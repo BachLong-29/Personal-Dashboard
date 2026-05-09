@@ -1,6 +1,7 @@
 'use client';
 
 import { useMutation } from '@tanstack/react-query';
+import { useRouter } from 'next/navigation';
 
 import { apiClient } from '@/libs/axios';
 import { setTokens } from '@/libs/axios/instance';
@@ -16,15 +17,15 @@ async function login(credentials: LoginFormValues): Promise<ApiResponse<AuthSess
 
 export function useLogin() {
   const setUser = useAuthStore((s) => s.setUser);
+  const router = useRouter();
 
   return useMutation({
     mutationFn: login,
     onSuccess: (data) => {
       const { user, tokens } = data.data;
-      // Store tokens in cookies so proxy.ts can read them for route protection
       setTokens(tokens.accessToken, tokens.refreshToken);
-      // Sync user into Zustand store for in-app state
       setUser(user);
+      router.push('/dashboard');
     },
   });
 }

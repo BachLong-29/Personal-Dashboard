@@ -62,6 +62,7 @@ export function LoginForm() {
         <Button type="submit" className="w-full" isLoading={isPending}>
           Sign in
         </Button>
+        <>admin@example.com / Password1</>
       </form>
     </motion.div>
   );
