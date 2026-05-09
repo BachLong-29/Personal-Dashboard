@@ -1,0 +1,31 @@
+{
+  "app": {
+    "name": "Personal Dashboard"
+  },
+  "nav": {
+    "home": "หน้าแรก",
+    "dashboard": "แดชบอร์ด",
+    "profile": "โปรไฟล์",
+    "settings": "การตั้งค่า"
+  },
+  "auth": {
+    "login": "เข้าสู่ระบบ",
+    "register": "สมัครสมาชิก",
+    "logout": "ออกจากระบบ",
+    "email": "อีเมล",
+    "password": "รหัสผ่าน",
+    "confirmPassword": "ยืนยันรหัสผ่าน",
+    "forgotPassword": "ลืมรหัสผ่าน?",
+    "noAccount": "ยังไม่มีบัญชี?",
+    "hasAccount": "มีบัญชีอยู่แล้ว?"
+  },
+  "common": {
+    "save": "บันทึก",
+    "cancel": "ยกเลิก",
+    "delete": "ลบ",
+    "edit": "แก้ไข",
+    "loading": "กำลังโหลด...",
+    "error": "เกิดข้อผิดพลาด",
+    "success": "สำเร็จ"
+  }
+}

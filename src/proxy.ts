@@ -1,44 +1,64 @@
+import createMiddleware from 'next-intl/middleware';
 import { type NextRequest, NextResponse } from 'next/server';
 
-import { TOKEN_KEYS, AUTH_ROUTES, PROTECTED_ROUTES } from '@/constants/auth';
+import { AUTH_ROUTES, PROTECTED_ROUTES, TOKEN_KEYS } from '@/constants/auth';
+import { routing } from '@/i18n/routing';
 
-const publicRoutes = [AUTH_ROUTES.LOGIN, AUTH_ROUTES.REGISTER, '/'];
+const handleI18n = createMiddleware(routing);
 
-function isProtectedRoute(pathname: string) {
+/**
+ * Strip the locale prefix from a pathname to get the canonical route.
+ * Only non-default locales have a URL prefix (localePrefix: 'as-needed').
+ */
+function stripLocalePrefix(pathname: string): string {
+  for (const locale of routing.locales) {
+    if (locale === routing.defaultLocale) continue;
+    if (pathname.startsWith(`/${locale}/`)) return pathname.slice(`/${locale}`.length);
+    if (pathname === `/${locale}`) return '/';
+  }
+  return pathname;
+}
+
+/**
+ * Derive locale from the URL pathname.
+ * Returns defaultLocale when the pathname has no explicit prefix.
+ */
+function getLocale(pathname: string): string {
+  for (const locale of routing.locales) {
+    if (locale === routing.defaultLocale) continue;
+    if (pathname.startsWith(`/${locale}/`) || pathname === `/${locale}`) return locale;
+  }
+  return routing.defaultLocale;
+}
+
+function isProtectedRoute(pathname: string): boolean {
   return PROTECTED_ROUTES.some((route) => pathname.startsWith(route));
 }
 
-function isPublicRoute(pathname: string) {
-  return publicRoutes.includes(pathname as (typeof publicRoutes)[number]);
-}
-
-export function proxy(req: NextRequest) {
+export default function proxy(req: NextRequest): NextResponse {
   const { pathname } = req.nextUrl;
 
-  if (
-    pathname.startsWith('/api') ||
-    pathname.startsWith('/_next') ||
-    pathname.startsWith('/favicon')
-  ) {
-    return NextResponse.next();
-  }
-
-  // Reads the access_token cookie set by setTokens() after login
+  const cleanPathname = stripLocalePrefix(pathname);
+  const locale = getLocale(pathname);
+  const localePrefix = locale === routing.defaultLocale ? '' : `/${locale}`;
   const token = req.cookies.get(TOKEN_KEYS.ACCESS)?.value;
 
-  if (isProtectedRoute(pathname) && !token) {
-    const loginUrl = new URL(AUTH_ROUTES.LOGIN, req.url);
+  // Unauthenticated user hitting a protected route → redirect to login
+  if (isProtectedRoute(cleanPathname) && !token) {
+    const loginUrl = new URL(`${localePrefix}${AUTH_ROUTES.LOGIN}`, req.url);
     loginUrl.searchParams.set('callbackUrl', pathname);
     return NextResponse.redirect(loginUrl);
   }
 
-  if (isPublicRoute(pathname) && token && pathname === AUTH_ROUTES.LOGIN) {
-    return NextResponse.redirect(new URL('/dashboard', req.url));
+  // Authenticated user hitting the login page → redirect to dashboard
+  if (cleanPathname === AUTH_ROUTES.LOGIN && token) {
+    return NextResponse.redirect(new URL(`${localePrefix}/dashboard`, req.url));
   }
 
-  return NextResponse.next();
+  // Delegate to next-intl for locale detection and routing
+  return handleI18n(req);
 }
 
 export const config = {
-  matcher: ['/((?!_next/static|_next/image|favicon.ico).*)'],
+  matcher: ['/((?!api|_next|_vercel|.*\\..*).*)'],
 };

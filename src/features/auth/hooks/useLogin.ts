@@ -1,7 +1,8 @@
 'use client';
 
 import { useMutation } from '@tanstack/react-query';
-import { useRouter } from 'next/navigation';
+
+import { useRouter } from '@/i18n/navigation';
 
 import { apiClient } from '@/libs/axios';
 import { setTokens } from '@/libs/axios/instance';

@@ -2,6 +2,7 @@
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { motion } from 'framer-motion';
+import { useTranslations } from 'next-intl';
 import { useForm } from 'react-hook-form';
 
 import { Button, Input } from '@/components/ui';
@@ -10,6 +11,9 @@ import { useLogin } from '../hooks/useLogin';
 import { loginSchema, type LoginFormValues } from '../schemas';
 
 export function LoginForm() {
+  const t = useTranslations('auth');
+  const tCommon = useTranslations('common');
+
   const { mutate: login, isPending, error } = useLogin();
 
   const {
@@ -36,7 +40,7 @@ export function LoginForm() {
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
         <Input
-          label="Email"
+          label={t('email')}
           type="email"
           autoComplete="email"
           placeholder="you@example.com"
@@ -45,7 +49,7 @@ export function LoginForm() {
         />
 
         <Input
-          label="Password"
+          label={t('password')}
           type="password"
           autoComplete="current-password"
           placeholder="••••••••"
@@ -55,12 +59,12 @@ export function LoginForm() {
 
         {error && (
           <p className="text-sm text-destructive" role="alert">
-            {(error as Error).message}
+            {tCommon('error')}
           </p>
         )}
 
         <Button type="submit" className="w-full" isLoading={isPending}>
-          Sign in
+          {t('login')}
         </Button>
         <>admin@example.com / Password1</>
       </form>
