@@ -10,6 +10,7 @@ const serverEnvSchema = z.object({
   AUTH_SECRET: z.string().min(32),
   ACCESS_TOKEN_EXPIRY: z.string().default('15m'),
   REFRESH_TOKEN_EXPIRY: z.string().default('7d'),
+  MONGODB_URI: z.string().url(),
 });
 
 const _clientEnv = clientEnvSchema.safeParse({
@@ -30,6 +31,7 @@ export function validateServerEnv() {
     AUTH_SECRET: process.env.AUTH_SECRET,
     ACCESS_TOKEN_EXPIRY: process.env.ACCESS_TOKEN_EXPIRY,
     REFRESH_TOKEN_EXPIRY: process.env.REFRESH_TOKEN_EXPIRY,
+    MONGODB_URI: process.env.MONGODB_URI,
   });
 
   if (!result.success) {

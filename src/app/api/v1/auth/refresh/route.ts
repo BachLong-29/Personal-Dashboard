@@ -1,5 +1,8 @@
 import { z } from 'zod';
 
+import { connectDB } from '@/libs/mongodb';
+import { signAccessToken, signRefreshToken, verifyRefreshToken } from '@/libs/jwt';
+import { UserModel } from '@/server/models/user.model';
 import { asyncHandler, successResponse, unauthorizedResponse } from '@/server';
 import { validateBody } from '@/server/validate';
 
@@ -11,13 +14,24 @@ export const POST = asyncHandler(async (req) => {
   const { data, error } = await validateBody(req, refreshSchema);
   if (error) return error;
 
-  // TODO: verify the refreshToken against DB / signed JWT
-  if (!data.refreshToken || data.refreshToken === 'invalid') {
+  let payload;
+  try {
+    payload = verifyRefreshToken(data.refreshToken);
+  } catch {
     return unauthorizedResponse('Invalid or expired refresh token');
   }
 
-  return successResponse(
-    { accessToken: 'new-mock-access-token', refreshToken: 'new-mock-refresh-token' },
-    'Token refreshed',
-  );
+  await connectDB();
+
+  const user = await UserModel.findById(payload.sub);
+  if (!user) return unauthorizedResponse('User not found');
+
+  const accessToken = signAccessToken({
+    sub: user._id.toString(),
+    email: user.email,
+    role: user.role,
+  });
+  const refreshToken = signRefreshToken({ sub: user._id.toString() });
+
+  return successResponse({ accessToken, refreshToken }, 'Token refreshed');
 });

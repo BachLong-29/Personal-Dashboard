@@ -1,6 +1,9 @@
+import bcrypt from 'bcryptjs';
 import { z } from 'zod';
 
-import { asyncHandler, createdResponse } from '@/server';
+import { connectDB } from '@/libs/mongodb';
+import { UserModel } from '@/server/models/user.model';
+import { asyncHandler, createdResponse, errorResponse } from '@/server';
 import { validateBody } from '@/server/validate';
 import { emailSchema, passwordSchema } from '@/libs/validations/common';
 
@@ -20,13 +23,28 @@ export const POST = asyncHandler(async (req) => {
   const { data, error } = await validateBody(req, registerSchema);
   if (error) return error;
 
-  // TODO: check duplicate email in DB and hash password
-  const mockUser = {
-    id: crypto.randomUUID(),
-    email: data.email,
-    name: data.name,
-    role: 'user' as const,
-  };
+  await connectDB();
 
-  return createdResponse(mockUser, 'Account created successfully');
+  const existing = await UserModel.findOne({ email: data.email.toLowerCase() });
+  if (existing) return errorResponse('Email already registered', 409);
+
+  const hashedPassword = await bcrypt.hash(data.password, 12);
+
+  const user = await UserModel.create({
+    email: data.email.toLowerCase(),
+    name: data.name,
+    password: hashedPassword,
+  });
+
+  return createdResponse(
+    {
+      id: user._id.toString(),
+      email: user.email,
+      name: user.name,
+      role: user.role,
+      createdAt: user.createdAt.toISOString(),
+      updatedAt: user.updatedAt.toISOString(),
+    },
+    'Account created successfully',
+  );
 });

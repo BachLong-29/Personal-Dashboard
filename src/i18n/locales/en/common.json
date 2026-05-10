@@ -16,6 +16,7 @@
     "password": "Password",
     "confirmPassword": "Confirm Password",
     "forgotPassword": "Forgot password?",
+    "name": "Full Name",
     "noAccount": "Don't have an account?",
     "hasAccount": "Already have an account?"
   },

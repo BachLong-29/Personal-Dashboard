@@ -1,9 +1,20 @@
+import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 
+import { verifyAccessToken } from '@/libs/jwt';
+import { TOKEN_KEYS } from '@/constants/auth';
 import { defaultLocale } from '@/i18n/config';
 
 async function getSession() {
-  return true;
+  const cookieStore = await cookies();
+  const token = cookieStore.get(TOKEN_KEYS.ACCESS)?.value;
+  if (!token) return null;
+
+  try {
+    return verifyAccessToken(token);
+  } catch {
+    return null;
+  }
 }
 
 export default async function ProtectedLayout({
@@ -17,7 +28,6 @@ export default async function ProtectedLayout({
   const session = await getSession();
 
   if (!session) {
-    // Locale-aware redirect: default locale has no prefix (as-needed strategy)
     redirect(locale === defaultLocale ? '/login' : `/${locale}/login`);
   }
 
