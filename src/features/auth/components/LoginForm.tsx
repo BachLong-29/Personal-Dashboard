@@ -44,6 +44,7 @@ export function LoginForm() {
           type="email"
           autoComplete="email"
           placeholder="you@example.com"
+          className="bg-black text-white placeholder:text-white/60"
           error={errors.email?.message}
           {...register('email')}
         />
@@ -53,6 +54,7 @@ export function LoginForm() {
           type="password"
           autoComplete="current-password"
           placeholder="••••••••"
+          className="bg-black text-white placeholder:text-white/60"
           error={errors.password?.message}
           {...register('password')}
         />

@@ -2,8 +2,22 @@
 
 import { useState } from 'react';
 
-import { DEFAULT_SETTINGS, ESCALATIONS, QUOTES, RANKS, SKIP_CONFIRM_STORAGE_KEY } from '../constants';
-import { MOCK_ACHIEVEMENTS, MOCK_ANALYTICS, MOCK_CHARACTER, MOCK_QUESTS, MOCK_SCHEDULE } from '../data/mock';
+import { cn } from '@/libs/utils';
+
+import {
+  DEFAULT_SETTINGS,
+  ESCALATIONS,
+  QUOTES,
+  RANKS,
+  SKIP_CONFIRM_STORAGE_KEY,
+} from '../constants';
+import {
+  MOCK_ACHIEVEMENTS,
+  MOCK_ANALYTICS,
+  MOCK_CHARACTER,
+  MOCK_QUESTS,
+  MOCK_SCHEDULE,
+} from '../data/mock';
 import type {
   Achievement,
   BurstPos,
@@ -20,13 +34,13 @@ import { AnalyticsPanel } from './AnalyticsPanel';
 import { BurstParticles } from './BurstParticles';
 import { CharacterPanel } from './CharacterPanel';
 import { ConfirmQuestModal } from './ConfirmQuestModal';
-import { DashboardTopbar } from './DashboardTopbar';
 import { FocusTimer } from './FocusTimer';
 import { GuildPanel } from './GuildPanel';
 import { PenaltyFailureModal, PenaltyModal } from './PenaltyModal';
 import { QuestPanel } from './QuestPanel';
 import { SchedulePanel } from './SchedulePanel';
 import { XPToast } from './XPToast';
+import DashboardTopbar from './DashboardTopbar';
 
 const CENTER_TABS: { key: CenterTab; label: string }[] = [
   { key: 'quests', label: 'Quests' },
@@ -68,7 +82,7 @@ export default function MainDashboard() {
     day: 'numeric',
   });
 
-  function completeQuest(quest: Quest, burstPos: BurstPos | null) {
+  const completeQuest = (quest: Quest, burstPos: BurstPos | null) => {
     const newQuests = quests.map((q) => (q.id === quest.id ? { ...q, done: true } : q));
     const allDone = newQuests.length > 0 && newQuests.every((q) => q.done);
 
@@ -95,9 +109,9 @@ export default function MainDashboard() {
         : withFirstS;
     });
     setQuests(newQuests);
-  }
+  };
 
-  function handleToggleQuest(id: number, burstPos: BurstPos | null) {
+  const handleToggleQuest = (id: number, burstPos: BurstPos | null) => {
     const quest = quests.find((q) => q.id === id);
     if (!quest) return;
     if (quest.done) {
@@ -109,37 +123,40 @@ export default function MainDashboard() {
     } else {
       setPendingQuest({ quest, burstPos });
     }
-  }
+  };
 
-  function handleConfirmQuest(dontShowAgain: boolean) {
+  const handleConfirmQuest = (dontShowAgain: boolean) => {
     if (!pendingQuest) return;
     if (dontShowAgain) {
       setSkipConfirm(true);
-      localStorage.setItem(SKIP_CONFIRM_STORAGE_KEY, JSON.stringify({ date: new Date().toDateString() }));
+      localStorage.setItem(
+        SKIP_CONFIRM_STORAGE_KEY,
+        JSON.stringify({ date: new Date().toDateString() }),
+      );
     }
-    completeQuest(pendingQuest.quest, pendingQuest.burstPos);
+    // completeQuest(pendingQuest.quest, pendingQuest.burstPos);
     setPendingQuest(null);
-  }
+  };
 
-  function handleToggleSchedule(idx: number) {
+  const handleToggleSchedule = (idx: number) => {
     setSchedule((prev) => prev.map((s, i) => (i === idx ? { ...s, done: !s.done } : s)));
-  }
+  };
 
-  function handleAddQuest(quest: Quest) {
+  const handleAddQuest = (quest: Quest) => {
     setQuests((prev) => [quest, ...prev]);
-  }
+  };
 
-  function handleEndDay() {
+  const handleEndDay = () => {
     const unfinished = quests.filter((q) => !q.done);
     setPenaltyState({ tier: 1, unfinished: unfinished.length ? unfinished : quests.slice(0, 1) });
-  }
+  };
 
-  function handlePenaltyComplete() {
+  const handlePenaltyComplete = () => {
     setToast({ xp: 50, coins: 10 });
     setPenaltyState(null);
-  }
+  };
 
-  function handlePenaltyFail() {
+  const handlePenaltyFail = () => {
     if (!penaltyState) return;
     const esc = ESCALATIONS[Math.min(penaltyState.tier - 1, ESCALATIONS.length - 1)];
     if (!esc) return;
@@ -157,16 +174,19 @@ export default function MainDashboard() {
     });
     setPenaltyFailed(true);
     setPenaltyState(null);
-  }
+  };
 
-  function handleFailureContinue() {
+  const handleFailureContinue = () => {
     const nextTier = Math.min((penaltyState?.tier ?? 1) + 1, 4);
     setPenaltyFailed(false);
     setTimeout(() => {
       const unfinished = quests.filter((q) => !q.done);
-      setPenaltyState({ tier: nextTier, unfinished: unfinished.length ? unfinished : quests.slice(0, 1) });
+      setPenaltyState({
+        tier: nextTier,
+        unfinished: unfinished.length ? unfinished : quests.slice(0, 1),
+      });
     }, 400);
-  }
+  };
 
   return (
     <>
@@ -195,18 +215,22 @@ export default function MainDashboard() {
 
       <DashboardTopbar char={char} dateStr={dateStr} onEndDay={handleEndDay} />
 
-      <div className="dashboard">
-        <div className="left-col">
+      <div className={dashboardLayout}>
+        <div className={scrollCol}>
           <CharacterPanel char={char} settings={settings} />
           <AchievementsPanel achievements={achievements} />
         </div>
 
-        <div className="center-col">
-          <div className="center-tabs">
+        <div className={centerCol}>
+          <div className={centerTabs}>
             {CENTER_TABS.map((t) => (
               <button
                 key={t.key}
-                className={`tab-btn${centerTab === t.key ? ' active' : ''}`}
+                className={cn(
+                  tabButtonBase,
+                  tabButtonHover,
+                  centerTab === t.key && tabButtonActive,
+                )}
                 onClick={() => setCenterTab(t.key)}
               >
                 {t.label}
@@ -224,41 +248,39 @@ export default function MainDashboard() {
           )}
           {centerTab === 'schedule' && (
             <div
-              className="panel panel-gold"
-              style={{ flex: 1, overflow: 'hidden', minHeight: 0, display: 'flex', flexDirection: 'column' }}
+              className={cn(panelBase, panelGold, 'flex-1 overflow-hidden min-h-0 flex flex-col')}
             >
-              <div className="corner-tl" />
-              <div className="corner-tr" />
-              <div className="corner-bl" />
-              <div className="corner-br" />
-              <div className="panel-header">
-                <span className="panel-header-title">Today&apos;s Schedule</span>
-                <span className="panel-header-ornament">◆ ◆ ◆</span>
+              <div className={cornerTL} />
+              <div className={cornerTR} />
+              <div className={cornerBL} />
+              <div className={cornerBR} />
+              <div className={panelHeader}>
+                <span className={panelHeaderTitle}>Today&apos;s Schedule</span>
+                <span className={panelHeaderOrnament}>◆ ◆ ◆</span>
               </div>
               <SchedulePanel schedule={schedule} onToggle={handleToggleSchedule} />
             </div>
           )}
           {centerTab === 'stats' && (
             <div
-              className="panel panel-violet"
-              style={{ flex: 1, overflow: 'hidden', minHeight: 0, display: 'flex', flexDirection: 'column' }}
+              className={cn(panelBase, panelViolet, 'flex-1 overflow-hidden min-h-0 flex flex-col')}
             >
-              <div className="panel-header">
-                <span className="panel-header-title">Weekly Analytics</span>
-                <span className="panel-header-ornament">◆ ◆ ◆</span>
+              <div className={panelHeader}>
+                <span className={panelHeaderTitle}>Weekly Analytics</span>
+                <span className={panelHeaderOrnament}>◆ ◆ ◆</span>
               </div>
               <AnalyticsPanel analytics={MOCK_ANALYTICS} char={char} />
             </div>
           )}
         </div>
 
-        <div className="right-col">
+        <div className={scrollCol}>
           <FocusTimer duration={settings.timerDuration} />
           {settings.showQuoteCard && (
-            <div className="motivation-card">
-              <div className="motivation-label">◆ Daily Wisdom</div>
-              <div className="motivation-text">&ldquo;{quote?.text}&rdquo;</div>
-              <div className="motivation-author">{quote?.author}</div>
+            <div className={motivationCard}>
+              <div className={motivationLabel}>◆ Daily Wisdom</div>
+              <div className={motivationText}>&ldquo;{quote?.text}&rdquo;</div>
+              <div className={motivationAuthor}>{quote?.author}</div>
             </div>
           )}
           {settings.showGuildPanel && <GuildPanel />}
@@ -267,3 +289,41 @@ export default function MainDashboard() {
     </>
   );
 }
+
+const dashboardLayout = 'grid grid-cols-[220px_1fr_260px] gap-3 p-3 flex-1 overflow-hidden min-h-0';
+
+const scrollCol = 'flex flex-col gap-2.5 overflow-y-auto overflow-x-hidden';
+const centerCol = 'flex flex-col gap-2.5 overflow-hidden min-h-0';
+const centerTabs = 'flex gap-1 shrink-0';
+
+const tabButtonBase =
+  'font-[var(--font-title)] text-[10px] tracking-[0.12em] font-bold text-[var(--text-mid)] bg-[var(--panel)] border border-[var(--border)] rounded-[var(--r-sm)] px-[14px] py-[7px] cursor-pointer transition-all duration-200 uppercase';
+const tabButtonHover = 'hover:text-[var(--text-hi)] hover:border-[oklch(0.74_0.17_85_/_0.3)]';
+const tabButtonActive =
+  'text-[var(--gold)] bg-[oklch(0.74_0.17_85_/_0.08)] border-[oklch(0.74_0.17_85_/_0.5)] shadow-[0_0_12px_var(--gold-glow)]';
+
+const panelBase =
+  "bg-[var(--panel)] border border-[var(--border)] rounded-[var(--r)] overflow-hidden relative before:content-[''] before:absolute before:inset-0 before:pointer-events-none before:rounded-[inherit] before:[background-image:repeating-linear-gradient(0deg,transparent,transparent_28px,oklch(1_0_0_/_0.012)_28px,oklch(1_0_0_/_0.012)_29px),repeating-linear-gradient(90deg,transparent,transparent_28px,oklch(1_0_0_/_0.012)_28px,oklch(1_0_0_/_0.012)_29px)]";
+const panelGold =
+  'border-[oklch(0.74_0.17_85_/_0.35)] shadow-[0_0_20px_oklch(0.74_0.17_85_/_0.06),inset_0_0_20px_oklch(0.74_0.17_85_/_0.03)]';
+const panelViolet =
+  'border-[oklch(0.66_0.22_295_/_0.35)] shadow-[0_0_20px_oklch(0.66_0.22_295_/_0.08),inset_0_0_20px_oklch(0.66_0.22_295_/_0.03)]';
+
+const panelHeader =
+  'flex items-center gap-2 px-[14px] pt-[10px] pb-[8px] border-b border-[var(--border)]';
+const panelHeaderTitle =
+  'font-[var(--font-title)] text-[10px] font-bold tracking-[0.15em] text-[var(--gold)] uppercase flex-1';
+const panelHeaderOrnament = 'text-[var(--gold-dim)] text-[8px] tracking-[3px] opacity-60';
+
+const cornerBase = 'absolute w-3 h-3 pointer-events-none border-[var(--gold-dim)]';
+const cornerTL = cn(cornerBase, 'top-[5px] left-[5px] border-t-[1.5px] border-l-[1.5px]');
+const cornerTR = cn(cornerBase, 'top-[5px] right-[5px] border-t-[1.5px] border-r-[1.5px]');
+const cornerBL = cn(cornerBase, 'bottom-[5px] left-[5px] border-b-[1.5px] border-l-[1.5px]');
+const cornerBR = cn(cornerBase, 'bottom-[5px] right-[5px] border-b-[1.5px] border-r-[1.5px]');
+
+const motivationCard =
+  'bg-[linear-gradient(135deg,oklch(0.35_0.15_295_/_0.25),oklch(0.28_0.12_270_/_0.2))] border border-[oklch(0.66_0.22_295_/_0.3)] rounded-[var(--r)] px-[14px] py-3 shrink-0';
+const motivationLabel =
+  'text-[8px] tracking-[0.12em] uppercase text-[var(--violet)] font-[var(--font-title)] mb-[5px]';
+const motivationText = 'text-[11px] text-[var(--text-hi)] leading-[1.6] italic';
+const motivationAuthor = 'text-[9px] text-[var(--text-mid)] mt-1 text-right';
