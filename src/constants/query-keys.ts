@@ -10,4 +10,8 @@ export const queryKeys = {
     details: () => [...queryKeys.users.all, 'detail'] as const,
     detail: (id: string) => [...queryKeys.users.details(), id] as const,
   },
+  quests: {
+    all: ['quests'] as const,
+    list: (date?: string) => [...queryKeys.quests.all, 'list', date ?? 'today'] as const,
+  },
 } as const;

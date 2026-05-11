@@ -7,7 +7,7 @@ import type { BurstPos, Quest } from '../types';
 
 interface QuestCardProps {
   quest: Quest;
-  onToggle: (id: number, burstPos: BurstPos | null) => void;
+  onToggle: (id: string, burstPos: BurstPos | null) => void;
   animationsEnabled: boolean;
 }
 

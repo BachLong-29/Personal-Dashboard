@@ -1,3 +1,7 @@
+'use client';
+
+import { useTranslations } from 'next-intl';
+
 import type { Character, DashboardSettings } from '../types';
 
 import { cn } from '@/libs/utils';
@@ -8,6 +12,9 @@ interface CharacterPanelProps {
 }
 
 export function CharacterPanel({ char, settings }: CharacterPanelProps) {
+  const tNav = useTranslations('nav');
+  const tCommon = useTranslations('common');
+
   const xpPct = (char.xp / char.xpNext) * 100;
   const displayName = settings.characterName || char.name;
 
@@ -18,7 +25,7 @@ export function CharacterPanel({ char, settings }: CharacterPanelProps) {
       <div className={cornerBL} />
       <div className={cornerBR} />
       <div className={panelHeader}>
-        <span className={profileLabel}>PROFILE</span>
+        <span className={profileLabel}>{tNav('profile')}</span>
         <span className="flex-1" />
         <span className={levelLabel}>Lv.{char.level}</span>
       </div>
@@ -34,26 +41,26 @@ export function CharacterPanel({ char, settings }: CharacterPanelProps) {
       <div className={metaWrap}>
         <div className={metaItem}>
           <div className={metaVal}>{char.level}</div>
-          <div className={metaKey}>Level</div>
+          <div className={metaKey}>{tCommon('level')}</div>
         </div>
         <div className={metaDivider} />
         <div className={metaItem}>
           <div className={metaVal} style={{ color: 'var(--rose)' }}>
             {char.streak}
           </div>
-          <div className={metaKey}>Streak</div>
+          <div className={metaKey}>{tCommon('streak')}</div>
         </div>
         <div className={metaDivider} />
         <div className={metaItem}>
           <div className={metaVal} style={{ color: 'var(--mint)' }}>
             {char.class}
           </div>
-          <div className={metaKey}>Class</div>
+          <div className={metaKey}>{tCommon('class')}</div>
         </div>
       </div>
       <div className={xpWrap}>
         <div className={xpLabel}>
-          <span>EXP</span>
+          <span>{tCommon('exp')}</span>
           <span className={xpValue}>
             {char.xp.toLocaleString()} / {char.xpNext.toLocaleString()}
           </span>

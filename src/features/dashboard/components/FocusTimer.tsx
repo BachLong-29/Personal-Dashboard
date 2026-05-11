@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { useTranslations } from 'next-intl';
 
 import { cn } from '@/libs/utils';
 
@@ -9,6 +10,8 @@ interface FocusTimerProps {
 }
 
 export function FocusTimer({ duration }: FocusTimerProps) {
+  const t = useTranslations('dashboard');
+
   const [secsLeft, setSecsLeft] = useState(duration * 60);
   const [running, setRunning] = useState(false);
   const [prevDuration, setPrevDuration] = useState(duration);
@@ -51,7 +54,7 @@ export function FocusTimer({ duration }: FocusTimerProps) {
   return (
     <div className={cn(panelBase, panelViolet, focusPanel)}>
       <div className={panelHeader}>
-        <span className={panelHeaderTitle}>Focus Timer</span>
+        <span className={panelHeaderTitle}>{t('focus.title')}</span>
         <span className={panelHeaderOrnament}>◆ ◆ ◆</span>
       </div>
       <div className={focusInner}>
@@ -84,7 +87,11 @@ export function FocusTimer({ duration }: FocusTimerProps) {
         </div>
         <div className={focusControls}>
           <button className={cn(focusBtn, focusBtnStart)} onClick={() => setRunning((r) => !r)}>
-            {running ? '⏸ Pause' : secsLeft === 0 ? '↺ Replay' : '▶ Start'}
+            {running
+              ? `⏸ ${t('focus.pause')}`
+              : secsLeft === 0
+                ? `↺ ${t('focus.replay')}`
+                : `▶ ${t('focus.start')}`}
           </button>
           <button
             className={cn(focusBtn, focusBtnReset)}

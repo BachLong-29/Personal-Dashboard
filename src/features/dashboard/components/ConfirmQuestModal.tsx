@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 
+import { useUpdateQuestStatus } from '../hooks/useUpdateQuestStatus';
 import type { Quest } from '../types';
 
 interface ConfirmQuestModalProps {
@@ -11,7 +12,15 @@ interface ConfirmQuestModalProps {
 }
 
 export function ConfirmQuestModal({ quest, onConfirm, onCancel }: ConfirmQuestModalProps) {
-  const [dontShowAgain, setDontShowAgain] = useState(false);
+  const [skipNextPrompt, setSkipNextPrompt] = useState(false);
+  const { mutate: updateStatus, isPending, error } = useUpdateQuestStatus();
+
+  function handleConfirm() {
+    updateStatus(
+      { id: quest.id, done: true },
+      { onSuccess: () => onConfirm(skipNextPrompt) },
+    );
+  }
 
   return (
     <div className="confirm-backdrop" onClick={(e) => e.target === e.currentTarget && onCancel()}>
@@ -28,18 +37,23 @@ export function ConfirmQuestModal({ quest, onConfirm, onCancel }: ConfirmQuestMo
           <span className="confirm-reward-pill xp">⚡ +{quest.xp} XP</span>
           <span className="confirm-reward-pill coin">🪙 +{quest.coins}</span>
         </div>
-        <div className="confirm-checkbox-row" onClick={() => setDontShowAgain((v) => !v)}>
-          <span className={`confirm-checkbox${dontShowAgain ? ' checked' : ''}`}>
-            {dontShowAgain ? '✓' : ''}
+        {error && (
+          <div style={{ color: 'var(--danger)', fontSize: 11, textAlign: 'center', margin: '4px 0' }}>
+            ✕ Failed to update quest. Please try again.
+          </div>
+        )}
+        <div className="confirm-checkbox-row" onClick={() => !isPending && setSkipNextPrompt((v) => !v)}>
+          <span className={`confirm-checkbox${skipNextPrompt ? ' checked' : ''}`}>
+            {skipNextPrompt ? '✓' : ''}
           </span>
-          <span>Don&apos;t ask again for the rest of the day</span>
+          <span>{"Don't ask again for the rest of the day"}</span>
         </div>
         <div className="confirm-actions">
-          <button className="confirm-btn secondary" onClick={onCancel}>
+          <button className="confirm-btn secondary" onClick={onCancel} disabled={isPending}>
             Not Yet
           </button>
-          <button className="confirm-btn primary" onClick={() => onConfirm(dontShowAgain)}>
-            ✓ Claim Reward
+          <button className="confirm-btn primary" onClick={handleConfirm} disabled={isPending}>
+            {isPending ? 'Saving...' : '✓ Claim Reward'}
           </button>
         </div>
       </div>

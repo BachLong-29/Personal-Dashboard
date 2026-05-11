@@ -20,10 +20,10 @@ export const MOCK_CHARACTER: Character = {
 };
 
 export const MOCK_QUESTS: Quest[] = [
-  { id: 1, title: 'Morning Deep Work', desc: 'Focus session before distractions hit', type: 'focus', difficulty: 'A', xp: 120, coins: 30, done: false, tags: ['focus'] },
-  { id: 2, title: 'Daily Exercise', desc: '30 min workout or walk', type: 'health', difficulty: 'B', xp: 90, coins: 25, done: false, tags: ['health'] },
-  { id: 3, title: 'Read 30 Pages', desc: 'Non-fiction reading block', type: 'reflect', difficulty: 'C', xp: 60, coins: 15, done: true, tags: ['reflect'] },
-  { id: 4, title: 'Clear Inbox', desc: 'Process all emails to zero', type: 'admin', difficulty: 'C', xp: 60, coins: 15, done: false, tags: ['admin'] },
+  { id: '1', title: 'Morning Deep Work', desc: 'Focus session before distractions hit', type: 'focus', difficulty: 'A', xp: 120, coins: 30, done: false, tags: ['focus'] },
+  { id: '2', title: 'Daily Exercise', desc: '30 min workout or walk', type: 'health', difficulty: 'B', xp: 90, coins: 25, done: false, tags: ['health'] },
+  { id: '3', title: 'Read 30 Pages', desc: 'Non-fiction reading block', type: 'reflect', difficulty: 'C', xp: 60, coins: 15, done: true, tags: ['reflect'] },
+  { id: '4', title: 'Clear Inbox', desc: 'Process all emails to zero', type: 'admin', difficulty: 'C', xp: 60, coins: 15, done: false, tags: ['admin'] },
 ];
 
 export const MOCK_SCHEDULE: ScheduleItem[] = [

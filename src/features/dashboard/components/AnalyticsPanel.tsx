@@ -1,3 +1,7 @@
+'use client';
+
+import { useTranslations } from 'next-intl';
+
 import type { Analytics, Character } from '../types';
 import { MiniBarChart } from './MiniBarChart';
 
@@ -9,6 +13,8 @@ interface AnalyticsPanelProps {
 }
 
 export function AnalyticsPanel({ analytics, char }: AnalyticsPanelProps) {
+  const t = useTranslations('dashboard');
+
   const totalXP = analytics.weeklyXP.reduce((a, b) => a + b, 0);
   const totalFocus = analytics.focusHours.reduce((a, b) => a + b, 0).toFixed(1);
   const avgTasks = (analytics.tasksDone.reduce((a, b) => a + b, 0) / 7).toFixed(1);
@@ -18,28 +24,28 @@ export function AnalyticsPanel({ analytics, char }: AnalyticsPanelProps) {
       <div className={analyticsWrap}>
         <div className={analyticsGrid}>
           <div className={statCard}>
-            <div className={statCardLabel}>Weekly XP</div>
+            <div className={statCardLabel}>{t('analytics.weeklyXp')}</div>
             <div className={cn(statCardVal, statValViolet)}>{totalXP.toLocaleString()}</div>
-            <div className={statCardSub}>+12% vs last week</div>
+            <div className={statCardSub}>{t('analytics.vsLastWeek')}</div>
           </div>
           <div className={statCard}>
-            <div className={statCardLabel}>Focus Hours</div>
+            <div className={statCardLabel}>{t('analytics.focusHours')}</div>
             <div className={cn(statCardVal, statValMint)}>{totalFocus}h</div>
-            <div className={statCardSub}>this week</div>
+            <div className={statCardSub}>{t('analytics.thisWeek')}</div>
           </div>
           <div className={statCard}>
-            <div className={statCardLabel}>Avg. Tasks/Day</div>
+            <div className={statCardLabel}>{t('analytics.avgTasksPerDay')}</div>
             <div className={cn(statCardVal, statValGold)}>{avgTasks}</div>
-            <div className={statCardSub}>tasks completed</div>
+            <div className={statCardSub}>{t('analytics.tasksCompleted')}</div>
           </div>
           <div className={statCard}>
-            <div className={statCardLabel}>Current Streak</div>
+            <div className={statCardLabel}>{t('analytics.currentStreak')}</div>
             <div className={cn(statCardVal, statValRose)}>{char.streak}🔥</div>
-            <div className={statCardSub}>days in a row</div>
+            <div className={statCardSub}>{t('analytics.daysInARow')}</div>
           </div>
         </div>
         <div className={chartCard}>
-          <div className={chartTitle}>Weekly XP Gain</div>
+          <div className={chartTitle}>{t('analytics.weeklyXpGain')}</div>
           <MiniBarChart
             data={analytics.weeklyXP}
             labels={analytics.weekLabels}
@@ -48,7 +54,7 @@ export function AnalyticsPanel({ analytics, char }: AnalyticsPanelProps) {
           />
         </div>
         <div className={chartCard}>
-          <div className={chartTitle}>Focus Hours / Day</div>
+          <div className={chartTitle}>{t('analytics.focusHoursPerDay')}</div>
           <MiniBarChart
             data={analytics.focusHours}
             labels={analytics.weekLabels}
@@ -57,7 +63,7 @@ export function AnalyticsPanel({ analytics, char }: AnalyticsPanelProps) {
           />
         </div>
         <div className={chartCard}>
-          <div className={chartTitle}>Tasks Completed / Day</div>
+          <div className={chartTitle}>{t('analytics.tasksCompletedPerDay')}</div>
           <MiniBarChart
             data={analytics.tasksDone}
             labels={analytics.weekLabels}

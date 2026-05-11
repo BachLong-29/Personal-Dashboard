@@ -1,3 +1,7 @@
+'use client';
+
+import { useTranslations } from 'next-intl';
+
 import type { GuildMember } from '../types';
 
 import { cn } from '@/libs/utils';
@@ -9,14 +13,15 @@ const GUILD_MEMBERS: GuildMember[] = [
   { name: 'Luna Vale', level: 22, avatar: '🌙', online: true },
 ];
 
-const onlineCount = GUILD_MEMBERS.filter((m) => m.online).length;
-
 export function GuildPanel() {
+  const t = useTranslations('dashboard');
+  const onlineCount = GUILD_MEMBERS.filter((m) => m.online).length;
+
   return (
     <div className={cn(panelBase, guildPanel)}>
       <div className={panelHeader}>
-        <span className={panelHeaderTitle}>Guild ◆ Aetheria</span>
-        <span className={onlineCountLabel}>{onlineCount} Online</span>
+        <span className={panelHeaderTitle}>{t('guild.title')}</span>
+        <span className={onlineCountLabel}>{t('guild.online', { count: onlineCount })}</span>
       </div>
       <div className={guildList}>
         {GUILD_MEMBERS.map((m, i) => (

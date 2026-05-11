@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { useTranslations } from 'next-intl';
 
 import { cn } from '@/libs/utils';
 
@@ -15,9 +16,9 @@ import {
   MOCK_ACHIEVEMENTS,
   MOCK_ANALYTICS,
   MOCK_CHARACTER,
-  MOCK_QUESTS,
   MOCK_SCHEDULE,
 } from '../data/mock';
+import { useQuests } from '../hooks/useQuests';
 import type {
   Achievement,
   BurstPos,
@@ -42,12 +43,6 @@ import { SchedulePanel } from './SchedulePanel';
 import { XPToast } from './XPToast';
 import DashboardTopbar from './DashboardTopbar';
 
-const CENTER_TABS: { key: CenterTab; label: string }[] = [
-  { key: 'quests', label: 'Quests' },
-  { key: 'schedule', label: 'Schedule' },
-  { key: 'stats', label: 'Stats' },
-];
-
 function loadSkipConfirm(): boolean {
   if (typeof window === 'undefined') return false;
   try {
@@ -61,7 +56,19 @@ function loadSkipConfirm(): boolean {
 }
 
 export default function MainDashboard() {
-  const [quests, setQuests] = useState<Quest[]>(MOCK_QUESTS);
+  const t = useTranslations('dashboard');
+
+  const { data: serverQuests, isLoading: questsLoading } = useQuests();
+  const [quests, setQuests] = useState<Quest[]>([]);
+  const questsInitialized = useRef(false);
+
+  useEffect(() => {
+    if (serverQuests && !questsInitialized.current) {
+      setQuests(serverQuests as Quest[]);
+      questsInitialized.current = true;
+    }
+  }, [serverQuests]);
+
   const [schedule, setSchedule] = useState<ScheduleItem[]>(MOCK_SCHEDULE);
   const [char, setChar] = useState<Character>(MOCK_CHARACTER);
   const [achievements, setAchievements] = useState<Achievement[]>(MOCK_ACHIEVEMENTS);
@@ -111,7 +118,7 @@ export default function MainDashboard() {
     setQuests(newQuests);
   };
 
-  const handleToggleQuest = (id: number, burstPos: BurstPos | null) => {
+  const handleToggleQuest = (id: string, burstPos: BurstPos | null) => {
     const quest = quests.find((q) => q.id === id);
     if (!quest) return;
     if (quest.done) {
@@ -125,16 +132,16 @@ export default function MainDashboard() {
     }
   };
 
-  const handleConfirmQuest = (dontShowAgain: boolean) => {
+  const handleConfirmQuest = (skipNextPrompt: boolean) => {
     if (!pendingQuest) return;
-    if (dontShowAgain) {
+    if (skipNextPrompt) {
       setSkipConfirm(true);
       localStorage.setItem(
         SKIP_CONFIRM_STORAGE_KEY,
         JSON.stringify({ date: new Date().toDateString() }),
       );
     }
-    // completeQuest(pendingQuest.quest, pendingQuest.burstPos);
+    completeQuest(pendingQuest.quest, pendingQuest.burstPos);
     setPendingQuest(null);
   };
 
@@ -223,17 +230,23 @@ export default function MainDashboard() {
 
         <div className={centerCol}>
           <div className={centerTabs}>
-            {CENTER_TABS.map((t) => (
+            {(
+              [
+                { key: 'quests', label: t('tabs.quests') },
+                { key: 'schedule', label: t('tabs.schedule') },
+                { key: 'stats', label: t('tabs.stats') },
+              ] satisfies { key: CenterTab; label: string }[]
+            ).map((tab) => (
               <button
-                key={t.key}
+                key={tab.key}
                 className={cn(
                   tabButtonBase,
                   tabButtonHover,
-                  centerTab === t.key && tabButtonActive,
+                  centerTab === tab.key && tabButtonActive,
                 )}
-                onClick={() => setCenterTab(t.key)}
+                onClick={() => setCenterTab(tab.key)}
               >
-                {t.label}
+                {tab.label}
               </button>
             ))}
           </div>
@@ -244,6 +257,7 @@ export default function MainDashboard() {
               onToggle={handleToggleQuest}
               onAddQuest={handleAddQuest}
               animationsEnabled={settings.animationsEnabled}
+              isLoading={questsLoading}
             />
           )}
           {centerTab === 'schedule' && (
@@ -255,7 +269,7 @@ export default function MainDashboard() {
               <div className={cornerBL} />
               <div className={cornerBR} />
               <div className={panelHeader}>
-                <span className={panelHeaderTitle}>Today&apos;s Schedule</span>
+                <span className={panelHeaderTitle}>{t('schedule.title')}</span>
                 <span className={panelHeaderOrnament}>◆ ◆ ◆</span>
               </div>
               <SchedulePanel schedule={schedule} onToggle={handleToggleSchedule} />
@@ -266,7 +280,7 @@ export default function MainDashboard() {
               className={cn(panelBase, panelViolet, 'flex-1 overflow-hidden min-h-0 flex flex-col')}
             >
               <div className={panelHeader}>
-                <span className={panelHeaderTitle}>Weekly Analytics</span>
+                <span className={panelHeaderTitle}>{t('analytics.title')}</span>
                 <span className={panelHeaderOrnament}>◆ ◆ ◆</span>
               </div>
               <AnalyticsPanel analytics={MOCK_ANALYTICS} char={char} />
@@ -278,7 +292,7 @@ export default function MainDashboard() {
           <FocusTimer duration={settings.timerDuration} />
           {settings.showQuoteCard && (
             <div className={motivationCard}>
-              <div className={motivationLabel}>◆ Daily Wisdom</div>
+              <div className={motivationLabel}>◆ {t('motivation.dailyWisdom')}</div>
               <div className={motivationText}>&ldquo;{quote?.text}&rdquo;</div>
               <div className={motivationAuthor}>{quote?.author}</div>
             </div>

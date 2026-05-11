@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 
+import { useCreateQuest } from '../hooks/useCreateQuest';
 import { COIN_MAP, QUEST_ICONS, XP_MAP } from '../constants';
 import type { Difficulty, Quest, QuestType } from '../types';
 
@@ -18,20 +19,26 @@ export function AddQuestModal({ onAdd, onClose }: AddQuestModalProps) {
   const [type, setType] = useState<QuestType>('focus');
   const [diff, setDiff] = useState<Difficulty>('B');
 
+  const { mutate: createQuest, isPending, error } = useCreateQuest();
+
   function handleAdd() {
-    if (!title.trim()) return;
-    onAdd({
-      title: title.trim(),
-      desc: desc.trim() || 'Complete this quest',
-      type,
-      difficulty: diff,
-      xp: XP_MAP[diff],
-      coins: COIN_MAP[diff],
-      done: false,
-      id: Date.now(),
-      tags: [type],
-    });
-    onClose();
+    if (!title.trim() || isPending) return;
+
+    createQuest(
+      {
+        title: title.trim(),
+        desc: desc.trim() || undefined,
+        type,
+        difficulty: diff,
+        tags: [type],
+      },
+      {
+        onSuccess: (quest) => {
+          onAdd(quest as Quest);
+          onClose();
+        },
+      },
+    );
   }
 
   return (
@@ -48,6 +55,7 @@ export function AddQuestModal({ onAdd, onClose }: AddQuestModalProps) {
             onChange={(e) => setTitle(e.target.value)}
             placeholder="Enter quest title..."
             autoFocus
+            disabled={isPending}
             onKeyDown={(e) => e.key === 'Enter' && handleAdd()}
           />
         </div>
@@ -58,6 +66,7 @@ export function AddQuestModal({ onAdd, onClose }: AddQuestModalProps) {
             value={desc}
             onChange={(e) => setDesc(e.target.value)}
             placeholder="What needs to be done?"
+            disabled={isPending}
           />
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
@@ -66,6 +75,7 @@ export function AddQuestModal({ onAdd, onClose }: AddQuestModalProps) {
             <select
               className="modal-select"
               value={type}
+              disabled={isPending}
               onChange={(e) => setType(e.target.value as QuestType)}
             >
               {Object.entries(QUEST_ICONS).map(([k, v]) => (
@@ -80,6 +90,7 @@ export function AddQuestModal({ onAdd, onClose }: AddQuestModalProps) {
             <select
               className="modal-select"
               value={diff}
+              disabled={isPending}
               onChange={(e) => setDiff(e.target.value as Difficulty)}
             >
               {DIFFICULTIES.map((d) => (
@@ -90,12 +101,17 @@ export function AddQuestModal({ onAdd, onClose }: AddQuestModalProps) {
             </select>
           </div>
         </div>
+        {error && (
+          <div style={{ color: 'var(--danger)', fontSize: 11, textAlign: 'center', marginTop: 6 }}>
+            ✕ Failed to create quest. Please try again.
+          </div>
+        )}
         <div className="modal-actions">
-          <button className="modal-btn cancel" onClick={onClose}>
+          <button className="modal-btn cancel" onClick={onClose} disabled={isPending}>
             Cancel
           </button>
-          <button className="modal-btn confirm" onClick={handleAdd}>
-            Add Quest ✦
+          <button className="modal-btn confirm" onClick={handleAdd} disabled={isPending}>
+            {isPending ? 'Creating...' : 'Add Quest ✦'}
           </button>
         </div>
       </div>

@@ -6,7 +6,9 @@
     "home": "หน้าแรก",
     "dashboard": "แดชบอร์ด",
     "profile": "โปรไฟล์",
-    "settings": "การตั้งค่า"
+    "settings": "การตั้งค่า",
+    "marketplace": "มาร์เก็ตเพลส",
+    "vault": "คลัง"
   },
   "auth": {
     "login": "เข้าสู่ระบบ",
@@ -25,8 +27,59 @@
     "cancel": "ยกเลิก",
     "delete": "ลบ",
     "edit": "แก้ไข",
+    "level": "เลเวล",
+    "streak": "สตรีค",
+    "class": "คลาส",
+    "exp": "EXP",
     "loading": "กำลังโหลด...",
     "error": "เกิดข้อผิดพลาด",
     "success": "สำเร็จ"
+  },
+  "dashboard": {
+    "endDay": "สิ้นสุดวัน",
+    "streakDays": "🔥 {count} วันติดต่อกัน",
+    "achievements": "ความสำเร็จ",
+    "tabs": {
+      "quests": "ภารกิจ",
+      "schedule": "ตารางเวลา",
+      "stats": "สถิติ"
+    },
+    "quests": {
+      "title": "ภารกิจวันนี้",
+      "new": "ภารกิจใหม่",
+      "dailyProgress": "ความคืบหน้าประจำวัน",
+      "completed": "{done}/{total} เสร็จแล้ว",
+      "done": "เสร็จ"
+    },
+    "schedule": {
+      "title": "ตารางวันนี้"
+    },
+    "analytics": {
+      "title": "การวิเคราะห์รายสัปดาห์",
+      "weeklyXp": "XP รายสัปดาห์",
+      "vsLastWeek": "+12% เทียบกับสัปดาห์ที่แล้ว",
+      "focusHours": "ชั่วโมงโฟกัส",
+      "thisWeek": "สัปดาห์นี้",
+      "avgTasksPerDay": "เฉลี่ยงาน/วัน",
+      "tasksCompleted": "งานที่เสร็จ",
+      "currentStreak": "สตรีคปัจจุบัน",
+      "daysInARow": "วันติดต่อกัน",
+      "weeklyXpGain": "XP ที่ได้ต่อสัปดาห์",
+      "focusHoursPerDay": "ชั่วโมงโฟกัส / วัน",
+      "tasksCompletedPerDay": "งานที่เสร็จ / วัน"
+    },
+    "focus": {
+      "title": "ตัวจับเวลาโฟกัส",
+      "pause": "หยุดชั่วคราว",
+      "replay": "เริ่มใหม่",
+      "start": "เริ่ม"
+    },
+    "motivation": {
+      "dailyWisdom": "คติประจำวัน"
+    },
+    "guild": {
+      "title": "กิลด์ ◆ Aetheria",
+      "online": "{count} ออนไลน์"
+    }
   }
 }

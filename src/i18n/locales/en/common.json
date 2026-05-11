@@ -6,7 +6,9 @@
     "home": "Home",
     "dashboard": "Dashboard",
     "profile": "Profile",
-    "settings": "Settings"
+    "settings": "Settings",
+    "marketplace": "Marketplace",
+    "vault": "Vault"
   },
   "auth": {
     "login": "Login",
@@ -25,8 +27,59 @@
     "cancel": "Cancel",
     "delete": "Delete",
     "edit": "Edit",
+    "level": "Level",
+    "streak": "Streak",
+    "class": "Class",
+    "exp": "EXP",
     "loading": "Loading...",
     "error": "Something went wrong",
     "success": "Success"
+  },
+  "dashboard": {
+    "endDay": "END DAY",
+    "streakDays": "🔥 {count} Day Streak",
+    "achievements": "Achievements",
+    "tabs": {
+      "quests": "Quests",
+      "schedule": "Schedule",
+      "stats": "Stats"
+    },
+    "quests": {
+      "title": "Today's Quests",
+      "new": "New Quest",
+      "dailyProgress": "Daily Progress",
+      "completed": "{done}/{total} Complete",
+      "done": "DONE"
+    },
+    "schedule": {
+      "title": "Today's Schedule"
+    },
+    "analytics": {
+      "title": "Weekly Analytics",
+      "weeklyXp": "Weekly XP",
+      "vsLastWeek": "+12% vs last week",
+      "focusHours": "Focus Hours",
+      "thisWeek": "this week",
+      "avgTasksPerDay": "Avg. Tasks/Day",
+      "tasksCompleted": "tasks completed",
+      "currentStreak": "Current Streak",
+      "daysInARow": "days in a row",
+      "weeklyXpGain": "Weekly XP Gain",
+      "focusHoursPerDay": "Focus Hours / Day",
+      "tasksCompletedPerDay": "Tasks Completed / Day"
+    },
+    "focus": {
+      "title": "Focus Timer",
+      "pause": "Pause",
+      "replay": "Replay",
+      "start": "Start"
+    },
+    "motivation": {
+      "dailyWisdom": "Daily Wisdom"
+    },
+    "guild": {
+      "title": "Guild ◆ Aetheria",
+      "online": "{count} Online"
+    }
   }
 }

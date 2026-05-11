@@ -3,7 +3,7 @@ export type Difficulty = 'S' | 'A' | 'B' | 'C' | 'D';
 export type CenterTab = 'quests' | 'schedule' | 'stats';
 
 export interface Quest {
-  id: number;
+  id: string;
   title: string;
   desc: string;
   type: QuestType;

@@ -1,3 +1,7 @@
+'use client';
+
+import { useTranslations } from 'next-intl';
+
 import type { Achievement } from '../types';
 
 import { cn } from '@/libs/utils';
@@ -7,10 +11,12 @@ interface AchievementsPanelProps {
 }
 
 export function AchievementsPanel({ achievements }: AchievementsPanelProps) {
+  const t = useTranslations('dashboard');
+
   return (
     <div className={cn(panelBase, panelGold)}>
       <div className={panelHeader}>
-        <span className={panelHeaderTitle}>Achievements</span>
+        <span className={panelHeaderTitle}>{t('achievements')}</span>
         <span className={panelHeaderOrnament}>◆ ◆ ◆</span>
       </div>
       <div className={achGrid}>

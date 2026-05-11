@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useTranslations } from 'next-intl';
 
 import { cn } from '@/libs/utils';
 
@@ -10,12 +11,15 @@ import { QuestCard } from './QuestCard';
 
 interface QuestPanelProps {
   quests: Quest[];
-  onToggle: (id: number, burstPos: BurstPos | null) => void;
+  onToggle: (id: string, burstPos: BurstPos | null) => void;
   onAddQuest: (quest: Quest) => void;
   animationsEnabled: boolean;
+  isLoading?: boolean;
 }
 
-export function QuestPanel({ quests, onToggle, onAddQuest, animationsEnabled }: QuestPanelProps) {
+export function QuestPanel({ quests, onToggle, onAddQuest, animationsEnabled, isLoading }: QuestPanelProps) {
+  const t = useTranslations('dashboard');
+
   const [showModal, setShowModal] = useState(false);
 
   const done = quests.filter((q) => q.done).length;
@@ -30,18 +34,18 @@ export function QuestPanel({ quests, onToggle, onAddQuest, animationsEnabled }: 
       <div className={questSubheader}>
         <div className={questTitleGroup}>
           <span className={questSparkle}>✦</span>
-          <span className={questMainTitle}>{`Today\'s Quests`}</span>
+          <span className={questMainTitle}>{t('quests.title')}</span>
         </div>
         <button className={questAddButton} onClick={() => setShowModal(true)}>
-          <span>+</span> New Quest
+          <span>+</span> {t('quests.new')}
         </button>
       </div>
       <div className={progressMini}>
         <div className={progBarWrap}>
           <div className={progLabel}>
-            <span>Daily Progress</span>
+            <span>{t('quests.dailyProgress')}</span>
             <span className={progLabelValue}>
-              {done}/{quests.length} Complete
+              {t('quests.completed', { done, total: quests.length })}
             </span>
           </div>
           <div className={progTrack}>
@@ -50,19 +54,27 @@ export function QuestPanel({ quests, onToggle, onAddQuest, animationsEnabled }: 
         </div>
         <div className={progPctWrap}>
           <div className={progPct}>{pct}%</div>
-          <div className={progDone}>DONE</div>
+          <div className={progDone}>{t('quests.done')}</div>
         </div>
       </div>
       <div className={questList}>
-        {quests.map((q) => (
-          <QuestCard
-            key={q.id}
-            quest={q}
-            onToggle={onToggle}
-            animationsEnabled={animationsEnabled}
-          />
-        ))}
-        {quests.length === 0 && <div className={emptyState}>◆ No quests yet. Add one above! ◆</div>}
+        {isLoading ? (
+          <div className={emptyState}>◆ Loading quests... ◆</div>
+        ) : (
+          <>
+            {quests.map((q) => (
+              <QuestCard
+                key={q.id}
+                quest={q}
+                onToggle={onToggle}
+                animationsEnabled={animationsEnabled}
+              />
+            ))}
+            {quests.length === 0 && (
+              <div className={emptyState}>◆ No quests yet. Add one above! ◆</div>
+            )}
+          </>
+        )}
       </div>
       {showModal && <AddQuestModal onAdd={onAddQuest} onClose={() => setShowModal(false)} />}
     </div>

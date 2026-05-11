@@ -6,7 +6,9 @@
     "home": "Trang chủ",
     "dashboard": "Bảng điều khiển",
     "profile": "Hồ sơ",
-    "settings": "Cài đặt"
+    "settings": "Cài đặt",
+    "marketplace": "Cửa hàng",
+    "vault": "Kho báu"
   },
   "auth": {
     "login": "Đăng nhập",
@@ -25,8 +27,59 @@
     "cancel": "Hủy",
     "delete": "Xóa",
     "edit": "Chỉnh sửa",
+    "level": "Cấp",
+    "streak": "Chuỗi",
+    "class": "Lớp",
+    "exp": "EXP",
     "loading": "Đang tải...",
     "error": "Đã có lỗi xảy ra",
     "success": "Thành công"
+  },
+  "dashboard": {
+    "endDay": "KẾT THÚC NGÀY",
+    "streakDays": "🔥 {count} ngày liên tiếp",
+    "achievements": "Thành tích",
+    "tabs": {
+      "quests": "Nhiệm vụ",
+      "schedule": "Lịch trình",
+      "stats": "Thống kê"
+    },
+    "quests": {
+      "title": "Nhiệm vụ hôm nay",
+      "new": "Nhiệm vụ mới",
+      "dailyProgress": "Tiến độ hôm nay",
+      "completed": "{done}/{total} hoàn thành",
+      "done": "XONG"
+    },
+    "schedule": {
+      "title": "Lịch hôm nay"
+    },
+    "analytics": {
+      "title": "Phân tích tuần",
+      "weeklyXp": "XP tuần",
+      "vsLastWeek": "+12% so với tuần trước",
+      "focusHours": "Giờ tập trung",
+      "thisWeek": "tuần này",
+      "avgTasksPerDay": "TB nhiệm vụ/ngày",
+      "tasksCompleted": "nhiệm vụ hoàn thành",
+      "currentStreak": "Chuỗi hiện tại",
+      "daysInARow": "ngày liên tiếp",
+      "weeklyXpGain": "XP tăng theo tuần",
+      "focusHoursPerDay": "Giờ tập trung / ngày",
+      "tasksCompletedPerDay": "Nhiệm vụ hoàn thành / ngày"
+    },
+    "focus": {
+      "title": "Hẹn giờ tập trung",
+      "pause": "Tạm dừng",
+      "replay": "Chạy lại",
+      "start": "Bắt đầu"
+    },
+    "motivation": {
+      "dailyWisdom": "Lời hay mỗi ngày"
+    },
+    "guild": {
+      "title": "Bang hội ◆ Aetheria",
+      "online": "{count} đang trực tuyến"
+    }
   }
 }
