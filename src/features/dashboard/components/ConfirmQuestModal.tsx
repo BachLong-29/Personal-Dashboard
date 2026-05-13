@@ -1,7 +1,9 @@
 'use client';
 
 import { useState } from 'react';
+import { useTranslations } from 'next-intl';
 
+import { Button } from '@/components/ui/Button';
 import { useUpdateQuestStatus } from '../hooks/useUpdateQuestStatus';
 import type { Quest } from '../types';
 
@@ -12,6 +14,7 @@ interface ConfirmQuestModalProps {
 }
 
 export function ConfirmQuestModal({ quest, onConfirm, onCancel }: ConfirmQuestModalProps) {
+  const t = useTranslations('dashboard');
   const [skipNextPrompt, setSkipNextPrompt] = useState(false);
   const { mutate: updateStatus, isPending, error } = useUpdateQuestStatus();
 
@@ -49,12 +52,24 @@ export function ConfirmQuestModal({ quest, onConfirm, onCancel }: ConfirmQuestMo
           <span>{"Don't ask again for the rest of the day"}</span>
         </div>
         <div className="confirm-actions">
-          <button className="confirm-btn secondary" onClick={onCancel} disabled={isPending}>
-            Not Yet
-          </button>
-          <button className="confirm-btn primary" onClick={handleConfirm} disabled={isPending}>
-            {isPending ? 'Saving...' : '✓ Claim Reward'}
-          </button>
+          <Button
+            type="button"
+            variant="ghost"
+            className="confirm-btn secondary"
+            onClick={onCancel}
+            disabled={isPending}
+          >
+            {t('confirmQuest.buttons.cancel')}
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            className="confirm-btn primary"
+            onClick={handleConfirm}
+            disabled={isPending}
+          >
+            {isPending ? t('confirmQuest.buttons.pending') : `✓ ${t('confirmQuest.buttons.confirm')}`}
+          </Button>
         </div>
       </div>
     </div>

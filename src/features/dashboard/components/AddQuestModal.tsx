@@ -1,7 +1,9 @@
 'use client';
 
 import { useState } from 'react';
+import { useTranslations } from 'next-intl';
 
+import { Button } from '@/components/ui/Button';
 import { useCreateQuest } from '../hooks/useCreateQuest';
 import { COIN_MAP, QUEST_ICONS, XP_MAP } from '../constants';
 import type { Difficulty, Quest, QuestType } from '../types';
@@ -14,6 +16,7 @@ interface AddQuestModalProps {
 const DIFFICULTIES: Difficulty[] = ['S', 'A', 'B', 'C', 'D'];
 
 export function AddQuestModal({ onAdd, onClose }: AddQuestModalProps) {
+  const t = useTranslations('dashboard');
   const [title, setTitle] = useState('');
   const [desc, setDesc] = useState('');
   const [type, setType] = useState<QuestType>('focus');
@@ -107,12 +110,24 @@ export function AddQuestModal({ onAdd, onClose }: AddQuestModalProps) {
           </div>
         )}
         <div className="modal-actions">
-          <button className="modal-btn cancel" onClick={onClose} disabled={isPending}>
-            Cancel
-          </button>
-          <button className="modal-btn confirm" onClick={handleAdd} disabled={isPending}>
-            {isPending ? 'Creating...' : 'Add Quest ✦'}
-          </button>
+          <Button
+            type="button"
+            variant="ghost"
+            className="modal-btn cancel"
+            onClick={onClose}
+            disabled={isPending}
+          >
+            {t('addQuest.buttons.cancel')}
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            className="modal-btn confirm"
+            onClick={handleAdd}
+            disabled={isPending}
+          >
+            {isPending ? t('addQuest.buttons.pending') : `${t('addQuest.buttons.confirm')} ✦`}
+          </Button>
         </div>
       </div>
     </div>

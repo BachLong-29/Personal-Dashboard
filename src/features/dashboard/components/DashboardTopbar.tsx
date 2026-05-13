@@ -3,6 +3,7 @@
 import { useLocale } from 'next-intl';
 import { useTranslations } from 'next-intl';
 
+import { Button } from '@/components/ui/Button';
 import { locales, localeLabels, type Locale } from '@/i18n/config';
 import { Link, usePathname, useRouter } from '@/i18n/navigation';
 import type { Character } from '../types';
@@ -70,13 +71,15 @@ const DashboardTopbar = (props: DashboardTopbarProps) => {
         <span>{char.coins}</span>
       </div>
       <div className="flex-1" />
-      <button
+      <Button
+        type="button"
+        variant="ghost"
         className={penaltyTrigger}
         onClick={onEndDay}
-        title="Trigger penalty for unfinished quests"
+        title={tDash('buttons.endDayTitle')}
       >
         ⚠ {tDash('endDay')}
-      </button>
+      </Button>
       <div className={dateLabel}>{dateStr}</div>
       <Link href="/marketplace" className={cn(navPill, marketplacePill)}>
         🛍 {tNav('marketplace')}
@@ -84,15 +87,16 @@ const DashboardTopbar = (props: DashboardTopbarProps) => {
       <Link href="/vault" className={cn(streakPill, 'no-underline cursor-pointer')}>
         ✦ {tNav('vault')}
       </Link>
-      <button
+      <Button
         type="button"
+        variant="ghost"
         className={cn(navPill, languagePill)}
         onClick={handleToggleLocale}
-        aria-label="Toggle language"
+        aria-label={tDash('buttons.toggleLanguage')}
         title={localeLabels[locale]}
       >
         🌐 {locale.toUpperCase()}
-      </button>
+      </Button>
       <div className={streakPill}>{tDash('streakDays', { count: char.streak })}</div>
     </div>
   );

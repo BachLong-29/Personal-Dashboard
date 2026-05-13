@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useTranslations } from 'next-intl';
 
+import { Button } from '@/components/ui/Button';
 import { cn } from '@/libs/utils';
 
 import {
@@ -12,12 +13,7 @@ import {
   RANKS,
   SKIP_CONFIRM_STORAGE_KEY,
 } from '../constants';
-import {
-  MOCK_ACHIEVEMENTS,
-  MOCK_ANALYTICS,
-  MOCK_CHARACTER,
-  MOCK_SCHEDULE,
-} from '../data/mock';
+import { MOCK_ACHIEVEMENTS, MOCK_ANALYTICS, MOCK_CHARACTER, MOCK_SCHEDULE } from '../data/mock';
 import { useQuests } from '../hooks/useQuests';
 import type {
   Achievement,
@@ -237,8 +233,10 @@ export default function MainDashboard() {
                 { key: 'stats', label: t('tabs.stats') },
               ] satisfies { key: CenterTab; label: string }[]
             ).map((tab) => (
-              <button
+              <Button
                 key={tab.key}
+                type="button"
+                variant="ghost"
                 className={cn(
                   tabButtonBase,
                   tabButtonHover,
@@ -247,7 +245,7 @@ export default function MainDashboard() {
                 onClick={() => setCenterTab(tab.key)}
               >
                 {tab.label}
-              </button>
+              </Button>
             ))}
           </div>
 

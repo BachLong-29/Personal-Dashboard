@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useTranslations } from 'next-intl';
 
+import { Button } from '@/components/ui/Button';
 import { cn } from '@/libs/utils';
 
 interface FocusTimerProps {
@@ -86,22 +87,31 @@ export function FocusTimer({ duration }: FocusTimerProps) {
           </div>
         </div>
         <div className={focusControls}>
-          <button className={cn(focusBtn, focusBtnStart)} onClick={() => setRunning((r) => !r)}>
+          <Button
+            type="button"
+            variant="ghost"
+            className={cn(focusBtn, focusBtnStart)}
+            onClick={() => setRunning((r) => !r)}
+          >
             {running
               ? `⏸ ${t('focus.pause')}`
               : secsLeft === 0
                 ? `↺ ${t('focus.replay')}`
                 : `▶ ${t('focus.start')}`}
-          </button>
-          <button
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
             className={cn(focusBtn, focusBtnReset)}
+            aria-label={t('focus.reset')}
+            title={t('focus.reset')}
             onClick={() => {
               setRunning(false);
               setSecsLeft(totalSecs);
             }}
           >
             ↺
-          </button>
+          </Button>
         </div>
       </div>
     </div>

@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 
+import { Button } from '@/components/ui/Button';
 import { cn } from '@/libs/utils';
 
 import type { BurstPos, Quest } from '../types';
@@ -17,7 +18,13 @@ interface QuestPanelProps {
   isLoading?: boolean;
 }
 
-export function QuestPanel({ quests, onToggle, onAddQuest, animationsEnabled, isLoading }: QuestPanelProps) {
+export function QuestPanel({
+  quests,
+  onToggle,
+  onAddQuest,
+  animationsEnabled,
+  isLoading,
+}: QuestPanelProps) {
   const t = useTranslations('dashboard');
 
   const [showModal, setShowModal] = useState(false);
@@ -36,9 +43,9 @@ export function QuestPanel({ quests, onToggle, onAddQuest, animationsEnabled, is
           <span className={questSparkle}>✦</span>
           <span className={questMainTitle}>{t('quests.title')}</span>
         </div>
-        <button className={questAddButton} onClick={() => setShowModal(true)}>
+        <Button variant="primary" size="sm" onClick={() => setShowModal(true)}>
           <span>+</span> {t('quests.new')}
-        </button>
+        </Button>
       </div>
       <div className={progressMini}>
         <div className={progBarWrap}>
@@ -99,9 +106,7 @@ const questSubheader =
 const questTitleGroup = 'flex items-center gap-2';
 const questSparkle = 'text-[16px] animate-[spin_4s_linear_infinite]';
 const questMainTitle =
-  'font-[var(--font-title)] text-[14px] font-bold tracking-[0.08em] text-[var(--text-hi)]';
-const questAddButton =
-  'flex items-center gap-[5px] text-[11px] font-semibold text-[var(--gold)] bg-[oklch(0.74_0.17_85_/_0.08)] border border-[oklch(0.74_0.17_85_/_0.35)] rounded-[var(--r-sm)] px-[10px] py-[5px] cursor-pointer transition-all duration-200 hover:bg-[oklch(0.74_0.17_85_/_0.15)] hover:shadow-[0_0_12px_var(--gold-glow)]';
+  '[font-family:var(--f-title)] text-[14px] font-bold tracking-[0.08em] text-[var(--text-hi)]';
 
 const progressMini =
   'flex items-center gap-2.5 px-[14px] pt-[6px] pb-[10px] border-b border-[var(--border)] shrink-0';

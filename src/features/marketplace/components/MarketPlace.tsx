@@ -1,7 +1,9 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import { useTranslations } from 'next-intl';
 
+import { Button } from '@/components/ui/Button';
 import { Link } from '@/i18n/navigation';
 import { cn } from '@/libs/utils';
 
@@ -86,6 +88,7 @@ function RewardCard({
   player: PlayerState;
   onClick: (reward: Reward) => void;
 }) {
+  const tMarket = useTranslations('marketplace');
   const hasStock = reward.stock == null || reward.stock > 0;
   const hasCurrency =
     reward.currency === 'achievement' ? true : player[reward.currency] >= reward.price;
@@ -136,16 +139,17 @@ function RewardCard({
             <span>{formatPrice(reward)}</span>
           </div>
           {!reward.locked && (
-            <button
+            <Button
+              type="button"
+              variant="ghost"
               className={cn(rewardRedeem, !canRedeem && rewardRedeemCant)}
               onClick={(e) => {
                 e.stopPropagation();
                 onClick(reward);
               }}
-              type="button"
             >
-              {canRedeem ? 'Redeem' : 'View'}
-            </button>
+              {canRedeem ? tMarket('buttons.redeem') : tMarket('buttons.view')}
+            </Button>
           )}
         </div>
       </div>
@@ -164,6 +168,7 @@ function RewardDetailModal({
   onClose: () => void;
   onRedeem: (reward: Reward) => void;
 }) {
+  const tMarket = useTranslations('marketplace');
   const hasCurrency =
     reward.currency === 'achievement' ? true : player[reward.currency] >= reward.price;
   const hasLevel = player.level >= reward.reqLevel;
@@ -205,9 +210,16 @@ function RewardDetailModal({
   return (
     <div className={detailBackdrop} onClick={(e) => e.target === e.currentTarget && onClose()}>
       <div className={detailModal} style={{ color: RARITY_COLOR[reward.rarity] }}>
-        <button className={detailClose} onClick={onClose} type="button">
+        <Button
+          type="button"
+          variant="ghost"
+          className={detailClose}
+          aria-label={tMarket('buttons.close')}
+          title={tMarket('buttons.close')}
+          onClick={onClose}
+        >
           ✕
-        </button>
+        </Button>
 
         <div className={detailArt}>
           <div className={detailArtRune} />
@@ -242,25 +254,31 @@ function RewardDetailModal({
           </div>
 
           <div className={detailActions}>
-            <button className={cn(detailBtn, detailBtnSecondary)} onClick={onClose} type="button">
-              Cancel
-            </button>
-            <button
+            <Button
+              type="button"
+              variant="ghost"
+              className={cn(detailBtn, detailBtnSecondary)}
+              onClick={onClose}
+            >
+              {tMarket('buttons.cancel')}
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
               className={cn(detailBtn, detailBtnPrimary)}
               disabled={!canRedeem}
               onClick={() => onRedeem(reward)}
-              type="button"
             >
               {reward.locked
-                ? '🔒 Sealed'
+                ? `🔒 ${tMarket('buttons.sealed')}`
                 : !hasLevel
-                  ? 'Need Higher Level'
+                  ? tMarket('buttons.needHigherLevel')
                   : !hasCurrency
-                    ? 'Insufficient Funds'
+                    ? tMarket('buttons.insufficientFunds')
                     : !hasStock
-                      ? 'Out of Stock'
-                      : '✦ Redeem Now ✦'}
-            </button>
+                      ? tMarket('buttons.outOfStock')
+                      : `✦ ${tMarket('buttons.redeemNow')} ✦`}
+            </Button>
           </div>
         </div>
       </div>
@@ -290,6 +308,7 @@ function FeaturedBanner({
   featured: FeaturedReward;
   onClaim: (reward: Reward) => void;
 }) {
+  const tMarket = useTranslations('marketplace');
   const reward: Reward = {
     id: featured.id,
     cat: 'real',
@@ -329,9 +348,14 @@ function FeaturedBanner({
           </div>
           <div className={featuredCountdown}>ENDS IN {featured.expiresIn}</div>
         </div>
-        <button className={featuredBtn} onClick={() => onClaim(reward)} type="button">
-          ✦ Claim Mythic Reward ✦
-        </button>
+        <Button
+          type="button"
+          variant="ghost"
+          className={featuredBtn}
+          onClick={() => onClaim(reward)}
+        >
+          ✦ {tMarket('buttons.claimMythicReward')} ✦
+        </Button>
       </div>
 
       <div className={featuredArtWrap}>
@@ -350,6 +374,7 @@ function FeaturedBanner({
 }
 
 export function MarketPlace() {
+  const tMarket = useTranslations('marketplace');
   const [activeCat, setActiveCat] = useState<RewardCategoryKey>('all');
   const [selected, setSelected] = useState<Reward | null>(null);
   const [player, setPlayer] = useState<PlayerState>(() => ({
@@ -471,18 +496,19 @@ export function MarketPlace() {
       <div className={marketWrap}>
         <div className={catTabs}>
           {CATEGORIES.map((cat) => (
-            <button
+            <Button
               key={cat.key}
+              type="button"
+              variant="ghost"
               className={cn(catTab, activeCat === cat.key && catTabActive)}
               onClick={() => setActiveCat(cat.key)}
-              type="button"
             >
               <span>{cat.icon}</span>
-              <span>{cat.label}</span>
+              <span>{tMarket(`categories.${cat.key}`)}</span>
               <span className={cn(catTabCount, activeCat === cat.key && catTabCountActive)}>
                 {counts[cat.key] || 0}
               </span>
-            </button>
+            </Button>
           ))}
         </div>
 

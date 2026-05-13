@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { useTranslations } from 'next-intl';
 
+import { Button } from '@/components/ui/Button';
 import { cn } from '@/libs/utils';
 
 import type { Quest } from '../types';
@@ -74,6 +76,7 @@ export function PenaltyModal({
   onComplete,
   onFail,
 }: PenaltyModalProps) {
+  const t = useTranslations('dashboard');
   const escalation = PENALTY_ESCALATIONS[Math.min(tier - 1, PENALTY_ESCALATIONS.length - 1)]!;
 
   const penalty = useRef<PenaltyTask>(pickPenalty(unfinished.length + tier * 7)).current;
@@ -225,13 +228,23 @@ export function PenaltyModal({
 
         <div className={penaltyActions}>
           {!accepted ? (
-            <button className={cn(penaltyBtnBase, penaltyBtnPrimary)} onClick={handleAccept}>
-              ⚔ ACCEPT PENALTY QUEST
-            </button>
+            <Button
+              type="button"
+              variant="ghost"
+              className={cn(penaltyBtnBase, penaltyBtnPrimary)}
+              onClick={handleAccept}
+            >
+              ⚔ {t('penalty.buttons.acceptQuest')}
+            </Button>
           ) : (
-            <button className={cn(penaltyBtnBase, penaltyBtnComplete)} onClick={onComplete}>
-              ✓ MARK AS COMPLETED
-            </button>
+            <Button
+              type="button"
+              variant="ghost"
+              className={cn(penaltyBtnBase, penaltyBtnComplete)}
+              onClick={onComplete}
+            >
+              ✓ {t('penalty.buttons.markCompleted')}
+            </Button>
           )}
           <div className={penaltyFooterText}>
             ◆ Refusal is not an option. The System is absolute. ◆
@@ -243,6 +256,8 @@ export function PenaltyModal({
 }
 
 export function PenaltyFailureModal({ tier, onContinue }: PenaltyFailureModalProps) {
+  const t = useTranslations('dashboard');
+
   return (
     <div className={penaltyBackdrop}>
       <div className={penaltyBgFlashDanger} />
@@ -256,9 +271,14 @@ export function PenaltyFailureModal({ tier, onContinue }: PenaltyFailureModalPro
           You failed to complete the corrective task within the allotted time. The System will now
           apply consequences and issue a more severe penalty.
         </div>
-        <button className={cn(penaltyBtnBase, penaltyBtnPrimary)} onClick={onContinue}>
-          ACCEPT THE CONSEQUENCES
-        </button>
+        <Button
+          type="button"
+          variant="ghost"
+          className={cn(penaltyBtnBase, penaltyBtnPrimary)}
+          onClick={onContinue}
+        >
+          {t('penalty.buttons.acceptConsequences')}
+        </Button>
       </div>
     </div>
   );

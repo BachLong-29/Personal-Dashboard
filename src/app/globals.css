@@ -1,4 +1,6 @@
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=Sora:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
 @import 'tailwindcss';
+@config "../../tailwind.config.ts";
 
 /* ── Light tokens ── */
 :root {
@@ -40,6 +42,98 @@
   --font-body: 'Sora', sans-serif;
   --r: 10px;
   --r-sm: 6px;
+
+  /* Surfaces */
+  --bg-0: #06060d;
+  --bg-1: #0a0a14;
+  --bg-2: #0f0f1d;
+  --bg-3: #15152a;
+  --bg-4: #1c1c34;
+  --surface: #131326;
+  --surface-2: #1a1a30;
+  --surface-3: #232340;
+
+  /* Borders */
+  --border: #2a2a48;
+  --border-hi: #3a3a5e;
+  --border-lo: #1f1f38;
+
+  /* Brand — Aetheric */
+  --gold: oklch(0.78 0.16 82);
+  --gold-2: oklch(0.68 0.14 82);
+  --gold-glow: oklch(0.78 0.16 82 / 0.35);
+  --violet: oklch(0.68 0.22 295);
+  --violet-2: oklch(0.55 0.2 295);
+  --violet-glow: oklch(0.68 0.22 295 / 0.35);
+  --cyan: oklch(0.78 0.16 205);
+  --cyan-glow: oklch(0.78 0.16 205 / 0.35);
+  --rose: oklch(0.74 0.18 5);
+  --rose-glow: oklch(0.74 0.18 5 / 0.35);
+  --mint: oklch(0.76 0.14 162);
+  --mint-glow: oklch(0.76 0.14 162 / 0.35);
+  --crimson: oklch(0.62 0.24 22);
+  --crimson-glow: oklch(0.62 0.24 22 / 0.35);
+
+  /* Semantic */
+  --success: var(--mint);
+  --warning: oklch(0.78 0.16 65);
+  --danger: var(--crimson);
+  --info: var(--cyan);
+
+  /* Text */
+  --text-hi: #f0eeff;
+  --text-md: #b4b4d8;
+  --text-lo: #7676a0;
+  --text-dim: #4a4a6a;
+
+  /* Type scale */
+  --t-9: 44px;
+  --t-8: 36px;
+  --t-7: 28px;
+  --t-6: 22px;
+  --t-5: 18px;
+  --t-4: 15px;
+  --t-3: 13px;
+  --t-2: 11px;
+  --t-1: 9px;
+
+  /* Spacing scale (4-base) */
+  --s-1: 4px;
+  --s-2: 8px;
+  --s-3: 12px;
+  --s-4: 16px;
+  --s-5: 20px;
+  --s-6: 24px;
+  --s-7: 32px;
+  --s-8: 44px;
+  --s-9: 60px;
+
+  /* Radii */
+  --r-xs: 3px;
+  --r-sm: 6px;
+  --r-md: 10px;
+  --r-lg: 14px;
+  --r-xl: 20px;
+  --r-pill: 999px;
+
+  /* Shadows */
+  --sh-1: 0 1px 2px oklch(0 0 0 / 0.4);
+  --sh-2: 0 4px 12px oklch(0 0 0 / 0.5);
+  --sh-3: 0 8px 24px oklch(0 0 0 / 0.6);
+  --sh-4: 0 16px 48px oklch(0 0 0 / 0.7);
+  --sh-glow-gold: 0 0 24px var(--gold-glow);
+  --sh-glow-violet: 0 0 24px var(--violet-glow);
+  --sh-glow-cyan: 0 0 24px var(--cyan-glow);
+
+  /* Easing */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-snap: cubic-bezier(0.4, 0.8, 0.2, 1);
+
+  /* Fonts */
+  --f-title: 'Cinzel', serif;
+  --f-body: 'Sora', sans-serif;
+  --f-mono: 'JetBrains Mono', monospace;
 }
 
 /* ── Dark tokens ── */
@@ -62,6 +156,7 @@
 
 /* ── Tailwind v4 theme bridge ── */
 @theme inline {
+  /* shadcn/ui compatibility */
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-primary: var(--primary);
@@ -76,11 +171,103 @@
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
+
+  /* Surfaces — bg-bg, bg-bg-0 … bg-panel-3 */
+  --color-bg: var(--bg);
+  --color-bg-0: var(--bg-0);
+  --color-bg-1: var(--bg-1);
+  --color-bg-2: var(--bg-2);
+  --color-bg-3: var(--bg-3);
+  --color-bg-4: var(--bg-4);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-surface-3: var(--surface-3);
+  --color-panel: var(--panel);
+  --color-panel-2: var(--panel2);
+  --color-panel-3: var(--panel3);
+
+  /* Borders — border-hi, border-lo */
+  --color-border-hi: var(--border-hi);
+  --color-border-lo: var(--border-lo);
+
+  /* Brand — bg-gold, text-gold, border-gold … */
+  --color-gold: var(--gold);
+  --color-gold-2: var(--gold-2);
+  --color-gold-glow: var(--gold-glow);
+  --color-violet: var(--violet);
+  --color-violet-2: var(--violet-2);
+  --color-violet-glow: var(--violet-glow);
+  --color-cyan: var(--cyan);
+  --color-cyan-glow: var(--cyan-glow);
+  --color-rose: var(--rose);
+  --color-rose-glow: var(--rose-glow);
+  --color-mint: var(--mint);
+  --color-mint-glow: var(--mint-glow);
+  --color-crimson: var(--crimson);
+  --color-crimson-glow: var(--crimson-glow);
+
+  /* Semantic — bg-success, text-danger … */
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-danger: var(--danger);
+  --color-info: var(--info);
+
+  /* Text — text-hi, text-md, text-lo, text-dim */
+  --color-text-hi: var(--text-hi);
+  --color-text-md: var(--text-md);
+  --color-text-lo: var(--text-lo);
+  --color-text-dim: var(--text-dim);
+
+  /* Fonts — font-title, font-body, font-code */
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-lg: var(--radius);
+  --font-title: var(--f-title);
+  --font-body: var(--f-body);
+  --font-code: var(--f-mono);
+
+  /* Type scale — text-t1 … text-t9 */
+  --text-t1: var(--t-1);
+  --text-t2: var(--t-2);
+  --text-t3: var(--t-3);
+  --text-t4: var(--t-4);
+  --text-t5: var(--t-5);
+  --text-t6: var(--t-6);
+  --text-t7: var(--t-7);
+  --text-t8: var(--t-8);
+  --text-t9: var(--t-9);
+
+  /* Spacing — p-s1 … p-s9, m-s1 … gap-s9 */
+  --spacing-s1: var(--s-1);
+  --spacing-s2: var(--s-2);
+  --spacing-s3: var(--s-3);
+  --spacing-s4: var(--s-4);
+  --spacing-s5: var(--s-5);
+  --spacing-s6: var(--s-6);
+  --spacing-s7: var(--s-7);
+  --spacing-s8: var(--s-8);
+  --spacing-s9: var(--s-9);
+
+  /* Radii — rounded-xs, rounded-sm … rounded-pill */
+  --radius-xs: var(--r-xs);
+  --radius-sm: var(--r-sm);
+  --radius-md: var(--r-md);
+  --radius-lg: var(--r-lg);
+  --radius-xl: var(--r-xl);
+  --radius-pill: var(--r-pill);
+
+  /* Shadows — shadow-1 … shadow-4, shadow-glow-gold … */
+  --shadow-1: var(--sh-1);
+  --shadow-2: var(--sh-2);
+  --shadow-3: var(--sh-3);
+  --shadow-4: var(--sh-4);
+  --shadow-glow-gold: var(--sh-glow-gold);
+  --shadow-glow-violet: var(--sh-glow-violet);
+  --shadow-glow-cyan: var(--sh-glow-cyan);
+
+  /* Easing — ease-fluid, ease-spring, ease-snap */
+  --ease-fluid: var(--ease-out);
+  --ease-spring: var(--ease-spring);
+  --ease-snap: var(--ease-snap);
 }
 
 /* ── Base ── */
@@ -1465,6 +1652,23 @@ body {
 .modal-btn.cancel:hover {
   color: var(--text-hi);
   border-color: var(--text-mid);
+}
+
+/* ── BUTTON SHADOWS ─────────────────────────────────── */
+.btn-shadow-primary {
+  box-shadow: var(--sh-glow-gold), inset 0 0 8px oklch(1 0 0 / 0.2);
+}
+.btn-shadow-primary:hover:not(:disabled) {
+  box-shadow: 0 0 36px var(--gold-glow), inset 0 0 8px oklch(1 0 0 / 0.25);
+}
+.btn-shadow-violet {
+  box-shadow: var(--sh-glow-violet), inset 0 0 8px oklch(1 0 0 / 0.15);
+}
+.btn-shadow-danger {
+  box-shadow: 0 0 20px var(--crimson-glow);
+}
+.btn-shadow-success {
+  box-shadow: 0 0 20px var(--mint-glow);
 }
 
 /* ── ORNAMENTS ───────────────────────────────────────── */

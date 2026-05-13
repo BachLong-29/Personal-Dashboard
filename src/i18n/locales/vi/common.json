@@ -37,6 +37,10 @@
   },
   "dashboard": {
     "endDay": "KẾT THÚC NGÀY",
+    "buttons": {
+      "endDayTitle": "Kích hoạt hình phạt cho nhiệm vụ chưa hoàn thành",
+      "toggleLanguage": "Chuyển ngôn ngữ"
+    },
     "streakDays": "🔥 {count} ngày liên tiếp",
     "achievements": "Thành tích",
     "tabs": {
@@ -72,7 +76,29 @@
       "title": "Hẹn giờ tập trung",
       "pause": "Tạm dừng",
       "replay": "Chạy lại",
-      "start": "Bắt đầu"
+      "start": "Bắt đầu",
+      "reset": "Đặt lại"
+    },
+    "confirmQuest": {
+      "buttons": {
+        "cancel": "Để sau",
+        "confirm": "Nhận thưởng",
+        "pending": "Đang lưu..."
+      }
+    },
+    "addQuest": {
+      "buttons": {
+        "cancel": "Hủy",
+        "confirm": "Thêm nhiệm vụ",
+        "pending": "Đang tạo..."
+      }
+    },
+    "penalty": {
+      "buttons": {
+        "acceptQuest": "CHẤP NHẬN NHIỆM VỤ PHẠT",
+        "markCompleted": "ĐÁNH DẤU ĐÃ HOÀN THÀNH",
+        "acceptConsequences": "CHẤP NHẬN HẬU QUẢ"
+      }
     },
     "motivation": {
       "dailyWisdom": "Lời hay mỗi ngày"
@@ -80,6 +106,28 @@
     "guild": {
       "title": "Bang hội ◆ Aetheria",
       "online": "{count} đang trực tuyến"
+    }
+  },
+  "marketplace": {
+    "buttons": {
+      "view": "Xem",
+      "redeem": "Đổi",
+      "close": "Đóng",
+      "cancel": "Hủy",
+      "sealed": "Bị niêm phong",
+      "needHigherLevel": "Cần cấp độ cao hơn",
+      "insufficientFunds": "Không đủ tài nguyên",
+      "outOfStock": "Hết hàng",
+      "redeemNow": "Đổi ngay",
+      "claimMythicReward": "Nhận phần thưởng Mythic"
+    },
+    "categories": {
+      "all": "Tất cả phần thưởng",
+      "real": "Đời thực",
+      "cosmetic": "Trang trí",
+      "game": "Cổ vật",
+      "booster": "Tăng cường",
+      "quest": "Chế độ mới"
     }
   }
 }

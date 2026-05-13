@@ -37,6 +37,10 @@
   },
   "dashboard": {
     "endDay": "END DAY",
+    "buttons": {
+      "endDayTitle": "Trigger penalty for unfinished quests",
+      "toggleLanguage": "Toggle language"
+    },
     "streakDays": "🔥 {count} Day Streak",
     "achievements": "Achievements",
     "tabs": {
@@ -72,7 +76,29 @@
       "title": "Focus Timer",
       "pause": "Pause",
       "replay": "Replay",
-      "start": "Start"
+      "start": "Start",
+      "reset": "Reset"
+    },
+    "confirmQuest": {
+      "buttons": {
+        "cancel": "Not Yet",
+        "confirm": "Claim Reward",
+        "pending": "Saving..."
+      }
+    },
+    "addQuest": {
+      "buttons": {
+        "cancel": "Cancel",
+        "confirm": "Add Quest",
+        "pending": "Creating..."
+      }
+    },
+    "penalty": {
+      "buttons": {
+        "acceptQuest": "ACCEPT PENALTY QUEST",
+        "markCompleted": "MARK AS COMPLETED",
+        "acceptConsequences": "ACCEPT THE CONSEQUENCES"
+      }
     },
     "motivation": {
       "dailyWisdom": "Daily Wisdom"
@@ -80,6 +106,28 @@
     "guild": {
       "title": "Guild ◆ Aetheria",
       "online": "{count} Online"
+    }
+  },
+  "marketplace": {
+    "buttons": {
+      "view": "View",
+      "redeem": "Redeem",
+      "close": "Close",
+      "cancel": "Cancel",
+      "sealed": "Sealed",
+      "needHigherLevel": "Need Higher Level",
+      "insufficientFunds": "Insufficient Funds",
+      "outOfStock": "Out of Stock",
+      "redeemNow": "Redeem Now",
+      "claimMythicReward": "Claim Mythic Reward"
+    },
+    "categories": {
+      "all": "All Rewards",
+      "real": "Real-World",
+      "cosmetic": "Cosmetics",
+      "game": "Artifacts",
+      "booster": "Boosters",
+      "quest": "New Modes"
     }
   }
 }
