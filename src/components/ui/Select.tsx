@@ -95,13 +95,17 @@ export function Select({
 
   const state = error ? 'error' : success ? 'success' : 'default';
 
+  const updateFocusValue = (value) => {
+    setFocusedValue(value);
+  };
+
   useEffect(() => {
     if (!open) return;
 
     const nextFocusedValue =
       selectedOption && !selectedOption.disabled ? selectedOption.value : enabledOptions[0]?.value;
 
-    setFocusedValue(nextFocusedValue);
+    updateFocusValue(nextFocusedValue);
   }, [open, selectedOption, enabledOptions]);
 
   useEffect(() => {
@@ -227,7 +231,7 @@ export function Select({
             triggerClassName,
           )}
         >
-          <span className={cn(!selectedOption && 'text-[var(--text-dim)]')}>
+          <span className={cn('truncate', !selectedOption && 'text-[var(--text-dim)]')}>
             {renderValue ? renderValue(selectedOption) : (selectedOption?.label ?? placeholder)}
           </span>
 
@@ -281,7 +285,7 @@ export function Select({
                     optionClassName,
                   )}
                 >
-                  <span className="min-w-0 flex-1">
+                  <span className="min-w-0 flex-1 truncate">
                     {renderOption ? renderOption(option, { selected, focused }) : option.label}
                   </span>
 

@@ -760,6 +760,16 @@ body {
   }
 }
 
+@keyframes skel-shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+@keyframes dot-bounce {
+  0%, 80%, 100% { transform: scale(0.4); opacity: 0.5; }
+  40% { transform: scale(1); opacity: 1; }
+}
+
 .quest-add-btn {
   display: flex;
   align-items: center;
@@ -1537,7 +1547,7 @@ body {
   border: 1px solid oklch(0.74 0.17 85 / 0.4);
   border-radius: 14px;
   padding: 24px;
-  width: 380px;
+  width: 480px;
   box-shadow:
     0 0 60px var(--gold-glow),
     0 24px 64px oklch(0 0 0 / 0.6);
@@ -1656,13 +1666,19 @@ body {
 
 /* ── BUTTON SHADOWS ─────────────────────────────────── */
 .btn-shadow-primary {
-  box-shadow: var(--sh-glow-gold), inset 0 0 8px oklch(1 0 0 / 0.2);
+  box-shadow:
+    var(--sh-glow-gold),
+    inset 0 0 8px oklch(1 0 0 / 0.2);
 }
 .btn-shadow-primary:hover:not(:disabled) {
-  box-shadow: 0 0 36px var(--gold-glow), inset 0 0 8px oklch(1 0 0 / 0.25);
+  box-shadow:
+    0 0 36px var(--gold-glow),
+    inset 0 0 8px oklch(1 0 0 / 0.25);
 }
 .btn-shadow-violet {
-  box-shadow: var(--sh-glow-violet), inset 0 0 8px oklch(1 0 0 / 0.15);
+  box-shadow:
+    var(--sh-glow-violet),
+    inset 0 0 8px oklch(1 0 0 / 0.15);
 }
 .btn-shadow-danger {
   box-shadow: 0 0 20px var(--crimson-glow);

@@ -1,12 +1,12 @@
 'use client';
 
-import { useState } from 'react';
 import { useTranslations } from 'next-intl';
+import { useState } from 'react';
 
+import { Input, Select, type SelectOption } from '@/components/ui';
 import { Button } from '@/components/ui/Button';
-import { Input } from '@/components/ui';
+import { QUEST_ICONS, XP_MAP } from '../constants';
 import { useCreateQuest } from '../hooks/useCreateQuest';
-import { COIN_MAP, QUEST_ICONS, XP_MAP } from '../constants';
 import type { Difficulty, Quest, QuestType } from '../types';
 
 interface AddQuestModalProps {
@@ -15,6 +15,16 @@ interface AddQuestModalProps {
 }
 
 const DIFFICULTIES: Difficulty[] = ['S', 'A', 'B', 'C', 'D'];
+
+const TYPE_OPTIONS: SelectOption[] = Object.entries(QUEST_ICONS).map(([k, v]) => ({
+  value: k,
+  label: `${v} ${k}`,
+}));
+
+const DIFF_OPTIONS: SelectOption[] = DIFFICULTIES.map((d) => ({
+  value: d,
+  label: `${d}-Rank (+${XP_MAP[d] ?? 0} XP)`,
+}));
 
 export function AddQuestModal({ onAdd, onClose }: AddQuestModalProps) {
   const t = useTranslations('dashboard');
@@ -73,37 +83,21 @@ export function AddQuestModal({ onAdd, onClose }: AddQuestModalProps) {
             disabled={isPending}
           />
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-          <div className="modal-field">
-            <div className="modal-label">Type</div>
-            <select
-              className="modal-select"
-              value={type}
-              disabled={isPending}
-              onChange={(e) => setType(e.target.value as QuestType)}
-            >
-              {Object.entries(QUEST_ICONS).map(([k, v]) => (
-                <option key={k} value={k}>
-                  {v} {k}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div className="modal-field">
-            <div className="modal-label">Difficulty</div>
-            <select
-              className="modal-select"
-              value={diff}
-              disabled={isPending}
-              onChange={(e) => setDiff(e.target.value as Difficulty)}
-            >
-              {DIFFICULTIES.map((d) => (
-                <option key={d} value={d}>
-                  {d}-Rank (+{XP_MAP[d]} XP)
-                </option>
-              ))}
-            </select>
-          </div>
+        <div className="grid grid-cols-2 gap-2.5">
+          <Select
+            label="Type"
+            options={TYPE_OPTIONS}
+            value={type}
+            onValueChange={(v) => setType(v as QuestType)}
+            disabled={isPending}
+          />
+          <Select
+            label="Difficulty"
+            options={DIFF_OPTIONS}
+            value={diff}
+            onValueChange={(v) => setDiff(v as Difficulty)}
+            disabled={isPending}
+          />
         </div>
         {error && (
           <div style={{ color: 'var(--danger)', fontSize: 11, textAlign: 'center', marginTop: 6 }}>
