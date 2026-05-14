@@ -95,17 +95,13 @@ export function Select({
 
   const state = error ? 'error' : success ? 'success' : 'default';
 
-  const updateFocusValue = (value) => {
-    setFocusedValue(value);
-  };
-
   useEffect(() => {
     if (!open) return;
 
     const nextFocusedValue =
       selectedOption && !selectedOption.disabled ? selectedOption.value : enabledOptions[0]?.value;
 
-    updateFocusValue(nextFocusedValue);
+    setFocusedValue(nextFocusedValue);
   }, [open, selectedOption, enabledOptions]);
 
   useEffect(() => {

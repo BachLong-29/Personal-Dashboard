@@ -1,13 +1,15 @@
 import type { Metadata } from 'next';
 
-import { RegisterForm } from '@/features/auth/components/RegisterForm';
+import { AuthPanel } from '@/features/auth/components/AuthPanel';
+import { AuthScene } from '@/features/auth/components/AuthScene';
 
-export const metadata: Metadata = { title: 'Register' };
+export const metadata: Metadata = { title: 'Register — Aetheria' };
 
 export default function RegisterPage() {
   return (
-    <div className="flex min-h-screen items-center justify-center px-4">
-      <RegisterForm />
+    <div className="auth-shell">
+      <AuthScene />
+      <AuthPanel initialMode="register" />
     </div>
   );
 }

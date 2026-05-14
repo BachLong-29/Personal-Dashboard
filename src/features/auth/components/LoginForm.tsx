@@ -1,15 +1,30 @@
 'use client';
 
+import { useState } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { motion } from 'framer-motion';
 import { useTranslations } from 'next-intl';
 import { useForm } from 'react-hook-form';
 
-import { Link } from '@/i18n/navigation';
-import { Button, Input } from '@/components/ui';
-
 import { useLogin } from '../hooks/useLogin';
 import { loginSchema, type LoginFormValues } from '../schemas';
+import { AuthInput } from './AuthInput';
+
+function RememberMeToggle() {
+  const [checked, setChecked] = useState(false);
+  return (
+    <button
+      type="button"
+      className="auth-check-pill"
+      onClick={() => setChecked((v) => !v)}
+      aria-pressed={checked}
+    >
+      <div className={`auth-check-box${checked ? ' checked' : ''}`} aria-hidden="true">
+        {checked && '✓'}
+      </div>
+      <span>Remember me</span>
+    </button>
+  );
+}
 
 export function LoginForm() {
   const t = useTranslations('auth');
@@ -28,55 +43,50 @@ export function LoginForm() {
   const onSubmit = (values: LoginFormValues) => login(values);
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 16 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3 }}
-      className="w-full max-w-sm space-y-6"
-    >
-      <div className="space-y-1">
-        <h1 className="text-2xl font-bold tracking-tight">Welcome back</h1>
-        <p className="text-sm text-muted-foreground">Sign in to your account to continue</p>
-      </div>
-
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
-        <Input
+    <form onSubmit={handleSubmit(onSubmit)} noValidate>
+      <div className="ap-body">
+        <AuthInput
           label={t('email')}
+          icon="✉"
           type="email"
           autoComplete="email"
           placeholder="you@example.com"
-          className="bg-black text-white placeholder:text-white/60"
           error={errors.email?.message}
           {...register('email')}
         />
 
-        <Input
+        <AuthInput
           label={t('password')}
+          icon="🔑"
           type="password"
           autoComplete="current-password"
           placeholder="••••••••"
-          className="bg-black text-white placeholder:text-white/60"
+          showPasswordToggle
           error={errors.password?.message}
           {...register('password')}
         />
 
+        <div className="row-between">
+          <RememberMeToggle />
+          <button type="button" className="auth-link-btn">
+            Forgot password?
+          </button>
+        </div>
+
         {error && (
-          <p className="text-sm text-destructive" role="alert">
-            {tCommon('error')}
-          </p>
+          <div className="auth-alert kind-error" role="alert">
+            <div className="auth-alert-icon">⚠</div>
+            <div className="auth-alert-msg">{tCommon('error')}</div>
+          </div>
         )}
 
-        <Button type="submit" className="w-full" isLoading={isPending}>
-          {t('login')}
-        </Button>
-      </form>
-
-      <p className="text-center text-sm text-muted-foreground">
-        {t('noAccount')}{' '}
-        <Link href="/register" className="font-medium text-foreground underline underline-offset-4">
-          {t('register')}
-        </Link>
-      </p>
-    </motion.div>
+        <button type="submit" className="auth-primary-btn" disabled={isPending}>
+          <span className="auth-pb-ornament">⟡</span>
+          <span>{isPending ? 'ENTERING...' : t('login').toUpperCase()}</span>
+          {isPending && <div className="auth-pb-loader" aria-hidden="true" />}
+          <div className="auth-pb-shine" aria-hidden="true" />
+        </button>
+      </div>
+    </form>
   );
 }

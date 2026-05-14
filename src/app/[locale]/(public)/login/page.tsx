@@ -1,13 +1,15 @@
 import type { Metadata } from 'next';
 
-import { LoginForm } from '@/features/auth/components/LoginForm';
+import { AuthPanel } from '@/features/auth/components/AuthPanel';
+import { AuthScene } from '@/features/auth/components/AuthScene';
 
-export const metadata: Metadata = { title: 'Login' };
+export const metadata: Metadata = { title: 'Login — Aetheria' };
 
 export default function LoginPage() {
   return (
-    <div className="flex min-h-screen items-center justify-center px-4">
-      <LoginForm />
+    <div className="auth-shell">
+      <AuthScene />
+      <AuthPanel initialMode="login" />
     </div>
   );
 }

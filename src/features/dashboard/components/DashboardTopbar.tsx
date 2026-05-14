@@ -6,6 +6,7 @@ import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/Button';
 import { locales, localeLabels, type Locale } from '@/i18n/config';
 import { Link, usePathname, useRouter } from '@/i18n/navigation';
+import { useLogout } from '@/features/auth/hooks/useLogout';
 import type { Character } from '../types';
 import { cn } from '@/libs/utils';
 
@@ -52,6 +53,8 @@ const DashboardTopbar = (props: DashboardTopbarProps) => {
   const penaltyTrigger =
     'inline-flex items-center gap-[6px] bg-[oklch(0.62_0.24_22_/_0.1)] border border-[oklch(0.62_0.24_22_/_0.4)] text-[oklch(0.85_0.18_22)] px-[11px] py-[5px] rounded-[var(--r-sm)] text-[10px] font-[var(--font-title)] tracking-[0.12em] font-bold cursor-pointer transition-all duration-200 ml-1 hover:bg-[oklch(0.62_0.24_22_/_0.2)] hover:shadow-[0_0_12px_var(--danger-glow)]';
 
+  const logout = useLogout();
+
   const handleToggleLocale = () => {
     const currentIndex = locales.indexOf(locale);
     const nextLocale = locales[(currentIndex + 1) % locales.length] ?? locales[0];
@@ -96,6 +99,15 @@ const DashboardTopbar = (props: DashboardTopbarProps) => {
         title={localeLabels[locale]}
       >
         🌐 {locale.toUpperCase()}
+      </Button>
+      <Button
+        type="button"
+        variant="ghost"
+        className={cn(navPill, 'text-[var(--text-lo)] hover:text-[var(--rose)] hover:!border-[oklch(0.74_0.18_5_/_0.4)]')}
+        onClick={logout}
+        aria-label="Logout"
+      >
+        ⏻
       </Button>
       <div className={streakPill}>{tDash('streakDays', { count: char.streak })}</div>
     </div>
