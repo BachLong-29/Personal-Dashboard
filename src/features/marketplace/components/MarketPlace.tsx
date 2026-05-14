@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import { useMemo, useState } from 'react';
 import { useTranslations } from 'next-intl';
 
@@ -440,7 +441,7 @@ export function MarketPlace() {
         <Link className={topbarBack} href="/dashboard">
           ← Dashboard
         </Link>
-        <span className={topbarLogo}>AETHERIA</span>
+        <Image src="/logo.png" alt="Aetheria logo" width={36} height={36} className={topbarLogo} />
         <span className={topbarDiamond}>◆</span>
         <span className={topbarSection}>REWARD VAULT</span>
         <div className="flex-1" />
@@ -645,7 +646,7 @@ const topbar =
 const topbarBack =
   'flex items-center gap-1.5 text-[11px] text-[var(--text-mid)] no-underline px-3 py-1.5 rounded-[6px] border border-[var(--border)] bg-[var(--panel2)] font-[var(--font-title)] tracking-[0.1em] transition-all duration-200 hover:border-[var(--gold)] hover:text-[var(--gold)]';
 const topbarLogo =
-  'font-[var(--font-title)] text-[18px] font-black tracking-[0.12em] bg-[linear-gradient(90deg,var(--gold),var(--violet))] bg-clip-text text-transparent';
+  'h-9 w-9 object-contain drop-shadow-[0_0_12px_var(--violet-glow)]';
 const topbarDiamond = 'text-[var(--gold)] text-[8px] opacity-50';
 const topbarSection =
   'font-[var(--font-title)] text-[12px] tracking-[0.2em] text-[var(--text-mid)]';

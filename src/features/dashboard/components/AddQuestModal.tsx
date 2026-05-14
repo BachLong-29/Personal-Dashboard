@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 
 import { Button } from '@/components/ui/Button';
+import { Input } from '@/components/ui';
 import { useCreateQuest } from '../hooks/useCreateQuest';
 import { COIN_MAP, QUEST_ICONS, XP_MAP } from '../constants';
 import type { Difficulty, Quest, QuestType } from '../types';
@@ -52,7 +53,7 @@ export function AddQuestModal({ onAdd, onClose }: AddQuestModalProps) {
         </div>
         <div className="modal-field">
           <div className="modal-label">Quest Name</div>
-          <input
+          <Input
             className="modal-input"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
@@ -64,7 +65,7 @@ export function AddQuestModal({ onAdd, onClose }: AddQuestModalProps) {
         </div>
         <div className="modal-field">
           <div className="modal-label">Description</div>
-          <input
+          <Input
             className="modal-input"
             value={desc}
             onChange={(e) => setDesc(e.target.value)}

@@ -17,6 +17,11 @@ export const metadata: Metadata = {
     template: '%s | Personal Dashboard',
     default: 'Personal Dashboard',
   },
+  icons: {
+    icon: '/logo.png',
+    shortcut: '/logo.png',
+    apple: '/logo.png',
+  },
   description: 'A production-ready Next.js dashboard starter',
   keywords: ['Next.js', 'React', 'TypeScript', 'Tailwind CSS'],
   authors: [{ name: 'Your Name' }],
