@@ -12,6 +12,7 @@
   },
   "auth": {
     "login": "Login",
+    "signIn": "Sign In",
     "register": "Register",
     "logout": "Logout",
     "email": "Email",
@@ -20,7 +21,28 @@
     "forgotPassword": "Forgot password?",
     "name": "Full Name",
     "noAccount": "Don't have an account?",
-    "hasAccount": "Already have an account?"
+    "hasAccount": "Already have an account?",
+    "panel": {
+      "brandTag": "PERSONAL DASHBOARD",
+      "gate": "Gate of Aetheria",
+      "welcomeBack": "Welcome Back",
+      "joinRealm": "Join the Realm",
+      "loginSub": "Enter your credentials to continue your journey",
+      "registerSub": "Create your account and begin your adventure",
+      "orContinueWith": "OR CONTINUE WITH"
+    },
+    "scene": {
+      "outerRingText": "✦ AETHERIA ✦ GATE OF WORLDS ✦ AETHER FLOWS ETERNAL ✦ SEEK THE LIGHT BEYOND ✦ ",
+      "innerRingText": "⊕ ENTER THE THRESHOLD ⊕ ALL WHO SEEK SHALL FIND ⊕",
+      "heroTagline": "Your quests, your growth,<br></br>your legend - forged daily.",
+      "realmStatus": "Realm Status",
+      "activeQuesters": "Active Questers",
+      "questsToday": "Quests Today",
+      "server": "Server",
+      "online": "ONLINE",
+      "creedTitle": "The Aetherian Creed",
+      "creedText": "\"Every dawn is a new quest.<br></br>Every dusk, a legend written.\""
+    }
   },
   "common": {
     "save": "Save",

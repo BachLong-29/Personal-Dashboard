@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useTranslations } from 'next-intl';
 
 interface Star {
   id: number;
@@ -23,6 +24,7 @@ interface Mote {
 }
 
 function RunicGate() {
+  const t = useTranslations('auth');
   const cx = 500;
   const cy = 500;
 
@@ -76,12 +78,12 @@ function RunicGate() {
 
         <text className="rg-text-outer">
           <textPath href="#outerArc" startOffset="0%">
-            {'✦ AETHERIA ✦ GATE OF WORLDS ✦ AETHER FLOWS ETERNAL ✦ SEEK THE LIGHT BEYOND ✦ '}
+            {t('scene.outerRingText')}
           </textPath>
         </text>
         <text className="rg-text-inner">
           <textPath href="#innerArc" startOffset="25%">
-            {'⊕ ENTER THE THRESHOLD ⊕ ALL WHO SEEK SHALL FIND ⊕'}
+            {t('scene.innerRingText')}
           </textPath>
         </text>
 
@@ -105,6 +107,7 @@ function RunicGate() {
 }
 
 export function AuthScene() {
+  const t = useTranslations('auth');
   const [stars, setStars] = useState<Star[]>([]);
   const [motes, setMotes] = useState<Mote[]>([]);
 
@@ -238,9 +241,9 @@ export function AuthScene() {
           <span />
         </div>
         <div className="wm-tagline">
-          Your quests, your growth,
-          <br />
-          your legend — forged daily.
+          {t.rich('scene.heroTagline', {
+            br: () => <br />,
+          })}
         </div>
       </div>
 
@@ -249,18 +252,18 @@ export function AuthScene() {
         <div className="fc-corner tr" />
         <div className="fc-corner bl" />
         <div className="fc-corner br" />
-        <div className="fc-tag">Realm Status</div>
+        <div className="fc-tag">{t('scene.realmStatus')}</div>
         <div className="fc-row">
-          <span className="fc-k">Active Questers</span>
+          <span className="fc-k">{t('scene.activeQuesters')}</span>
           <span className="fc-v fc-gold">1,247</span>
         </div>
         <div className="fc-row">
-          <span className="fc-k">Quests Today</span>
+          <span className="fc-k">{t('scene.questsToday')}</span>
           <span className="fc-v">3,891</span>
         </div>
         <div className="fc-row">
-          <span className="fc-k">Server</span>
-          <span className="fc-v fc-gold">ONLINE</span>
+          <span className="fc-k">{t('scene.server')}</span>
+          <span className="fc-v fc-gold">{t('scene.online')}</span>
         </div>
       </div>
 
@@ -269,11 +272,11 @@ export function AuthScene() {
         <div className="fc-corner tr" />
         <div className="fc-corner bl" />
         <div className="fc-corner br" />
-        <div className="fc-tag fc-violet">The Aetherian Creed</div>
+        <div className="fc-tag fc-violet">{t('scene.creedTitle')}</div>
         <div className="fc-creed-text">
-          &ldquo;Every dawn is a new quest.
-          <br />
-          Every dusk, a legend written.&rdquo;
+          {t.rich('scene.creedText', {
+            br: () => <br />,
+          })}
         </div>
       </div>
 

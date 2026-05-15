@@ -12,6 +12,7 @@
   },
   "auth": {
     "login": "Đăng nhập",
+    "signIn": "Đăng nhập",
     "register": "Đăng ký",
     "logout": "Đăng xuất",
     "email": "Email",
@@ -20,7 +21,28 @@
     "forgotPassword": "Quên mật khẩu?",
     "name": "Họ và tên",
     "noAccount": "Chưa có tài khoản?",
-    "hasAccount": "Đã có tài khoản?"
+    "hasAccount": "Đã có tài khoản?",
+    "panel": {
+      "brandTag": "BẢNG ĐIỀU KHIỂN CÁ NHÂN",
+      "gate": "Cánh Cổng Aetheria",
+      "welcomeBack": "Chào Mừng Trở Lại",
+      "joinRealm": "Gia Nhập Cõi Giới",
+      "loginSub": "Nhập thông tin đăng nhập để tiếp tục hành trình của bạn",
+      "registerSub": "Tạo tài khoản và bắt đầu cuộc phiêu lưu của bạn",
+      "orContinueWith": "HOẶC TIẾP TỤC VỚI"
+    },
+    "scene": {
+      "outerRingText": "✦ AETHERIA ✦ CỔNG KẾT NỐI THẾ GIỚI ✦ DÒNG AETHER CHẢY MÃI ✦ HÃY TÌM ÁNH SÁNG PHÍA BÊN KIA ✦ ",
+      "innerRingText": "⊕ BƯỚC QUA NGƯỠNG CỬA ⊕ AI TÌM KIẾM RỒI SẼ THẤY ⊕",
+      "heroTagline": "Nhiệm vụ của bạn, sự trưởng thành của bạn,<br></br>huyền thoại của bạn - được tôi luyện mỗi ngày.",
+      "realmStatus": "Trạng Thái Cõi Giới",
+      "activeQuesters": "Người Chinh Phục Đang Hoạt Động",
+      "questsToday": "Nhiệm Vụ Hôm Nay",
+      "server": "Máy Chủ",
+      "online": "TRỰC TUYẾN",
+      "creedTitle": "Tín Điều Aetheria",
+      "creedText": "\"Mỗi bình minh là một nhiệm vụ mới.<br></br>Mỗi hoàng hôn là một huyền thoại được viết nên.\""
+    }
   },
   "common": {
     "save": "Lưu",
