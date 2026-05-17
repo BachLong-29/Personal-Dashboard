@@ -3,6 +3,8 @@ export type Difficulty = 'S' | 'A' | 'B' | 'C' | 'D';
 export type CenterTab = 'quests' | 'schedule' | 'stats' | 'habits';
 export type HabitColor = 'gold' | 'mint' | 'violet' | 'cyan' | 'rose' | 'amber' | 'blue';
 export type HabitDay = 0 | 1 | 2 | 3 | 4 | 5 | 6;
+export type TaskStatus = 'todo' | 'in_progress' | 'pending' | 'waiting' | 'done';
+export type TaskColor = 'gold' | 'mint' | 'violet' | 'cyan' | 'rose' | 'amber' | 'blue';
 
 export interface Quest {
   id: string;
@@ -35,6 +37,23 @@ export interface HabitLog {
   habitId: string;
   date: string;
   done: boolean;
+}
+
+export interface Task {
+  id: string;
+  userId: string;
+  name: string;
+  note?: string;
+  tagId: string;
+  color: TaskColor;
+  icon: string;
+  status: TaskStatus;
+  startDate: string;
+  endDate: string;
+  dependencies: string[];
+  active: boolean;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface CharacterStat {

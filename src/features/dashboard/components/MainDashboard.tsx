@@ -15,7 +15,7 @@ import {
   RANKS,
   SKIP_CONFIRM_STORAGE_KEY,
 } from '../constants';
-import { MOCK_ACHIEVEMENTS, MOCK_ANALYTICS, MOCK_CHARACTER, MOCK_SCHEDULE } from '../data/mock';
+import { MOCK_ACHIEVEMENTS, MOCK_ANALYTICS, MOCK_CHARACTER } from '../data/mock';
 import { useHabitLogs } from '../hooks/useHabitLogs';
 import { useHabits } from '../hooks/useHabits';
 import { useQuests } from '../hooks/useQuests';
@@ -32,7 +32,6 @@ import type {
   PenaltyState,
   Quest,
   QuestType,
-  ScheduleItem,
 } from '../types';
 import { AchievementsPanel } from './AchievementsPanel';
 import { AnalyticsPanel } from './AnalyticsPanel';
@@ -44,7 +43,7 @@ import { GuildPanel } from './GuildPanel';
 import { HabitPanel } from './HabitPanel';
 import { PenaltyFailureModal, PenaltyModal } from './PenaltyModal';
 import { QuestPanel } from './QuestPanel';
-import { SchedulePanel } from './SchedulePanel';
+import { ScheduleView } from './ScheduleView';
 import { XPToast } from './XPToast';
 import DashboardTopbar from './DashboardTopbar';
 
@@ -118,7 +117,6 @@ export default function MainDashboard() {
     [todayHabitQuests, quests],
   );
 
-  const [schedule, setSchedule] = useState<ScheduleItem[]>(MOCK_SCHEDULE);
   const [char, setChar] = useState<Character>(MOCK_CHARACTER);
   const [achievements, setAchievements] = useState<Achievement[]>(MOCK_ACHIEVEMENTS);
   const [settings] = useState<DashboardSettings>(DEFAULT_SETTINGS);
@@ -220,10 +218,6 @@ export default function MainDashboard() {
     }
     completeQuest(pendingQuest.quest, pendingQuest.burstPos);
     setPendingQuest(null);
-  };
-
-  const handleToggleSchedule = (idx: number) => {
-    setSchedule((prev) => prev.map((s, i) => (i === idx ? { ...s, done: !s.done } : s)));
   };
 
   const handleAddQuest = (quest: Quest) => {
@@ -353,7 +347,7 @@ export default function MainDashboard() {
                 <span className={panelHeaderTitle}>{t('schedule.title')}</span>
                 <span className={panelHeaderOrnament}>◆ ◆ ◆</span>
               </div>
-              <SchedulePanel schedule={schedule} onToggle={handleToggleSchedule} />
+              <ScheduleView quests={allQuests} />
             </div>
           )}
           {centerTab === 'stats' && (
