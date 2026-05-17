@@ -16,18 +16,12 @@ export interface TableProps<T> {
   emptyMessage?: string;
 }
 
-export function TableAvatar({
-  children,
-  className,
-}: {
-  children: ReactNode;
-  className?: string;
-}) {
+export function TableAvatar({ children, className }: { children: ReactNode; className?: string }) {
   return (
     <span
       className={cn(
         'w-7 h-7 rounded-full inline-flex items-center justify-center text-[12px] mr-2 align-middle',
-        'font-[var(--f-title)] font-bold',
+        '[font-family:var(--f-title)] font-bold',
         className,
       )}
       style={{
@@ -60,7 +54,7 @@ export function Table<T>({
               <th
                 key={col.key}
                 className={cn(
-                  'text-left px-4 py-3 font-[var(--f-title)] text-[9px] tracking-[0.18em] uppercase text-[var(--text-lo)]',
+                  'text-left px-4 py-3 [font-family:var(--f-title)] text-[9px] tracking-[0.18em] uppercase text-[var(--text-lo)]',
                   'bg-[var(--bg-2)] border-b border-[var(--border)]',
                   col.className,
                 )}

@@ -14,8 +14,18 @@ export interface DatePickerProps {
 
 const DAYS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
 const MONTHS = [
-  'January', 'February', 'March', 'April', 'May', 'June',
-  'July', 'August', 'September', 'October', 'November', 'December',
+  'January',
+  'February',
+  'March',
+  'April',
+  'May',
+  'June',
+  'July',
+  'August',
+  'September',
+  'October',
+  'November',
+  'December',
 ];
 
 function formatDate(date: Date): string {
@@ -70,13 +80,17 @@ export function DatePicker({
   }, [open]);
 
   const prevMonth = () => {
-    if (viewMonth === 0) { setViewMonth(11); setViewYear((y) => y - 1); }
-    else setViewMonth((m) => m - 1);
+    if (viewMonth === 0) {
+      setViewMonth(11);
+      setViewYear((y) => y - 1);
+    } else setViewMonth((m) => m - 1);
   };
 
   const nextMonth = () => {
-    if (viewMonth === 11) { setViewMonth(0); setViewYear((y) => y + 1); }
-    else setViewMonth((m) => m + 1);
+    if (viewMonth === 11) {
+      setViewMonth(0);
+      setViewYear((y) => y + 1);
+    } else setViewMonth((m) => m + 1);
   };
 
   const selectDate = (date: Date) => {
@@ -94,7 +108,7 @@ export function DatePicker({
   return (
     <div ref={rootRef} className={cn('relative flex flex-col gap-1.5', className)}>
       {label && (
-        <label className="font-[var(--f-title)] text-[11px] tracking-[0.16em] uppercase text-[var(--text-md)]">
+        <label className="[font-family:var(--f-title)] text-[11px] tracking-[0.16em] uppercase text-[var(--text-md)]">
           {label}
         </label>
       )}
@@ -135,7 +149,7 @@ export function DatePicker({
             >
               ◀
             </button>
-            <span className="font-[var(--f-title)] text-[15px] tracking-[0.08em] text-[var(--text-hi)]">
+            <span className="[font-family:var(--f-title)] text-[15px] tracking-[0.08em] text-[var(--text-hi)]">
               {MONTHS[viewMonth]} {viewYear}
             </span>
             <button
@@ -151,7 +165,7 @@ export function DatePicker({
             {DAYS.map((d, i) => (
               <span
                 key={`dow-${i}`}
-                className="aspect-square flex items-center justify-center font-[var(--f-title)] text-[9px] tracking-[0.1em] text-[var(--text-dim)]"
+                className="aspect-square flex items-center justify-center [font-family:var(--f-title)] text-[9px] tracking-[0.1em] text-[var(--text-dim)]"
               >
                 {d}
               </span>
@@ -172,7 +186,9 @@ export function DatePicker({
                     'aspect-square flex items-center justify-center rounded-[var(--r-sm)] text-[13px]',
                     'transition-all duration-150 relative',
                     cell.muted && 'text-[var(--text-dim)] opacity-50',
-                    !cell.muted && !isSelected && 'text-[var(--text-md)] hover:bg-[var(--surface-3)] hover:text-[var(--text-hi)]',
+                    !cell.muted &&
+                      !isSelected &&
+                      'text-[var(--text-md)] hover:bg-[var(--surface-3)] hover:text-[var(--text-hi)]',
                     isToday && !isSelected && 'text-[var(--gold)] font-bold',
                     isSelected && 'font-bold text-[#0a0400] shadow-[var(--sh-glow-gold)]',
                   )}

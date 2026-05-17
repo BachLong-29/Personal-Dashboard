@@ -37,7 +37,7 @@ export function Slider({
   return (
     <div className={cn('flex flex-col gap-1.5', className)}>
       {label && (
-        <label className="font-[var(--f-title)] text-[11px] tracking-[0.16em] uppercase text-[var(--text-md)]">
+        <label className="[font-family:var(--f-title)] text-[11px] tracking-[0.16em] uppercase text-[var(--text-md)]">
           {label}
         </label>
       )}

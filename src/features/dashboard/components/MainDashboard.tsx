@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslations } from 'next-intl';
 
 import { Button } from '@/components/ui/Button';
@@ -9,21 +9,29 @@ import { cn } from '@/libs/utils';
 import {
   DEFAULT_SETTINGS,
   ESCALATIONS,
+  HABIT_COINS,
+  HABIT_XP,
   QUOTES,
   RANKS,
   SKIP_CONFIRM_STORAGE_KEY,
 } from '../constants';
 import { MOCK_ACHIEVEMENTS, MOCK_ANALYTICS, MOCK_CHARACTER, MOCK_SCHEDULE } from '../data/mock';
+import { useHabitLogs } from '../hooks/useHabitLogs';
+import { useHabits } from '../hooks/useHabits';
 import { useQuests } from '../hooks/useQuests';
+import { useToggleHabitLog } from '../hooks/useToggleHabitLog';
 import type {
   Achievement,
   BurstPos,
   Character,
   CenterTab,
   DashboardSettings,
+  Difficulty,
+  Habit,
   PendingQuest,
   PenaltyState,
   Quest,
+  QuestType,
   ScheduleItem,
 } from '../types';
 import { AchievementsPanel } from './AchievementsPanel';
@@ -33,6 +41,7 @@ import { CharacterPanel } from './CharacterPanel';
 import { ConfirmQuestModal } from './ConfirmQuestModal';
 import { FocusTimer } from './FocusTimer';
 import { GuildPanel } from './GuildPanel';
+import { HabitPanel } from './HabitPanel';
 import { PenaltyFailureModal, PenaltyModal } from './PenaltyModal';
 import { QuestPanel } from './QuestPanel';
 import { SchedulePanel } from './SchedulePanel';
@@ -54,9 +63,19 @@ function loadSkipConfirm(): boolean {
 export default function MainDashboard() {
   const t = useTranslations('dashboard');
 
+  const todayDateStr = new Date().toISOString().substring(0, 10);
+  const todayDay = new Date().getDay();
+
   const { data: serverQuests, isLoading: questsLoading } = useQuests();
+  const { data: habits = [] } = useHabits();
+  const { data: habitLogs = [] } = useHabitLogs(todayDateStr);
+  const { mutate: toggleHabitLog } = useToggleHabitLog();
+
   const [quests, setQuests] = useState<Quest[]>([]);
   const questsInitialized = useRef(false);
+
+  // Local habit done state for optimistic updates
+  const [habitDoneMap, setHabitDoneMap] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     if (serverQuests && !questsInitialized.current) {
@@ -64,6 +83,40 @@ export default function MainDashboard() {
       questsInitialized.current = true;
     }
   }, [serverQuests]);
+
+  // Sync habit logs into local map
+  useEffect(() => {
+    const map: Record<string, boolean> = {};
+    for (const log of habitLogs) {
+      map[log.habitId] = log.done;
+    }
+    setHabitDoneMap(map);
+  }, [habitLogs]);
+
+  // Build today's habit quests
+  const todayHabitQuests = useMemo<Quest[]>(() => {
+    return (habits as Habit[])
+      .filter((h) => h.active && (h.days as number[]).includes(todayDay))
+      .map((h) => ({
+        id: `habit-${h.id}`,
+        title: h.name,
+        desc: h.note ?? h.tagId,
+        type: 'habit' as QuestType,
+        difficulty: 'C' as Difficulty,
+        xp: HABIT_XP,
+        coins: HABIT_COINS,
+        done: habitDoneMap[h.id] ?? false,
+        tags: [h.tagId],
+        habitId: h.id,
+        habitColor: h.color,
+        habitIcon: h.icon,
+      }));
+  }, [habits, todayDay, habitDoneMap]);
+
+  const allQuests = useMemo<Quest[]>(
+    () => [...todayHabitQuests, ...quests],
+    [todayHabitQuests, quests],
+  );
 
   const [schedule, setSchedule] = useState<ScheduleItem[]>(MOCK_SCHEDULE);
   const [char, setChar] = useState<Character>(MOCK_CHARACTER);
@@ -114,7 +167,35 @@ export default function MainDashboard() {
     setQuests(newQuests);
   };
 
+  const handleToggleHabit = (habitId: string, burstPos: BurstPos | null) => {
+    const currentDone = habitDoneMap[habitId] ?? false;
+    const newDone = !currentDone;
+
+    setHabitDoneMap((prev) => ({ ...prev, [habitId]: newDone }));
+    toggleHabitLog({ habitId, date: todayDateStr, done: newDone });
+
+    if (newDone) {
+      setChar((c) => {
+        const newXp = c.xp + HABIT_XP;
+        const leveled = newXp >= c.xpNext;
+        return {
+          ...c,
+          xp: leveled ? newXp - c.xpNext : newXp,
+          coins: c.coins + HABIT_COINS,
+          level: leveled ? c.level + 1 : c.level,
+          xpNext: leveled ? Math.round(c.xpNext * 1.3) : c.xpNext,
+        };
+      });
+      if (burstPos && settings.animationsEnabled) setBurst(burstPos);
+      setToast({ xp: HABIT_XP, coins: HABIT_COINS });
+    }
+  };
+
   const handleToggleQuest = (id: string, burstPos: BurstPos | null) => {
+    if (id.startsWith('habit-')) {
+      handleToggleHabit(id.slice('habit-'.length), burstPos);
+      return;
+    }
     const quest = quests.find((q) => q.id === id);
     if (!quest) return;
     if (quest.done) {
@@ -229,6 +310,7 @@ export default function MainDashboard() {
             {(
               [
                 { key: 'quests', label: t('tabs.quests') },
+                { key: 'habits', label: t('tabs.habits') },
                 { key: 'schedule', label: t('tabs.schedule') },
                 { key: 'stats', label: t('tabs.stats') },
               ] satisfies { key: CenterTab; label: string }[]
@@ -251,13 +333,14 @@ export default function MainDashboard() {
 
           {centerTab === 'quests' && (
             <QuestPanel
-              quests={quests}
+              quests={allQuests}
               onToggle={handleToggleQuest}
               onAddQuest={handleAddQuest}
               animationsEnabled={settings.animationsEnabled}
               isLoading={questsLoading}
             />
           )}
+          {centerTab === 'habits' && <HabitPanel todayStr={todayDateStr} />}
           {centerTab === 'schedule' && (
             <div
               className={cn(panelBase, panelGold, 'flex-1 overflow-hidden min-h-0 flex flex-col')}

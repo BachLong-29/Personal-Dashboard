@@ -14,10 +14,12 @@ export interface ProgressProps {
 
 const barStyles: Record<ProgressVariant, string> = {
   gold: 'bg-gradient-to-r from-[var(--gold-2)] to-[var(--gold)] shadow-[0_0_12px_var(--gold-glow)]',
-  violet: 'bg-gradient-to-r from-[var(--violet-2)] to-[var(--violet)] shadow-[0_0_12px_var(--violet-glow)]',
+  violet:
+    'bg-gradient-to-r from-[var(--violet-2)] to-[var(--violet)] shadow-[0_0_12px_var(--violet-glow)]',
   cyan: 'bg-gradient-to-r from-[oklch(0.55_0.16_205)] to-[var(--cyan)] shadow-[0_0_12px_var(--cyan-glow)]',
   mint: 'bg-gradient-to-r from-[oklch(0.55_0.14_162)] to-[var(--mint)] shadow-[0_0_12px_var(--mint-glow)]',
-  danger: 'bg-gradient-to-r from-[oklch(0.50_0.20_22)] to-[var(--crimson)] shadow-[0_0_12px_var(--crimson-glow)]',
+  danger:
+    'bg-gradient-to-r from-[oklch(0.50_0.20_22)] to-[var(--crimson)] shadow-[0_0_12px_var(--crimson-glow)]',
 };
 
 export function Progress({
@@ -43,13 +45,14 @@ export function Progress({
           className="h-full rounded-[inherit] transition-[width] duration-500 relative"
           style={{
             width: `${pct}%`,
-            background: 'linear-gradient(90deg, var(--gold-2), var(--gold) 60%, oklch(0.85 0.18 60))',
+            background:
+              'linear-gradient(90deg, var(--gold-2), var(--gold) 60%, oklch(0.85 0.18 60))',
             boxShadow: '0 0 16px var(--gold-glow), inset 0 1px 0 oklch(1 0 0 / 0.3)',
           }}
         />
         {label && (
           <span
-            className="absolute inset-0 flex items-center justify-center font-[var(--f-title)] text-[11px] font-bold tracking-[0.12em] text-[var(--text-hi)] z-[2]"
+            className="absolute inset-0 flex items-center justify-center [font-family:var(--f-title)] text-[11px] font-bold tracking-[0.12em] text-[var(--text-hi)] z-[2]"
             style={{ textShadow: '0 0 4px oklch(0 0 0 / 0.6)' }}
           >
             {label}

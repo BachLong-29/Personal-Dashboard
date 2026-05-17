@@ -2,8 +2,8 @@
 
 import { useRef } from 'react';
 
-import { QUEST_ICONS } from '../constants';
-import type { BurstPos, Quest } from '../types';
+import { HABIT_COLORS, QUEST_ICONS } from '../constants';
+import type { BurstPos, HabitColor, Quest } from '../types';
 
 interface QuestCardProps {
   quest: Quest;
@@ -24,20 +24,46 @@ export function QuestCard({ quest, onToggle, animationsEnabled }: QuestCardProps
     }
   }
 
+  const icon = quest.habitIcon ?? QUEST_ICONS[quest.type] ?? '📌';
+  const habitColorVal = quest.habitColor
+    ? HABIT_COLORS[quest.habitColor as HabitColor]?.value
+    : undefined;
+
   return (
     <div ref={cardRef} className={`quest-card${quest.done ? ' done' : ''}`} onClick={handleCheck}>
       <div className={`quest-check${quest.done ? ' checked' : ''}`} onClick={handleCheck}>
         {quest.done ? '✓' : ''}
       </div>
-      <div className={`quest-icon-wrap type-${quest.type}`}>
-        {QUEST_ICONS[quest.type] ?? '📌'}
+      <div
+        className={`quest-icon-wrap type-${quest.type}`}
+        style={
+          habitColorVal
+            ? { background: `${habitColorVal}20`, color: habitColorVal }
+            : undefined
+        }
+      >
+        {icon}
       </div>
       <div className="quest-info">
         <div className="quest-name">{quest.title}</div>
         <div className="quest-desc">{quest.desc}</div>
       </div>
       <div className="quest-rewards">
-        <div className={`diff-badge diff-${quest.difficulty}`}>{quest.difficulty}</div>
+        {!quest.habitId && (
+          <div className={`diff-badge diff-${quest.difficulty}`}>{quest.difficulty}</div>
+        )}
+        {quest.habitId && (
+          <div
+            className="diff-badge"
+            style={{
+              background: habitColorVal ? `${habitColorVal}20` : undefined,
+              color: habitColorVal,
+              borderColor: habitColorVal ? `${habitColorVal}50` : undefined,
+            }}
+          >
+            habit
+          </div>
+        )}
         <div className="reward-pill xp">⚡ {quest.xp}</div>
         <div className="reward-pill coin">🪙 {quest.coins}</div>
       </div>

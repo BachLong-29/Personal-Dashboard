@@ -1,4 +1,4 @@
-import type { DashboardSettings, Escalation, QuestType } from '../types';
+import type { DashboardSettings, Escalation, HabitColor, QuestType } from '../types';
 
 export const QUEST_ICONS: Record<QuestType, string> = {
   focus: '🎯',
@@ -48,3 +48,21 @@ export const DEFAULT_SETTINGS: DashboardSettings = {
 export const RANKS = ['F', 'E', 'D', 'C', 'B', 'A', 'S'] as const;
 
 export const SKIP_CONFIRM_STORAGE_KEY = 'aetheria_skip_quest_confirm';
+
+export const HABIT_XP = 30;
+export const HABIT_COINS = 10;
+
+export const HABIT_COLORS: Record<HabitColor, { label: string; value: string }> = {
+  gold:   { label: 'Gold',   value: 'oklch(0.74 0.17 85)' },
+  mint:   { label: 'Mint',   value: 'oklch(0.76 0.14 162)' },
+  violet: { label: 'Violet', value: 'oklch(0.66 0.22 295)' },
+  cyan:   { label: 'Cyan',   value: 'oklch(0.76 0.16 205)' },
+  rose:   { label: 'Rose',   value: 'oklch(0.72 0.18 5)' },
+  amber:  { label: 'Amber',  value: 'oklch(0.76 0.16 55)' },
+  blue:   { label: 'Blue',   value: 'oklch(0.65 0.18 250)' },
+};
+
+
+
+export const DAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] as const;
+export const DAY_ORDER = [1, 2, 3, 4, 5, 6, 0] as const; // Mon-Sun display order

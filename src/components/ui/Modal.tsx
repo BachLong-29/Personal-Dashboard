@@ -32,11 +32,11 @@ export function ModalHead({ tag, title, className }: ModalHeadProps) {
   return (
     <div className={cn('px-6 pt-5 pb-3 relative border-b border-[var(--border-lo)]', className)}>
       {tag && (
-        <div className="font-[var(--f-title)] text-[9px] tracking-[0.3em] text-[var(--gold)] mb-1">
+        <div className="[font-family:var(--f-title)] text-[9px] tracking-[0.3em] text-[var(--gold)] mb-1">
           {tag}
         </div>
       )}
-      <div className="font-[var(--f-title)] text-[22px] font-bold tracking-[0.04em] text-[var(--text-hi)]">
+      <div className="[font-family:var(--f-title)] text-[22px] font-bold tracking-[0.04em] text-[var(--text-hi)]">
         {title}
       </div>
     </div>

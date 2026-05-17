@@ -60,7 +60,7 @@ function ToastCard({ item, onDismiss }: { item: ToastItem; onDismiss: () => void
         {icons[item.variant]}
       </span>
       <div className="flex-1 min-w-0">
-        <div className="font-[var(--f-title)] text-[13px] tracking-[0.06em] text-[var(--text-hi)]">
+        <div className="[font-family:var(--f-title)] text-[13px] tracking-[0.06em] text-[var(--text-hi)]">
           {item.title}
         </div>
         {item.message && (

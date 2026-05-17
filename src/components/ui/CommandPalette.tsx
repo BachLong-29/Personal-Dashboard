@@ -119,7 +119,7 @@ export function CommandPalette({
           {filteredGroups.map((group, gi) => (
             <div key={gi}>
               {group.label && (
-                <div className="font-[var(--f-title)] text-[9px] tracking-[0.25em] uppercase text-[var(--text-dim)] px-3 pt-3 pb-1">
+                <div className="[font-family:var(--f-title)] text-[9px] tracking-[0.25em] uppercase text-[var(--text-dim)] px-3 pt-3 pb-1">
                   {group.label}
                 </div>
               )}

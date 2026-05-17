@@ -26,15 +26,13 @@ export function NoData({
         }}
       >
         {icon}
-        <span
-          className="absolute -inset-2 rounded-full border border-dashed border-[oklch(0.78_0.16_82_/_0.25)] animate-[spin_18s_linear_infinite]"
-        />
+        <span className="absolute -inset-2 rounded-full border border-dashed border-[oklch(0.78_0.16_82_/_0.25)] animate-[spin_18s_linear_infinite]" />
         <span
           className="absolute rounded-full border border-dashed border-[oklch(0.78_0.16_82_/_0.12)]"
           style={{ inset: '-16px', animation: 'spin 28s linear infinite reverse', opacity: 0.5 }}
         />
       </div>
-      <div className="font-[var(--f-title)] text-[18px] tracking-[0.06em] text-[var(--text-hi)] mb-1.5">
+      <div className="[font-family:var(--f-title)] text-[18px] tracking-[0.06em] text-[var(--text-hi)] mb-1.5">
         {title}
       </div>
       {message && (

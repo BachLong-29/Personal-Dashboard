@@ -1,6 +1,8 @@
 export type QuestType = 'focus' | 'habit' | 'reflect' | 'admin' | 'create' | 'health' | 'break';
 export type Difficulty = 'S' | 'A' | 'B' | 'C' | 'D';
-export type CenterTab = 'quests' | 'schedule' | 'stats';
+export type CenterTab = 'quests' | 'schedule' | 'stats' | 'habits';
+export type HabitColor = 'gold' | 'mint' | 'violet' | 'cyan' | 'rose' | 'amber' | 'blue';
+export type HabitDay = 0 | 1 | 2 | 3 | 4 | 5 | 6;
 
 export interface Quest {
   id: string;
@@ -12,6 +14,27 @@ export interface Quest {
   coins: number;
   done: boolean;
   tags: string[];
+  habitId?: string;
+  habitColor?: HabitColor;
+  habitIcon?: string;
+}
+
+export interface Habit {
+  id: string;
+  name: string;
+  days: HabitDay[];
+  note?: string;
+  tagId: string;
+  color: HabitColor;
+  icon: string;
+  active: boolean;
+}
+
+export interface HabitLog {
+  id: string;
+  habitId: string;
+  date: string;
+  done: boolean;
 }
 
 export interface CharacterStat {

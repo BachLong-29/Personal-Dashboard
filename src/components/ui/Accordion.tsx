@@ -32,23 +32,18 @@ export function Accordion({ items, defaultOpenKey, className }: AccordionProps) 
       {items.map((item) => {
         const open = openKey === item.key;
         return (
-          <div
-            key={item.key}
-            className="border-b border-[var(--border-lo)] last:border-b-0"
-          >
+          <div key={item.key} className="border-b border-[var(--border-lo)] last:border-b-0">
             <button
               type="button"
               onClick={() => toggle(item.key)}
               className={cn(
                 'w-full flex items-center gap-3 px-4 py-3 text-left',
-                'font-[var(--f-title)] text-[15px] tracking-[0.06em]',
+                '[font-family:var(--f-title)] text-[15px] tracking-[0.06em]',
                 'transition-all duration-[180ms] hover:bg-[var(--surface-2)]',
                 open ? 'text-[var(--gold)]' : 'text-[var(--text-hi)]',
               )}
             >
-              {item.icon ?? (
-                <span className="text-[10px] text-[var(--gold)]">◆</span>
-              )}
+              {item.icon ?? <span className="text-[10px] text-[var(--gold)]">◆</span>}
               <span className="flex-1">{item.title}</span>
               <span
                 className={cn(

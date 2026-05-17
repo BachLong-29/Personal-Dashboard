@@ -57,7 +57,7 @@ export function Dropdown({ trigger, groups, align = 'left', className }: Dropdow
             <div key={gi}>
               {gi > 0 && <div className="h-px bg-[var(--border-lo)] my-1" />}
               {group.label && (
-                <div className="font-[var(--f-title)] text-[9px] tracking-[0.2em] uppercase text-[var(--text-dim)] px-[10px] pt-1.5 pb-1">
+                <div className="[font-family:var(--f-title)] text-[9px] tracking-[0.2em] uppercase text-[var(--text-dim)] px-[10px] pt-1.5 pb-1">
                   {group.label}
                 </div>
               )}

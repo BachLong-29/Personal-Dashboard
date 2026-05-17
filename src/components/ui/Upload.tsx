@@ -59,7 +59,10 @@ export function Upload({
         tabIndex={0}
         onClick={() => inputRef.current?.click()}
         onKeyDown={(e) => e.key === 'Enter' && inputRef.current?.click()}
-        onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
+        onDragOver={(e) => {
+          e.preventDefault();
+          setDragging(true);
+        }}
         onDragLeave={() => setDragging(false)}
         onDrop={handleDrop}
         className={cn(
@@ -79,7 +82,7 @@ export function Upload({
         >
           ⬆
         </div>
-        <div className="font-[var(--f-title)] text-[15px] tracking-[0.06em] text-[var(--text-hi)] mb-1">
+        <div className="[font-family:var(--f-title)] text-[15px] tracking-[0.06em] text-[var(--text-hi)] mb-1">
           {files.length > 0 ? 'Add More' : 'Drop Artifacts Here'}
         </div>
         <div className="text-[11px] text-[var(--text-lo)]">
