@@ -3,20 +3,46 @@
 import { useTranslations } from 'next-intl';
 
 import type { Character, DashboardSettings } from '../types';
-
+import { Link } from '@/i18n/navigation';
 import { cn } from '@/libs/utils';
+import { useProfile } from '@/features/profile/hooks/useProfile';
+import { findClass, findCompanion, findRank } from '@/constants/hero-data';
+import type { HeroStats } from '@/types/profile';
 
 interface CharacterPanelProps {
   char: Character;
   settings: DashboardSettings;
 }
 
+const STAT_CONFIG: { key: string; field: keyof HeroStats; color: string }[] = [
+  { key: 'DIS', field: 'discipline', color: 'var(--gold)' },
+  { key: 'WIS', field: 'wisdom', color: 'var(--violet)' },
+  { key: 'END', field: 'endurance', color: 'var(--mint)' },
+  { key: 'COM', field: 'composition', color: 'var(--cyan)' },
+  { key: 'SER', field: 'serenity', color: 'var(--rose)' },
+];
+
 export function CharacterPanel({ char, settings }: CharacterPanelProps) {
   const tNav = useTranslations('nav');
   const tCommon = useTranslations('common');
+  const { data: profileData } = useProfile();
+
+  const profile = profileData?.profile;
 
   const xpPct = (char.xp / char.xpNext) * 100;
-  const displayName = settings.characterName || char.name;
+  const displayName = profile?.heroName || settings.characterName || char.name;
+  const displayTitle = profile?.title || char.title;
+  const heroClass = profile ? findClass(profile.classId) : null;
+  const companion = profile ? findCompanion(profile.companionId) : null;
+  const rank = findRank(char.level);
+
+  const statPool = profile?.statPool ?? 30;
+  const heroStats = STAT_CONFIG.map((s) => ({
+    key: s.key,
+    value: profile?.stats[s.field] ?? 0,
+    color: s.color,
+    barPct: profile ? Math.min(Math.round((profile.stats[s.field] / statPool) * 100), 100) : 0,
+  }));
 
   return (
     <div className={cn(panelBase, panelGold, 'shrink-0')}>
@@ -32,12 +58,12 @@ export function CharacterPanel({ char, settings }: CharacterPanelProps) {
       <div className={avatarWrap}>
         <div className={halo} />
         <div className={avatarRing}>
-          <div className={avatarInner}>🧝‍♀️</div>
-          <div className={rankBadge}>{char.rank}</div>
+          <div className={avatarInner}>{companion?.glyph ?? '🧝‍♀️'}</div>
+          <div className={rankBadge}>{rank.name[0]?.toUpperCase() ?? char.rank}</div>
         </div>
       </div>
       <div className={charName}>{displayName}</div>
-      <div className={charTitleLine}>◆ {char.title} ◆</div>
+      <div className={charTitleLine}>◆ {displayTitle} ◆</div>
       <div className={metaWrap}>
         <div className={metaItem}>
           <div className={metaVal}>{char.level}</div>
@@ -53,7 +79,7 @@ export function CharacterPanel({ char, settings }: CharacterPanelProps) {
         <div className={metaDivider} />
         <div className={metaItem}>
           <div className={metaVal} style={{ color: 'var(--mint)' }}>
-            {char.class}
+            {heroClass?.glyph ?? char.class}
           </div>
           <div className={metaKey}>{tCommon('class')}</div>
         </div>
@@ -70,15 +96,20 @@ export function CharacterPanel({ char, settings }: CharacterPanelProps) {
         </div>
       </div>
       <div className={statsWrap}>
-        {char.stats.map((s) => (
+        {heroStats.map((s) => (
           <div className={statRow} key={s.key}>
             <span className={statKey}>{s.key}</span>
             <div className={statTrack}>
-              <div className={statFill} style={{ width: `${s.value}%`, background: s.color }} />
+              <div className={statFill} style={{ width: `${s.barPct}%`, background: s.color }} />
             </div>
             <span className={statVal}>{s.value}</span>
           </div>
         ))}
+      </div>
+      <div className="px-[14px] pb-[14px]">
+        <Link href="/profile" className={editProfileBtn}>
+          ✦ {tCommon('edit')} {tNav('profile')}
+        </Link>
       </div>
     </div>
   );
@@ -142,3 +173,6 @@ const statTrack =
 const statFill =
   'h-full rounded-[3px] transition-[width] duration-[600ms] ease-[ease] shadow-[0_0_6px_currentColor]';
 const statVal = 'text-[9px] font-bold text-[var(--text-mid)] w-[22px] text-right shrink-0';
+
+const editProfileBtn =
+  'flex items-center justify-center gap-1.5 w-full py-[7px] rounded-[var(--r-sm)] border border-[oklch(0.74_0.17_85_/_0.35)] text-[var(--gold)] font-[var(--font-title)] text-[10px] tracking-[0.12em] font-bold no-underline transition-all duration-200 hover:bg-[oklch(0.74_0.17_85_/_0.08)] hover:border-[oklch(0.74_0.17_85_/_0.6)]';

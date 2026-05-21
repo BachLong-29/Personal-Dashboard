@@ -15,7 +15,11 @@ import {
   RANKS,
   SKIP_CONFIRM_STORAGE_KEY,
 } from '../constants';
-import { MOCK_ACHIEVEMENTS, MOCK_ANALYTICS, MOCK_CHARACTER } from '../data/mock';
+import { MOCK_ACHIEVEMENTS, MOCK_ANALYTICS } from '../data/mock';
+import { useProfile } from '@/features/profile/hooks/useProfile';
+import { useCharacterProgress } from '../hooks/useCharacterProgress';
+import { findClass } from '@/constants/hero-data';
+import type { UserProfileData } from '@/types';
 import { useHabitLogs } from '../hooks/useHabitLogs';
 import { useHabits } from '../hooks/useHabits';
 import { useQuests } from '../hooks/useQuests';
@@ -117,7 +121,18 @@ export default function MainDashboard() {
     [todayHabitQuests, quests],
   );
 
-  const [char, setChar] = useState<Character>(MOCK_CHARACTER);
+  const { data: profileData } = useProfile();
+  const charInitialized = useRef(false);
+
+  const [char, setChar] = useState<Character>(() => buildEmptyChar());
+  const { awardProgress, applyGamePatch } = useCharacterProgress(char, setChar);
+
+  useEffect(() => {
+    const profile = profileData?.profile;
+    if (!profile || charInitialized.current) return;
+    setChar(profileToCharacter(profile));
+    charInitialized.current = true;
+  }, [profileData]);
   const [achievements, setAchievements] = useState<Achievement[]>(MOCK_ACHIEVEMENTS);
   const [settings] = useState<DashboardSettings>(DEFAULT_SETTINGS);
   const [centerTab, setCenterTab] = useState<CenterTab>('quests');
@@ -140,17 +155,10 @@ export default function MainDashboard() {
     const newQuests = quests.map((q) => (q.id === quest.id ? { ...q, done: true } : q));
     const allDone = newQuests.length > 0 && newQuests.every((q) => q.done);
 
-    setChar((c) => {
-      const newXp = c.xp + quest.xp;
-      const leveled = newXp >= c.xpNext;
-      return {
-        ...c,
-        xp: leveled ? newXp - c.xpNext : newXp,
-        coins: c.coins + quest.coins,
-        gems: c.gems + (quest.difficulty === 'S' ? 5 : 0),
-        level: leveled ? c.level + 1 : c.level,
-        xpNext: leveled ? Math.round(c.xpNext * 1.3) : c.xpNext,
-      };
+    awardProgress({
+      xp: quest.xp,
+      coins: quest.coins,
+      gems: quest.difficulty === 'S' ? 5 : 0,
     });
     if (burstPos && settings.animationsEnabled) setBurst(burstPos);
     setToast({ xp: quest.xp, coins: quest.coins });
@@ -173,17 +181,7 @@ export default function MainDashboard() {
     toggleHabitLog({ habitId, date: todayDateStr, done: newDone });
 
     if (newDone) {
-      setChar((c) => {
-        const newXp = c.xp + HABIT_XP;
-        const leveled = newXp >= c.xpNext;
-        return {
-          ...c,
-          xp: leveled ? newXp - c.xpNext : newXp,
-          coins: c.coins + HABIT_COINS,
-          level: leveled ? c.level + 1 : c.level,
-          xpNext: leveled ? Math.round(c.xpNext * 1.3) : c.xpNext,
-        };
-      });
+      awardProgress({ xp: HABIT_XP, coins: HABIT_COINS });
       if (burstPos && settings.animationsEnabled) setBurst(burstPos);
       setToast({ xp: HABIT_XP, coins: HABIT_COINS });
     }
@@ -238,7 +236,7 @@ export default function MainDashboard() {
     if (!penaltyState) return;
     const esc = ESCALATIONS[Math.min(penaltyState.tier - 1, ESCALATIONS.length - 1)];
     if (!esc) return;
-    setChar((c) => {
+    applyGamePatch((c) => {
       const curIdx = RANKS.indexOf(c.rank as (typeof RANKS)[number]);
       const demotedRank = RANKS[curIdx - 1];
       return {
@@ -377,6 +375,52 @@ export default function MainDashboard() {
       </div>
     </>
   );
+}
+
+function buildEmptyChar(): Character {
+  return {
+    name: '',
+    title: '',
+    level: 1,
+    rank: 'E',
+    class: '',
+    streak: 0,
+    xp: 0,
+    xpNext: 1000,
+    coins: 0,
+    gems: 0,
+    stats: [
+      { key: 'DIS', value: 0, color: 'var(--gold)' },
+      { key: 'WIS', value: 0, color: 'var(--violet)' },
+      { key: 'END', value: 0, color: 'var(--mint)' },
+      { key: 'COM', value: 0, color: 'var(--cyan)' },
+      { key: 'SER', value: 0, color: 'var(--rose)' },
+    ],
+  };
+}
+
+function profileToCharacter(profile: UserProfileData): Character {
+  const heroClass = findClass(profile.classId);
+  const scale = (v: number) => Math.round((v / Math.max(profile.statPool, 1)) * 100);
+  return {
+    name: profile.heroName || 'Hero',
+    title: profile.title,
+    level: profile.level,
+    rank: profile.rank || 'E',
+    class: heroClass.name,
+    streak: profile.streak,
+    xp: profile.xp ?? 0,
+    xpNext: profile.xpNext ?? 0,
+    coins: profile.coins ?? 0,
+    gems: profile.gems ?? 0,
+    stats: [
+      { key: 'DIS', value: scale(profile.stats.discipline), color: 'var(--gold)' },
+      { key: 'WIS', value: scale(profile.stats.wisdom), color: 'var(--violet)' },
+      { key: 'END', value: scale(profile.stats.endurance), color: 'var(--mint)' },
+      { key: 'COM', value: scale(profile.stats.composition), color: 'var(--cyan)' },
+      { key: 'SER', value: scale(profile.stats.serenity), color: 'var(--rose)' },
+    ],
+  };
 }
 
 const dashboardLayout = 'grid grid-cols-[220px_1fr_260px] gap-3 p-3 flex-1 overflow-hidden min-h-0';
