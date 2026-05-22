@@ -16,10 +16,12 @@ import {
   QUOTES,
   RANKS,
   SKIP_CONFIRM_STORAGE_KEY,
+  QUEST_ROLLOVER_KEY,
 } from '../constants';
 import { MOCK_ACHIEVEMENTS, MOCK_ANALYTICS } from '../data/mock';
 import { useProfile } from '@/features/profile/hooks/useProfile';
 import { useCharacterProgress } from '../hooks/useCharacterProgress';
+import { useRolloverQuests } from '../hooks/useRolloverQuests';
 import { findClass } from '@/constants/hero-data';
 import type { UserProfileData } from '@/types';
 import { useHabitLogs } from '../hooks/useHabitLogs';
@@ -74,6 +76,18 @@ export default function MainDashboard() {
 
   const todayDateStr = new Date().toISOString().substring(0, 10);
   const todayDay = new Date().getDay();
+
+  const { mutate: rolloverQuests } = useRolloverQuests();
+  const rolloverRef = useRef(rolloverQuests);
+  rolloverRef.current = rolloverQuests;
+
+  useEffect(() => {
+    const today = new Date().toDateString();
+    if (localStorage.getItem(QUEST_ROLLOVER_KEY) === today) return;
+    rolloverRef.current(undefined, {
+      onSuccess: () => localStorage.setItem(QUEST_ROLLOVER_KEY, today),
+    });
+  }, []);
 
   const { data: serverQuests, isLoading: questsLoading } = useQuests();
   const { data: habits = [] } = useHabits();

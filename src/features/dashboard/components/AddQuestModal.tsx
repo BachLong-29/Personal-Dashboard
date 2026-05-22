@@ -32,6 +32,7 @@ export function AddQuestModal({ onAdd, onClose }: AddQuestModalProps) {
   const [desc, setDesc] = useState('');
   const [type, setType] = useState<QuestType>('focus');
   const [diff, setDiff] = useState<Difficulty>('B');
+  const [dueDate, setDueDate] = useState(() => new Date().toISOString().substring(0, 10));
 
   const { mutate: createQuest, isPending, error } = useCreateQuest();
 
@@ -45,6 +46,7 @@ export function AddQuestModal({ onAdd, onClose }: AddQuestModalProps) {
         type,
         difficulty: diff,
         tags: [type],
+        dueDate,
       },
       {
         onSuccess: (quest) => {
@@ -80,6 +82,16 @@ export function AddQuestModal({ onAdd, onClose }: AddQuestModalProps) {
             value={desc}
             onChange={(e) => setDesc(e.target.value)}
             placeholder="What needs to be done?"
+            disabled={isPending}
+          />
+        </div>
+        <div className="modal-field">
+          <div className="modal-label">Due Date</div>
+          <Input
+            className="modal-input"
+            type="date"
+            value={dueDate}
+            onChange={(e) => setDueDate(e.target.value)}
             disabled={isPending}
           />
         </div>

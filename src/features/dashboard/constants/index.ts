@@ -53,6 +53,7 @@ export const DEFAULT_SETTINGS: DashboardSettings = {
 export const RANKS = ['F', 'E', 'D', 'C', 'B', 'A', 'S'] as const;
 
 export const SKIP_CONFIRM_STORAGE_KEY = 'aetheria_skip_quest_confirm';
+export const QUEST_ROLLOVER_KEY = 'aetheria_quest_rollover_date';
 
 export const HABIT_XP = 30;
 export const HABIT_COINS = 10;
