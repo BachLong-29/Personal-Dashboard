@@ -102,7 +102,6 @@ export function ScheduleView({ quests = [], onNavigateTab }: ScheduleViewProps) 
           <WeekView
             weekStart={weekStart}
             display={display}
-            quests={display.showQuests ? quests : []}
             onWeekChange={(ws) => {
               setWeekStart(ws);
               setYear(new Date(ws).getFullYear());

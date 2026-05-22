@@ -12,7 +12,8 @@ export const queryKeys = {
   },
   quests: {
     all: ['quests'] as const,
-    list: (date?: string) => [...queryKeys.quests.all, 'list', date ?? 'today'] as const,
+    list: (dateFrom?: string, dateTo?: string) =>
+      [...queryKeys.quests.all, 'list', dateFrom ?? 'today', dateTo] as const,
   },
   profile: {
     all: ['profile'] as const,

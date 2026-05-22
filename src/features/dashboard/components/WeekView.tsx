@@ -1,29 +1,47 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import {
+  DndContext,
+  DragOverlay,
+  MouseSensor,
+  TouchSensor,
+  useDraggable,
+  useDroppable,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+  type DragStartEvent,
+} from '@dnd-kit/core';
+import { CSS } from '@dnd-kit/utilities';
 
 import { cn } from '@/libs/utils';
 
 import { HABIT_COLORS } from '../constants';
-import { useCategories } from '../hooks/useCategories';
 import { useDeleteTask } from '../hooks/useDeleteTask';
 import { useHabitLogs } from '../hooks/useHabitLogs';
 import { useHabits } from '../hooks/useHabits';
+import { useMoveQuest } from '../hooks/useMoveQuest';
+import { useQuests } from '../hooks/useQuests';
 import { useTasks } from '../hooks/useTasks';
+import { useUpdateHabit } from '../hooks/useUpdateHabit';
 import { useUpdateTask } from '../hooks/useUpdateTask';
-import type { CenterTab, Habit, HabitColor, Quest, Task, TaskColor, TaskStatus } from '../types';
+import type { CenterTab, Habit, HabitColor, Quest, Task, TaskColor } from '../types';
 import type { ScheduleDisplayOptions } from '../hooks/useScheduleState';
 import { ScheduleTaskModal } from './ScheduleTaskModal';
-import { TaskCard } from './TaskCard';
 
 interface WeekViewProps {
   weekStart: string;
   display: ScheduleDisplayOptions;
-  quests?: Quest[];
   onWeekChange: (weekStart: string) => void;
   onNavigateDay: (date: string) => void;
   onNavigateTab?: (tab: CenterTab) => void;
 }
+
+type ActiveDrag =
+  | { type: 'task'; item: Task; color: string; dayStr: string }
+  | { type: 'quest'; item: Quest; dayStr: string }
+  | { type: 'habit'; item: Habit; color: string; dayStr: string };
 
 function addDays(dateStr: string, n: number): string {
   const d = new Date(dateStr);
@@ -43,12 +61,15 @@ function formatWeekRange(weekStart: string): string {
   return `${fmt(start)} – ${fmt(end)}, ${end.getFullYear()}`;
 }
 
+function dayDiff(from: string, to: string): number {
+  return Math.round((new Date(to).getTime() - new Date(from).getTime()) / 86400000);
+}
+
 const DAY_SHORT = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
 export function WeekView({
   weekStart,
   display,
-  quests = [],
   onWeekChange,
   onNavigateDay,
   onNavigateTab,
@@ -57,20 +78,23 @@ export function WeekView({
   const todayStr = new Date().toISOString().substring(0, 10);
 
   const { data: allTasks = [], isLoading } = useTasks(weekStart, weekEnd);
-  const { data: categories = [] } = useCategories();
+  const { data: weekQuests = [] } = useQuests(weekStart, weekEnd);
   const { mutate: updateTask } = useUpdateTask();
   const { mutate: deleteTask } = useDeleteTask();
+  const { mutate: moveQuest } = useMoveQuest();
   const { data: habits = [] } = useHabits();
   const { data: todayHabitLogs = [] } = useHabitLogs(todayStr);
+  const { mutate: updateHabit } = useUpdateHabit();
 
   const [editing, setEditing] = useState<Task | undefined>(undefined);
   const [showModal, setShowModal] = useState(false);
   const [addDefaultDate, setAddDefaultDate] = useState<string | undefined>(undefined);
   const [deletingTask, setDeletingTask] = useState<Task | undefined>(undefined);
+  const [activeDrag, setActiveDrag] = useState<ActiveDrag | null>(null);
 
-  const catMap = useMemo(
-    () => Object.fromEntries(categories.map((c) => [c.id, c.name])),
-    [categories],
+  const sensors = useSensors(
+    useSensor(MouseSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 250, tolerance: 5 } }),
   );
 
   const doneMap = useMemo<Record<string, boolean>>(
@@ -82,6 +106,18 @@ export function WeekView({
     () => Object.fromEntries(todayHabitLogs.map((l) => [l.habitId, l.done])),
     [todayHabitLogs],
   );
+
+  // Group week quests by dueDate (YYYY-MM-DD)
+  const questsByDate = useMemo<Record<string, Quest[]>>(() => {
+    const map: Record<string, Quest[]> = {};
+    for (const q of weekQuests as Quest[]) {
+      const date = q.dueDate?.substring(0, 10);
+      if (!date) continue;
+      if (!map[date]) map[date] = [];
+      map[date]!.push(q);
+    }
+    return map;
+  }, [weekQuests]);
 
   const weekDays = getWeekDays(weekStart);
 
@@ -103,10 +139,6 @@ export function WeekView({
     return task.dependencies.some((depId) => !doneMap[depId]);
   }
 
-  function handleStatusChange(id: string, status: TaskStatus) {
-    updateTask({ id, status });
-  }
-
   function handleEdit(task: Task) {
     setEditing(task);
     setShowModal(true);
@@ -124,8 +156,37 @@ export function WeekView({
     setDeletingTask(undefined);
   }
 
-  // Quest day index (only show on today)
-  const todayDayIdx = weekDays.findIndex((d) => d === todayStr);
+  function handleDragStart(event: DragStartEvent) {
+    setActiveDrag(event.active.data.current as ActiveDrag);
+  }
+
+  function handleDragEnd(event: DragEndEvent) {
+    setActiveDrag(null);
+    const { active, over } = event;
+    if (!over) return;
+
+    const drag = active.data.current as ActiveDrag;
+    const targetDay = over.id as string;
+    if (drag.dayStr === targetDay) return;
+
+    if (drag.type === 'task') {
+      const diff = dayDiff(drag.dayStr, targetDay);
+      updateTask({
+        id: drag.item.id,
+        startDate: addDays(drag.item.startDate, diff),
+        endDate: addDays(drag.item.endDate, diff),
+      });
+    } else if (drag.type === 'quest') {
+      moveQuest({ id: drag.item.id, dueDate: targetDay });
+    } else if (drag.type === 'habit') {
+      const sourceDow = new Date(drag.dayStr).getDay();
+      const targetDow = new Date(targetDay).getDay();
+      if (sourceDow === targetDow) return;
+      const newDays = (drag.item.days as number[]).filter((d) => d !== sourceDow);
+      if (!newDays.includes(targetDow)) newDays.push(targetDow);
+      updateHabit({ id: drag.item.id, days: newDays.sort((a, b) => a - b) });
+    }
+  }
 
   return (
     <div className={outerWrap}>
@@ -149,105 +210,152 @@ export function WeekView({
       </div>
 
       {/* 7-column grid */}
-      <div className={gridWrap}>
-        {isLoading ? (
-          <div className={loadingMsg}>Loading...</div>
-        ) : (
-          weekDays.map((dayStr, i) => {
-            const dayTasks = getTasksForDay(dayStr);
-            const isToday = dayStr === todayStr;
-            const dayDate = new Date(dayStr);
-            const dayNum = dayDate.getDate();
+      <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
+        <div className={gridWrap}>
+          {isLoading ? (
+            <div className={loadingMsg}>Loading...</div>
+          ) : (
+            weekDays.map((dayStr, i) => {
+              const dayTasks = getTasksForDay(dayStr);
+              const dayQuests = display.showQuests ? (questsByDate[dayStr] ?? []) : [];
+              const isToday = dayStr === todayStr;
+              const dayNum = new Date(dayStr).getDate();
 
-            return (
-              <div key={dayStr} className={cn(dayCol, isToday && dayColToday)}>
-                {/* Day header */}
-                <div className={dayHeader}>
-                  <button
-                    type="button"
-                    className={cn(dayLabel, isToday && dayLabelToday)}
-                    onClick={() => onNavigateDay(dayStr)}
-                    title={`Go to ${dayStr}`}
-                  >
-                    <span>{DAY_SHORT[i]}</span>
-                    <span className={dayNum2}>{dayNum}</span>
-                  </button>
-                  <button
-                    type="button"
-                    className={dayAddBtn}
-                    onClick={() => handleAddForDay(dayStr)}
-                    title="Add task"
-                  >
-                    +
-                  </button>
-                </div>
+              return (
+                <DroppableDay key={dayStr} id={dayStr} isToday={isToday}>
+                  {/* Day header */}
+                  <div className={dayHeader}>
+                    <button
+                      type="button"
+                      className={cn(dayLabel, isToday && dayLabelToday)}
+                      onClick={() => onNavigateDay(dayStr)}
+                      title={`Go to ${dayStr}`}
+                    >
+                      <span>{DAY_SHORT[i]}</span>
+                      <span className={dayNum2}>{dayNum}</span>
+                    </button>
+                    <button
+                      type="button"
+                      className={dayAddBtn}
+                      onClick={() => handleAddForDay(dayStr)}
+                      title="Add task"
+                    >
+                      +
+                    </button>
+                  </div>
 
-                {/* Tasks */}
-                <div className={dayTaskList}>
-                  {dayTasks.map((task) => {
-                    const color = HABIT_COLORS[task.color as TaskColor]?.value ?? 'var(--gold)';
-                    const blocked = isBlocked(task);
-                    return (
-                      <div
-                        key={task.id}
-                        className={cn(
-                          miniTask,
-                          task.status === 'done' && miniTaskDone,
-                          blocked && miniTaskBlocked,
-                        )}
-                        style={{ borderLeftColor: color, borderLeftWidth: 2 }}
-                        onClick={() => handleEdit(task)}
-                        title={task.name}
-                      >
-                        <span className={miniTaskIcon}>{task.icon}</span>
-                        <span className={miniTaskName}>{task.name}</span>
-                        {blocked && <span className={miniLock}>🔒</span>}
-                        {task.status === 'done' && <span className={miniDone}>✓</span>}
-                      </div>
-                    );
-                  })}
-
-                  {/* Quests on today column */}
-                  {display.showQuests &&
-                    i === todayDayIdx &&
-                    quests.map((q) => (
-                      <div
-                        key={q.id}
-                        className={cn(miniTask, miniTaskQuest, q.done && miniTaskDone)}
-                        title={q.title}
-                        onClick={() => onNavigateTab?.('quests')}
-                      >
-                        <span className={miniTaskIcon}>{q.habitIcon ?? '📌'}</span>
-                        <span className={miniTaskName}>{q.title}</span>
-                        {q.done && <span className={miniDone}>✓</span>}
-                      </div>
-                    ))}
-
-                  {/* Habits per day */}
-                  {display.showHabits &&
-                    getHabitsForDay(dayStr).map((h) => {
-                      const color = HABIT_COLORS[h.color as HabitColor]?.value ?? 'var(--violet)';
-                      const done = isToday ? (habitLogMap[h.id] ?? false) : false;
+                  {/* Items */}
+                  <div className={dayTaskList}>
+                    {dayTasks.map((task) => {
+                      const color = HABIT_COLORS[task.color as TaskColor]?.value ?? 'var(--gold)';
+                      const blocked = isBlocked(task);
                       return (
-                        <div
-                          key={h.id}
-                          className={cn(miniTask, miniTaskHabit, done && miniTaskDone)}
-                          style={{ borderLeftColor: color, borderLeftWidth: 2 }}
-                          title={h.name}
-                          onClick={() => onNavigateTab?.('habits')}
+                        <DraggableItem
+                          key={task.id}
+                          id={`task|${task.id}|${dayStr}`}
+                          data={{ type: 'task', item: task, color, dayStr }}
                         >
-                          <span className={miniTaskIcon}>{h.icon}</span>
-                          <span className={miniTaskName}>{h.name}</span>
-                          {done && <span className={miniDone}>✓</span>}
-                        </div>
+                          <div
+                            className={cn(
+                              miniTask,
+                              task.status === 'done' && miniTaskDone,
+                              blocked && miniTaskBlocked,
+                            )}
+                            style={{ borderLeftColor: color, borderLeftWidth: 2 }}
+                            onClick={() => handleEdit(task)}
+                            title={task.name}
+                          >
+                            <span className={miniTaskIcon}>{task.icon}</span>
+                            <span className={miniTaskName}>{task.name}</span>
+                            {blocked && <span className={miniLock}>🔒</span>}
+                            {task.status === 'done' && <span className={miniDone}>✓</span>}
+                          </div>
+                        </DraggableItem>
                       );
                     })}
-                </div>
-              </div>
-            );
-          })
-        )}
-      </div>
+
+                    {dayQuests.map((q) => (
+                      <DraggableItem
+                        key={q.id}
+                        id={`quest|${q.id}|${dayStr}`}
+                        data={{ type: 'quest', item: q, dayStr }}
+                      >
+                        <div
+                          className={cn(miniTask, miniTaskQuest, q.done && miniTaskDone)}
+                          title={q.title}
+                          onClick={() => onNavigateTab?.('quests')}
+                        >
+                          <span className={miniTaskIcon}>{q.habitIcon ?? '📌'}</span>
+                          <span className={miniTaskName}>{q.title}</span>
+                          {q.done && <span className={miniDone}>✓</span>}
+                        </div>
+                      </DraggableItem>
+                    ))}
+
+                    {display.showHabits &&
+                      getHabitsForDay(dayStr).map((h) => {
+                        const color =
+                          HABIT_COLORS[h.color as HabitColor]?.value ?? 'var(--violet)';
+                        const done = isToday ? (habitLogMap[h.id] ?? false) : false;
+                        return (
+                          <DraggableItem
+                            key={h.id}
+                            id={`habit|${h.id}|${dayStr}`}
+                            data={{ type: 'habit', item: h, color, dayStr }}
+                          >
+                            <div
+                              className={cn(miniTask, miniTaskHabit, done && miniTaskDone)}
+                              style={{ borderLeftColor: color, borderLeftWidth: 2 }}
+                              title={h.name}
+                              onClick={() => onNavigateTab?.('habits')}
+                            >
+                              <span className={miniTaskIcon}>{h.icon}</span>
+                              <span className={miniTaskName}>{h.name}</span>
+                              {done && <span className={miniDone}>✓</span>}
+                            </div>
+                          </DraggableItem>
+                        );
+                      })}
+                  </div>
+                </DroppableDay>
+              );
+            })
+          )}
+        </div>
+
+        <DragOverlay dropAnimation={null}>
+          {activeDrag && (
+            <div
+              className={cn(
+                miniTask,
+                activeDrag.type === 'quest' && miniTaskQuest,
+                activeDrag.type === 'habit' && miniTaskHabit,
+                dragOverlayItem,
+              )}
+              style={
+                activeDrag.type !== 'quest'
+                  ? { borderLeftColor: activeDrag.color, borderLeftWidth: 2 }
+                  : undefined
+              }
+            >
+              <span className={miniTaskIcon}>
+                {activeDrag.type === 'task'
+                  ? activeDrag.item.icon
+                  : activeDrag.type === 'quest'
+                    ? (activeDrag.item.habitIcon ?? '📌')
+                    : activeDrag.item.icon}
+              </span>
+              <span className={miniTaskName}>
+                {activeDrag.type === 'task'
+                  ? activeDrag.item.name
+                  : activeDrag.type === 'quest'
+                    ? activeDrag.item.title
+                    : activeDrag.item.name}
+              </span>
+            </div>
+          )}
+        </DragOverlay>
+      </DndContext>
 
       {showModal && (
         <ScheduleTaskModal
@@ -308,6 +416,58 @@ export function WeekView({
   );
 }
 
+// ── Droppable day column ──────────────────────────────────────────────────────
+
+function DroppableDay({
+  id,
+  isToday,
+  children,
+}: {
+  id: string;
+  isToday: boolean;
+  children: React.ReactNode;
+}) {
+  const { setNodeRef, isOver } = useDroppable({ id });
+  return (
+    <div
+      ref={setNodeRef}
+      className={cn(dayCol, isToday && dayColToday, isOver && dayColOver)}
+    >
+      {children}
+    </div>
+  );
+}
+
+// ── Draggable item wrapper ────────────────────────────────────────────────────
+
+function DraggableItem({
+  id,
+  data,
+  children,
+}: {
+  id: string;
+  data: Record<string, unknown>;
+  children: React.ReactNode;
+}) {
+  const { attributes, listeners, setNodeRef, isDragging, transform } = useDraggable({ id, data });
+  return (
+    <div
+      ref={setNodeRef}
+      style={{
+        transform: transform ? CSS.Translate.toString(transform) : undefined,
+        opacity: isDragging ? 0 : 1,
+        touchAction: 'none',
+      }}
+      {...attributes}
+      {...listeners}
+    >
+      {children}
+    </div>
+  );
+}
+
+// ── Style constants ───────────────────────────────────────────────────────────
+
 const outerWrap = 'flex flex-col flex-1 min-h-0 overflow-hidden';
 const navRow =
   'flex items-center gap-2 px-3 py-2 shrink-0 border-b border-[var(--border)] justify-between';
@@ -318,8 +478,9 @@ const loadingMsg = 'text-[11px] text-[var(--text-lo)] col-span-7 text-center py-
 
 const gridWrap = 'flex-1 overflow-hidden grid grid-cols-7 gap-px bg-[var(--border)] min-h-0';
 
-const dayCol = 'flex flex-col bg-[var(--panel)] overflow-hidden min-h-0';
+const dayCol = 'flex flex-col bg-[var(--panel)] overflow-hidden min-h-0 transition-colors duration-150';
 const dayColToday = 'bg-[oklch(0.74_0.17_85_/_0.04)]';
+const dayColOver = 'bg-[oklch(0.74_0.17_85_/_0.1)] ring-1 ring-inset ring-[oklch(0.74_0.17_85_/_0.45)]';
 
 const dayHeader =
   'flex items-center justify-between px-1.5 py-1 border-b border-[var(--border)] shrink-0';
@@ -334,7 +495,7 @@ const dayAddBtn =
 const dayTaskList = 'flex-1 overflow-y-auto px-1 py-1 flex flex-col gap-0.5 min-h-0';
 
 const miniTask =
-  'flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] bg-[var(--panel2)] border border-[var(--border)] cursor-pointer hover:border-[oklch(0.74_0.17_85_/_0.4)] transition-all overflow-hidden';
+  'flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] bg-[var(--panel2)] border border-[var(--border)] cursor-grab active:cursor-grabbing hover:border-[oklch(0.74_0.17_85_/_0.4)] transition-all overflow-hidden';
 const miniTaskDone = 'opacity-50';
 const miniTaskBlocked = 'opacity-60 cursor-default';
 const miniTaskQuest = 'border-[oklch(0.74_0.17_85_/_0.25)] bg-[oklch(0.74_0.17_85_/_0.05)]';
@@ -343,3 +504,6 @@ const miniTaskIcon = 'text-[10px] shrink-0';
 const miniTaskName = 'flex-1 truncate text-[var(--text-hi)] leading-tight';
 const miniLock = 'text-[8px] shrink-0';
 const miniDone = 'text-[9px] text-[oklch(0.76_0.14_162)] shrink-0';
+
+const dragOverlayItem =
+  'w-[150px] shadow-[0_8px_28px_rgba(0,0,0,0.55)] scale-105 !cursor-grabbing border-[oklch(0.74_0.17_85_/_0.5)] bg-[var(--panel3)]';

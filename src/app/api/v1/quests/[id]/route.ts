@@ -9,9 +9,14 @@ import { validateBody } from '@/server/validate';
 import type { Quest } from '@/types/quest';
 import type { IQuest } from '@/server/models/quest.model';
 
-const updateSchema = z.object({
-  done: z.boolean(),
-});
+const updateSchema = z
+  .object({
+    done: z.boolean().optional(),
+    dueDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+  })
+  .refine((d) => d.done !== undefined || d.dueDate !== undefined, {
+    message: 'Must provide done or dueDate',
+  });
 
 function serialize(q: IQuest): Quest {
   return {
@@ -44,12 +49,18 @@ export const PATCH = asyncHandler(async (req: NextRequest, ctx) => {
 
   await connectDB();
 
+  const patch: Record<string, unknown> = {};
+  if (data.done !== undefined) {
+    patch.done = data.done;
+    patch.completedAt = data.done ? new Date() : null;
+  }
+  if (data.dueDate) {
+    patch.dueDate = new Date(data.dueDate);
+  }
+
   const quest = await QuestModel.findOneAndUpdate(
     { _id: id, userId: user.sub },
-    {
-      done: data.done,
-      completedAt: data.done ? new Date() : null,
-    },
+    { $set: patch },
     { new: true },
   );
 

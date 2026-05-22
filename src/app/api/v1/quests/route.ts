@@ -14,6 +14,7 @@ const DIFFICULTIES = ['S', 'A', 'B', 'C', 'D'] as const;
 
 const listSchema = z.object({
   date: z.string().optional(),
+  dateTo: z.string().optional(),
 });
 
 const createSchema = z.object({
@@ -60,13 +61,14 @@ export const GET = asyncHandler(async (req: NextRequest) => {
   const { data: params, error } = validateSearchParams(req.nextUrl.searchParams, listSchema);
   if (error) return error;
 
-  const targetDate = params?.date ? new Date(params.date) : new Date();
+  const from = params?.date ? new Date(params.date) : new Date();
+  const to = params?.dateTo ? new Date(params.dateTo) : from;
 
   await connectDB();
 
   const quests = await QuestModel.find({
     userId: user.sub,
-    dueDate: { $gte: startOfDay(targetDate), $lte: endOfDay(targetDate) },
+    dueDate: { $gte: startOfDay(from), $lte: endOfDay(to) },
   }).sort({ createdAt: 1 });
 
   return successResponse(quests.map(serialize));

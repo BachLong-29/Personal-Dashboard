@@ -16,6 +16,7 @@ export interface Quest {
   coins: number;
   done: boolean;
   tags: string[];
+  dueDate?: string;
   habitId?: string;
   habitColor?: HabitColor;
   habitIcon?: string;
