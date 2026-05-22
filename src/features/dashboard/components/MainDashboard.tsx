@@ -11,6 +11,8 @@ import {
   ESCALATIONS,
   HABIT_COINS,
   HABIT_XP,
+  TASK_XP,
+  TASK_COINS,
   QUOTES,
   RANKS,
   SKIP_CONFIRM_STORAGE_KEY,
@@ -23,7 +25,10 @@ import type { UserProfileData } from '@/types';
 import { useHabitLogs } from '../hooks/useHabitLogs';
 import { useHabits } from '../hooks/useHabits';
 import { useQuests } from '../hooks/useQuests';
+import { useTasks } from '../hooks/useTasks';
 import { useToggleHabitLog } from '../hooks/useToggleHabitLog';
+import { useUpdateTask } from '../hooks/useUpdateTask';
+import type { Task } from '@/types';
 import type {
   Achievement,
   BurstPos,
@@ -32,6 +37,7 @@ import type {
   DashboardSettings,
   Difficulty,
   Habit,
+  HabitColor,
   PendingQuest,
   PenaltyState,
   Quest,
@@ -73,12 +79,14 @@ export default function MainDashboard() {
   const { data: habits = [] } = useHabits();
   const { data: habitLogs = [] } = useHabitLogs(todayDateStr);
   const { mutate: toggleHabitLog } = useToggleHabitLog();
+  const { data: allTasks = [] } = useTasks();
+  const { mutate: updateTask } = useUpdateTask();
 
   const [quests, setQuests] = useState<Quest[]>([]);
   const questsInitialized = useRef(false);
 
-  // Local habit done state for optimistic updates
   const [habitDoneMap, setHabitDoneMap] = useState<Record<string, boolean>>({});
+  const [taskDoneMap, setTaskDoneMap] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     if (serverQuests && !questsInitialized.current) {
@@ -87,7 +95,6 @@ export default function MainDashboard() {
     }
   }, [serverQuests]);
 
-  // Sync habit logs into local map
   useEffect(() => {
     const map: Record<string, boolean> = {};
     for (const log of habitLogs) {
@@ -95,6 +102,26 @@ export default function MainDashboard() {
     }
     setHabitDoneMap(map);
   }, [habitLogs]);
+
+  // Build today's task quests — tasks whose date range spans today
+  const todayTaskQuests = useMemo<Quest[]>(() => {
+    return (allTasks as Task[])
+      .filter((t) => t.active && t.startDate <= todayDateStr && t.endDate >= todayDateStr)
+      .map((t) => ({
+        id: `task-${t.id}`,
+        title: t.name,
+        desc: t.note ?? t.tagId,
+        type: 'task' as QuestType,
+        difficulty: 'C' as Difficulty,
+        xp: TASK_XP,
+        coins: TASK_COINS,
+        done: taskDoneMap[t.id] ?? t.status === 'done',
+        tags: [t.tagId],
+        taskId: t.id,
+        habitIcon: t.icon,
+        habitColor: t.color as HabitColor,
+      }));
+  }, [allTasks, todayDateStr, taskDoneMap]);
 
   // Build today's habit quests
   const todayHabitQuests = useMemo<Quest[]>(() => {
@@ -117,8 +144,8 @@ export default function MainDashboard() {
   }, [habits, todayDay, habitDoneMap]);
 
   const allQuests = useMemo<Quest[]>(
-    () => [...todayHabitQuests, ...quests],
-    [todayHabitQuests, quests],
+    () => [...todayTaskQuests, ...todayHabitQuests, ...quests],
+    [todayTaskQuests, todayHabitQuests, quests],
   );
 
   const { data: profileData } = useProfile();
@@ -187,7 +214,23 @@ export default function MainDashboard() {
     }
   };
 
+  const handleToggleTask = (taskId: string, burstPos: BurstPos | null) => {
+    const currentDone = taskDoneMap[taskId] ?? (allTasks as Task[]).find((t) => t.id === taskId)?.status === 'done';
+    const newDone = !currentDone;
+    setTaskDoneMap((prev) => ({ ...prev, [taskId]: newDone }));
+    updateTask({ id: taskId, status: newDone ? 'done' : 'todo' });
+    if (newDone) {
+      awardProgress({ xp: TASK_XP, coins: TASK_COINS });
+      if (burstPos && settings.animationsEnabled) setBurst(burstPos);
+      setToast({ xp: TASK_XP, coins: TASK_COINS });
+    }
+  };
+
   const handleToggleQuest = (id: string, burstPos: BurstPos | null) => {
+    if (id.startsWith('task-')) {
+      handleToggleTask(id.slice('task-'.length), burstPos);
+      return;
+    }
     if (id.startsWith('habit-')) {
       handleToggleHabit(id.slice('habit-'.length), burstPos);
       return;
@@ -345,7 +388,7 @@ export default function MainDashboard() {
                 <span className={panelHeaderTitle}>{t('schedule.title')}</span>
                 <span className={panelHeaderOrnament}>◆ ◆ ◆</span>
               </div>
-              <ScheduleView quests={allQuests} />
+              <ScheduleView quests={quests} onNavigateTab={setCenterTab} />
             </div>
           )}
           {centerTab === 'stats' && (

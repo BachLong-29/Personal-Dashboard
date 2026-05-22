@@ -8,6 +8,7 @@ export const QUEST_ICONS: Record<QuestType, string> = {
   create: '✨',
   health: '🌿',
   break: '☕',
+  task: '📋',
 };
 
 export const SCHED_COLORS: Record<QuestType, string> = {
@@ -18,7 +19,11 @@ export const SCHED_COLORS: Record<QuestType, string> = {
   create: '#6ee7b7',
   health: '#86efac',
   break: '#94a3b8',
+  task: '#67e8f9',
 };
+
+export const TASK_XP = 60;
+export const TASK_COINS = 15;
 
 export const QUOTES = [
   { text: "Every quest completed is a step toward the hero you're becoming.", author: '— The Oracle' },

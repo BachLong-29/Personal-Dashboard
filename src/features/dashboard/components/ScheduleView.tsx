@@ -3,19 +3,20 @@
 import { cn } from '@/libs/utils';
 
 import { useScheduleState } from '../hooks/useScheduleState';
-import type { Quest } from '../types';
+import type { CenterTab, Quest } from '../types';
 import { DayView } from './DayView';
 import { MonthView } from './MonthView';
 import { WeekView } from './WeekView';
 
 interface ScheduleViewProps {
   quests?: Quest[];
+  onNavigateTab?: (tab: CenterTab) => void;
 }
 
 const CURRENT_YEAR = new Date().getFullYear();
 const YEARS = Array.from({ length: 5 }, (_, i) => CURRENT_YEAR - 2 + i);
 
-export function ScheduleView({ quests = [] }: ScheduleViewProps) {
+export function ScheduleView({ quests = [], onNavigateTab }: ScheduleViewProps) {
   const {
     tab, year, dayDate, weekStart, month, display,
     setTab, setYear, setDayDate, setWeekStart, setMonth, setDisplay,
@@ -107,6 +108,7 @@ export function ScheduleView({ quests = [] }: ScheduleViewProps) {
               setYear(new Date(ws).getFullYear());
             }}
             onNavigateDay={handleWeekNavigateDay}
+            onNavigateTab={onNavigateTab}
           />
         )}
         {tab === 'month' && (
@@ -120,6 +122,7 @@ export function ScheduleView({ quests = [] }: ScheduleViewProps) {
               setYear(y);
             }}
             onNavigateDay={handleNavigateDay}
+            onNavigateTab={onNavigateTab}
           />
         )}
       </div>

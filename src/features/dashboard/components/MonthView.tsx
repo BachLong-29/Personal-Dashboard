@@ -5,8 +5,10 @@ import { useMemo } from 'react';
 import { cn } from '@/libs/utils';
 
 import { HABIT_COLORS } from '../constants';
+import { useHabitLogs } from '../hooks/useHabitLogs';
+import { useHabits } from '../hooks/useHabits';
 import { useTasks } from '../hooks/useTasks';
-import type { Quest, Task, TaskColor } from '../types';
+import type { CenterTab, Habit, HabitColor, Quest, Task, TaskColor } from '../types';
 import type { ScheduleDisplayOptions } from '../hooks/useScheduleState';
 
 interface MonthViewProps {
@@ -16,6 +18,7 @@ interface MonthViewProps {
   quests?: Quest[];
   onMonthChange: (month: number, year: number) => void;
   onNavigateDay: (date: string) => void;
+  onNavigateTab?: (tab: CenterTab) => void;
 }
 
 const MONTH_NAMES = [
@@ -47,14 +50,29 @@ export function MonthView({
   quests = [],
   onMonthChange,
   onNavigateDay,
+  onNavigateTab,
 }: MonthViewProps) {
   const monthStart = `${year}-${pad(month + 1)}-01`;
   const monthEnd = `${year}-${pad(month + 1)}-${new Date(year, month + 1, 0).getDate()}`;
 
   const { data: allTasks = [] } = useTasks(monthStart, monthEnd);
-
+  const { data: habits = [] } = useHabits();
   const todayStr = new Date().toISOString().substring(0, 10);
+  const { data: todayHabitLogs = [] } = useHabitLogs(todayStr);
+
   const calendarDays = useMemo(() => getCalendarDays(year, month), [year, month]);
+
+  const habitLogMap = useMemo<Record<string, boolean>>(
+    () => Object.fromEntries(todayHabitLogs.map((l) => [l.habitId, l.done])),
+    [todayHabitLogs],
+  );
+
+  function getHabitsForDay(dateStr: string): Habit[] {
+    const dow = new Date(dateStr).getDay();
+    return (habits as Habit[]).filter(
+      (h) => h.active && (h.days as number[]).includes(dow),
+    );
+  }
 
   // Map dateStr → tasks active on that date (UTC-safe: avoids local timezone shift)
   const tasksByDate = useMemo(() => {
@@ -112,19 +130,21 @@ export function MonthView({
 
           // Today's quests shown only on today's cell
           const todayQuests = isToday && display.showQuests ? quests : [];
-          const totalItems = dayTasks.length + todayQuests.length;
+          const dayHabits = display.showHabits ? getHabitsForDay(dateStr) : [];
+          const totalItems = dayTasks.length + todayQuests.length + dayHabits.length;
           const MAX_SHOWN = 3;
           const overflow = totalItems - MAX_SHOWN;
 
-          // Items to render: tasks first, then quests, max MAX_SHOWN
+          // Items to render: tasks first, then quests, then habits, max MAX_SHOWN
           const taskItems = dayTasks.slice(0, MAX_SHOWN);
           const questItems = todayQuests.slice(0, Math.max(0, MAX_SHOWN - taskItems.length));
+          const habitItems = dayHabits.slice(0, Math.max(0, MAX_SHOWN - taskItems.length - questItems.length));
 
           return (
             <div
               key={dateStr}
               className={cn(dayCell, isToday && dayCellToday)}
-              onClick={() => onNavigateDay(dateStr)}
+              onDoubleClick={() => onNavigateDay(dateStr)}
             >
               {/* Day number */}
               <div className={dayNumRow}>
@@ -159,12 +179,32 @@ export function MonthView({
                     key={q.id}
                     className={cn(questPill, q.done && taskPillDone)}
                     title={q.title}
+                    onClick={(e) => { e.stopPropagation(); onNavigateTab?.('quests'); }}
                   >
                     <span className={pillIcon}>{q.habitIcon ?? '⚡'}</span>
                     <span className={cn(pillName, q.done && pillNameDone)}>{q.title}</span>
                     {q.done && <span className={pillCheck}>✓</span>}
                   </div>
                 ))}
+
+                {/* Habit pills */}
+                {habitItems.map((h) => {
+                  const color = HABIT_COLORS[h.color as HabitColor]?.value ?? 'var(--violet)';
+                  const done = isToday ? (habitLogMap[h.id] ?? false) : false;
+                  return (
+                    <div
+                      key={h.id}
+                      className={cn(habitPill, done && taskPillDone)}
+                      style={{ borderLeftColor: color }}
+                      title={h.name}
+                      onClick={(e) => { e.stopPropagation(); onNavigateTab?.('habits'); }}
+                    >
+                      <span className={pillIcon}>{h.icon}</span>
+                      <span className={cn(pillName, done && pillNameDone)}>{h.name}</span>
+                      {done && <span className={pillCheck}>✓</span>}
+                    </div>
+                  );
+                })}
 
                 {overflow > 0 && (
                   <div className={overflowBadge}>+{overflow} more</div>
@@ -217,6 +257,8 @@ const taskPillDone = 'opacity-45';
 
 const questPill =
   'flex items-center gap-1 pl-1.5 pr-1 py-[2px] rounded-sm border-l-[2px] border-l-[oklch(0.74_0.17_85_/_0.7)] bg-[oklch(0.74_0.17_85_/_0.07)] overflow-hidden shrink-0';
+const habitPill =
+  'flex items-center gap-1 pl-1.5 pr-1 py-[2px] rounded-sm border-l-[2px] bg-[oklch(0.66_0.22_295_/_0.07)] overflow-hidden shrink-0 cursor-pointer';
 
 const pillIcon = 'text-[9px] leading-none shrink-0';
 const pillName =

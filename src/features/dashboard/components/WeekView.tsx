@@ -7,9 +7,11 @@ import { cn } from '@/libs/utils';
 import { HABIT_COLORS } from '../constants';
 import { useCategories } from '../hooks/useCategories';
 import { useDeleteTask } from '../hooks/useDeleteTask';
+import { useHabitLogs } from '../hooks/useHabitLogs';
+import { useHabits } from '../hooks/useHabits';
 import { useTasks } from '../hooks/useTasks';
 import { useUpdateTask } from '../hooks/useUpdateTask';
-import type { Quest, Task, TaskColor, TaskStatus } from '../types';
+import type { CenterTab, Habit, HabitColor, Quest, Task, TaskColor, TaskStatus } from '../types';
 import type { ScheduleDisplayOptions } from '../hooks/useScheduleState';
 import { ScheduleTaskModal } from './ScheduleTaskModal';
 import { TaskCard } from './TaskCard';
@@ -20,6 +22,7 @@ interface WeekViewProps {
   quests?: Quest[];
   onWeekChange: (weekStart: string) => void;
   onNavigateDay: (date: string) => void;
+  onNavigateTab?: (tab: CenterTab) => void;
 }
 
 function addDays(dateStr: string, n: number): string {
@@ -48,12 +51,17 @@ export function WeekView({
   quests = [],
   onWeekChange,
   onNavigateDay,
+  onNavigateTab,
 }: WeekViewProps) {
   const weekEnd = addDays(weekStart, 6);
+  const todayStr = new Date().toISOString().substring(0, 10);
+
   const { data: allTasks = [], isLoading } = useTasks(weekStart, weekEnd);
   const { data: categories = [] } = useCategories();
   const { mutate: updateTask } = useUpdateTask();
   const { mutate: deleteTask } = useDeleteTask();
+  const { data: habits = [] } = useHabits();
+  const { data: todayHabitLogs = [] } = useHabitLogs(todayStr);
 
   const [editing, setEditing] = useState<Task | undefined>(undefined);
   const [showModal, setShowModal] = useState(false);
@@ -70,12 +78,23 @@ export function WeekView({
     [allTasks],
   );
 
+  const habitLogMap = useMemo<Record<string, boolean>>(
+    () => Object.fromEntries(todayHabitLogs.map((l) => [l.habitId, l.done])),
+    [todayHabitLogs],
+  );
+
   const weekDays = getWeekDays(weekStart);
-  const todayStr = new Date().toISOString().substring(0, 10);
 
   function getTasksForDay(dateStr: string): Task[] {
     return (allTasks as Task[]).filter(
       (t) => t.active && t.startDate <= dateStr && t.endDate >= dateStr,
+    );
+  }
+
+  function getHabitsForDay(dateStr: string): Habit[] {
+    const dow = new Date(dateStr).getDay();
+    return (habits as Habit[]).filter(
+      (h) => h.active && (h.days as number[]).includes(dow),
     );
   }
 
@@ -141,10 +160,7 @@ export function WeekView({
             const dayNum = dayDate.getDate();
 
             return (
-              <div
-                key={dayStr}
-                className={cn(dayCol, isToday && dayColToday)}
-              >
+              <div key={dayStr} className={cn(dayCol, isToday && dayColToday)}>
                 {/* Day header */}
                 <div className={dayHeader}>
                   <button
@@ -192,17 +208,40 @@ export function WeekView({
                   })}
 
                   {/* Quests on today column */}
-                  {display.showQuests && i === todayDayIdx && quests.map((q) => (
-                    <div
-                      key={q.id}
-                      className={cn(miniTask, miniTaskQuest, q.done && miniTaskDone)}
-                      title={q.title}
-                    >
-                      <span className={miniTaskIcon}>{q.habitIcon ?? '📌'}</span>
-                      <span className={miniTaskName}>{q.title}</span>
-                      {q.done && <span className={miniDone}>✓</span>}
-                    </div>
-                  ))}
+                  {display.showQuests &&
+                    i === todayDayIdx &&
+                    quests.map((q) => (
+                      <div
+                        key={q.id}
+                        className={cn(miniTask, miniTaskQuest, q.done && miniTaskDone)}
+                        title={q.title}
+                        onClick={() => onNavigateTab?.('quests')}
+                      >
+                        <span className={miniTaskIcon}>{q.habitIcon ?? '📌'}</span>
+                        <span className={miniTaskName}>{q.title}</span>
+                        {q.done && <span className={miniDone}>✓</span>}
+                      </div>
+                    ))}
+
+                  {/* Habits per day */}
+                  {display.showHabits &&
+                    getHabitsForDay(dayStr).map((h) => {
+                      const color = HABIT_COLORS[h.color as HabitColor]?.value ?? 'var(--violet)';
+                      const done = isToday ? (habitLogMap[h.id] ?? false) : false;
+                      return (
+                        <div
+                          key={h.id}
+                          className={cn(miniTask, miniTaskHabit, done && miniTaskDone)}
+                          style={{ borderLeftColor: color, borderLeftWidth: 2 }}
+                          title={h.name}
+                          onClick={() => onNavigateTab?.('habits')}
+                        >
+                          <span className={miniTaskIcon}>{h.icon}</span>
+                          <span className={miniTaskName}>{h.name}</span>
+                          {done && <span className={miniDone}>✓</span>}
+                        </div>
+                      );
+                    })}
                 </div>
               </div>
             );
@@ -215,8 +254,16 @@ export function WeekView({
           editing={editing}
           allTasks={allTasks as Task[]}
           defaultDate={addDefaultDate ?? weekStart}
-          onClose={() => { setShowModal(false); setEditing(undefined); setAddDefaultDate(undefined); }}
-          onSaved={() => { setShowModal(false); setEditing(undefined); setAddDefaultDate(undefined); }}
+          onClose={() => {
+            setShowModal(false);
+            setEditing(undefined);
+            setAddDefaultDate(undefined);
+          }}
+          onSaved={() => {
+            setShowModal(false);
+            setEditing(undefined);
+            setAddDefaultDate(undefined);
+          }}
         />
       )}
 
@@ -233,7 +280,11 @@ export function WeekView({
               Delete <strong style={{ color: 'var(--text-hi)' }}>{deletingTask.name}</strong>?
             </p>
             <div className="modal-actions">
-              <button type="button" className="modal-btn cancel" onClick={() => setDeletingTask(undefined)}>
+              <button
+                type="button"
+                className="modal-btn cancel"
+                onClick={() => setDeletingTask(undefined)}
+              >
                 Cancel
               </button>
               <button
@@ -265,13 +316,10 @@ const navBtn =
 const navLabel = 'text-[11px] font-semibold text-[var(--text-hi)]';
 const loadingMsg = 'text-[11px] text-[var(--text-lo)] col-span-7 text-center py-8';
 
-const gridWrap =
-  'flex-1 overflow-hidden grid grid-cols-7 gap-px bg-[var(--border)] min-h-0';
+const gridWrap = 'flex-1 overflow-hidden grid grid-cols-7 gap-px bg-[var(--border)] min-h-0';
 
-const dayCol =
-  'flex flex-col bg-[var(--panel)] overflow-hidden min-h-0';
-const dayColToday =
-  'bg-[oklch(0.74_0.17_85_/_0.04)]';
+const dayCol = 'flex flex-col bg-[var(--panel)] overflow-hidden min-h-0';
+const dayColToday = 'bg-[oklch(0.74_0.17_85_/_0.04)]';
 
 const dayHeader =
   'flex items-center justify-between px-1.5 py-1 border-b border-[var(--border)] shrink-0';
@@ -290,6 +338,7 @@ const miniTask =
 const miniTaskDone = 'opacity-50';
 const miniTaskBlocked = 'opacity-60 cursor-default';
 const miniTaskQuest = 'border-[oklch(0.74_0.17_85_/_0.25)] bg-[oklch(0.74_0.17_85_/_0.05)]';
+const miniTaskHabit = 'border-[oklch(0.66_0.22_295_/_0.25)] bg-[oklch(0.66_0.22_295_/_0.05)]';
 const miniTaskIcon = 'text-[10px] shrink-0';
 const miniTaskName = 'flex-1 truncate text-[var(--text-hi)] leading-tight';
 const miniLock = 'text-[8px] shrink-0';

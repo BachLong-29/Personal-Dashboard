@@ -76,7 +76,13 @@
       "new": "New Quest",
       "dailyProgress": "Daily Progress",
       "completed": "{done}/{total} Complete",
-      "done": "DONE"
+      "done": "DONE",
+      "empty": "No tasks for today. Add a quest above!",
+      "sections": {
+        "tasks": "Tasks",
+        "habits": "Habits",
+        "quests": "Quests"
+      }
     },
     "schedule": {
       "title": "Today's Schedule"

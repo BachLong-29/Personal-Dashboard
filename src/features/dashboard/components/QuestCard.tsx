@@ -49,8 +49,17 @@ export function QuestCard({ quest, onToggle, animationsEnabled }: QuestCardProps
         <div className="quest-desc">{quest.desc}</div>
       </div>
       <div className="quest-rewards">
-        {!quest.habitId && (
-          <div className={`diff-badge diff-${quest.difficulty}`}>{quest.difficulty}</div>
+        {quest.taskId && (
+          <div
+            className="diff-badge"
+            style={{
+              background: habitColorVal ? `${habitColorVal}20` : undefined,
+              color: habitColorVal ?? '#67e8f9',
+              borderColor: habitColorVal ? `${habitColorVal}50` : undefined,
+            }}
+          >
+            task
+          </div>
         )}
         {quest.habitId && (
           <div
@@ -63,6 +72,9 @@ export function QuestCard({ quest, onToggle, animationsEnabled }: QuestCardProps
           >
             habit
           </div>
+        )}
+        {!quest.taskId && !quest.habitId && (
+          <div className={`diff-badge diff-${quest.difficulty}`}>{quest.difficulty}</div>
         )}
         <div className="reward-pill xp">⚡ {quest.xp}</div>
         <div className="reward-pill coin">🪙 {quest.coins}</div>

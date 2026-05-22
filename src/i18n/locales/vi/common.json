@@ -76,7 +76,13 @@
       "new": "Nhiệm vụ mới",
       "dailyProgress": "Tiến độ hôm nay",
       "completed": "{done}/{total} hoàn thành",
-      "done": "XONG"
+      "done": "XONG",
+      "empty": "Không có nhiệm vụ hôm nay. Hãy thêm mới!",
+      "sections": {
+        "tasks": "Công việc",
+        "habits": "Thói quen",
+        "quests": "Nhiệm vụ"
+      }
     },
     "schedule": {
       "title": "Lịch hôm nay"
