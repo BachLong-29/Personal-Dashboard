@@ -138,6 +138,14 @@ const DashboardTopbar = (props: DashboardTopbarProps) => {
         <span className={currencyIcon}>🪙</span>
         <span>{char.coins}</span>
       </div>
+
+      {/* Back to dashboard — shown only when on a sub-page */}
+      {!pathname.startsWith('/dashboard') && (
+        <Link href="/dashboard" className={backBtn} title="Return to Dashboard">
+          ◂ Dashboard
+        </Link>
+      )}
+
       <div className="flex-1" />
       <Button
         type="button"
@@ -210,6 +218,9 @@ const marketplacePill =
   'text-[var(--violet)] border-[oklch(0.66_0.22_295_/_0.35)] hover:border-[oklch(0.66_0.22_295_/_0.55)]';
 const languagePill =
   'text-[var(--text-mid)] hover:text-[var(--text-hi)] focus:outline-none focus:ring-2 focus:ring-[var(--border)]';
+
+const backBtn =
+  'flex items-center gap-1 px-2.5 py-1 bg-[oklch(0.74_0.17_85_/_0.08)] border border-[oklch(0.74_0.17_85_/_0.3)] rounded-[var(--r-sm)] text-[9px] font-bold text-[var(--gold)] font-[var(--font-title)] tracking-[0.08em] no-underline transition-all hover:bg-[oklch(0.74_0.17_85_/_0.15)] hover:border-[oklch(0.74_0.17_85_/_0.55)] cursor-pointer shrink-0';
 
 const penaltyTrigger =
   'inline-flex items-center gap-[6px] bg-[oklch(0.62_0.24_22_/_0.1)] border border-[oklch(0.62_0.24_22_/_0.4)] text-[oklch(0.85_0.18_22)] px-[11px] py-[5px] rounded-[var(--r-sm)] text-[10px] font-[var(--font-title)] tracking-[0.12em] font-bold cursor-pointer transition-all duration-200 ml-1 hover:bg-[oklch(0.62_0.24_22_/_0.2)] hover:shadow-[0_0_12px_var(--danger-glow)]';

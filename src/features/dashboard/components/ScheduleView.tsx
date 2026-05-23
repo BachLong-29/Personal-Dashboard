@@ -1,5 +1,6 @@
 'use client';
 
+import { Link } from '@/i18n/navigation';
 import { cn } from '@/libs/utils';
 
 import { useScheduleState } from '../hooks/useScheduleState';
@@ -81,6 +82,10 @@ export function ScheduleView({ quests = [], onNavigateTab }: ScheduleViewProps) 
               </option>
             ))}
           </select>
+
+          <Link href="/tasks" className={taskLogBtn} title="Open Quest Log">
+            ❖ Quest Log
+          </Link>
         </div>
       </div>
 
@@ -151,3 +156,6 @@ const yearSelect =
   'bg-[var(--panel2)] border border-[var(--border)] rounded text-[10px] text-[var(--text-hi)] px-2 py-1 cursor-pointer focus:outline-none focus:border-[var(--gold)] transition-colors appearance-none';
 
 const contentArea = 'flex-1 min-h-0 overflow-hidden flex flex-col';
+
+const taskLogBtn =
+  'px-2 py-1 text-[9px] font-bold tracking-[0.08em] uppercase font-[var(--font-title)] rounded border border-[oklch(0.66_0.22_295_/_0.4)] bg-[oklch(0.66_0.22_295_/_0.06)] text-[var(--violet)] no-underline transition-all hover:bg-[oklch(0.66_0.22_295_/_0.14)] hover:border-[oklch(0.66_0.22_295_/_0.65)]';
