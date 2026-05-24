@@ -14,6 +14,7 @@ interface TaskCardProps {
   blockedByNames?: string[];
   onEdit?: (task: Task) => void;
   onDelete?: (id: string) => void;
+  onClone?: (task: Task) => void;
   onStatusChange?: (id: string, status: TaskStatus) => void;
   compact?: boolean;
 }
@@ -58,6 +59,7 @@ export function TaskCard({
   blockedByNames = [],
   onEdit,
   onDelete,
+  onClone,
   onStatusChange,
   compact = false,
 }: TaskCardProps) {
@@ -67,18 +69,23 @@ export function TaskCard({
 
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const [actionsOpen, setActionsOpen] = useState(false);
+  const actionsRef = useRef<HTMLDivElement>(null);
 
-  // Close dropdown on outside click
+  // Close dropdowns on outside click
   useEffect(() => {
-    if (!dropdownOpen) return;
+    if (!dropdownOpen && !actionsOpen) return;
     function handleClick(e: MouseEvent) {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
         setDropdownOpen(false);
       }
+      if (actionsRef.current && !actionsRef.current.contains(e.target as Node)) {
+        setActionsOpen(false);
+      }
     }
     document.addEventListener('mousedown', handleClick);
     return () => document.removeEventListener('mousedown', handleClick);
-  }, [dropdownOpen]);
+  }, [dropdownOpen, actionsOpen]);
 
   function handleStatusBtnClick(e: React.MouseEvent) {
     e.stopPropagation();
@@ -96,7 +103,7 @@ export function TaskCard({
 
   return (
     <div
-      className={cn(taskCardBase, isDone && taskCardDone, blocked && taskCardBlocked)}
+      className={cn(taskCardBase, blocked && taskCardBlocked)}
       style={{ borderLeftColor: color, borderLeftWidth: 3 }}
       onClick={() => !blocked && onEdit?.(task)}
     >
@@ -109,7 +116,7 @@ export function TaskCard({
         >
           <button
             type="button"
-            className={statusBtn}
+            className={cn(statusBtn, (isDone || blocked) && 'opacity-55')}
             style={{
               color: blocked ? 'var(--text-lo)' : meta.color,
               background: blocked ? 'transparent' : meta.bg,
@@ -147,7 +154,7 @@ export function TaskCard({
           )}
         </div>
 
-        <div className={taskCardBody}>
+        <div className={cn(taskCardBody, (isDone || blocked) && 'opacity-55')}>
           <div className={taskCardTopRow}>
             <span className={taskIcon}>{task.icon}</span>
             <span className={cn(taskName, isDone && taskNameDone)}>{task.name}</span>
@@ -182,29 +189,53 @@ export function TaskCard({
         </div>
 
         {!compact && (
-          <div className={taskCardActions}>
+          <div
+            ref={actionsRef}
+            className={cn(taskCardActions, 'relative')}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* ··· trigger */}
             <button
               type="button"
-              className={actionBtn}
-              onClick={(e) => {
-                e.stopPropagation();
-                onEdit?.(task);
-              }}
-              title="Edit"
+              className={cn(actionBtn, actionsOpen && actionBtnOpen)}
+              onClick={() => setActionsOpen((v) => !v)}
+              title="Actions"
             >
-              ✎
+              ···
             </button>
-            <button
-              type="button"
-              className={cn(actionBtn, 'hover:text-[var(--rose)]')}
-              onClick={(e) => {
-                e.stopPropagation();
-                onDelete?.(task.id);
-              }}
-              title="Delete"
-            >
-              ✕
-            </button>
+
+            {/* Dropdown */}
+            {actionsOpen && (
+              <div className={actionsDropdown}>
+                <button
+                  type="button"
+                  className={actionsItem}
+                  onClick={() => { setActionsOpen(false); onEdit?.(task); }}
+                >
+                  <span className={actionsItemIcon}>✎</span> Edit
+                </button>
+
+                {onClone && (
+                  <button
+                    type="button"
+                    className={actionsItem}
+                    onClick={() => { setActionsOpen(false); onClone(task); }}
+                  >
+                    <span className={cn(actionsItemIcon, 'text-[var(--cyan)]')}>⎘</span> Clone
+                  </button>
+                )}
+
+                <div className={actionsDivider} />
+
+                <button
+                  type="button"
+                  className={cn(actionsItem, 'hover:text-[var(--rose)]')}
+                  onClick={() => { setActionsOpen(false); onDelete?.(task.id); }}
+                >
+                  <span className={cn(actionsItemIcon, 'text-[var(--rose)]')}>✕</span> Delete
+                </button>
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -214,7 +245,6 @@ export function TaskCard({
 
 const taskCardBase =
   'group bg-[var(--panel2)] border border-[var(--border)] rounded-[var(--r-sm)] cursor-pointer transition-all duration-200 hover:border-[oklch(0.74_0.17_85_/_0.4)] hover:bg-[oklch(0.74_0.17_85_/_0.03)] overflow-visible';
-const taskCardDone = 'opacity-55';
 const taskCardBlocked =
   'opacity-70 cursor-default hover:border-[var(--border)] hover:bg-[var(--panel2)]';
 
@@ -249,4 +279,15 @@ const blockedMsg = 'text-[9px] text-[var(--text-lo)] mt-0.5 leading-[1.4] italic
 const taskNote = 'text-[10px] text-[var(--text-lo)] mt-0.5 leading-[1.4] truncate';
 
 const actionBtn =
-  'w-5 h-5 flex items-center justify-center rounded text-[10px] text-[var(--text-lo)] hover:text-[var(--text-hi)] hover:bg-[var(--panel)] transition-all border border-transparent hover:border-[var(--border)]';
+  'w-5 h-5 flex items-center justify-center rounded text-[9px] tracking-[-1px] text-[var(--text-lo)] hover:text-[var(--text-hi)] hover:bg-[var(--panel)] transition-all border border-transparent hover:border-[var(--border)]';
+const actionBtnOpen =
+  'text-[var(--text-hi)] bg-[var(--panel)] border-[var(--border)]';
+
+const actionsDropdown =
+  'absolute right-0 top-[22px] z-50 bg-[var(--panel)] border border-[var(--border)] rounded-[var(--r-sm)] shadow-[0_4px_20px_oklch(0_0_0_/_0.4)] py-1 min-w-[110px] flex flex-col';
+const actionsItem =
+  'flex items-center gap-2 px-2.5 py-[5px] text-[10px] font-medium text-[var(--text-mid)] cursor-pointer hover:bg-[var(--panel2)] hover:text-[var(--text-hi)] transition-colors whitespace-nowrap';
+const actionsItemIcon =
+  'text-[11px] w-4 text-center shrink-0 text-[var(--text-lo)]';
+const actionsDivider =
+  'my-1 border-t border-[var(--border)]';

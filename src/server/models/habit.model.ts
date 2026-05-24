@@ -1,13 +1,23 @@
 import type { Document } from 'mongoose';
 import mongoose, { Schema } from 'mongoose';
 
-import type { HabitColor } from '@/types/habit';
+import type { HabitColor, HabitDay } from '@/types/habit';
+
+const HABIT_COLORS: HabitColor[] = ['gold', 'mint', 'violet', 'cyan', 'rose', 'amber', 'blue'];
+const HABIT_DAYS: HabitDay[]     = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
+const TIME_RE = /^([01]\d|2[0-3]):[0-5]\d$/;
+
+export interface IHabitScheduleEntry {
+  days: HabitDay[];
+  time: string;
+}
 
 export interface IHabit extends Document {
   _id: mongoose.Types.ObjectId;
   userId: mongoose.Types.ObjectId;
   name: string;
-  days: number[];
+  schedule: IHabitScheduleEntry[];
+  duration?: number;
   note?: string;
   tagId: string;
   color: HabitColor;
@@ -17,7 +27,25 @@ export interface IHabit extends Document {
   updatedAt: Date;
 }
 
-const HABIT_COLORS: HabitColor[] = ['gold', 'mint', 'violet', 'cyan', 'rose', 'amber', 'blue'];
+const scheduleEntrySchema = new Schema<IHabitScheduleEntry>(
+  {
+    days: {
+      type: [String],
+      enum: HABIT_DAYS,
+      required: true,
+      validate: {
+        validator: (v: string[]) => v.length > 0,
+        message: 'Each schedule entry must have at least one day',
+      },
+    },
+    time: {
+      type: String,
+      required: true,
+      match: [TIME_RE, 'Time must be in HH:MM (24-hour) format'],
+    },
+  },
+  { _id: false },
+);
 
 const habitSchema = new Schema<IHabit>(
   {
@@ -33,13 +61,18 @@ const habitSchema = new Schema<IHabit>(
       trim: true,
       maxlength: 100,
     },
-    days: {
-      type: [Number],
+    schedule: {
+      type: [scheduleEntrySchema],
       required: true,
       validate: {
-        validator: (v: number[]) => v.length > 0 && v.every((d) => d >= 0 && d <= 6),
-        message: 'At least one valid day (0-6) is required',
+        validator: (v: IHabitScheduleEntry[]) => v.length > 0,
+        message: 'At least one schedule entry is required',
       },
+    },
+    duration: {
+      type: Number,
+      min: 1,
+      max: 1440,
     },
     note: {
       type: String,
@@ -70,6 +103,11 @@ const habitSchema = new Schema<IHabit>(
 );
 
 habitSchema.index({ userId: 1, active: 1 });
+
+// Force re-register in dev to avoid stale schema after hot-reload
+if (process.env.NODE_ENV === 'development') {
+  delete (mongoose.models as Record<string, unknown>).Habit;
+}
 
 export const HabitModel =
   (mongoose.models.Habit as mongoose.Model<IHabit>) ?? mongoose.model<IHabit>('Habit', habitSchema);

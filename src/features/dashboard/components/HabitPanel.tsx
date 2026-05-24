@@ -31,6 +31,10 @@ export function HabitPanel({ todayStr }: HabitPanelProps) {
 
   const todayDay = new Date().getDay();
   const logMap = Object.fromEntries(logs.map((l) => [l.habitId, l.done]));
+
+  /** Day-of-week index (0=Sun) → HabitDay string */
+  const DOW_TO_HABIT_DAY = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'] as const;
+  const todayDayStr = DOW_TO_HABIT_DAY[todayDay];
   const catMap = Object.fromEntries(categories.map((c) => [c.id, c.name]));
 
   function handleEdit(habit: Habit) {
@@ -91,7 +95,7 @@ export function HabitPanel({ todayStr }: HabitPanelProps) {
               key={h.id}
               habit={h as Habit}
               tagLabel={catMap[h.tagId]}
-              isToday={(h.days as number[]).includes(todayDay)}
+              isToday={!!todayDayStr && h.schedule.some((e) => e.days.includes(todayDayStr))}
               todayDone={logMap[h.id] ?? false}
               onEdit={handleEdit}
               onDelete={(id) => handleDeleteRequest(habits.find((x) => x.id === id) as Habit)}

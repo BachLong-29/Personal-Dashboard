@@ -19,6 +19,8 @@ import { STATUS_META } from './TaskCard';
 
 interface ScheduleTaskModalProps {
   editing?: Task;
+  /** When set, opens in create-mode pre-filled with this task's data */
+  cloneFrom?: Task;
   allTasks?: Task[];
   defaultDate?: string;
   onClose: () => void;
@@ -27,6 +29,7 @@ interface ScheduleTaskModalProps {
 
 export function ScheduleTaskModal({
   editing,
+  cloneFrom,
   allTasks = [],
   defaultDate,
   onClose,
@@ -35,17 +38,26 @@ export function ScheduleTaskModal({
   const today = new Date().toISOString().substring(0, 10);
   const initDate = defaultDate ?? today;
 
+  // `source` is the task to pre-fill from (clone), or the task being edited
+  const source = editing ?? cloneFrom;
+  const isCloning = !editing && !!cloneFrom;
+
   const { data: categories = [] } = useCategories();
 
-  const [name, setName] = useState(editing?.name ?? '');
-  const [note, setNote] = useState(editing?.note ?? '');
-  const [tagId, setTagId] = useState(editing?.tagId ?? '');
-  const [color, setColor] = useState<TaskColor>(editing?.color ?? 'gold');
-  const [icon, setIcon] = useState(editing?.icon ?? '');
-  const [startDate, setStartDate] = useState(editing?.startDate ?? initDate);
-  const [endDate, setEndDate] = useState(editing?.endDate ?? initDate);
-  const [status, setStatus] = useState<TaskStatus>(editing?.status ?? 'todo');
-  const [deps, setDeps] = useState<string[]>(editing?.dependencies ?? []);
+  const [name, setName] = useState(
+    isCloning ? `Copy of ${source?.name ?? ''}` : (source?.name ?? ''),
+  );
+  const [note, setNote] = useState(source?.note ?? '');
+  const [tagId, setTagId] = useState(source?.tagId ?? '');
+  const [color, setColor] = useState<TaskColor>(source?.color ?? 'gold');
+  const [icon, setIcon] = useState(source?.icon ?? '');
+  // Clone: default to current view date (fresh start); Edit: keep original dates
+  const [startDate, setStartDate] = useState(isCloning ? initDate : (source?.startDate ?? initDate));
+  const [endDate, setEndDate] = useState(isCloning ? '' : (source?.endDate ?? ''));
+  const [duration, setDuration] = useState(source?.duration != null ? String(source.duration) : '');
+  // Clone always starts as 'todo'; edit keeps original status
+  const [status, setStatus] = useState<TaskStatus>(isCloning ? 'todo' : (source?.status ?? 'todo'));
+  const [deps, setDeps] = useState<string[]>(isCloning ? [] : (source?.dependencies ?? []));
   const [showPicker, setShowPicker] = useState(false);
 
   const [showAddCat, setShowAddCat] = useState(false);
@@ -60,10 +72,16 @@ export function ScheduleTaskModal({
 
   const resolvedTagId = tagId || (categories.length > 0 ? (categories[0] as Category).id : '');
 
-  // Date validation: endDate must be >= startDate
-  const dateError = endDate < startDate ? 'End date must be on or after start date.' : '';
+  // Date validation — only when endDate is provided
+  const dateError = endDate && endDate < startDate ? 'End date must be on or after start date.' : '';
 
-  // Dependency options: exclude self and tasks that would create cycles
+  // Duration parsed value for display hint
+  const durationNum = duration ? parseInt(duration, 10) : NaN;
+  const durationHint = !Number.isNaN(durationNum) && durationNum > 0
+    ? `≈ ${Math.floor(durationNum / 60) > 0 ? `${Math.floor(durationNum / 60)}h ` : ''}${durationNum % 60}m`
+    : '';
+
+  // Dependency options: exclude self and inactive tasks
   const depOptions = allTasks.filter((t) => t.id !== editing?.id && t.active);
 
   function toggleDep(id: string) {
@@ -88,24 +106,35 @@ export function ScheduleTaskModal({
   function handleSave() {
     if (!name.trim() || !icon || !resolvedTagId || isPending || dateError) return;
 
-    const payload = {
-      name: name.trim(),
-      note: note.trim() || undefined,
-      tagId: resolvedTagId,
+    const parsedDuration = duration ? parseInt(duration, 10) : undefined;
+
+    const basePayload = {
+      name:         name.trim(),
+      note:         note.trim() || undefined,
+      tagId:        resolvedTagId,
       color,
       icon,
+      duration:     parsedDuration && !Number.isNaN(parsedDuration) ? parsedDuration : undefined,
       startDate,
-      endDate,
       dependencies: deps,
     };
 
     if (editing) {
       updateTask(
-        { id: editing.id, ...payload, status },
+        {
+          id: editing.id,
+          ...basePayload,
+          status,
+          // Pass null to explicitly clear endDate; pass string to update it
+          endDate: endDate || null,
+        },
         { onSuccess: () => { onSaved?.(); onClose(); } },
       );
     } else {
-      createTask(payload, { onSuccess: () => { onSaved?.(); onClose(); } });
+      createTask(
+        { ...basePayload, endDate: endDate || undefined },
+        { onSuccess: () => { onSaved?.(); onClose(); } },
+      );
     }
   }
 
@@ -115,10 +144,14 @@ export function ScheduleTaskModal({
     setShowPicker(false);
   }
 
+  const canSave = name.trim().length > 0 && !!icon && !!resolvedTagId && !dateError;
+
   return (
     <div className="modal-backdrop" onClick={(e) => e.target === e.currentTarget && onClose()}>
       <div className="modal-box" style={{ width: 520, maxHeight: '85vh', overflowY: 'auto' }}>
-        <div className="modal-title">{editing ? '✎ Edit Task' : '＋ New Task'}</div>
+        <div className="modal-title">
+          {editing ? '✎ Edit Task' : isCloning ? '⎘ Clone Task' : '＋ New Task'}
+        </div>
 
         {/* Name */}
         <div className={fieldGroup}>
@@ -128,6 +161,7 @@ export function ScheduleTaskModal({
             onChange={(e) => setName(e.target.value)}
             placeholder="Enter task name..."
             maxLength={100}
+            onKeyDown={(e) => e.key === 'Enter' && canSave && handleSave()}
           />
         </div>
 
@@ -167,21 +201,59 @@ export function ScheduleTaskModal({
               value={startDate}
               onChange={(e) => {
                 setStartDate(e.target.value);
-                if (e.target.value > endDate) setEndDate(e.target.value);
+                // If endDate is set and becomes invalid, clear it
+                if (endDate && e.target.value > endDate) setEndDate('');
               }}
             />
           </div>
           <div>
-            <label className={fieldLabel}>End Date *</label>
-            <Input
-              type="date"
-              value={endDate}
-              min={startDate}
-              onChange={(e) => setEndDate(e.target.value)}
-            />
+            <label className={fieldLabel}>End Date <span className={optionalBadge}>optional</span></label>
+            <div style={{ position: 'relative' }}>
+              <Input
+                type="date"
+                value={endDate}
+                min={startDate}
+                onChange={(e) => setEndDate(e.target.value)}
+                placeholder="No end date"
+              />
+              {endDate && (
+                <button
+                  type="button"
+                  onClick={() => setEndDate('')}
+                  className={clearDateBtn}
+                  title="Clear end date"
+                >
+                  ✕
+                </button>
+              )}
+            </div>
           </div>
         </div>
         {dateError && <p className={errorText}>{dateError}</p>}
+
+        {/* Duration */}
+        <div className={fieldGroup}>
+          <label className={fieldLabel}>Duration <span className={optionalBadge}>optional</span></label>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <div style={{ position: 'relative', width: 120 }}>
+              <Input
+                type="number"
+                min="1"
+                max="1440"
+                value={duration}
+                onChange={(e) => setDuration(e.target.value)}
+                placeholder="min"
+                style={{ paddingRight: 36 }}
+              />
+              <span className={durationUnit}>min</span>
+            </div>
+            {durationHint && (
+              <span style={{ fontSize: 11, color: 'var(--text-mid)', letterSpacing: '0.03em' }}>
+                {durationHint}
+              </span>
+            )}
+          </div>
+        </div>
 
         {/* Icon */}
         <div className={fieldGroup}>
@@ -189,15 +261,18 @@ export function ScheduleTaskModal({
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <button
               type="button"
-              className={iconBtn}
+              className={cn(iconBtn, icon && iconBtnSelected)}
               onClick={() => setShowPicker((v) => !v)}
               title="Pick icon"
             >
-              {icon ? <span style={{ fontSize: 22 }}>{icon}</span> : <span style={{ fontSize: 12, color: 'var(--text-lo)' }}>Pick</span>}
+              {icon
+                ? <span style={{ fontSize: 22 }}>{icon}</span>
+                : <span style={{ fontSize: 12, color: 'var(--text-lo)' }}>Pick</span>
+              }
             </button>
             {icon && (
               <button type="button" className={clearBtn} onClick={() => setIcon('')}>
-                ✕
+                ✕ clear
               </button>
             )}
           </div>
@@ -286,7 +361,7 @@ export function ScheduleTaskModal({
 
         {/* Note */}
         <div className={fieldGroup}>
-          <label className={fieldLabel}>Note (optional)</label>
+          <label className={fieldLabel}>Note <span className={optionalBadge}>optional</span></label>
           <textarea
             className={textareaClass}
             value={note}
@@ -300,7 +375,7 @@ export function ScheduleTaskModal({
         {/* Dependencies */}
         {depOptions.length > 0 && (
           <div className={fieldGroup}>
-            <label className={fieldLabel}>Dependencies (optional)</label>
+            <label className={fieldLabel}>Dependencies <span className={optionalBadge}>optional</span></label>
             <p style={{ fontSize: 10, color: 'var(--text-lo)', marginBottom: 6 }}>
               This task will be blocked until all selected tasks are done.
             </p>
@@ -316,7 +391,9 @@ export function ScheduleTaskModal({
                   <span style={{ fontSize: 14 }}>{t.icon}</span>
                   <span style={{ fontSize: 11, color: 'var(--text-hi)', flex: 1 }}>{t.name}</span>
                   <span style={{ fontSize: 10, color: 'var(--text-lo)' }}>
-                    {t.startDate === t.endDate ? t.startDate : `${t.startDate} → ${t.endDate}`}
+                    {!t.endDate || t.startDate === t.endDate
+                      ? t.startDate
+                      : `${t.startDate} → ${t.endDate}`}
                   </span>
                 </label>
               ))}
@@ -338,16 +415,16 @@ export function ScheduleTaskModal({
             type="button"
             className="modal-btn"
             onClick={handleSave}
-            disabled={isPending || !name.trim() || !icon || !!dateError}
+            disabled={isPending || !canSave}
             style={{
               flex: 1,
               background: 'linear-gradient(135deg, oklch(0.55 0.17 85), var(--gold))',
               borderColor: 'var(--gold)',
               color: '#000',
-              opacity: isPending || !name.trim() || !icon || !!dateError ? 0.5 : 1,
+              opacity: isPending || !canSave ? 0.5 : 1,
             }}
           >
-            {isPending ? 'Saving...' : editing ? 'Save Changes' : 'Create Task'}
+            {isPending ? 'Saving...' : editing ? 'Save Changes' : isCloning ? 'Clone Task' : 'Create Task'}
           </button>
         </div>
       </div>
@@ -355,14 +432,25 @@ export function ScheduleTaskModal({
   );
 }
 
+// ─── Styles ───────────────────────────────────────────────────────────────────
+
 const fieldGroup = 'mb-4';
 const fieldLabel = 'block text-[10px] font-bold tracking-[0.1em] uppercase text-[var(--text-mid)] mb-1.5 font-[var(--font-title)]';
+const optionalBadge = 'normal-case tracking-normal font-normal text-[var(--text-lo)] ml-1';
 const errorText = 'text-[10px] text-[var(--rose)] mt-1 mb-2';
 
 const iconBtn =
   'w-10 h-10 rounded-[var(--r-sm)] border border-[var(--border)] bg-[var(--panel2)] flex items-center justify-center cursor-pointer hover:border-[var(--gold)] transition-all';
+const iconBtnSelected =
+  'border-[oklch(0.74_0.17_85_/_0.5)] shadow-[0_0_8px_var(--gold-glow)]';
 const clearBtn =
   'text-[10px] text-[var(--text-lo)] hover:text-[var(--rose)] cursor-pointer transition-colors';
+
+const clearDateBtn =
+  'absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 flex items-center justify-center text-[9px] text-[var(--text-lo)] hover:text-[var(--rose)] cursor-pointer transition-colors';
+
+const durationUnit =
+  'absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-[var(--text-lo)] pointer-events-none';
 
 const catChip =
   'px-2.5 py-1 rounded-full border border-[var(--border)] text-[10px] font-medium text-[var(--text-mid)] bg-[var(--panel2)] cursor-pointer transition-all hover:border-[var(--gold)] hover:text-[var(--text-hi)]';

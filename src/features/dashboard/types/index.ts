@@ -2,7 +2,8 @@ export type QuestType = 'focus' | 'habit' | 'reflect' | 'admin' | 'create' | 'he
 export type Difficulty = 'S' | 'A' | 'B' | 'C' | 'D';
 export type CenterTab = 'quests' | 'schedule' | 'stats' | 'habits';
 export type HabitColor = 'gold' | 'mint' | 'violet' | 'cyan' | 'rose' | 'amber' | 'blue';
-export type HabitDay = 0 | 1 | 2 | 3 | 4 | 5 | 6;
+export type HabitDay = 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun';
+export interface HabitScheduleEntry { days: HabitDay[]; time: string; }
 export type TaskStatus = 'todo' | 'in_progress' | 'pending' | 'waiting' | 'done';
 export type TaskColor = 'gold' | 'mint' | 'violet' | 'cyan' | 'rose' | 'amber' | 'blue';
 
@@ -26,7 +27,8 @@ export interface Quest {
 export interface Habit {
   id: string;
   name: string;
-  days: HabitDay[];
+  schedule: HabitScheduleEntry[];
+  duration?: number;
   note?: string;
   tagId: string;
   color: HabitColor;
@@ -50,8 +52,11 @@ export interface Task {
   color: TaskColor;
   icon: string;
   status: TaskStatus;
+  /** Estimated duration in minutes */
+  duration?: number;
   startDate: string;
-  endDate: string;
+  /** Optional — omit for open-ended / point-in-time tasks */
+  endDate?: string;
   dependencies: string[];
   active: boolean;
   createdAt: string;

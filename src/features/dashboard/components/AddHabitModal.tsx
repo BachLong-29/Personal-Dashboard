@@ -9,12 +9,27 @@ import { Input } from '@/components/ui';
 import { cn } from '@/libs/utils';
 import type { Category } from '@/types';
 
-import { DAY_LABELS, DAY_ORDER, HABIT_COLORS } from '../constants';
+import { ALL_HABIT_DAYS, HABIT_DAY_SHORT, HABIT_COLORS } from '../constants';
 import { useCategories } from '../hooks/useCategories';
 import { useCreateCategory } from '../hooks/useCreateCategory';
 import { useCreateHabit } from '../hooks/useCreateHabit';
 import { useUpdateHabit } from '../hooks/useUpdateHabit';
-import type { Habit, HabitColor } from '../types';
+import type { Habit, HabitColor, HabitDay } from '../types';
+
+// ─── Local schedule state (adds `id` key for React) ──────────────────────────
+
+interface ScheduleEntry {
+  id: string;
+  days: HabitDay[];
+  time: string; // HH:MM
+}
+
+let _counter = 0;
+function makeEntry(days: HabitDay[] = [], time = ''): ScheduleEntry {
+  return { id: String(++_counter), days, time };
+}
+
+// ─── Props ────────────────────────────────────────────────────────────────────
 
 interface AddHabitModalProps {
   editing?: Habit;
@@ -22,11 +37,24 @@ interface AddHabitModalProps {
   onSaved: (habit: Habit) => void;
 }
 
+// ─── Component ────────────────────────────────────────────────────────────────
+
 export function AddHabitModal({ editing, onClose, onSaved }: AddHabitModalProps) {
   const { data: categories = [], isLoading: catsLoading } = useCategories();
 
+  // ── Form state ──────────────────────────────────────────────────────────────
   const [name, setName] = useState(editing?.name ?? '');
-  const [days, setDays] = useState<number[]>(editing?.days ?? [1, 2, 3, 4, 5]);
+
+  const [schedule, setSchedule] = useState<ScheduleEntry[]>(() => {
+    if (editing?.schedule?.length) {
+      return editing.schedule.map((e) => makeEntry(e.days as HabitDay[], e.time));
+    }
+    return [makeEntry(['mon', 'tue', 'wed', 'thu', 'fri'], '')];
+  });
+
+  const [duration, setDuration] = useState(
+    editing?.duration != null ? String(editing.duration) : '',
+  );
   const [note, setNote] = useState(editing?.note ?? '');
   const [tagId, setTagId] = useState(editing?.tagId ?? '');
   const [color, setColor] = useState<HabitColor>(editing?.color ?? 'gold');
@@ -44,25 +72,60 @@ export function AddHabitModal({ editing, onClose, onSaved }: AddHabitModalProps)
   const isPending = isCreating || isUpdating;
   const error = createError ?? updateError;
 
-  // Auto-select first category once loaded if no tagId yet
   const resolvedTagId =
     tagId || (categories.length > 0 ? (categories[0] as Category).id : '');
 
-  function toggleDay(d: number) {
-    setDays((prev) => {
-      if (prev.includes(d)) {
-        if (prev.length === 1) return prev;
-        return prev.filter((x) => x !== d);
+  // ── Schedule helpers ────────────────────────────────────────────────────────
+
+  /** All days that appear in at least one entry */
+  const assignedDays = new Set(schedule.flatMap((e) => e.days));
+  const unassignedDays = ALL_HABIT_DAYS.filter((d) => !assignedDays.has(d));
+
+  function toggleDayInEntry(entryId: string, day: HabitDay) {
+    setSchedule((prev) => {
+      const entry = prev.find((e) => e.id === entryId);
+      if (!entry) return prev;
+
+      const isInThisEntry = entry.days.includes(day);
+
+      if (isInThisEntry) {
+        // Prevent removing the last day in an entry
+        if (entry.days.length === 1) return prev;
+        return prev.map((e) =>
+          e.id === entryId ? { ...e, days: e.days.filter((d) => d !== day) } : e,
+        );
       }
-      return [...prev, d];
+
+      // Move day from any other entry to this one
+      return prev.map((e) => {
+        if (e.id === entryId) return { ...e, days: [...e.days, day] };
+        if (e.days.includes(day)) return { ...e, days: e.days.filter((d) => d !== day) };
+        return e;
+      });
     });
   }
 
+  function setEntryTime(entryId: string, time: string) {
+    setSchedule((prev) => prev.map((e) => (e.id === entryId ? { ...e, time } : e)));
+  }
+
+  function addEntry() {
+    if (unassignedDays.length === 0) return;
+    setSchedule((prev) => [...prev, makeEntry([], '')]);
+  }
+
+  function removeEntry(entryId: string) {
+    if (schedule.length <= 1) return;
+    setSchedule((prev) => prev.filter((e) => e.id !== entryId));
+  }
+
+  // ── Category helpers ────────────────────────────────────────────────────────
+
   function handleAddCategory() {
-    const name = newCatName.trim();
-    if (!name || isAddingCat) return;
+    const catName = newCatName.trim();
+    if (!catName || isAddingCat) return;
     createCategory(
-      { name },
+      { name: catName },
       {
         onSuccess: (cat) => {
           setTagId((cat as Category).id);
@@ -73,14 +136,20 @@ export function AddHabitModal({ editing, onClose, onSaved }: AddHabitModalProps)
     );
   }
 
+  // ── Save ────────────────────────────────────────────────────────────────────
+
   function handleSave() {
-    if (!name.trim() || !icon || days.length === 0 || !resolvedTagId || isPending) return;
+    const validSchedule = schedule.filter((e) => e.days.length > 0 && e.time.trim());
+    if (!name.trim() || !icon || validSchedule.length === 0 || !resolvedTagId || isPending) return;
+
+    const durationNum = duration ? parseInt(duration, 10) : undefined;
 
     const payload = {
-      name: name.trim(),
-      days,
-      note: note.trim() || undefined,
-      tagId: resolvedTagId,
+      name:     name.trim(),
+      schedule: validSchedule.map(({ days, time }) => ({ days, time })),
+      duration: durationNum && !Number.isNaN(durationNum) ? durationNum : undefined,
+      note:     note.trim() || undefined,
+      tagId:    resolvedTagId,
       color,
       icon,
     };
@@ -106,11 +175,16 @@ export function AddHabitModal({ editing, onClose, onSaved }: AddHabitModalProps)
   }
 
   const canSave =
-    name.trim().length > 0 && icon.length > 0 && days.length > 0 && resolvedTagId.length > 0;
+    name.trim().length > 0 &&
+    icon.length > 0 &&
+    resolvedTagId.length > 0 &&
+    schedule.some((e) => e.days.length > 0 && e.time.trim().length > 0);
+
+  // ── Render ──────────────────────────────────────────────────────────────────
 
   return (
     <div className="modal-backdrop" onClick={(e) => e.target === e.currentTarget && onClose()}>
-      <div className="modal-box" style={{ width: 520 }}>
+      <div className="modal-box" style={{ width: 540 }}>
         <div className="modal-title">
           <span>✦</span> {editing ? 'Edit Habit' : 'New Habit'}
         </div>
@@ -129,21 +203,109 @@ export function AddHabitModal({ editing, onClose, onSaved }: AddHabitModalProps)
           />
         </div>
 
-        {/* Days */}
+        {/* Schedule builder */}
         <div className="modal-field">
-          <div className="modal-label">Repeat Days *</div>
-          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-            {DAY_ORDER.map((d) => (
-              <button
-                key={d}
-                type="button"
-                disabled={isPending}
-                onClick={() => toggleDay(d)}
-                className={cn(dayChip, days.includes(d) && dayChipActive)}
-              >
-                {DAY_LABELS[d]}
-              </button>
+          <div className="modal-label">Schedule *</div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {schedule.map((entry) => (
+              <div key={entry.id} className={scheduleRow}>
+                {/* Day chips row */}
+                <div style={{ display: 'flex', gap: 5, alignItems: 'center', flexWrap: 'wrap' }}>
+                  {ALL_HABIT_DAYS.map((day) => {
+                    const active = entry.days.includes(day);
+                    // Dim days owned by another entry
+                    const inOther = !active && assignedDays.has(day);
+                    return (
+                      <button
+                        key={day}
+                        type="button"
+                        disabled={isPending}
+                        title={inOther ? 'Already in another time slot — click to move here' : undefined}
+                        onClick={() => toggleDayInEntry(entry.id, day)}
+                        className={cn(
+                          dayChip,
+                          active && dayChipActive,
+                          inOther && dayChipOther,
+                        )}
+                      >
+                        {HABIT_DAY_SHORT[day]}
+                      </button>
+                    );
+                  })}
+
+                  {/* Remove row button */}
+                  {schedule.length > 1 && (
+                    <button
+                      type="button"
+                      onClick={() => removeEntry(entry.id)}
+                      className={removeRowBtn}
+                      title="Remove this time slot"
+                      disabled={isPending}
+                    >
+                      ✕
+                    </button>
+                  )}
+                </div>
+
+                {/* Time input */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span className={timeLabel}>TIME</span>
+                  <input
+                    type="time"
+                    className={cn('modal-input', timeInput)}
+                    value={entry.time}
+                    onChange={(e) => setEntryTime(entry.id, e.target.value)}
+                    disabled={isPending}
+                    required
+                  />
+                  {!entry.time && (
+                    <span style={{ fontSize: 10, color: 'var(--rose)', opacity: 0.85 }}>
+                      required
+                    </span>
+                  )}
+                </div>
+              </div>
             ))}
+
+            {/* Add time slot */}
+            {unassignedDays.length > 0 && (
+              <button
+                type="button"
+                onClick={addEntry}
+                disabled={isPending}
+                className={addSlotBtn}
+              >
+                + Add time slot
+                <span style={{ fontSize: 9, opacity: 0.6, marginLeft: 4 }}>
+                  ({unassignedDays.map((d) => HABIT_DAY_SHORT[d]).join('·')} unassigned)
+                </span>
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Duration (optional) */}
+        <div className="modal-field">
+          <div className="modal-label">Duration (minutes, optional)</div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <Input
+              className="modal-input"
+              type="number"
+              min="1"
+              max="1440"
+              value={duration}
+              onChange={(e) => setDuration(e.target.value)}
+              placeholder="e.g. 30"
+              disabled={isPending}
+              style={{ width: 120 }}
+            />
+            {duration && (
+              <span style={{ fontSize: 10, color: 'var(--text-mid)' }}>
+                ≈ {Math.floor(parseInt(duration, 10) / 60) > 0
+                  ? `${Math.floor(parseInt(duration, 10) / 60)}h `
+                  : ''}{parseInt(duration, 10) % 60}m
+              </span>
+            )}
           </div>
         </div>
 
@@ -169,7 +331,6 @@ export function AddHabitModal({ editing, onClose, onSaved }: AddHabitModalProps)
                   </button>
                 ))}
 
-                {/* Quick-add toggle */}
                 {!showAddCat && (
                   <button
                     type="button"
@@ -183,7 +344,6 @@ export function AddHabitModal({ editing, onClose, onSaved }: AddHabitModalProps)
                 )}
               </div>
 
-              {/* Inline new category input */}
               {showAddCat && (
                 <div style={{ display: 'flex', gap: 6, marginTop: 6 }}>
                   <input
@@ -196,10 +356,7 @@ export function AddHabitModal({ editing, onClose, onSaved }: AddHabitModalProps)
                     disabled={isAddingCat}
                     onKeyDown={(e) => {
                       if (e.key === 'Enter') handleAddCategory();
-                      if (e.key === 'Escape') {
-                        setShowAddCat(false);
-                        setNewCatName('');
-                      }
+                      if (e.key === 'Escape') { setShowAddCat(false); setNewCatName(''); }
                     }}
                   />
                   <button
@@ -236,16 +393,10 @@ export function AddHabitModal({ editing, onClose, onSaved }: AddHabitModalProps)
                   disabled={isPending}
                   onClick={() => setColor(key)}
                   style={{
-                    width: 26,
-                    height: 26,
-                    borderRadius: '50%',
-                    background: value,
-                    border: color === key ? `2px solid white` : '2px solid transparent',
+                    width: 26, height: 26, borderRadius: '50%', background: value,
+                    border: color === key ? '2px solid white' : '2px solid transparent',
                     outline: color === key ? `2px solid ${value}` : 'none',
-                    outlineOffset: 2,
-                    cursor: 'pointer',
-                    transition: 'all 0.15s',
-                    flexShrink: 0,
+                    outlineOffset: 2, cursor: 'pointer', transition: 'all 0.15s', flexShrink: 0,
                   }}
                 />
               ),
@@ -331,10 +482,27 @@ export function AddHabitModal({ editing, onClose, onSaved }: AddHabitModalProps)
   );
 }
 
+// ─── Styles ───────────────────────────────────────────────────────────────────
+
+const scheduleRow =
+  'flex flex-col gap-[7px] px-3 py-2.5 rounded-[var(--r-sm)] bg-[var(--panel2)] border border-[var(--border)]';
+
 const dayChip =
-  'px-[10px] py-[5px] rounded-[var(--r-sm)] text-[10px] font-bold tracking-[0.08em] uppercase font-[var(--font-title)] border border-[var(--border)] bg-[var(--panel2)] text-[var(--text-mid)] cursor-pointer transition-all duration-150 hover:border-[var(--border-hi)] hover:text-[var(--text-hi)]';
+  'w-[30px] h-[26px] rounded-[var(--r-sm)] text-[10px] font-bold tracking-[0.06em] uppercase font-[var(--font-title)] border border-[var(--border)] bg-[var(--panel3)] text-[var(--text-mid)] cursor-pointer transition-all duration-150 hover:border-[var(--border-hi)] hover:text-[var(--text-hi)]';
 const dayChipActive =
   'bg-[oklch(0.74_0.17_85_/_0.15)] border-[oklch(0.74_0.17_85_/_0.6)] text-[var(--gold)] shadow-[0_0_8px_var(--gold-glow)]';
+const dayChipOther =
+  'opacity-40';
+
+const removeRowBtn =
+  'ml-auto w-[22px] h-[22px] rounded-[var(--r-sm)] flex items-center justify-center text-[10px] border border-[var(--border)] bg-[var(--panel3)] text-[var(--text-lo)] cursor-pointer hover:border-[var(--rose)] hover:text-[var(--rose)] transition-all shrink-0';
+
+const timeLabel =
+  'text-[9px] tracking-[0.08em] text-[var(--text-lo)] uppercase font-bold font-[var(--font-title)] min-w-[30px]';
+const timeInput = '!w-[120px]';
+
+const addSlotBtn =
+  'flex items-center px-3 h-[34px] rounded-[var(--r-sm)] text-[11px] font-[var(--font-body)] border border-dashed border-[var(--border)] text-[var(--text-lo)] cursor-pointer transition-all hover:border-[oklch(0.74_0.17_85_/_0.4)] hover:text-[var(--gold)] w-full';
 
 const catList = 'flex flex-wrap gap-[6px]';
 const catChip =

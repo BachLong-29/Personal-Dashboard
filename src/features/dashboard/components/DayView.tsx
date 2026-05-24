@@ -38,6 +38,7 @@ export function DayView({ date, display, quests = [], onDateChange }: DayViewPro
   const { mutate: deleteTask } = useDeleteTask();
 
   const [editing, setEditing] = useState<Task | undefined>(undefined);
+  const [cloning, setCloning] = useState<Task | undefined>(undefined);
   const [showModal, setShowModal] = useState(false);
   const [deletingTask, setDeletingTask] = useState<Task | undefined>(undefined);
 
@@ -52,7 +53,7 @@ export function DayView({ date, display, quests = [], onDateChange }: DayViewPro
   );
 
   const dayTasks = useMemo(
-    () => (allTasks as Task[]).filter((t) => t.active && t.startDate <= date && t.endDate >= date),
+    () => (allTasks as Task[]).filter((t) => t.active && t.startDate <= date && (t.endDate ?? t.startDate) >= date),
     [allTasks, date],
   );
 
@@ -73,6 +74,13 @@ export function DayView({ date, display, quests = [], onDateChange }: DayViewPro
 
   function handleEdit(task: Task) {
     setEditing(task);
+    setCloning(undefined);
+    setShowModal(true);
+  }
+
+  function handleClone(task: Task) {
+    setCloning(task);
+    setEditing(undefined);
     setShowModal(true);
   }
 
@@ -131,6 +139,7 @@ export function DayView({ date, display, quests = [], onDateChange }: DayViewPro
                 isBlocked={isBlocked(task)}
                 blockedByNames={blockedByNames(task)}
                 onEdit={handleEdit}
+                onClone={handleClone}
                 onDelete={(id) => setDeletingTask(dayTasks.find((t) => t.id === id))}
                 onStatusChange={handleStatusChange}
               />
@@ -160,15 +169,18 @@ export function DayView({ date, display, quests = [], onDateChange }: DayViewPro
       {showModal && (
         <ScheduleTaskModal
           editing={editing}
+          cloneFrom={cloning}
           allTasks={allTasks as Task[]}
           defaultDate={date}
           onClose={() => {
             setShowModal(false);
             setEditing(undefined);
+            setCloning(undefined);
           }}
           onSaved={() => {
             setShowModal(false);
             setEditing(undefined);
+            setCloning(undefined);
           }}
         />
       )}

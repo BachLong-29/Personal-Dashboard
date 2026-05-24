@@ -15,28 +15,36 @@ import type { Habit } from '@/types/habit';
 import type { IHabit } from '@/server/models/habit.model';
 
 const HABIT_COLORS = ['gold', 'mint', 'violet', 'cyan', 'rose', 'amber', 'blue'] as const;
+const HABIT_DAYS   = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] as const;
+
+const scheduleEntrySchema = z.object({
+  days: z.array(z.enum(HABIT_DAYS)).min(1),
+  time: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, 'Time must be HH:MM (24-hour)'),
+});
 
 const updateSchema = z.object({
-  name: z.string().min(1).max(100).optional(),
-  days: z.array(z.number().min(0).max(6)).min(1).max(7).optional(),
-  note: z.string().max(500).optional().nullable(),
-  tagId: z.string().min(1).optional(),
-  color: z.enum(HABIT_COLORS).optional(),
-  icon: z.string().min(1).optional(),
-  active: z.boolean().optional(),
+  name:     z.string().min(1).max(100).optional(),
+  schedule: z.array(scheduleEntrySchema).min(1).optional(),
+  duration: z.number().int().min(1).max(1440).optional().nullable(),
+  note:     z.string().max(500).optional().nullable(),
+  tagId:    z.string().min(1).optional(),
+  color:    z.enum(HABIT_COLORS).optional(),
+  icon:     z.string().min(1).optional(),
+  active:   z.boolean().optional(),
 });
 
 function serialize(h: IHabit): Habit {
   return {
-    id: h._id.toString(),
-    userId: h.userId.toString(),
-    name: h.name,
-    days: h.days,
-    note: h.note,
-    tagId: h.tagId,
-    color: h.color,
-    icon: h.icon,
-    active: h.active,
+    id:        h._id.toString(),
+    userId:    h.userId.toString(),
+    name:      h.name,
+    schedule:  h.schedule.map((e) => ({ days: e.days, time: e.time })),
+    duration:  h.duration,
+    note:      h.note,
+    tagId:     h.tagId,
+    color:     h.color,
+    icon:      h.icon,
+    active:    h.active,
     createdAt: h.createdAt.toISOString(),
     updatedAt: h.updatedAt.toISOString(),
   };

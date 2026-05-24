@@ -6,6 +6,8 @@ import { cn } from '@/libs/utils';
 export interface DatePickerProps {
   value?: Date | null;
   onChange?: (date: Date) => void;
+  /** Called when the user clears the selected date via the hover-✕ icon */
+  onClear?: () => void;
   placeholder?: string;
   label?: string;
   disabled?: boolean;
@@ -59,6 +61,7 @@ function getCalendarDays(year: number, month: number) {
 export function DatePicker({
   value,
   onChange,
+  onClear,
   placeholder = 'Select date',
   label,
   disabled,
@@ -66,6 +69,10 @@ export function DatePicker({
 }: DatePickerProps) {
   const today = new Date();
   const [open, setOpen] = useState(false);
+  const [hovered, setHovered] = useState(false);
+
+  // Show ✕ when the button is hovered and a value can be cleared
+  const showClear = !disabled && !!value && !!onClear && hovered;
   const [viewYear, setViewYear] = useState(value?.getFullYear() ?? today.getFullYear());
   const [viewMonth, setViewMonth] = useState(value?.getMonth() ?? today.getMonth());
   const rootRef = useRef<HTMLDivElement>(null);
@@ -117,6 +124,8 @@ export function DatePicker({
         type="button"
         disabled={disabled}
         onClick={() => setOpen((p) => !p)}
+        onMouseEnter={() => setHovered(true)}
+        onMouseLeave={() => setHovered(false)}
         className={cn(
           'h-[42px] w-full flex items-center justify-between gap-3 px-4',
           'bg-[var(--bg-2)] border border-[var(--border)] rounded-[var(--r-md)]',
@@ -129,7 +138,23 @@ export function DatePicker({
         <span className={cn(value ? 'text-[var(--text-hi)]' : 'text-[var(--text-dim)]')}>
           {value ? formatDate(value) : placeholder}
         </span>
-        <span className="text-[var(--text-lo)] shrink-0">📅</span>
+        <span
+          className={cn(
+            'shrink-0 w-5 h-5 flex items-center justify-center rounded transition-all duration-150',
+            showClear
+              ? 'text-[var(--rose)] text-[11px] font-bold bg-[oklch(0.72_0.18_5_/_0.12)]'
+              : 'text-[var(--text-lo)]',
+          )}
+          onClick={(e) => {
+            if (showClear) {
+              e.stopPropagation();
+              onClear?.();
+              setHovered(false);
+            }
+          }}
+        >
+          {showClear ? '✕' : '📅'}
+        </span>
       </button>
 
       {open && (

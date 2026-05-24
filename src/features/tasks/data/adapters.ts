@@ -159,8 +159,24 @@ export function questToUITask(q: QuestLike): UITask {
 
 // ─── Habit → UITask ───────────────────────────────────────────────────────────
 
+/** Day-of-week (Date.getDay()) → HabitDay string */
+const DOW_TO_HABIT_DAY = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'] as const;
+
+/** Returns the HabitScheduleEntry that covers today, or undefined */
+export function getTodayEntry(h: Habit) {
+  const today = DOW_TO_HABIT_DAY[new Date().getDay()];
+  return h.schedule.find((e) => today && e.days.includes(today));
+}
+
+/** Returns true if the habit is scheduled for today */
+export function isHabitScheduledToday(h: Habit): boolean {
+  return getTodayEntry(h) !== undefined;
+}
+
 export function habitToUITask(h: Habit, log?: HabitLog): UITask {
-  const done = log?.done ?? false;
+  const done      = log?.done ?? false;
+  const entry     = getTodayEntry(h);
+  const timeLabel = entry?.time ? `Today · ${entry.time}` : 'Today';
 
   return {
     id:              `habit-${h.id}`,
@@ -173,14 +189,14 @@ export function habitToUITask(h: Habit, log?: HabitLog): UITask {
     priority:        'medium',
     xp:              50,
     coins:           12,
-    est:             15,
-    deadline:        done ? 'Done · Today' : 'Today',
+    est:             h.duration ?? 15,
+    deadline:        done ? 'Done · Today' : timeLabel,
     deadlineUrgency: done ? 'done' : 'today',
     progress:        done ? 1 : 0,
     subtasks:        0,
     subtasksDone:    0,
     day:             0,
-    slot:            'morning',
+    slot:            timeToSlot(entry?.time),
     tags:            [],
     streak:          0,
     combo:           0,
@@ -201,11 +217,20 @@ function diffToPriority(diff: string): UITask['priority'] {
 }
 
 function offsetToSlot(offset: number): TaskSlot {
-  // Spread tasks across slots based on week day for a bit of variety
   const h = new Date().getHours();
-  if (offset !== 0) return 'morning'; // future tasks default to morning
+  if (offset !== 0) return 'morning';
   if (h < 10)  return 'morning';
   if (h < 13)  return 'deep';
   if (h < 17)  return 'afternoon';
+  return 'evening';
+}
+
+/** Map a "HH:MM" time string to the slot it falls in */
+function timeToSlot(time?: string): TaskSlot {
+  if (!time) return 'morning';
+  const h = parseInt(time.split(':')[0] ?? '0', 10);
+  if (h < 10) return 'morning';
+  if (h < 13) return 'deep';
+  if (h < 17) return 'afternoon';
   return 'evening';
 }

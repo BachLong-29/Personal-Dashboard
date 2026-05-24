@@ -67,10 +67,14 @@ export function MonthView({
     [todayHabitLogs],
   );
 
+  const DOW_TO_HABIT_DAY = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'] as const;
+
   function getHabitsForDay(dateStr: string): Habit[] {
     const dow = new Date(dateStr).getDay();
+    const dayStr = DOW_TO_HABIT_DAY[dow];
+    if (!dayStr) return [];
     return (habits as Habit[]).filter(
-      (h) => h.active && (h.days as number[]).includes(dow),
+      (h) => h.active && h.schedule.some((e) => e.days.includes(dayStr)),
     );
   }
 
@@ -80,7 +84,7 @@ export function MonthView({
     for (const task of allTasks as Task[]) {
       if (!task.active) continue;
       let cur = task.startDate;
-      while (cur <= task.endDate) {
+      while (cur <= (task.endDate ?? task.startDate)) {
         if (!map[cur]) map[cur] = [];
         map[cur]!.push(task);
         // Advance by 1 day using Date.UTC so timezone never affects the result

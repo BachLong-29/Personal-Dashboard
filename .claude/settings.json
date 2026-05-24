@@ -1,10 +1,17 @@
 {
   "permissions": {
     "allow": [
-      "Bash(mkdir -p \"c:/Users/long bach/Documents/Worksapce/project/personal-dashboard/src/features/tasks/data\" *)"
+      "Bash(mkdir -p \"c:/Users/long bach/Documents/Worksapce/project/personal-dashboard/src/features/tasks/data\" *)",
+      "PowerShell(New-Item -ItemType Directory -Force \"c:\\\\Users\\\\long bach\\\\Documents\\\\Worksapce\\\\project\\\\personal-dashboard\\\\src\\\\app\\\\api\\\\v1\\\\rewards\")",
+      "PowerShell(cd \"c:\\\\Users\\\\long bach\\\\Documents\\\\Worksapce\\\\project\\\\personal-dashboard\"; npx tsc --noEmit 2>&1 | Where-Object { $_ -match \"reward\" } | Select-Object -First 20)",
+      "PowerShell(cd \"c:\\\\Users\\\\long bach\\\\Documents\\\\Worksapce\\\\project\\\\personal-dashboard\"; npx tsc --noEmit 2>&1 | Where-Object { $_ -match \"reward\" -or $_ -match \"Reward\" })",
+      "PowerShell(cd \"c:\\\\Users\\\\long bach\\\\Documents\\\\Worksapce\\\\project\\\\personal-dashboard\"; npx tsc --noEmit 2>&1 | Out-String | Select-String -Pattern \"reward|Reward\" | ForEach-Object { $_.Line })",
+      "PowerShell(cd \"c:\\\\Users\\\\long bach\\\\Documents\\\\Worksapce\\\\project\\\\personal-dashboard\"; $result = npx tsc --noEmit 2>&1; $result -join \"`n\" | Out-File -Encoding utf8 \"$env:TEMP\\\\tsc_output.txt\"; Get-Content \"$env:TEMP\\\\tsc_output.txt\" | Select-String \"reward\" -CaseSensitive:$false)",
+      "PowerShell(cd \"c:\\\\Users\\\\long bach\\\\Documents\\\\Worksapce\\\\project\\\\personal-dashboard\"; npx tsc --noEmit 2>&1 | Tee-Object -FilePath \"$env:TEMP\\\\tsc_out.txt\" | Select-Object -Last 20; Write-Output \"---TAIL DONE---\")"
     ],
     "additionalDirectories": [
-      "c:\\Users\\long bach\\Documents\\Worksapce\\project\\personal-dashboard\\src\\app\\[locale]\\(protected)"
+      "c:\\Users\\long bach\\Documents\\Worksapce\\project\\personal-dashboard\\src\\app\\[locale]\\(protected)",
+      "c:\\Users\\long bach\\Documents\\Worksapce\\project\\personal-dashboard\\src\\app\\api\\v1\\rewards"
     ]
   }
 }

@@ -123,14 +123,18 @@ export function WeekView({
 
   function getTasksForDay(dateStr: string): Task[] {
     return (allTasks as Task[]).filter(
-      (t) => t.active && t.startDate <= dateStr && t.endDate >= dateStr,
+      (t) => t.active && t.startDate <= dateStr && (t.endDate ?? t.startDate) >= dateStr,
     );
   }
 
+  const DOW_TO_HABIT_DAY = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'] as const;
+
   function getHabitsForDay(dateStr: string): Habit[] {
     const dow = new Date(dateStr).getDay();
+    const dayStr = DOW_TO_HABIT_DAY[dow];
+    if (!dayStr) return [];
     return (habits as Habit[]).filter(
-      (h) => h.active && (h.days as number[]).includes(dow),
+      (h) => h.active && h.schedule.some((e) => e.days.includes(dayStr)),
     );
   }
 
@@ -174,7 +178,7 @@ export function WeekView({
       updateTask({
         id: drag.item.id,
         startDate: addDays(drag.item.startDate, diff),
-        endDate: addDays(drag.item.endDate, diff),
+        endDate: drag.item.endDate ? addDays(drag.item.endDate, diff) : undefined,
       });
     } else if (drag.type === 'quest') {
       moveQuest({ id: drag.item.id, dueDate: targetDay });
@@ -182,9 +186,30 @@ export function WeekView({
       const sourceDow = new Date(drag.dayStr).getDay();
       const targetDow = new Date(targetDay).getDay();
       if (sourceDow === targetDow) return;
-      const newDays = (drag.item.days as number[]).filter((d) => d !== sourceDow);
-      if (!newDays.includes(targetDow)) newDays.push(targetDow);
-      updateHabit({ id: drag.item.id, days: newDays.sort((a, b) => a - b) });
+
+      const sourceDay = DOW_TO_HABIT_DAY[sourceDow];
+      const targetDayStr = DOW_TO_HABIT_DAY[targetDow];
+      if (!sourceDay || !targetDayStr) return;
+
+      // Find the schedule entry that owns sourceDay and move it to targetDay
+      const habit = drag.item as Habit;
+      const sourceEntry = habit.schedule.find((e) => e.days.includes(sourceDay));
+      if (!sourceEntry) return;
+
+      const newSchedule = habit.schedule
+        .map((e) => {
+          if (e === sourceEntry) {
+            // Remove sourceDay, add targetDay (no duplicates)
+            const newDays = e.days.filter((d) => d !== sourceDay);
+            if (!newDays.includes(targetDayStr)) newDays.push(targetDayStr);
+            return { ...e, days: newDays };
+          }
+          // Remove targetDay from any other entry (day can only live in one slot)
+          return { ...e, days: e.days.filter((d) => d !== targetDayStr) };
+        })
+        .filter((e) => e.days.length > 0);
+
+      updateHabit({ id: drag.item.id, schedule: newSchedule });
     }
   }
 

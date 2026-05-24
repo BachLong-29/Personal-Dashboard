@@ -17,7 +17,7 @@ import DashboardTopbar from '@/features/dashboard/components/DashboardTopbar';
 import { AddQuestModal } from '@/features/dashboard/components/AddQuestModal';
 
 import { MOCK_TASKS, type TaskCat, type TaskDiff, type UITask } from '../data/mock';
-import { taskToUITask, questToUITask, habitToUITask, type QuestLike } from '../data/adapters';
+import { taskToUITask, questToUITask, habitToUITask, isHabitScheduledToday, type QuestLike } from '../data/adapters';
 import { PageHeader, type ViewMode } from './PageHeader';
 import { TaskDayView } from './day/TaskDayView';
 import { TaskWeekView } from './week/TaskWeekView';
@@ -70,10 +70,8 @@ export function TaskManagement() {
 
     const quests  = apiQuests.map((q) => questToUITask(q));
 
-    // Only include habits scheduled for today (check day-of-week)
-    const todayDow = new Date().getDay(); // 0=Sun … 6=Sat
     const habits = apiHabits
-      .filter((h) => h.active && h.days.includes(todayDow))
+      .filter((h) => h.active && isHabitScheduledToday(h))
       .map((h) => {
         const log = apiHabitLogs.find((l) => l.habitId === h.id);
         return habitToUITask(h, log);

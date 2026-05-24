@@ -457,6 +457,9 @@ export function MarketPlace() {
           <span className={currencyPillIcon}>🪙</span>
           <span>{player.coins.toLocaleString()}</span>
         </div>
+        <Link className={manageBtn} href="/manage/rewards">
+          ◈ Manage Rewards
+        </Link>
       </div>
 
       <div className={hero}>
@@ -650,6 +653,8 @@ const topbarLogo =
 const topbarDiamond = 'text-[var(--gold)] text-[8px] opacity-50';
 const topbarSection =
   'font-[var(--font-title)] text-[12px] tracking-[0.2em] text-[var(--text-mid)]';
+const manageBtn =
+  'flex items-center gap-1.5 text-[10px] font-bold text-[var(--violet)] no-underline px-3 py-1.5 rounded-[6px] border border-[oklch(0.66_0.22_295_/_0.4)] bg-[oklch(0.66_0.22_295_/_0.06)] font-[var(--font-title)] tracking-[0.1em] transition-all duration-200 hover:border-[oklch(0.66_0.22_295_/_0.7)] hover:bg-[oklch(0.66_0.22_295_/_0.12)] hover:shadow-[0_0_10px_oklch(0.66_0.22_295_/_0.25)] shrink-0';
 
 const currencyPill =
   'flex items-center gap-1.5 bg-[var(--panel2)] border border-[var(--border)] rounded-[20px] px-[14px] py-[5px] pl-[10px] text-[13px] font-bold font-[var(--font-title)] tracking-[0.05em]';

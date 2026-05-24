@@ -12,8 +12,11 @@ export interface ITask extends Document {
   color: TaskColor;
   icon: string;
   status: TaskStatus;
+  /** Estimated duration in minutes */
+  duration?: number;
   startDate: Date;
-  endDate: Date;
+  /** Optional — undefined means open-ended / point-in-time */
+  endDate?: Date;
   dependencies: mongoose.Types.ObjectId[];
   active: boolean;
   createdAt: Date;
@@ -62,13 +65,18 @@ const taskSchema = new Schema<ITask>(
       enum: TASK_STATUSES,
       default: 'todo',
     },
+    duration: {
+      type: Number,
+      min: 1,
+      max: 1440,
+    },
     startDate: {
       type: Date,
       required: true,
     },
     endDate: {
       type: Date,
-      required: true,
+      // optional — no required: true
     },
     dependencies: [
       {
@@ -84,8 +92,13 @@ const taskSchema = new Schema<ITask>(
   { timestamps: true },
 );
 
-taskSchema.index({ userId: 1, startDate: 1, endDate: 1 });
+taskSchema.index({ userId: 1, startDate: 1 });
 taskSchema.index({ userId: 1, active: 1 });
+
+// Force re-register in dev to avoid stale schema after hot-reload
+if (process.env.NODE_ENV === 'development') {
+  delete (mongoose.models as Record<string, unknown>).Task;
+}
 
 export const TaskModel =
   (mongoose.models.Task as mongoose.Model<ITask>) ?? mongoose.model<ITask>('Task', taskSchema);

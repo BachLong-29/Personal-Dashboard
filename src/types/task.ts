@@ -10,8 +10,11 @@ export interface Task {
   color: TaskColor;
   icon: string;
   status: TaskStatus;
+  /** Estimated duration in minutes */
+  duration?: number;
   startDate: string;
-  endDate: string;
+  /** Optional — omit for open-ended / point-in-time tasks */
+  endDate?: string;
   dependencies: string[];
   active: boolean;
   createdAt: string;
@@ -24,8 +27,11 @@ export interface CreateTaskPayload {
   tagId: string;
   color: TaskColor;
   icon: string;
+  /** Estimated duration in minutes */
+  duration?: number;
   startDate: string;
-  endDate: string;
+  /** Defaults to startDate when omitted */
+  endDate?: string;
   dependencies?: string[];
 }
 
@@ -36,8 +42,9 @@ export interface UpdateTaskPayload {
   color?: TaskColor;
   icon?: string;
   status?: TaskStatus;
+  duration?: number;
   startDate?: string;
-  endDate?: string;
+  endDate?: string | null;
   dependencies?: string[];
   active?: boolean;
 }

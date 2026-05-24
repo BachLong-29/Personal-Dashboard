@@ -1,4 +1,4 @@
-import type { DashboardSettings, Escalation, HabitColor, QuestType } from '../types';
+import type { DashboardSettings, Escalation, HabitColor, HabitDay, QuestType } from '../types';
 
 export const QUEST_ICONS: Record<QuestType, string> = {
   focus: '🎯',
@@ -70,5 +70,20 @@ export const HABIT_COLORS: Record<HabitColor, { label: string; value: string }> 
 
 
 
+/** @deprecated Use ALL_HABIT_DAYS + HABIT_DAY_LABELS instead */
 export const DAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] as const;
+/** @deprecated Use ALL_HABIT_DAYS instead */
 export const DAY_ORDER = [1, 2, 3, 4, 5, 6, 0] as const; // Mon-Sun display order
+
+/** Ordered Mon → Sun for display */
+export const ALL_HABIT_DAYS: HabitDay[] = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
+
+/** Full label per day */
+export const HABIT_DAY_LABELS: Record<HabitDay, string> = {
+  mon: 'Mon', tue: 'Tue', wed: 'Wed', thu: 'Thu', fri: 'Fri', sat: 'Sat', sun: 'Sun',
+};
+
+/** 2-char abbreviation per day */
+export const HABIT_DAY_SHORT: Record<HabitDay, string> = {
+  mon: 'Mo', tue: 'Tu', wed: 'We', thu: 'Th', fri: 'Fr', sat: 'Sa', sun: 'Su',
+};

@@ -2,8 +2,8 @@
 
 import { cn } from '@/libs/utils';
 
-import { DAY_LABELS, DAY_ORDER, HABIT_COLORS } from '../constants';
-import type { Habit, HabitColor } from '../types';
+import { ALL_HABIT_DAYS, HABIT_DAY_SHORT, HABIT_COLORS } from '../constants';
+import type { Habit, HabitColor, HabitDay } from '../types';
 
 interface HabitCardProps {
   habit: Habit;
@@ -14,9 +14,24 @@ interface HabitCardProps {
   onDelete: (id: string) => void;
 }
 
+/** Build compact schedule text like "Mo·Tu·We·Fr 19:00 / Th 20:00" */
+function buildScheduleText(habit: Habit): string {
+  if (!habit.schedule?.length) return '–';
+  return habit.schedule
+    .map((e) => {
+      const days = [...e.days]
+        .sort((a, b) => ALL_HABIT_DAYS.indexOf(a as HabitDay) - ALL_HABIT_DAYS.indexOf(b as HabitDay))
+        .map((d) => HABIT_DAY_SHORT[d as HabitDay] ?? d)
+        .join('·');
+      return `${days} ${e.time}`;
+    })
+    .join('  /  ');
+}
+
 export function HabitCard({ habit, tagLabel, todayDone, isToday, onEdit, onDelete }: HabitCardProps) {
   const colorVal = HABIT_COLORS[habit.color as HabitColor]?.value ?? HABIT_COLORS.gold.value;
   const displayTag = tagLabel ?? habit.tagId;
+  const scheduleText = buildScheduleText(habit);
 
   return (
     <div
@@ -37,15 +52,16 @@ export function HabitCard({ habit, tagLabel, todayDone, isToday, onEdit, onDelet
             />
           )}
         </div>
-        <div className={meta}>
+        <div className={metaRow}>
           <span className={tagPill} style={{ color: colorVal, borderColor: `${colorVal}40` }}>
             {displayTag}
           </span>
-          <span className={daysText}>
-            {DAY_ORDER.filter((d) => habit.days.includes(d))
-              .map((d) => DAY_LABELS[d])
-              .join(' · ')}
+          <span className={scheduleDisplay} title={scheduleText}>
+            {scheduleText}
           </span>
+          {habit.duration && (
+            <span className={durationPill}>⏱ {habit.duration}m</span>
+          )}
           {habit.note && <span className={noteText}>{habit.note}</span>}
         </div>
       </div>
@@ -84,10 +100,11 @@ const nameRow = 'flex items-center gap-1.5';
 const nameText = 'text-[12px] font-bold text-[var(--text-hi)] truncate font-[var(--font-body)]';
 const nameDone = 'line-through text-[var(--text-lo)]';
 
-const meta = 'flex items-center gap-1.5 mt-[3px] flex-wrap';
+const metaRow = 'flex items-center gap-1.5 mt-[3px] flex-wrap';
 const tagPill =
-  'text-[9px] font-bold tracking-[0.08em] uppercase font-[var(--font-title)] border rounded-[3px] px-[5px] py-[1px]';
-const daysText = 'text-[9px] text-[var(--text-lo)] tracking-[0.05em]';
+  'text-[9px] font-bold tracking-[0.08em] uppercase font-[var(--font-title)] border rounded-[3px] px-[5px] py-[1px] shrink-0';
+const scheduleDisplay = 'text-[9px] text-[var(--text-lo)] tracking-[0.04em] truncate max-w-[180px]';
+const durationPill = 'text-[9px] text-[var(--text-lo)] shrink-0';
 const noteText = 'text-[9px] text-[var(--text-lo)] truncate max-w-[100px]';
 
 const statusDot = 'w-[6px] h-[6px] rounded-full shrink-0';

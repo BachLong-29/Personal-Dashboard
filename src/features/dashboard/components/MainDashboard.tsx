@@ -76,6 +76,8 @@ export default function MainDashboard() {
 
   const todayDateStr = new Date().toISOString().substring(0, 10);
   const todayDay = new Date().getDay();
+  const DOW_TO_HABIT_DAY = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'] as const;
+  const todayDayStr = DOW_TO_HABIT_DAY[todayDay];
 
   const { mutate: rolloverQuests } = useRolloverQuests();
   const rolloverRef = useRef(rolloverQuests);
@@ -120,7 +122,7 @@ export default function MainDashboard() {
   // Build today's task quests — tasks whose date range spans today
   const todayTaskQuests = useMemo<Quest[]>(() => {
     return (allTasks as Task[])
-      .filter((t) => t.active && t.startDate <= todayDateStr && t.endDate >= todayDateStr)
+      .filter((t) => t.active && t.startDate <= todayDateStr && (t.endDate ?? t.startDate) >= todayDateStr)
       .map((t) => ({
         id: `task-${t.id}`,
         title: t.name,
@@ -140,7 +142,7 @@ export default function MainDashboard() {
   // Build today's habit quests
   const todayHabitQuests = useMemo<Quest[]>(() => {
     return (habits as Habit[])
-      .filter((h) => h.active && (h.days as number[]).includes(todayDay))
+      .filter((h) => h.active && !!todayDayStr && h.schedule.some((e) => e.days.includes(todayDayStr)))
       .map((h) => ({
         id: `habit-${h.id}`,
         title: h.name,
