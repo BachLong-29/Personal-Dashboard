@@ -30,6 +30,8 @@ import { useQuests } from '../hooks/useQuests';
 import { useTasks } from '../hooks/useTasks';
 import { useToggleHabitLog } from '../hooks/useToggleHabitLog';
 import { useUpdateTask } from '../hooks/useUpdateTask';
+import { useTaskLogs } from '../hooks/useTaskLogs';
+import { useToggleTaskLog } from '../hooks/useToggleTaskLog';
 import type { Task } from '@/types';
 import type {
   Achievement,
@@ -97,12 +99,21 @@ export default function MainDashboard() {
   const { mutate: toggleHabitLog } = useToggleHabitLog();
   const { data: allTasks = [] } = useTasks();
   const { mutate: updateTask } = useUpdateTask();
+  const { data: apiTaskLogs = [] } = useTaskLogs(todayDateStr);
+  const { mutate: toggleTaskLog } = useToggleTaskLog();
 
   const [quests, setQuests] = useState<Quest[]>([]);
   const questsInitialized = useRef(false);
 
   const [habitDoneMap, setHabitDoneMap] = useState<Record<string, boolean>>({});
   const [taskDoneMap, setTaskDoneMap] = useState<Record<string, boolean>>({});
+
+  /** taskId → true when today's session has been logged (multi-day tasks) */
+  const taskLoggedMap = useMemo<Record<string, boolean>>(() => {
+    const map: Record<string, boolean> = {};
+    for (const log of apiTaskLogs) map[log.taskId] = true;
+    return map;
+  }, [apiTaskLogs]);
 
   useEffect(() => {
     if (serverQuests && !questsInitialized.current) {
@@ -123,21 +134,28 @@ export default function MainDashboard() {
   const todayTaskQuests = useMemo<Quest[]>(() => {
     return (allTasks as Task[])
       .filter((t) => t.active && t.startDate <= todayDateStr && (t.endDate ?? t.startDate) >= todayDateStr)
-      .map((t) => ({
-        id: `task-${t.id}`,
-        title: t.name,
-        desc: t.note ?? t.tagId,
-        type: 'task' as QuestType,
-        difficulty: 'C' as Difficulty,
-        xp: TASK_XP,
-        coins: TASK_COINS,
-        done: taskDoneMap[t.id] ?? t.status === 'done',
-        tags: [t.tagId],
-        taskId: t.id,
-        habitIcon: t.icon,
-        habitColor: t.color as HabitColor,
-      }));
-  }, [allTasks, todayDateStr, taskDoneMap]);
+      .map((t) => {
+        const isMultiDay = !!t.endDate && t.endDate > t.startDate;
+        // Multi-day: "done" in day view = today's session logged, not overall status
+        const done = isMultiDay
+          ? (taskDoneMap[t.id] ?? taskLoggedMap[t.id] ?? false)
+          : (taskDoneMap[t.id] ?? t.status === 'done');
+        return {
+          id: `task-${t.id}`,
+          title: t.name,
+          desc: t.note ?? t.tagId,
+          type: 'task' as QuestType,
+          difficulty: 'C' as Difficulty,
+          xp: TASK_XP,
+          coins: TASK_COINS,
+          done,
+          tags: [t.tagId],
+          taskId: t.id,
+          habitIcon: t.icon,
+          habitColor: t.color as HabitColor,
+        };
+      });
+  }, [allTasks, todayDateStr, taskDoneMap, taskLoggedMap]);
 
   // Build today's habit quests
   const todayHabitQuests = useMemo<Quest[]>(() => {
@@ -231,7 +249,32 @@ export default function MainDashboard() {
   };
 
   const handleToggleTask = (taskId: string, burstPos: BurstPos | null) => {
-    const currentDone = taskDoneMap[taskId] ?? (allTasks as Task[]).find((t) => t.id === taskId)?.status === 'done';
+    const task = (allTasks as Task[]).find((t) => t.id === taskId);
+    const isMultiDay = !!task?.endDate && task.endDate > task.startDate;
+
+    if (isMultiDay) {
+      // Multi-day: toggle today's session log — does NOT mark the task fully done
+      const currentLogged = taskDoneMap[taskId] ?? taskLoggedMap[taskId] ?? false;
+      const nextLogged = !currentLogged;
+
+      setTaskDoneMap((prev) => ({ ...prev, [taskId]: nextLogged }));
+      toggleTaskLog({ taskId, date: todayDateStr });
+
+      // Transition to in_progress on first log
+      if (nextLogged && task?.status === 'todo') {
+        updateTask({ id: taskId, status: 'in_progress' });
+      }
+
+      if (nextLogged) {
+        awardProgress({ xp: TASK_XP, coins: TASK_COINS });
+        if (burstPos && settings.animationsEnabled) setBurst(burstPos);
+        setToast({ xp: TASK_XP, coins: TASK_COINS });
+      }
+      return;
+    }
+
+    // Single-day task: toggle done status as before
+    const currentDone = taskDoneMap[taskId] ?? task?.status === 'done';
     const newDone = !currentDone;
     setTaskDoneMap((prev) => ({ ...prev, [taskId]: newDone }));
     updateTask({ id: taskId, status: newDone ? 'done' : 'todo' });

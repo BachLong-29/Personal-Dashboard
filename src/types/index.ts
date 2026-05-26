@@ -6,3 +6,4 @@ export type * from './category';
 export type * from './task';
 export type * from './profile';
 export type * from './reward';
+export type * from './task-log';

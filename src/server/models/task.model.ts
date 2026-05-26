@@ -15,8 +15,12 @@ export interface ITask extends Document {
   /** Estimated duration in minutes */
   duration?: number;
   startDate: Date;
+  /** HH:MM scheduled time within startDate — used when a habit is rescheduled */
+  startTime?: string;
   /** Optional — undefined means open-ended / point-in-time */
   endDate?: Date;
+  /** Reference to a Habit that this task replaces for startDate's day */
+  habitRef?: mongoose.Types.ObjectId;
   dependencies: mongoose.Types.ObjectId[];
   active: boolean;
   createdAt: Date;
@@ -74,9 +78,18 @@ const taskSchema = new Schema<ITask>(
       type: Date,
       required: true,
     },
+    startTime: {
+      type: String,
+      match: [/^([01]\d|2[0-3]):[0-5]\d$/, 'startTime must be in HH:MM (24-hour) format'],
+    },
     endDate: {
       type: Date,
       // optional — no required: true
+    },
+    habitRef: {
+      type: Schema.Types.ObjectId,
+      ref: 'Habit',
+      // optional — only set when this task replaces a habit occurrence
     },
     dependencies: [
       {

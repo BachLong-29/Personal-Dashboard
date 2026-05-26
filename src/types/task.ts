@@ -13,8 +13,12 @@ export interface Task {
   /** Estimated duration in minutes */
   duration?: number;
   startDate: string;
+  /** HH:MM scheduled time within startDate — set when rescheduling a habit */
+  startTime?: string;
   /** Optional — omit for open-ended / point-in-time tasks */
   endDate?: string;
+  /** Habit ID this task replaces for the startDate day */
+  habitRef?: string;
   dependencies: string[];
   active: boolean;
   createdAt: string;
@@ -30,8 +34,12 @@ export interface CreateTaskPayload {
   /** Estimated duration in minutes */
   duration?: number;
   startDate: string;
+  /** HH:MM scheduled time — used when rescheduling a habit to a specific time */
+  startTime?: string;
   /** Defaults to startDate when omitted */
   endDate?: string;
+  /** Habit ObjectId this task is replacing */
+  habitRef?: string;
   dependencies?: string[];
 }
 

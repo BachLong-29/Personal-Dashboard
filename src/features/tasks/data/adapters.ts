@@ -2,7 +2,7 @@
 //  Task Management — API → UITask adapters
 // ─────────────────────────────────────────────────────────────────────────────
 
-import type { Task, Habit, HabitLog } from '@/types';
+import type { Task, Habit, HabitLog, TaskLog } from '@/types';
 
 import type { UITask, TaskCat, TaskSlot } from './mock';
 
@@ -82,14 +82,40 @@ const COLOR_TO_CAT: Record<string, TaskCat> = {
 
 // ─── Task → UITask ────────────────────────────────────────────────────────────
 
-export function taskToUITask(t: Task): UITask {
-  const done = t.status === 'done';
+export function taskToUITask(t: Task, taskLog?: TaskLog): UITask {
+  const startOffset = dayOffset(t.startDate);
+  const endOffset   = t.endDate ? dayOffset(t.endDate) : startOffset;
+  const totalDays   = Math.max(endOffset - startOffset + 1, 1);
+
+  // A task is "multi-day" when it spans more than 1 calendar day
+  const isMultiDay = totalDays > 1;
+
+  // Multi-day task active today: clamp day to 0 so it appears in the day view
+  const isActiveToday = isMultiDay && startOffset <= 0 && endOffset >= 0;
+  const day           = isActiveToday ? 0 : startOffset;
+
+  const loggedToday = isMultiDay ? !!taskLog : undefined;
+
+  // "Done" for day-view purposes:
+  //   - single-day: reflects task status
+  //   - multi-day active today: true when today is logged OR task was explicitly completed
+  //   - multi-day NOT active today (past / future): reflects overall status only
+  //     → prevents a stale loggedToday from marking future-day slots as done
+  const done = isMultiDay
+    ? isActiveToday
+      ? ((loggedToday ?? false) || t.status === 'done')
+      : t.status === 'done'
+    : t.status === 'done';
+
   const progress =
     t.status === 'done'        ? 1 :
     t.status === 'in_progress' ? 0.5 : 0;
 
+  // Deadline label for multi-day tasks shows the full range
   const deadlineStr = t.endDate || t.startDate;
-  const offset = dayOffset(t.startDate);
+  const deadline = isMultiDay
+    ? `${formatDeadline(t.startDate)} → ${formatDeadline(t.endDate)}`
+    : formatDeadline(deadlineStr);
 
   return {
     id:              t.id,
@@ -102,14 +128,14 @@ export function taskToUITask(t: Task): UITask {
     priority:        'medium',
     xp:              100,
     coins:           25,
-    est:             60,
-    deadline:        formatDeadline(deadlineStr),
-    deadlineUrgency: computeUrgency(deadlineStr, done),
+    est:             t.duration ?? 60,
+    deadline,
+    deadlineUrgency: computeUrgency(deadlineStr, t.status === 'done'),
     progress,
     subtasks:        0,
     subtasksDone:    0,
-    day:             offset,
-    slot:            offsetToSlot(offset),
+    day,
+    slot:            offsetToSlot(day, t.startTime),
     tags:            [],
     streak:          0,
     combo:           0,
@@ -118,10 +144,17 @@ export function taskToUITask(t: Task): UITask {
     icon:            t.icon,
     status:          t.status,
     color:           t.color,
+    tagId:           t.tagId,
     dependencies:    t.dependencies,
     startDate:       t.startDate,
     endDate:         t.endDate,
+    startTime:       t.startTime,
+    habitRef:        t.habitRef,
     active:          t.active,
+    // multi-day extras
+    isMultiDay,
+    totalDays: isMultiDay ? totalDays : undefined,
+    loggedToday,
   };
 }
 
@@ -173,7 +206,7 @@ export function isHabitScheduledToday(h: Habit): boolean {
   return getTodayEntry(h) !== undefined;
 }
 
-export function habitToUITask(h: Habit, log?: HabitLog): UITask {
+export function habitToUITask(h: Habit, log?: HabitLog, cancelled = false): UITask {
   const done      = log?.done ?? false;
   const entry     = getTodayEntry(h);
   const timeLabel = entry?.time ? `Today · ${entry.time}` : 'Today';
@@ -203,7 +236,10 @@ export function habitToUITask(h: Habit, log?: HabitLog): UITask {
     done,
     icon:            h.icon,
     color:           h.color,
+    tagId:           h.tagId,
+    startTime:       entry?.time,
     active:          h.active,
+    cancelled,
   };
 }
 
@@ -216,9 +252,13 @@ function diffToPriority(diff: string): UITask['priority'] {
   return 'low';
 }
 
-function offsetToSlot(offset: number): TaskSlot {
-  const h = new Date().getHours();
+/** Map offset + optional explicit startTime to a TaskSlot */
+function offsetToSlot(offset: number, startTime?: string): TaskSlot {
   if (offset !== 0) return 'morning';
+  // If the task has an explicit scheduled time, use that hour for slot mapping
+  const h = startTime
+    ? parseInt(startTime.split(':')[0] ?? '0', 10)
+    : new Date().getHours();
   if (h < 10)  return 'morning';
   if (h < 13)  return 'deep';
   if (h < 17)  return 'afternoon';

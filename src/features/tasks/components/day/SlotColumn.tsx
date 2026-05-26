@@ -19,6 +19,8 @@ interface SlotColumnProps {
   expandedId: string | null;
   setExpandedId: (id: string | null) => void;
   onToggleDone: (id: string) => void;
+  onReschedule?: (task: UITask) => void;
+  onCompleteTask?: (id: string) => void;
   draggingId: string | null;
 }
 
@@ -28,6 +30,8 @@ export function SlotColumn({
   expandedId,
   setExpandedId,
   onToggleDone,
+  onReschedule,
+  onCompleteTask,
   draggingId,
 }: SlotColumnProps) {
   const { setNodeRef, isOver } = useDroppable({ id: slot.id });
@@ -58,6 +62,8 @@ export function SlotColumn({
               expanded={expandedId === t.id}
               onExpand={() => setExpandedId(expandedId === t.id ? null : t.id)}
               onToggleDone={onToggleDone}
+              onReschedule={onReschedule}
+              onCompleteTask={onCompleteTask}
               isDragging={draggingId === t.id}
             />
           ))}
@@ -150,10 +156,12 @@ interface DraggableCardProps {
   expanded: boolean;
   onExpand: () => void;
   onToggleDone: (id: string) => void;
+  onReschedule?: (task: UITask) => void;
+  onCompleteTask?: (id: string) => void;
   isDragging: boolean;
 }
 
-function DraggableCard({ task, expanded, onExpand, onToggleDone, isDragging }: DraggableCardProps) {
+function DraggableCard({ task, expanded, onExpand, onToggleDone, onReschedule, onCompleteTask, isDragging }: DraggableCardProps) {
   const { attributes, listeners, setNodeRef, transform } = useDraggable({ id: task.id });
 
   const style = transform
@@ -168,7 +176,7 @@ function DraggableCard({ task, expanded, onExpand, onToggleDone, isDragging }: D
       {...attributes}
       {...listeners}
     >
-      <QuestCard task={task} expanded={expanded} onExpand={onExpand} onToggleDone={onToggleDone} />
+      <QuestCard task={task} expanded={expanded} onExpand={onExpand} onToggleDone={onToggleDone} onReschedule={onReschedule} onCompleteTask={onCompleteTask} />
     </div>
   );
 }

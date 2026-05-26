@@ -59,6 +59,22 @@ export interface UITask {
   endDate?: string;
   /** Whether the source entity is active */
   active?: boolean;
+  /** tagId from the API entity — needed to create replacement tasks */
+  tagId?: string;
+  /** HH:MM scheduled time (task with startTime, or habit schedule time) */
+  startTime?: string;
+  /** Habit ObjectId this task replaces (source === 'task' && habitRef set) */
+  habitRef?: string;
+  /** Habit occurrence was cancelled — a replacement task exists for this day */
+  cancelled?: boolean;
+
+  // ── Multi-day task fields ───────────────────────────────────────────────────
+  /** True when endDate exists and spans ≥ 1 full calendar day after startDate */
+  isMultiDay?: boolean;
+  /** Total calendar days in the task range (inclusive) */
+  totalDays?: number;
+  /** Whether today's session has been logged (multi-day tasks only) */
+  loggedToday?: boolean;
 }
 
 // ─── Category meta ────────────────────────────────────────────────────────────

@@ -16,6 +16,7 @@ import { QuestCard } from '../shared/QuestCard';
 import { ActiveBlock } from './ActiveBlock';
 import { DayProgress } from './DayProgress';
 import { MonthPeek } from './MonthPeek';
+import { RescheduleHabitModal } from './RescheduleHabitModal';
 import { ScheduleStrip } from './ScheduleStrip';
 import { SlotColumn } from './SlotColumn';
 import { WeekPeek } from './WeekPeek';
@@ -29,6 +30,9 @@ interface TaskDayViewProps {
   setExpandedId: (id: string | null) => void;
   onToggleDone: (id: string) => void;
   onMoveToSlot: (id: string, slot: UITask['slot']) => void;
+  onRescheduleHabit: (task: UITask, newTime: string) => void;
+  onCompleteTask: (id: string) => void;
+  rescheduleLoading?: boolean;
   splitMode: 'week' | 'month';
 }
 
@@ -41,6 +45,9 @@ export function TaskDayView({
   setExpandedId,
   onToggleDone,
   onMoveToSlot,
+  onRescheduleHabit,
+  onCompleteTask,
+  rescheduleLoading,
   splitMode,
 }: TaskDayViewProps) {
   const todayTasks = tasks.filter((t) => t.day === 0);
@@ -48,6 +55,8 @@ export function TaskDayView({
   const pct = todayTasks.length ? Math.round((done / todayTasks.length) * 100) : 0;
 
   const [activeId, setActiveId] = useState<string | null>(null);
+  // Which habit card triggered the reschedule modal
+  const [rescheduleTarget, setRescheduleTarget] = useState<UITask | null>(null);
   const activeTask = activeId ? todayTasks.find((t) => t.id === activeId) : null;
 
   const sensors = useSensors(
@@ -103,6 +112,8 @@ export function TaskDayView({
                 expandedId={expandedId}
                 setExpandedId={setExpandedId}
                 onToggleDone={onToggleDone}
+                onReschedule={setRescheduleTarget}
+                onCompleteTask={onCompleteTask}
                 draggingId={activeId}
               />
             ))}
@@ -110,9 +121,9 @@ export function TaskDayView({
         </section>
 
         {/* ── Right: side panels ────────────────────────────────────────── */}
-        <section className="w-[240px] shrink-0 flex flex-col gap-2.5 overflow-y-auto">
+        <section className="w-[400px] shrink-0 flex flex-col gap-2.5 overflow-y-auto">
           {splitMode === 'week' ? <WeekPeek tasks={allTasks} /> : <MonthPeek tasks={allTasks} />}
-          <ScheduleStrip />
+          <ScheduleStrip tasks={todayTasks} />
         </section>
       </div>
 
@@ -124,6 +135,19 @@ export function TaskDayView({
           </div>
         )}
       </DragOverlay>
+
+      {/* Reschedule habit modal */}
+      {rescheduleTarget && (
+        <RescheduleHabitModal
+          task={rescheduleTarget}
+          loading={rescheduleLoading}
+          onConfirm={(newTime) => {
+            onRescheduleHabit(rescheduleTarget, newTime);
+            setRescheduleTarget(null);
+          }}
+          onClose={() => setRescheduleTarget(null)}
+        />
+      )}
     </DndContext>
   );
 }

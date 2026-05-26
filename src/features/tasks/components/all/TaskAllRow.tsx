@@ -183,7 +183,7 @@ const diffBadge =
 const titleCol = 'flex-1 min-w-0 text-[11px] font-semibold text-[var(--text-hi)] truncate';
 
 const catPill =
-  'text-[8px] font-bold px-1.5 py-0.5 rounded border tracking-[0.06em] font-[var(--font-title)] shrink-0 whitespace-nowrap';
+  'text-[8px] font-bold px-1.5 py-0.5 rounded border tracking-[0.06em] font-[var(--font-title)] shrink-0 w-20 overflow-hidden whitespace-nowrap text-ellipsis';
 
 const deadlineCol = 'text-[9px] font-semibold w-24 shrink-0';
 

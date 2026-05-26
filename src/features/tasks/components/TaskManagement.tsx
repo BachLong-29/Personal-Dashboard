@@ -8,7 +8,10 @@ import { useHabits } from '@/features/dashboard/hooks/useHabits';
 import { useHabitLogs } from '@/features/dashboard/hooks/useHabitLogs';
 import { useQuests } from '@/features/dashboard/hooks/useQuests';
 import { useTasks } from '@/features/dashboard/hooks/useTasks';
+import { useCreateTask } from '@/features/dashboard/hooks/useCreateTask';
+import { useTaskLogs } from '@/features/dashboard/hooks/useTaskLogs';
 import { useToggleHabitLog } from '@/features/dashboard/hooks/useToggleHabitLog';
+import { useToggleTaskLog } from '@/features/dashboard/hooks/useToggleTaskLog';
 import { useUpdateQuestStatus } from '@/features/dashboard/hooks/useUpdateQuestStatus';
 import { useUpdateTask } from '@/features/dashboard/hooks/useUpdateTask';
 import type { Character } from '@/features/dashboard/types';
@@ -58,27 +61,46 @@ export function TaskManagement() {
   const { data: apiQuests   = [] } = useQuests();
   const { data: apiHabits   = [] } = useHabits();
   const { data: apiHabitLogs = [] } = useHabitLogs(todayStr);
+  const { data: apiTaskLogs  = [] } = useTaskLogs(todayStr);
 
   // ── Mutations ────────────────────────────────────────────────────────────────
   const updateTask        = useUpdateTask();
   const updateQuestStatus = useUpdateQuestStatus();
   const toggleHabitLog    = useToggleHabitLog();
+  const toggleTaskLog     = useToggleTaskLog();
+  const createTask        = useCreateTask();
 
   // ── Merge API data → UITask[] ─────────────────────────────────────────────
+
+  /**
+   * Set of habit IDs that have a replacement task for today.
+   * A habit is considered "cancelled" when a task with `habitRef === habit.id`
+   * exists with a startDate matching today.
+   */
+  const cancelledHabitIds = useMemo(() => {
+    return new Set(
+      apiTasks
+        .filter((t) => t.habitRef && t.startDate === todayStr)
+        .map((t) => t.habitRef!),
+    );
+  }, [apiTasks, todayStr]);
+
   const apiMerged = useMemo<UITask[]>(() => {
-    const tasks   = apiTasks.map((t) => taskToUITask(t));
-
-    const quests  = apiQuests.map((q) => questToUITask(q));
-
+    // Pass today's TaskLog (if any) so multi-day tasks know if today is logged
+    const tasks  = apiTasks.map((t) => {
+      const log = apiTaskLogs.find((l) => l.taskId === t.id);
+      return taskToUITask(t, log);
+    });
+    const quests = apiQuests.map((q) => questToUITask(q));
     const habits = apiHabits
       .filter((h) => h.active && isHabitScheduledToday(h))
       .map((h) => {
-        const log = apiHabitLogs.find((l) => l.habitId === h.id);
-        return habitToUITask(h, log);
+        const log       = apiHabitLogs.find((l) => l.habitId === h.id);
+        const cancelled = cancelledHabitIds.has(h.id);
+        return habitToUITask(h, log, cancelled);
       });
-
     return [...tasks, ...quests, ...habits];
-  }, [apiTasks, apiQuests, apiHabits, apiHabitLogs]);
+  }, [apiTasks, apiTaskLogs, apiQuests, apiHabits, apiHabitLogs, cancelledHabitIds]);
 
   // ── Local task state ──────────────────────────────────────────────────────
   // Seed with MOCK_TASKS while API loads; replace once real data arrives.
@@ -130,34 +152,57 @@ export function TaskManagement() {
   // ── Actions ─────────────────────────────────────────────────────────────────
 
   function handleToggleDone(id: string) {
-    // Optimistic local update first
-    setTasks((ts) =>
-      ts.map((t) =>
-        t.id === id ? { ...t, done: !t.done, progress: !t.done ? 1 : t.progress } : t,
-      ),
-    );
-
-    // Fire the appropriate API mutation based on source
     const task = tasks.find((t) => t.id === id);
     if (!task) return;
 
+    if (task.isMultiDay && task.source === 'task' && task.sourceId) {
+      // Multi-day task: toggle today's log — does NOT change the task's overall status
+      const nextLogged = !task.loggedToday;
+
+      // Optimistic update: flip loggedToday + mirror into done for the check-button visual
+      setTasks((ts) =>
+        ts.map((t) =>
+          t.id === id ? { ...t, loggedToday: nextLogged, done: nextLogged } : t,
+        ),
+      );
+
+      toggleTaskLog.mutate({ taskId: task.sourceId, date: todayStr });
+
+      // First time logging → transition to in_progress
+      if (nextLogged && task.status === 'todo') {
+        updateTask.mutate({ id: task.sourceId, status: 'in_progress' });
+      }
+      return;
+    }
+
+    // ── Single-day / quest / habit behavior (unchanged) ───────────────────
     const nextDone = !task.done;
+
+    setTasks((ts) =>
+      ts.map((t) =>
+        t.id === id ? { ...t, done: nextDone, progress: nextDone ? 1 : t.progress } : t,
+      ),
+    );
 
     if (task.source === 'quest' && task.sourceId) {
       updateQuestStatus.mutate({ id: task.sourceId, done: nextDone });
     } else if (task.source === 'task' && task.sourceId) {
-      updateTask.mutate({
-        id: task.sourceId,
-        status: nextDone ? 'done' : 'todo',
-      });
+      updateTask.mutate({ id: task.sourceId, status: nextDone ? 'done' : 'todo' });
     } else if (task.source === 'habit' && task.sourceId) {
-      toggleHabitLog.mutate({
-        habitId: task.sourceId,
-        date: todayStr,
-        done: nextDone,
-      });
+      toggleHabitLog.mutate({ habitId: task.sourceId, date: todayStr, done: nextDone });
     }
-    // 'mock' source: local-only, no API call needed
+    // 'mock' source: local-only
+  }
+
+  /** Explicitly mark a multi-day task as fully complete (separate from daily check-in). */
+  function handleCompleteTask(id: string) {
+    const task = tasks.find((t) => t.id === id);
+    if (!task?.sourceId) return;
+
+    setTasks((ts) =>
+      ts.map((t) => (t.id === id ? { ...t, done: true, progress: 1, status: 'done' } : t)),
+    );
+    updateTask.mutate({ id: task.sourceId, status: 'done' });
   }
 
   function handleMoveToSlot(id: string, slot: UITask['slot']) {
@@ -166,6 +211,60 @@ export function TaskManagement() {
 
   function handleMoveToDay(id: string, day: number) {
     setTasks((ts) => ts.map((t) => (t.id === id ? { ...t, day } : t)));
+  }
+
+  function handleRescheduleHabit(habitTask: UITask, newTime: string) {
+    if (!habitTask.sourceId) return;
+
+    // Derive slot from the chosen time so the new task lands in the right column
+    const hour = parseInt(newTime.split(':')[0] ?? '0', 10);
+    const slot: UITask['slot'] =
+      hour < 10 ? 'morning' :
+      hour < 13 ? 'deep'    :
+      hour < 17 ? 'afternoon' : 'evening';
+
+    // Optimistic: mark the habit as cancelled + add a placeholder task card
+    const tempId = `reschedule-${habitTask.sourceId}-${Date.now()}`;
+    const newTask: UITask = {
+      ...habitTask,
+      id:        tempId,
+      sourceId:  tempId,
+      source:    'task',
+      slot,
+      startTime: newTime,
+      habitRef:  habitTask.sourceId,
+      cancelled: false,
+      done:      false,
+      deadline:  `Today · ${newTime}`,
+    };
+
+    setTasks((ts) => [
+      ...ts.map((t) => (t.id === habitTask.id ? { ...t, cancelled: true } : t)),
+      newTask,
+    ]);
+
+    // Persist — on success the query refetch replaces the temp task with a real one
+    createTask.mutate(
+      {
+        name:      habitTask.title.replace(/^\S+\s+/, ''), // strip leading icon
+        icon:      habitTask.icon ?? '◉',
+        color:     (habitTask.color ?? 'gold') as import('@/types/task').TaskColor,
+        tagId:     habitTask.tagId ?? 'habit',
+        startDate: todayStr,
+        startTime: newTime,
+        duration:  habitTask.est,
+        habitRef:  habitTask.sourceId,
+      },
+      {
+        // On error: roll back the optimistic update
+        onError: () => {
+          setTasks((ts) => [
+            ...ts.filter((t) => t.id !== tempId),
+            ...ts.map((t) => (t.id === habitTask.id ? { ...t, cancelled: false } : t)),
+          ]);
+        },
+      },
+    );
   }
 
   // ── Header counts ────────────────────────────────────────────────────────────
@@ -210,6 +309,9 @@ export function TaskManagement() {
               setExpandedId={setExpandedId}
               onToggleDone={handleToggleDone}
               onMoveToSlot={handleMoveToSlot}
+              onRescheduleHabit={handleRescheduleHabit}
+              onCompleteTask={handleCompleteTask}
+              rescheduleLoading={createTask.isPending}
               splitMode={splitMode}
             />
           )}

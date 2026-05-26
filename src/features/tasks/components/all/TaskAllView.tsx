@@ -18,29 +18,32 @@ import { TaskAllRow } from './TaskAllRow';
 // ─── Group-by options ─────────────────────────────────────────────────────────
 
 type GroupBy = 'category' | 'difficulty' | 'slot' | 'none';
-type SortBy  = 'deadline' | 'xp' | 'priority' | 'title';
+type SortBy = 'deadline' | 'xp' | 'priority' | 'title';
 
 const GROUP_BY_OPTIONS: { id: GroupBy; label: string }[] = [
-  { id: 'category',   label: 'Category'   },
+  { id: 'category', label: 'Category' },
   { id: 'difficulty', label: 'Difficulty' },
-  { id: 'slot',       label: 'Time slot'  },
-  { id: 'none',       label: 'Flat list'  },
+  { id: 'slot', label: 'Time slot' },
+  { id: 'none', label: 'Flat list' },
 ];
 
 const SORT_BY_OPTIONS: { id: SortBy; label: string }[] = [
   { id: 'deadline', label: 'Deadline' },
-  { id: 'xp',       label: 'XP'       },
+  { id: 'xp', label: 'XP' },
   { id: 'priority', label: 'Priority' },
-  { id: 'title',    label: 'Title'    },
+  { id: 'title', label: 'Title' },
 ];
 
 const PRIORITY_ORDER: Record<string, number> = {
-  critical: 0, high: 1, medium: 2, low: 3,
+  critical: 0,
+  high: 1,
+  medium: 2,
+  low: 3,
 };
 
 const SLOT_LABELS: Record<string, string> = {
   morning: '◐ Dawn (06–10)',
-  deep:    '❖ Deep Work (10–13)',
+  deep: '❖ Deep Work (10–13)',
   afternoon: '☉ Afternoon (13–17)',
   evening: '☾ Twilight (17–22)',
 };
@@ -56,7 +59,7 @@ interface TaskAllViewProps {
 
 export function TaskAllView({ tasks, onToggleDone }: TaskAllViewProps) {
   const [groupBy, setGroupBy] = useState<GroupBy>('category');
-  const [sortBy,  setSortBy]  = useState<SortBy>('deadline');
+  const [sortBy, setSortBy] = useState<SortBy>('deadline');
   const [showDone, setShowDone] = useState(true);
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
@@ -64,9 +67,10 @@ export function TaskAllView({ tasks, onToggleDone }: TaskAllViewProps) {
   const sorted = useMemo(() => {
     let list = showDone ? tasks : tasks.filter((t) => !t.done);
     list = [...list].sort((a, b) => {
-      if (sortBy === 'xp')       return b.xp - a.xp;
-      if (sortBy === 'priority') return (PRIORITY_ORDER[a.priority] ?? 9) - (PRIORITY_ORDER[b.priority] ?? 9);
-      if (sortBy === 'title')    return a.title.localeCompare(b.title);
+      if (sortBy === 'xp') return b.xp - a.xp;
+      if (sortBy === 'priority')
+        return (PRIORITY_ORDER[a.priority] ?? 9) - (PRIORITY_ORDER[b.priority] ?? 9);
+      if (sortBy === 'title') return a.title.localeCompare(b.title);
       // deadline: done tasks go to the bottom
       if (a.done !== b.done) return a.done ? 1 : -1;
       return a.day - b.day;
@@ -75,29 +79,30 @@ export function TaskAllView({ tasks, onToggleDone }: TaskAllViewProps) {
   }, [tasks, sortBy, showDone]);
 
   // Build groups
-  const groups = useMemo((): Array<{ key: string; label: string; color?: string; tasks: UITask[] }> => {
+  const groups = useMemo((): Array<{
+    key: string;
+    label: string;
+    color?: string;
+    tasks: UITask[];
+  }> => {
     if (groupBy === 'none') return [{ key: 'all', label: 'All Quests', tasks: sorted }];
 
     if (groupBy === 'category') {
-      return TASK_CATEGORIES
-        .map((cat) => ({
-          key: cat.id,
-          label: `${cat.icon} ${cat.label}`,
-          color: COLOR_VAR[cat.color],
-          tasks: sorted.filter((t) => t.cat === cat.id),
-        }))
-        .filter((g) => g.tasks.length > 0);
+      return TASK_CATEGORIES.map((cat) => ({
+        key: cat.id,
+        label: `${cat.icon} ${cat.label}`,
+        color: COLOR_VAR[cat.color],
+        tasks: sorted.filter((t) => t.cat === cat.id),
+      })).filter((g) => g.tasks.length > 0);
     }
 
     if (groupBy === 'difficulty') {
-      return DIFF_LIST
-        .map((diff) => ({
-          key: diff,
-          label: `Rank ${diff}`,
-          color: DIFF_GROUP_COLORS[diff],
-          tasks: sorted.filter((t) => t.diff === diff),
-        }))
-        .filter((g) => g.tasks.length > 0);
+      return DIFF_LIST.map((diff) => ({
+        key: diff,
+        label: `Rank ${diff}`,
+        color: DIFF_GROUP_COLORS[diff],
+        tasks: sorted.filter((t) => t.diff === diff),
+      })).filter((g) => g.tasks.length > 0);
     }
 
     if (groupBy === 'slot') {
@@ -115,8 +120,8 @@ export function TaskAllView({ tasks, onToggleDone }: TaskAllViewProps) {
 
   // Summary stats
   const total = tasks.length;
-  const done  = tasks.filter((t) => t.done).length;
-  const xpTotal  = tasks.reduce((s, t) => s + t.xp, 0);
+  const done = tasks.filter((t) => t.done).length;
+  const xpTotal = tasks.reduce((s, t) => s + t.xp, 0);
   const xpEarned = tasks.filter((t) => t.done).reduce((s, t) => s + t.xp, 0);
 
   return (
@@ -212,10 +217,17 @@ interface TaskGroupProps {
   onToggleDone: (id: string) => void;
 }
 
-function TaskGroup({ label, color, tasks, expandedId, setExpandedId, onToggleDone }: TaskGroupProps) {
+function TaskGroup({
+  label,
+  color,
+  tasks,
+  expandedId,
+  setExpandedId,
+  onToggleDone,
+}: TaskGroupProps) {
   const [collapsed, setCollapsed] = useState(false);
   const done = tasks.filter((t) => t.done).length;
-  const xp   = tasks.reduce((s, t) => s + t.xp, 0);
+  const xp = tasks.reduce((s, t) => s + t.xp, 0);
 
   return (
     <div>
@@ -226,37 +238,52 @@ function TaskGroup({ label, color, tasks, expandedId, setExpandedId, onToggleDon
         onClick={() => setCollapsed((v) => !v)}
         style={color ? { borderLeftColor: color, borderLeftWidth: 3 } : undefined}
       >
-        <span className="text-[8px] text-[var(--text-lo)] transition-transform duration-150" style={{ transform: collapsed ? 'rotate(-90deg)' : 'none' }}>
+        {/* Chevron */}
+        <span
+          className="text-[8px] text-[var(--text-lo)] transition-transform duration-150 shrink-0"
+          style={{ transform: collapsed ? 'rotate(-90deg)' : 'none' }}
+        >
           ▼
         </span>
-        <span className="text-[10px] font-bold text-[var(--text-hi)] font-[var(--font-title)] tracking-[0.06em]">
+
+        {/* Label — capped at 40% so the bar always has room */}
+        <span className="max-w-[40%] truncate text-[10px] font-bold text-[var(--text-hi)] font-[var(--font-title)] tracking-[0.06em] shrink-0">
           {label}
         </span>
-        <span className="text-[8px] text-[var(--text-lo)] ml-1">
+
+        {/* Count */}
+        <span className="text-[8px] text-[var(--text-lo)] shrink-0 whitespace-nowrap">
           {done}/{tasks.length} cleared
         </span>
-        <div className="flex-1 h-[2px] bg-[var(--panel2)] rounded-full overflow-hidden mx-2">
+
+        {/* Progress bar — flex-1 + min-w-0 so it never collapses inside a button */}
+        <div className="flex-1 min-w-0 min-w-[40px] h-[2px] bg-[var(--panel2)] rounded-full overflow-hidden mx-2">
           <div
-            className="h-full rounded-full transition-all"
+            className="h-full rounded-full transition-all duration-300"
             style={{
               width: `${tasks.length ? (done / tasks.length) * 100 : 0}%`,
               background: color ?? 'var(--gold)',
             }}
           />
         </div>
-        <span className="text-[8px] font-bold text-[var(--violet)] shrink-0">{xp} XP total</span>
+
+        {/* XP */}
+        <span className="text-[8px] font-bold text-[var(--violet)] shrink-0 whitespace-nowrap">
+          {xp} XP
+        </span>
       </button>
 
       {/* Rows */}
-      {!collapsed && tasks.map((t) => (
-        <TaskAllRow
-          key={t.id}
-          task={t}
-          isExpanded={expandedId === t.id}
-          onExpand={() => setExpandedId(expandedId === t.id ? null : t.id)}
-          onToggleDone={onToggleDone}
-        />
-      ))}
+      {!collapsed &&
+        tasks.map((t) => (
+          <TaskAllRow
+            key={t.id}
+            task={t}
+            isExpanded={expandedId === t.id}
+            onExpand={() => setExpandedId(expandedId === t.id ? null : t.id)}
+            onToggleDone={onToggleDone}
+          />
+        ))}
     </div>
   );
 }
@@ -266,8 +293,8 @@ function TaskGroup({ label, color, tasks, expandedId, setExpandedId, onToggleDon
 function TableHeader() {
   return (
     <div className={tableHeader}>
-      <span className="w-[16px] shrink-0" />  {/* check */}
-      <span className="w-[16px] shrink-0" />  {/* diff */}
+      <span className="w-[16px] shrink-0" /> {/* check */}
+      <span className="w-[16px] shrink-0" /> {/* diff */}
       <span className="flex-1 min-w-0">Quest</span>
       <span className="w-20 shrink-0">Category</span>
       <span className="w-10 text-center shrink-0">Pri</span>
@@ -288,15 +315,27 @@ function EmptyState() {
   return (
     <div className="flex flex-col items-center justify-center py-16 gap-2 text-center opacity-50">
       <div className="text-[32px]">◈</div>
-      <div className="text-[12px] font-bold text-[var(--text-mid)]">No quests match the current filters</div>
-      <div className="text-[10px] text-[var(--text-lo)]">Try clearing your filters or showing done quests</div>
+      <div className="text-[12px] font-bold text-[var(--text-mid)]">
+        No quests match the current filters
+      </div>
+      <div className="text-[10px] text-[var(--text-lo)]">
+        Try clearing your filters or showing done quests
+      </div>
     </div>
   );
 }
 
 // ─── Summary pill ─────────────────────────────────────────────────────────────
 
-function SummaryPill({ value, label, color }: { value: string | number; label: string; color: string }) {
+function SummaryPill({
+  value,
+  label,
+  color,
+}: {
+  value: string | number;
+  label: string;
+  color: string;
+}) {
   const cssColor = `var(--${color})`;
   return (
     <div className="flex items-baseline gap-1">
@@ -335,7 +374,7 @@ const tableHeader =
   'flex items-center gap-3 px-4 py-1.5 bg-[var(--panel2)] border-b border-[var(--border)] text-[8px] font-bold text-[var(--text-lo)] tracking-[0.1em] uppercase font-[var(--font-title)] sticky top-0 z-10 shrink-0';
 
 const groupHeader =
-  'w-full flex items-center gap-2 px-4 py-2 bg-[var(--panel2)] border-b border-[var(--border)] border-l-[var(--border)] text-left transition-colors hover:bg-[oklch(0.74_0.17_85_/_0.03)] sticky top-[30px] z-[9]';
+  'w-full min-w-0 flex items-center gap-2 px-4 py-2 bg-[var(--panel2)] border-b border-[var(--border)] border-l-[var(--border)] text-left transition-colors hover:bg-[oklch(0.74_0.17_85_/_0.03)] sticky top-[30px] z-[9]';
 
 const DIFF_GROUP_COLORS: Record<string, string> = {
   S: 'oklch(0.74 0.17 85)',
