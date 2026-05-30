@@ -572,6 +572,15 @@ body {
   }
 }
 
+@keyframes slide-loading {
+  0% {
+    transform: translateX(-250%);
+  }
+  100% {
+    transform: translateX(350%);
+  }
+}
+
 /* Stats */
 .stats-wrap {
   padding: 0 14px 12px;

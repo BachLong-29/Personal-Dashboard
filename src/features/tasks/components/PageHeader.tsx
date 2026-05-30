@@ -1,11 +1,6 @@
 import { cn } from '@/libs/utils';
 
-import {
-  DIFF_LIST,
-  TASK_CATEGORIES,
-  type TaskCat,
-  type TaskDiff,
-} from '../data/mock';
+import { DIFF_LIST, TASK_CATEGORIES, type TaskCat, type TaskDiff } from '../data/mock';
 
 export type ViewMode = 'day' | 'week' | 'month' | 'all';
 
@@ -21,6 +16,7 @@ interface PageHeaderProps {
   search: string;
   onSearch: (s: string) => void;
   onForge: () => void;
+  onAddTask: () => void;
   /** Counts for the subtitle */
   todayDone: number;
   todayTotal: number;
@@ -40,6 +36,7 @@ export function PageHeader({
   search,
   onSearch,
   onForge,
+  onAddTask,
   todayDone,
   todayTotal,
   weekDone,
@@ -53,7 +50,9 @@ export function PageHeader({
     <div className={headerWrap}>
       {/* ── Title block ──────────────────────────────────────────────────── */}
       <div className="flex flex-col gap-0.5 min-w-0">
-        <div className={tagLine}>✦ &nbsp; CHRONICLE · {monthName} {yr} &nbsp; ✦</div>
+        <div className={tagLine}>
+          ✦ &nbsp; CHRONICLE · {monthName} {yr} &nbsp; ✦
+        </div>
         <h1 className={titleText}>Quest Log</h1>
         <p className="text-[10px] mt-0.5">
           <span className="text-[var(--text-hi)] font-semibold">{todayDone}</span>
@@ -68,6 +67,9 @@ export function PageHeader({
       {/* ── Right: view switch + forge ────────────────────────────────────── */}
       <div className="flex items-center gap-2 ml-auto">
         <ViewSwitch view={view} onChange={onViewChange} />
+        <button type="button" className={addTaskBtn} onClick={onAddTask}>
+          <span>＋</span> Add Task
+        </button>
         <button type="button" className={forgeBtn} onClick={onForge}>
           <span>＋</span> Forge Quest
         </button>
@@ -77,10 +79,7 @@ export function PageHeader({
       <div className={filterBar}>
         {/* Realm chips */}
         <FilterGroup label="Realm">
-          <Chip
-            active={filterCat === 'all'}
-            onClick={() => onFilterCat('all')}
-          >
+          <Chip active={filterCat === 'all'} onClick={() => onFilterCat('all')}>
             All
           </Chip>
           {TASK_CATEGORIES.map((c) => (
@@ -90,14 +89,17 @@ export function PageHeader({
               activeColor={`var(--${c.color})`}
               onClick={() => onFilterCat(filterCat === c.id ? 'all' : (c.id as TaskCat))}
             >
-              <span className="mr-0.5">{c.icon}</span>{c.label}
+              <span className="mr-0.5">{c.icon}</span>
+              {c.label}
             </Chip>
           ))}
         </FilterGroup>
 
         {/* Rank chips */}
         <FilterGroup label="Rank">
-          <Chip active={filterDiff === 'all'} onClick={() => onFilterDiff('all')}>Any</Chip>
+          <Chip active={filterDiff === 'all'} onClick={() => onFilterDiff('all')}>
+            Any
+          </Chip>
           {DIFF_LIST.map((d) => (
             <Chip
               key={d}
@@ -153,10 +155,10 @@ export function PageHeader({
 // ─── View switch ──────────────────────────────────────────────────────────────
 
 const VIEW_META: Array<{ id: ViewMode; glyph: string; label: string }> = [
-  { id: 'day',   glyph: '◐', label: 'DAY'   },
-  { id: 'week',  glyph: '◧', label: 'WEEK'  },
+  { id: 'day', glyph: '◐', label: 'DAY' },
+  { id: 'week', glyph: '◧', label: 'WEEK' },
   { id: 'month', glyph: '▦', label: 'MONTH' },
-  { id: 'all',   glyph: '≡', label: 'ALL'   },
+  { id: 'all', glyph: '≡', label: 'ALL' },
 ];
 
 function ViewSwitch({ view, onChange }: { view: ViewMode; onChange: (v: ViewMode) => void }) {
@@ -211,11 +213,7 @@ function Chip({ active, activeColor, onClick, children }: ChipProps) {
     <button
       type="button"
       className={cn(chipBase, active && chipActive)}
-      style={
-        active && activeColor
-          ? { borderColor: activeColor, color: activeColor }
-          : undefined
-      }
+      style={active && activeColor ? { borderColor: activeColor, color: activeColor } : undefined}
       onClick={onClick}
     >
       {children}
@@ -232,6 +230,9 @@ const tagLine =
   'text-[8px] tracking-[0.18em] text-[var(--gold)] font-[var(--font-title)] font-bold opacity-70';
 const titleText =
   'text-[22px] font-black text-[var(--text-hi)] font-[var(--font-title)] tracking-[0.05em] leading-none';
+
+const addTaskBtn =
+  'flex items-center gap-1.5 px-3 py-1.5 bg-[oklch(0.76_0.16_205_/_0.1)] border border-[oklch(0.76_0.16_205_/_0.35)] text-[var(--cyan)] text-[9px] font-bold font-[var(--font-title)] tracking-[0.08em] rounded-[var(--r-sm)] hover:bg-[oklch(0.76_0.16_205_/_0.18)] hover:border-[oklch(0.76_0.16_205_/_0.55)] transition-all duration-150';
 
 const forgeBtn =
   'flex items-center gap-1.5 px-3 py-1.5 bg-[oklch(0.74_0.17_85_/_0.12)] border border-[oklch(0.74_0.17_85_/_0.4)] text-[var(--gold)] text-[9px] font-bold font-[var(--font-title)] tracking-[0.08em] rounded-[var(--r-sm)] hover:bg-[oklch(0.74_0.17_85_/_0.2)] hover:border-[oklch(0.74_0.17_85_/_0.6)] transition-all duration-150';

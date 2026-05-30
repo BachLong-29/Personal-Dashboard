@@ -52,6 +52,8 @@ export interface UpdateTaskPayload {
   status?: TaskStatus;
   duration?: number;
   startDate?: string;
+  /** HH:MM scheduled time — null to clear */
+  startTime?: string | null;
   endDate?: string | null;
   dependencies?: string[];
   active?: boolean;

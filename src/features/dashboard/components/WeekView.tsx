@@ -28,7 +28,10 @@ import { useUpdateHabit } from '../hooks/useUpdateHabit';
 import { useUpdateTask } from '../hooks/useUpdateTask';
 import type { CenterTab, Habit, HabitColor, Quest, Task, TaskColor } from '../types';
 import type { ScheduleDisplayOptions } from '../hooks/useScheduleState';
-import { ScheduleTaskModal } from './ScheduleTaskModal';
+import { AddTaskModal } from '@/features/tasks/components/shared/AddTaskModal';
+import { EditTaskModal } from '@/features/tasks/components/shared/EditTaskModal';
+import { taskToUITask } from '@/features/tasks/data/adapters';
+import type { Task as CoreTask } from '@/types/task';
 
 interface WeekViewProps {
   weekStart: string;
@@ -87,7 +90,8 @@ export function WeekView({
   const { mutate: updateHabit } = useUpdateHabit();
 
   const [editing, setEditing] = useState<Task | undefined>(undefined);
-  const [showModal, setShowModal] = useState(false);
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
   const [addDefaultDate, setAddDefaultDate] = useState<string | undefined>(undefined);
   const [deletingTask, setDeletingTask] = useState<Task | undefined>(undefined);
   const [activeDrag, setActiveDrag] = useState<ActiveDrag | null>(null);
@@ -113,8 +117,7 @@ export function WeekView({
     for (const q of weekQuests as Quest[]) {
       const date = q.dueDate?.substring(0, 10);
       if (!date) continue;
-      if (!map[date]) map[date] = [];
-      map[date]!.push(q);
+      (map[date] ??= []).push(q);
     }
     return map;
   }, [weekQuests]);
@@ -145,13 +148,13 @@ export function WeekView({
 
   function handleEdit(task: Task) {
     setEditing(task);
-    setShowModal(true);
+    setShowEditModal(true);
   }
 
   function handleAddForDay(dateStr: string) {
     setEditing(undefined);
     setAddDefaultDate(dateStr);
-    setShowModal(true);
+    setShowAddModal(true);
   }
 
   function handleDeleteConfirm() {
@@ -319,8 +322,7 @@ export function WeekView({
 
                     {display.showHabits &&
                       getHabitsForDay(dayStr).map((h) => {
-                        const color =
-                          HABIT_COLORS[h.color as HabitColor]?.value ?? 'var(--violet)';
+                        const color = HABIT_COLORS[h.color as HabitColor]?.value ?? 'var(--violet)';
                         const done = isToday ? (habitLogMap[h.id] ?? false) : false;
                         return (
                           <DraggableItem
@@ -382,23 +384,40 @@ export function WeekView({
         </DragOverlay>
       </DndContext>
 
-      {showModal && (
-        <ScheduleTaskModal
-          editing={editing}
-          allTasks={allTasks as Task[]}
-          defaultDate={addDefaultDate ?? weekStart}
-          onClose={() => {
-            setShowModal(false);
-            setEditing(undefined);
-            setAddDefaultDate(undefined);
-          }}
-          onSaved={() => {
-            setShowModal(false);
-            setEditing(undefined);
-            setAddDefaultDate(undefined);
-          }}
-        />
-      )}
+      {/* Create — unified AddTaskModal */}
+      <AddTaskModal
+        open={showAddModal}
+        defaultDate={addDefaultDate ?? weekStart}
+        onClose={() => {
+          setShowAddModal(false);
+          setAddDefaultDate(undefined);
+        }}
+        onSaved={() => {
+          setShowAddModal(false);
+          setAddDefaultDate(undefined);
+        }}
+      />
+
+      {/* Edit — unified EditTaskModal */}
+      <EditTaskModal
+        task={editing ? taskToUITask(editing as unknown as CoreTask) : null}
+        open={showEditModal}
+        onClose={() => {
+          setShowEditModal(false);
+          setEditing(undefined);
+        }}
+        onSave={(id, payload) => {
+          updateTask(
+            { id, ...payload },
+            {
+              onSuccess: () => {
+                setShowEditModal(false);
+                setEditing(undefined);
+              },
+            },
+          );
+        }}
+      />
 
       {deletingTask && (
         <div
@@ -454,10 +473,7 @@ function DroppableDay({
 }) {
   const { setNodeRef, isOver } = useDroppable({ id });
   return (
-    <div
-      ref={setNodeRef}
-      className={cn(dayCol, isToday && dayColToday, isOver && dayColOver)}
-    >
+    <div ref={setNodeRef} className={cn(dayCol, isToday && dayColToday, isOver && dayColOver)}>
       {children}
     </div>
   );
@@ -503,9 +519,11 @@ const loadingMsg = 'text-[11px] text-[var(--text-lo)] col-span-7 text-center py-
 
 const gridWrap = 'flex-1 overflow-hidden grid grid-cols-7 gap-px bg-[var(--border)] min-h-0';
 
-const dayCol = 'flex flex-col bg-[var(--panel)] overflow-hidden min-h-0 transition-colors duration-150';
+const dayCol =
+  'flex flex-col bg-[var(--panel)] overflow-hidden min-h-0 transition-colors duration-150';
 const dayColToday = 'bg-[oklch(0.74_0.17_85_/_0.04)]';
-const dayColOver = 'bg-[oklch(0.74_0.17_85_/_0.1)] ring-1 ring-inset ring-[oklch(0.74_0.17_85_/_0.45)]';
+const dayColOver =
+  'bg-[oklch(0.74_0.17_85_/_0.1)] ring-1 ring-inset ring-[oklch(0.74_0.17_85_/_0.45)]';
 
 const dayHeader =
   'flex items-center justify-between px-1.5 py-1 border-b border-[var(--border)] shrink-0';

@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { startTransition, useEffect, useMemo, useRef, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 
 import { Button } from '@/components/ui/Button';
@@ -83,7 +84,9 @@ export default function MainDashboard() {
 
   const { mutate: rolloverQuests } = useRolloverQuests();
   const rolloverRef = useRef(rolloverQuests);
-  rolloverRef.current = rolloverQuests;
+  useEffect(() => {
+    rolloverRef.current = rolloverQuests;
+  }, [rolloverQuests]);
 
   useEffect(() => {
     const today = new Date().toDateString();
@@ -127,13 +130,16 @@ export default function MainDashboard() {
     for (const log of habitLogs) {
       map[log.habitId] = log.done;
     }
-    setHabitDoneMap(map);
+    startTransition(() => setHabitDoneMap(map));
   }, [habitLogs]);
 
   // Build today's task quests — tasks whose date range spans today
   const todayTaskQuests = useMemo<Quest[]>(() => {
     return (allTasks as Task[])
-      .filter((t) => t.active && t.startDate <= todayDateStr && (t.endDate ?? t.startDate) >= todayDateStr)
+      .filter(
+        (t) =>
+          t.active && t.startDate <= todayDateStr && (t.endDate ?? t.startDate) >= todayDateStr,
+      )
       .map((t) => {
         const isMultiDay = !!t.endDate && t.endDate > t.startDate;
         // Multi-day: "done" in day view = today's session logged, not overall status
@@ -160,7 +166,9 @@ export default function MainDashboard() {
   // Build today's habit quests
   const todayHabitQuests = useMemo<Quest[]>(() => {
     return (habits as Habit[])
-      .filter((h) => h.active && !!todayDayStr && h.schedule.some((e) => e.days.includes(todayDayStr)))
+      .filter(
+        (h) => h.active && !!todayDayStr && h.schedule.some((e) => e.days.includes(todayDayStr)),
+      )
       .map((h) => ({
         id: `habit-${h.id}`,
         title: h.name,
@@ -175,7 +183,7 @@ export default function MainDashboard() {
         habitColor: h.color,
         habitIcon: h.icon,
       }));
-  }, [habits, todayDay, habitDoneMap]);
+  }, [habits, todayDayStr, habitDoneMap]);
 
   const allQuests = useMemo<Quest[]>(
     () => [...todayTaskQuests, ...todayHabitQuests, ...quests],
@@ -194,9 +202,14 @@ export default function MainDashboard() {
     setChar(profileToCharacter(profile));
     charInitialized.current = true;
   }, [profileData]);
+  const searchParams = useSearchParams();
   const [achievements, setAchievements] = useState<Achievement[]>(MOCK_ACHIEVEMENTS);
   const [settings] = useState<DashboardSettings>(DEFAULT_SETTINGS);
-  const [centerTab, setCenterTab] = useState<CenterTab>('quests');
+  const [centerTab, setCenterTab] = useState<CenterTab>(() => {
+    const tab = searchParams.get('tab');
+    if (tab === 'habits' || tab === 'schedule' || tab === 'stats') return tab;
+    return 'quests';
+  });
   const [burst, setBurst] = useState<BurstPos | null>(null);
   const [toast, setToast] = useState<{ xp: number; coins: number } | null>(null);
   const [penaltyState, setPenaltyState] = useState<PenaltyState | null>(null);

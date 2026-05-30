@@ -16,6 +16,12 @@ export interface QuestCardProps {
   onReschedule?: (task: UITask) => void;
   /** Called when "Mark Complete" is clicked on a multi-day task */
   onCompleteTask?: (id: string) => void;
+  /**
+   * Called when the ⋯ action button is clicked.
+   * source === 'task'  → open EditTaskModal
+   * source === 'habit' → navigate to Habits tab
+   */
+  onEdit?: (task: UITask) => void;
   /** True when rendered inside DragOverlay — disables click handlers */
   isOverlay?: boolean;
   /** Strip desc, tags, expanded section — used in DragOverlay */
@@ -31,6 +37,7 @@ export function QuestCard({
   onToggleDone,
   onReschedule,
   onCompleteTask,
+  onEdit,
   isOverlay,
   compact,
 }: QuestCardProps) {
@@ -51,10 +58,7 @@ export function QuestCard({
       style={{ borderLeftColor: catColor, borderLeftWidth: 3 }}
     >
       {/* ── Main row — click anywhere here to expand ──────────────────────── */}
-      <div
-        className="flex gap-2 w-full cursor-pointer"
-        onClick={!isOverlay ? onExpand : undefined}
-      >
+      <div className="flex gap-2 w-full cursor-pointer" onClick={!isOverlay ? onExpand : undefined}>
         {/* Left: check button + diff badge */}
         <div className="flex flex-col items-center gap-1 shrink-0 pt-0.5">
           <button
@@ -69,9 +73,15 @@ export function QuestCard({
               onToggleDone?.(task.id);
             }}
             aria-label={task.isMultiDay ? 'Log today' : 'Toggle complete'}
-            title={task.isMultiDay ? (task.loggedToday ? 'Un-log today' : "Log today’s session") : undefined}
+            title={
+              task.isMultiDay
+                ? task.loggedToday
+                  ? 'Un-log today'
+                  : 'Log today’s session'
+                : undefined
+            }
           >
-            {task.isMultiDay ? (task.loggedToday ? '✓' : '') : (task.done ? '✓' : '')}
+            {task.isMultiDay ? (task.loggedToday ? '✓' : '') : task.done ? '✓' : ''}
           </button>
           <div className={cn(diffBadge, diffColors[task.diff])}>{task.diff}</div>
         </div>
@@ -80,11 +90,13 @@ export function QuestCard({
         <div className="flex-1 min-w-0">
           {/* Title + badges */}
           <div className="flex items-start gap-1.5 mb-1">
-            <div className={cn(
-              titleText,
-              (task.done && !task.isMultiDay) && 'line-through text-[var(--text-lo)]',
-              task.cancelled && 'line-through text-[var(--text-lo)]',
-            )}>
+            <div
+              className={cn(
+                titleText,
+                task.done && !task.isMultiDay && 'line-through text-[var(--text-lo)]',
+                task.cancelled && 'line-through text-[var(--text-lo)]',
+              )}
+            >
               {task.title}
             </div>
 
@@ -94,16 +106,21 @@ export function QuestCard({
               </span>
             ) : task.isMultiDay ? (
               /* Multi-day badge — shows "logged" state */
-              <span className={cn(
-                'text-[7px] font-bold shrink-0 px-1 py-0.5 rounded border tracking-[0.08em] font-[var(--font-title)] transition-colors',
-                task.loggedToday
-                  ? 'bg-[oklch(0.76_0.16_205_/_0.15)] border-[oklch(0.76_0.16_205_/_0.4)] text-[var(--cyan)]'
-                  : 'bg-[var(--panel)] border-[var(--border)] text-[var(--text-lo)]',
-              )}>
+              <span
+                className={cn(
+                  'text-[7px] font-bold shrink-0 px-1 py-0.5 rounded border tracking-[0.08em] font-[var(--font-title)] transition-colors',
+                  task.loggedToday
+                    ? 'bg-[oklch(0.76_0.16_205_/_0.15)] border-[oklch(0.76_0.16_205_/_0.4)] text-[var(--cyan)]'
+                    : 'bg-[var(--panel)] border-[var(--border)] text-[var(--text-lo)]',
+                )}
+              >
                 {task.loggedToday ? '✓ TODAY' : `${task.totalDays}D`}
               </span>
             ) : (
-              <div className="text-[9px] font-bold shrink-0" style={{ color: COLOR_VAR[p.color] ?? 'var(--text-lo)' }}>
+              <div
+                className="text-[9px] font-bold shrink-0"
+                style={{ color: COLOR_VAR[p.color] ?? 'var(--text-lo)' }}
+              >
                 {p.token}
               </div>
             )}
@@ -122,7 +139,8 @@ export function QuestCard({
               className="text-[8px] font-bold px-1.5 py-0.5 rounded border tracking-[0.06em] font-[var(--font-title)]"
               style={{ color: catColor, borderColor: `${catColor}55`, background: `${catColor}0F` }}
             >
-              <span className="mr-0.5">{c.icon}</span>{c.label}
+              <span className="mr-0.5">{c.icon}</span>
+              {c.label}
             </span>
             <span className="text-[9px] text-[var(--text-lo)]">⏲ {fmtEst(task.est)}</span>
             <span className={cn('text-[9px] font-semibold', urgencyColors[task.deadlineUrgency])}>
@@ -169,10 +187,12 @@ export function QuestCard({
         {/* Right: rewards + expand caret */}
         <div className="flex flex-col items-end gap-1 shrink-0 ml-1">
           <div className="text-[9px] font-bold text-[var(--violet)]">
-            +{task.xp}<span className="text-[7px] ml-0.5 opacity-70">XP</span>
+            +{task.xp}
+            <span className="text-[7px] ml-0.5 opacity-70">XP</span>
           </div>
           <div className="text-[9px] font-bold text-[var(--gold)]">
-            +{task.coins}<span className="text-[7px] ml-0.5 opacity-70">◎</span>
+            +{task.coins}
+            <span className="text-[7px] ml-0.5 opacity-70">◎</span>
           </div>
           {/* Expand caret — rotates when open */}
           {!isOverlay && (
@@ -185,19 +205,32 @@ export function QuestCard({
               ▶
             </span>
           )}
-          <button
-            type="button"
-            className="w-5 h-5 flex items-center justify-center text-[var(--text-lo)] hover:text-[var(--text-hi)] text-[12px] rounded hover:bg-[var(--panel2)] transition-colors"
-            onClick={(e) => e.stopPropagation()}
-          >
-            ⋯
-          </button>
+          {/* ⋯ action button — edit task / go to habits */}
+          {!isOverlay && onEdit && (task.source === 'task' || task.source === 'habit') && (
+            <button
+              type="button"
+              title={task.source === 'habit' ? 'Go to Habits' : 'Edit task'}
+              className="w-5 h-5 flex items-center justify-center text-[var(--text-lo)] hover:text-[var(--text-hi)] text-[12px] rounded hover:bg-[var(--panel2)] transition-colors"
+              onClick={(e) => {
+                e.stopPropagation();
+                onEdit(task);
+              }}
+            >
+              {task.source === 'habit' ? '↗' : '✎'}
+            </button>
+          )}
         </div>
       </div>
 
       {/* ── Expanded detail panel — second row in flex-col ────────────────── */}
       {expanded && !compact && (
-        <ExpandedPanel task={task} catColor={catColor} onReschedule={onReschedule} onCompleteTask={onCompleteTask} />
+        <ExpandedPanel
+          task={task}
+          catColor={catColor}
+          onReschedule={onReschedule}
+          onCompleteTask={onCompleteTask}
+          onEdit={onEdit}
+        />
       )}
     </article>
   );
@@ -210,11 +243,13 @@ function ExpandedPanel({
   catColor,
   onReschedule,
   onCompleteTask,
+  onEdit,
 }: {
   task: UITask;
   catColor: string;
   onReschedule?: (task: UITask) => void;
   onCompleteTask?: (id: string) => void;
+  onEdit?: (task: UITask) => void;
 }) {
   const c = catOf(task.cat);
   const p = priOf(task.priority);
@@ -224,19 +259,24 @@ function ExpandedPanel({
       {/* Detail grid */}
       <div className="grid grid-cols-4 gap-2 mb-3">
         {[
-          { label: 'Realm',    value: `${c.icon} ${c.label}` },
-          { label: 'Rank',     value: task.diff },
+          { label: 'Realm', value: `${c.icon} ${c.label}` },
+          { label: 'Rank', value: task.diff },
           { label: 'Priority', value: p.label },
-          { label: 'Est.',     value: fmtEst(task.est) },
+          { label: 'Est.', value: fmtEst(task.est) },
           task.isMultiDay
             ? { label: 'Duration', value: `${task.totalDays} days` }
             : { label: 'Deadline', value: task.deadline },
-          { label: 'Today',    value: task.isMultiDay ? (task.loggedToday ? '✓ Logged' : '○ Not yet') : '—' },
-          { label: 'Streak',   value: task.streak > 0 ? `${task.streak}d` : '—' },
-          { label: 'Reward',   value: `${task.xp} XP · ${task.coins} ◎` },
+          {
+            label: 'Today',
+            value: task.isMultiDay ? (task.loggedToday ? '✓ Logged' : '○ Not yet') : '—',
+          },
+          { label: 'Streak', value: task.streak > 0 ? `${task.streak}d` : '—' },
+          { label: 'Reward', value: `${task.xp} XP · ${task.coins} ◎` },
         ].map(({ label, value }) => (
           <div key={label} className="flex flex-col gap-[2px]">
-            <div className="text-[8px] text-[var(--text-lo)] tracking-[0.1em] uppercase">{label}</div>
+            <div className="text-[8px] text-[var(--text-lo)] tracking-[0.1em] uppercase">
+              {label}
+            </div>
             <div className="text-[10px] text-[var(--text-hi)] font-semibold">{value}</div>
           </div>
         ))}
@@ -282,7 +322,9 @@ function ExpandedPanel({
             <button
               type="button"
               className={task.loggedToday ? qcxBtnGhost : qcxBtnPrimary}
-              onClick={(e) => { e.stopPropagation(); /* handled by check btn above */ }}
+              onClick={(e) => {
+                e.stopPropagation(); /* handled by check btn above */
+              }}
             >
               {task.loggedToday ? '✓ Today logged' : '◉ Log today'}
             </button>
@@ -292,12 +334,26 @@ function ExpandedPanel({
               <button
                 type="button"
                 className={qcxBtnGhost}
-                onClick={(e) => { e.stopPropagation(); onCompleteTask(task.id); }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onCompleteTask(task.id);
+                }}
               >
                 ✦ Mark Complete
               </button>
             )}
-            <button type="button" className={qcxBtnGhost}>✎ Edit</button>
+            {onEdit && (
+              <button
+                type="button"
+                className={qcxBtnGhost}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onEdit(task);
+                }}
+              >
+                ✎ Edit
+              </button>
+            )}
           </>
         ) : task.cancelled ? (
           <span className="text-[8px] text-[var(--rose)] opacity-70 italic">
@@ -306,18 +362,48 @@ function ExpandedPanel({
         ) : (
           /* Single-day / habit / quest actions */
           <>
-            <button type="button" className={qcxBtnPrimary}>▶ Begin</button>
-            <button type="button" className={qcxBtnGhost}>✎ Edit</button>
+            <button type="button" className={qcxBtnPrimary}>
+              ▶ Begin
+            </button>
+            {task.source === 'task' && onEdit && (
+              <button
+                type="button"
+                className={qcxBtnGhost}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onEdit(task);
+                }}
+              >
+                ✎ Edit
+              </button>
+            )}
+            {task.source === 'habit' && onEdit && (
+              <button
+                type="button"
+                className={qcxBtnGhost}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onEdit(task);
+                }}
+              >
+                ↗ Habits tab
+              </button>
+            )}
             {task.source === 'habit' && onReschedule && (
               <button
                 type="button"
                 className={qcxBtnGhost}
-                onClick={(e) => { e.stopPropagation(); onReschedule(task); }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onReschedule(task);
+                }}
               >
                 ⏱ Reschedule
               </button>
             )}
-            <button type="button" className={qcxBtnDanger}>✕ Abandon</button>
+            <button type="button" className={qcxBtnDanger}>
+              ✕ Abandon
+            </button>
           </>
         )}
       </div>
@@ -329,18 +415,18 @@ function ExpandedPanel({
 
 const cardBase =
   'flex flex-col gap-0 p-2.5 bg-[var(--panel2)] border border-[var(--border)] rounded-[var(--r-sm)] mb-1.5 cursor-grab hover:border-[oklch(0.74_0.17_85_/_0.3)] hover:bg-[oklch(0.74_0.17_85_/_0.03)] transition-all duration-150 active:cursor-grabbing';
-const cardDone      = 'opacity-50';
-const cardSaga      = 'border-[oklch(0.74_0.17_85_/_0.35)] bg-[oklch(0.74_0.17_85_/_0.04)]';
-const cardCancelled = 'opacity-40 border-dashed border-[oklch(0.72_0.18_5_/_0.35)] bg-[oklch(0.72_0.18_5_/_0.03)]';
+const cardDone = 'opacity-50';
+const cardSaga = 'border-[oklch(0.74_0.17_85_/_0.35)] bg-[oklch(0.74_0.17_85_/_0.04)]';
+const cardCancelled =
+  'opacity-40 border-dashed border-[oklch(0.72_0.18_5_/_0.35)] bg-[oklch(0.72_0.18_5_/_0.03)]';
 
 const checkBtn =
   'w-[18px] h-[18px] rounded-full border border-[var(--border)] flex items-center justify-center text-[9px] font-bold transition-all hover:border-[var(--mint)] shrink-0';
-const checkBtnDone   = 'bg-[var(--mint)] border-[var(--mint)] text-[oklch(0.1_0_0)]';
+const checkBtnDone = 'bg-[var(--mint)] border-[var(--mint)] text-[oklch(0.1_0_0)]';
 /** Multi-day "logged today" state — cyan instead of mint so it's visually distinct */
 const checkBtnLogged = 'bg-[var(--cyan)] border-[var(--cyan)] text-[oklch(0.1_0_0)]';
 
 const diffBadge =
   'w-[16px] h-[16px] rounded-sm flex items-center justify-center text-[8px] font-black font-[var(--font-title)]';
 
-const titleText =
-  'text-[11px] font-semibold text-[var(--text-hi)] leading-[1.3] flex-1';
+const titleText = 'text-[11px] font-semibold text-[var(--text-hi)] leading-[1.3] flex-1';

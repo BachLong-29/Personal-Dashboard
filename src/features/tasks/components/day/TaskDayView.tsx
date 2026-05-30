@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import {
   DndContext,
   DragOverlay,
@@ -10,6 +10,8 @@ import {
   useSensors,
   type DragEndEvent,
 } from '@dnd-kit/core';
+
+import { DatePicker } from '@/components/ui/DatePicker';
 
 import { SLOTS, type UITask } from '../../data/mock';
 import { QuestCard } from '../shared/QuestCard';
@@ -26,14 +28,30 @@ import { WeekPeek } from './WeekPeek';
 interface TaskDayViewProps {
   tasks: UITask[];
   allTasks: UITask[];
+  /** Controlled selected date — owned by TaskManagement */
+  selectedDate: Date;
+  setSelectedDate: (date: Date) => void;
+  /** True while the day-specific API query is in-flight */
+  isLoadingDay?: boolean;
   expandedId: string | null;
   setExpandedId: (id: string | null) => void;
   onToggleDone: (id: string) => void;
-  onMoveToSlot: (id: string, slot: UITask['slot']) => void;
+  onMoveToSlot: (id: string, slot: UITask['slot'], day?: number) => void;
   onRescheduleHabit: (task: UITask, newTime: string) => void;
   onCompleteTask: (id: string) => void;
+  onEdit?: (task: UITask) => void;
   rescheduleLoading?: boolean;
   splitMode: 'week' | 'month';
+}
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+function computeOffset(date: Date): number {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const d = new Date(date);
+  d.setHours(0, 0, 0, 0);
+  return Math.round((d.getTime() - today.getTime()) / 86_400_000);
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -41,23 +59,37 @@ interface TaskDayViewProps {
 export function TaskDayView({
   tasks,
   allTasks,
+  selectedDate,
+  setSelectedDate,
+  isLoadingDay,
   expandedId,
   setExpandedId,
   onToggleDone,
   onMoveToSlot,
   onRescheduleHabit,
   onCompleteTask,
+  onEdit,
   rescheduleLoading,
   splitMode,
 }: TaskDayViewProps) {
-  const todayTasks = tasks.filter((t) => t.day === 0);
-  const done = todayTasks.filter((t) => t.done).length;
-  const pct = todayTasks.length ? Math.round((done / todayTasks.length) * 100) : 0;
+  // ── Date offset derived from controlled prop ─────────────────────────────────
+  const selectedOffset = useMemo(() => computeOffset(selectedDate), [selectedDate]);
 
+  function shiftDate(days: number) {
+    const d = new Date(selectedDate);
+    d.setDate(d.getDate() + days);
+    setSelectedDate(d);
+  }
+
+  // ── Tasks for selected date ─────────────────────────────────────────────────
+  const selectedTasks = tasks.filter((t) => t.day === selectedOffset);
+  const done = selectedTasks.filter((t) => t.done).length;
+  const pct = selectedTasks.length ? Math.round((done / selectedTasks.length) * 100) : 0;
+
+  // ── DnD state ───────────────────────────────────────────────────────────────
   const [activeId, setActiveId] = useState<string | null>(null);
-  // Which habit card triggered the reschedule modal
   const [rescheduleTarget, setRescheduleTarget] = useState<UITask | null>(null);
-  const activeTask = activeId ? todayTasks.find((t) => t.id === activeId) : null;
+  const activeTask = activeId ? selectedTasks.find((t) => t.id === activeId) : null;
 
   const sensors = useSensors(
     useSensor(MouseSensor, { activationConstraint: { distance: 8 } }),
@@ -68,14 +100,8 @@ export function TaskDayView({
     setActiveId(null);
     const { active, over } = event;
     if (!over) return;
-    onMoveToSlot(active.id as string, over.id as UITask['slot']);
+    onMoveToSlot(active.id as string, over.id as UITask['slot'], selectedOffset);
   }
-
-  const dateStr = new Date().toLocaleDateString('en-US', {
-    weekday: 'long',
-    month: 'long',
-    day: 'numeric',
-  });
 
   return (
     <DndContext
@@ -87,20 +113,66 @@ export function TaskDayView({
       <div className="flex gap-3 flex-1 min-h-0 overflow-hidden">
         {/* ── Left: daily ledger ────────────────────────────────────────── */}
         <section className="flex-1 min-w-0 bg-[var(--panel)] border border-[var(--border)] rounded-[var(--r)] flex flex-col overflow-hidden">
-          {/* Panel head */}
-          <div className="flex items-center gap-2 px-4 py-3 border-b border-[var(--border)] shrink-0">
-            <span className="text-[8px] tracking-[0.18em] text-[var(--text-lo)] font-[var(--font-title)] font-bold">
+          {/* Panel head with date navigation */}
+          <div className="flex items-center gap-2 px-4 py-2 border-b border-[var(--border)] shrink-0">
+            <span className="text-[8px] tracking-[0.18em] text-[var(--text-lo)] font-[var(--font-title)] font-bold shrink-0">
               CHAPTER I
             </span>
-            <h2 className="text-[13px] font-bold text-[var(--text-hi)] font-[var(--font-title)] tracking-[0.05em]">
-              Today · {dateStr}
-            </h2>
-            <div className="flex-1" />
-            <DayProgress done={done} total={todayTasks.length} pct={pct} />
+
+            {/* Date navigation */}
+            <div className="flex items-center gap-1.5 flex-1">
+              {/* Prev day */}
+              <button
+                type="button"
+                onClick={() => shiftDate(-1)}
+                title="Previous day"
+                className={navArrowBtn}
+              >
+                ◀
+              </button>
+
+              {/* DatePicker — shows selected date, opens calendar popup */}
+              <div className="w-[190px] shrink-0">
+                <DatePicker value={selectedDate} onChange={setSelectedDate} />
+              </div>
+
+              {/* Next day */}
+              <button
+                type="button"
+                onClick={() => shiftDate(1)}
+                title="Next day"
+                className={navArrowBtn}
+              >
+                ▶
+              </button>
+
+              {/* Today chip — visible only when not on today */}
+              {selectedOffset !== 0 && (
+                <button
+                  type="button"
+                  onClick={() => setSelectedDate(new Date())}
+                  className={todayChipCls}
+                >
+                  TODAY
+                </button>
+              )}
+            </div>
+
+            <DayProgress done={done} total={selectedTasks.length} pct={pct} />
           </div>
 
           {/* Active session indicator */}
-          <ActiveBlock tasks={todayTasks} />
+          <ActiveBlock tasks={selectedTasks} />
+
+          {/* Loading bar — visible while day-specific query is in flight */}
+          {isLoadingDay && (
+            <div className="h-[2px] w-full shrink-0 bg-[oklch(0.74_0.17_85_/_0.25)] overflow-hidden">
+              <div
+                className="h-full w-2/5 bg-[var(--gold)] rounded-full opacity-80"
+                style={{ animation: 'slide-loading 1.2s ease-in-out infinite' }}
+              />
+            </div>
+          )}
 
           {/* Slot columns */}
           <div className="flex-1 overflow-y-auto flex flex-col divide-y divide-[var(--border)]">
@@ -108,12 +180,13 @@ export function TaskDayView({
               <SlotColumn
                 key={slot.id}
                 slot={slot}
-                tasks={todayTasks.filter((t) => t.slot === slot.id)}
+                tasks={selectedTasks.filter((t) => t.slot === slot.id)}
                 expandedId={expandedId}
                 setExpandedId={setExpandedId}
                 onToggleDone={onToggleDone}
                 onReschedule={setRescheduleTarget}
                 onCompleteTask={onCompleteTask}
+                onEdit={onEdit}
                 draggingId={activeId}
               />
             ))}
@@ -123,7 +196,7 @@ export function TaskDayView({
         {/* ── Right: side panels ────────────────────────────────────────── */}
         <section className="w-[400px] shrink-0 flex flex-col gap-2.5 overflow-y-auto">
           {splitMode === 'week' ? <WeekPeek tasks={allTasks} /> : <MonthPeek tasks={allTasks} />}
-          <ScheduleStrip tasks={todayTasks} />
+          <ScheduleStrip tasks={selectedTasks} />
         </section>
       </div>
 
@@ -151,3 +224,11 @@ export function TaskDayView({
     </DndContext>
   );
 }
+
+// ─── Style constants ──────────────────────────────────────────────────────────
+
+const navArrowBtn =
+  'w-6 h-6 flex items-center justify-center text-[var(--text-lo)] hover:text-[var(--gold)] text-[9px] rounded hover:bg-[var(--panel2)] transition-colors shrink-0';
+
+const todayChipCls =
+  'px-2 py-0.5 text-[8px] font-bold font-[var(--font-title)] tracking-[0.08em] text-[var(--gold)] border border-[oklch(0.74_0.17_85_/_0.4)] rounded-full hover:bg-[oklch(0.74_0.17_85_/_0.1)] transition-colors shrink-0';

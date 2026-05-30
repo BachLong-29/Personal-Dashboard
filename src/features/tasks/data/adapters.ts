@@ -41,7 +41,11 @@ export function formatDeadline(dateStr?: string): string {
   if (offset === -1) return 'Yesterday';
   if (offset < 0) return `${Math.abs(offset)}d ago`;
   if (offset <= 7)
-    return new Date(dateStr).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+    return new Date(dateStr).toLocaleDateString('en-US', {
+      weekday: 'short',
+      month: 'short',
+      day: 'numeric',
+    });
   return new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
 
@@ -60,39 +64,39 @@ export function computeUrgency(dateStr?: string, done?: boolean): string {
 // ─── Mapping tables ───────────────────────────────────────────────────────────
 
 const QUEST_TYPE_TO_CAT: Record<string, TaskCat> = {
-  focus:   'focus',
-  habit:   'habit',
+  focus: 'focus',
+  habit: 'habit',
   reflect: 'reflect',
-  admin:   'admin',
-  create:  'create',
-  health:  'health',
-  break:   'reflect',
-  task:    'focus', // dashboard/types has 'task' as a QuestType
+  admin: 'admin',
+  create: 'create',
+  health: 'health',
+  break: 'reflect',
+  task: 'focus', // dashboard/types has 'task' as a QuestType
 };
 
 const COLOR_TO_CAT: Record<string, TaskCat> = {
-  cyan:   'focus',
-  mint:   'create',
-  gold:   'habit',
+  cyan: 'focus',
+  mint: 'create',
+  gold: 'habit',
   violet: 'reflect',
-  rose:   'admin',
-  amber:  'create',
-  blue:   'focus',
+  rose: 'admin',
+  amber: 'create',
+  blue: 'focus',
 };
 
 // ─── Task → UITask ────────────────────────────────────────────────────────────
 
 export function taskToUITask(t: Task, taskLog?: TaskLog): UITask {
   const startOffset = dayOffset(t.startDate);
-  const endOffset   = t.endDate ? dayOffset(t.endDate) : startOffset;
-  const totalDays   = Math.max(endOffset - startOffset + 1, 1);
+  const endOffset = t.endDate ? dayOffset(t.endDate) : startOffset;
+  const totalDays = Math.max(endOffset - startOffset + 1, 1);
 
   // A task is "multi-day" when it spans more than 1 calendar day
   const isMultiDay = totalDays > 1;
 
   // Multi-day task active today: clamp day to 0 so it appears in the day view
   const isActiveToday = isMultiDay && startOffset <= 0 && endOffset >= 0;
-  const day           = isActiveToday ? 0 : startOffset;
+  const day = isActiveToday ? 0 : startOffset;
 
   const loggedToday = isMultiDay ? !!taskLog : undefined;
 
@@ -103,13 +107,11 @@ export function taskToUITask(t: Task, taskLog?: TaskLog): UITask {
   //     → prevents a stale loggedToday from marking future-day slots as done
   const done = isMultiDay
     ? isActiveToday
-      ? ((loggedToday ?? false) || t.status === 'done')
+      ? (loggedToday ?? false) || t.status === 'done'
       : t.status === 'done'
     : t.status === 'done';
 
-  const progress =
-    t.status === 'done'        ? 1 :
-    t.status === 'in_progress' ? 0.5 : 0;
+  const progress = t.status === 'done' ? 1 : t.status === 'in_progress' ? 0.5 : 0;
 
   // Deadline label for multi-day tasks shows the full range
   const deadlineStr = t.endDate || t.startDate;
@@ -118,39 +120,39 @@ export function taskToUITask(t: Task, taskLog?: TaskLog): UITask {
     : formatDeadline(deadlineStr);
 
   return {
-    id:              t.id,
-    sourceId:        t.id,
-    source:          'task',
-    title:           t.name,
-    desc:            t.note ?? '',
-    cat:             COLOR_TO_CAT[t.color] ?? 'focus',
-    diff:            'B',
-    priority:        'medium',
-    xp:              100,
-    coins:           25,
-    est:             t.duration ?? 60,
+    id: t.id,
+    sourceId: t.id,
+    source: 'task',
+    title: t.name,
+    desc: t.note ?? '',
+    cat: COLOR_TO_CAT[t.color] ?? 'focus',
+    diff: 'B',
+    priority: 'medium',
+    xp: 100,
+    coins: 25,
+    est: t.duration ?? 60,
     deadline,
     deadlineUrgency: computeUrgency(deadlineStr, t.status === 'done'),
     progress,
-    subtasks:        0,
-    subtasksDone:    0,
+    subtasks: 0,
+    subtasksDone: 0,
     day,
-    slot:            offsetToSlot(day, t.startTime),
-    tags:            [],
-    streak:          0,
-    combo:           0,
+    slot: offsetToSlot(day, t.startTime),
+    tags: [],
+    streak: 0,
+    combo: 0,
     done,
     // raw API fields
-    icon:            t.icon,
-    status:          t.status,
-    color:           t.color,
-    tagId:           t.tagId,
-    dependencies:    t.dependencies,
-    startDate:       t.startDate,
-    endDate:         t.endDate,
-    startTime:       t.startTime,
-    habitRef:        t.habitRef,
-    active:          t.active,
+    icon: t.icon,
+    status: t.status,
+    color: t.color,
+    tagId: t.tagId,
+    dependencies: t.dependencies,
+    startDate: t.startDate,
+    endDate: t.endDate,
+    startTime: t.startTime,
+    habitRef: t.habitRef,
+    active: t.active,
     // multi-day extras
     isMultiDay,
     totalDays: isMultiDay ? totalDays : undefined,
@@ -164,29 +166,29 @@ export function questToUITask(q: QuestLike): UITask {
   const offset = dayOffset(q.dueDate);
 
   return {
-    id:              q.id,
-    sourceId:        q.id,
-    source:          'quest',
-    title:           q.title,
-    desc:            q.desc,
-    cat:             QUEST_TYPE_TO_CAT[q.type] ?? 'focus',
-    diff:            q.difficulty as UITask['diff'],
-    priority:        diffToPriority(q.difficulty),
-    xp:              q.xp,
-    coins:           q.coins,
-    est:             60,
-    deadline:        formatDeadline(q.dueDate),
+    id: q.id,
+    sourceId: q.id,
+    source: 'quest',
+    title: q.title,
+    desc: q.desc,
+    cat: QUEST_TYPE_TO_CAT[q.type] ?? 'focus',
+    diff: q.difficulty as UITask['diff'],
+    priority: diffToPriority(q.difficulty),
+    xp: q.xp,
+    coins: q.coins,
+    est: 60,
+    deadline: formatDeadline(q.dueDate),
     deadlineUrgency: computeUrgency(q.dueDate, q.done),
-    progress:        q.done ? 1 : 0,
-    subtasks:        0,
-    subtasksDone:    0,
-    day:             offset,
-    slot:            offsetToSlot(offset),
-    tags:            q.tags,
-    streak:          0,
-    combo:           0,
-    done:            q.done,
-    endDate:         q.dueDate,
+    progress: q.done ? 1 : 0,
+    subtasks: 0,
+    subtasksDone: 0,
+    day: offset,
+    slot: offsetToSlot(offset),
+    tags: q.tags,
+    streak: 0,
+    combo: 0,
+    done: q.done,
+    endDate: q.dueDate,
   };
 }
 
@@ -201,46 +203,96 @@ export function getTodayEntry(h: Habit) {
   return h.schedule.find((e) => today && e.days.includes(today));
 }
 
+/** Returns the HabitScheduleEntry that covers the given date, or undefined */
+export function getEntryForDate(h: Habit, date: Date) {
+  const dow = DOW_TO_HABIT_DAY[date.getDay()];
+  return h.schedule.find((e) => dow && e.days.includes(dow));
+}
+
 /** Returns true if the habit is scheduled for today */
 export function isHabitScheduledToday(h: Habit): boolean {
   return getTodayEntry(h) !== undefined;
 }
 
-export function habitToUITask(h: Habit, log?: HabitLog, cancelled = false): UITask {
-  const done      = log?.done ?? false;
-  const entry     = getTodayEntry(h);
-  const timeLabel = entry?.time ? `Today · ${entry.time}` : 'Today';
+/** Returns true if the habit is scheduled for the given date */
+export function isHabitScheduledForDate(h: Habit, date: Date): boolean {
+  return getEntryForDate(h, date) !== undefined;
+}
+
+/**
+ * Convert a Habit to a UITask.
+ *
+ * Pass `forDate` when building a task for a date other than today — the entry,
+ * slot, day offset, deadline label and urgency are all computed relative to
+ * that date rather than the real current day.
+ */
+export function habitToUITask(h: Habit, log?: HabitLog, cancelled = false, forDate?: Date): UITask {
+  const done = log?.done ?? false;
+
+  // ── Entry & slot ────────────────────────────────────────────────────────────
+  const entry = forDate ? getEntryForDate(h, forDate) : getTodayEntry(h);
+
+  // ── Day offset & deadline label ─────────────────────────────────────────────
+  let day: number;
+  let deadline: string;
+  let deadlineUrgency: string;
+
+  if (forDate) {
+    const dateStr = forDate.toISOString().split('T')[0] ?? '';
+    day = dayOffset(dateStr);
+    const label = formatDeadline(dateStr);
+    deadline = done ? `Done · ${label}` : entry?.time ? `${label} · ${entry.time}` : label;
+    deadlineUrgency = done ? 'done' : computeUrgency(dateStr, false);
+  } else {
+    day = 0;
+    const timeLabel = entry?.time ? `Today · ${entry.time}` : 'Today';
+    deadline = done ? 'Done · Today' : timeLabel;
+    deadlineUrgency = done ? 'done' : 'today';
+  }
 
   return {
-    id:              `habit-${h.id}`,
-    sourceId:        h.id,
-    source:          'habit',
-    title:           `${h.icon} ${h.name}`,
-    desc:            h.note ?? '',
-    cat:             'habit',
-    diff:            'C',
-    priority:        'medium',
-    xp:              50,
-    coins:           12,
-    est:             h.duration ?? 15,
-    deadline:        done ? 'Done · Today' : timeLabel,
-    deadlineUrgency: done ? 'done' : 'today',
-    progress:        done ? 1 : 0,
-    subtasks:        0,
-    subtasksDone:    0,
-    day:             0,
-    slot:            timeToSlot(entry?.time),
-    tags:            [],
-    streak:          0,
-    combo:           0,
+    id: `habit-${h.id}`,
+    sourceId: h.id,
+    source: 'habit',
+    title: `${h.icon} ${h.name}`,
+    desc: h.note ?? '',
+    cat: 'habit',
+    diff: 'C',
+    priority: 'medium',
+    xp: 50,
+    coins: 12,
+    est: h.duration ?? 15,
+    deadline,
+    deadlineUrgency,
+    progress: done ? 1 : 0,
+    subtasks: 0,
+    subtasksDone: 0,
+    day,
+    slot: timeToSlot(entry?.time),
+    tags: [],
+    streak: 0,
+    combo: 0,
     done,
-    icon:            h.icon,
-    color:           h.color,
-    tagId:           h.tagId,
-    startTime:       entry?.time,
-    active:          h.active,
+    icon: h.icon,
+    color: h.color,
+    tagId: h.tagId,
+    startTime: entry?.time,
+    active: h.active,
     cancelled,
   };
+}
+
+// ─── Slot helpers (exported for use in drag-drop and UI) ─────────────────────
+
+/** Map a slot id to its default startTime (start of the slot's time range) */
+export function slotToDefaultTime(slot: TaskSlot): string {
+  const MAP: Record<TaskSlot, string> = {
+    morning: '06:00',
+    deep: '10:00',
+    afternoon: '13:00',
+    evening: '17:00',
+  };
+  return MAP[slot];
 }
 
 // ─── Private helpers ──────────────────────────────────────────────────────────
@@ -252,16 +304,27 @@ function diffToPriority(diff: string): UITask['priority'] {
   return 'low';
 }
 
-/** Map offset + optional explicit startTime to a TaskSlot */
+/**
+ * Map offset + optional explicit startTime to a TaskSlot.
+ *
+ * Priority order:
+ *   1. If startTime is set → always use it (works for any date offset)
+ *   2. No startTime + today (offset=0) → fall back to current hour
+ *   3. No startTime + other day → default to 'morning'
+ */
 function offsetToSlot(offset: number, startTime?: string): TaskSlot {
+  if (startTime) {
+    const h = parseInt(startTime.split(':')[0] ?? '0', 10);
+    if (h < 10) return 'morning';
+    if (h < 13) return 'deep';
+    if (h < 17) return 'afternoon';
+    return 'evening';
+  }
   if (offset !== 0) return 'morning';
-  // If the task has an explicit scheduled time, use that hour for slot mapping
-  const h = startTime
-    ? parseInt(startTime.split(':')[0] ?? '0', 10)
-    : new Date().getHours();
-  if (h < 10)  return 'morning';
-  if (h < 13)  return 'deep';
-  if (h < 17)  return 'afternoon';
+  const h = new Date().getHours();
+  if (h < 10) return 'morning';
+  if (h < 13) return 'deep';
+  if (h < 17) return 'afternoon';
   return 'evening';
 }
 
