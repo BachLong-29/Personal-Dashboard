@@ -3,14 +3,42 @@ import { cn } from '@/libs/utils';
 import { catOf, fmtEst, priOf, COLOR_VAR, type UITask } from '../../data/mock';
 import { diffColors, urgencyColors } from '../shared/styles';
 
-interface TaskAllRowProps {
-  task: UITask;
-  onToggleDone: (id: string) => void;
-  onExpand: () => void;
-  isExpanded: boolean;
+// ─── Status display ───────────────────────────────────────────────────────────
+
+const STATUS_META: Record<string, { label: string; color: string; bg: string }> = {
+  todo: { label: 'To Do', color: 'var(--text-lo)', bg: 'oklch(1 0 0 / 0.04)' },
+  in_progress: { label: 'In Progress', color: 'var(--cyan)', bg: 'oklch(0.76 0.16 205 / 0.12)' },
+  pending: { label: 'Pending', color: 'var(--gold)', bg: 'oklch(0.74 0.17 85 / 0.12)' },
+  waiting: { label: 'Waiting', color: 'var(--amber)', bg: 'oklch(0.76 0.16 55 / 0.12)' },
+  done: { label: 'Done', color: 'var(--mint)', bg: 'oklch(0.76 0.14 162 / 0.12)' },
+};
+
+function StatusBadge({ status }: { status?: string }) {
+  if (!status) return <span className="w-20 shrink-0" />;
+  const meta = STATUS_META[status] ?? { label: status, color: 'var(--text-lo)', bg: 'transparent' };
+  return (
+    <span
+      className="text-[8px] font-bold px-1.5 py-0.5 rounded border tracking-[0.06em] font-[var(--font-title)] shrink-0 w-20 overflow-hidden whitespace-nowrap text-ellipsis"
+      style={{ color: meta.color, borderColor: `${meta.color}55`, background: meta.bg }}
+    >
+      {meta.label}
+    </span>
+  );
 }
 
-export function TaskAllRow({ task, onToggleDone, onExpand, isExpanded }: TaskAllRowProps) {
+// ─── Props ────────────────────────────────────────────────────────────────────
+
+interface TaskAllRowProps {
+  task: UITask;
+  onExpand: () => void;
+  isExpanded: boolean;
+  onEdit?: (task: UITask) => void;
+  onDelete?: (task: UITask) => void;
+}
+
+// ─── Component ────────────────────────────────────────────────────────────────
+
+export function TaskAllRow({ task, onExpand, isExpanded, onEdit, onDelete }: TaskAllRowProps) {
   const c = catOf(task.cat);
   const p = priOf(task.priority);
   const catColor = COLOR_VAR[c.color] ?? 'var(--text-lo)';
@@ -18,31 +46,18 @@ export function TaskAllRow({ task, onToggleDone, onExpand, isExpanded }: TaskAll
   return (
     <>
       <div
-        className={cn(
-          rowBase,
-          task.done && 'opacity-45',
-          isExpanded && rowExpanded,
-        )}
+        className={cn(rowBase, isExpanded && rowExpanded)}
         style={{ borderLeftColor: catColor, borderLeftWidth: 2 }}
         onClick={onExpand}
       >
-        {/* Check */}
-        <button
-          type="button"
-          className={cn(checkBtn, task.done && checkBtnDone)}
-          onClick={(e) => { e.stopPropagation(); onToggleDone(task.id); }}
-          aria-label="Toggle complete"
-        >
-          {task.done ? '✓' : ''}
-        </button>
-
         {/* Diff */}
         <span className={cn(diffBadge, diffColors[task.diff])}>{task.diff}</span>
 
         {/* Title */}
-        <span className={cn(titleCol, task.done && 'line-through text-[var(--text-lo)]')}>
-          {task.title}
-        </span>
+        <span className={titleCol}>{task.title}</span>
+
+        {/* Status */}
+        <StatusBadge status={task.status} />
 
         {/* Category */}
         <span
@@ -71,10 +86,7 @@ export function TaskAllRow({ task, onToggleDone, onExpand, isExpanded }: TaskAll
           <div className="flex-1 h-[3px] bg-[var(--panel2)] rounded-full overflow-hidden">
             <div
               className="h-full rounded-full"
-              style={{
-                width: `${(task.progress || 0) * 100}%`,
-                background: catColor,
-              }}
+              style={{ width: `${(task.progress || 0) * 100}%`, background: catColor }}
             />
           </div>
           <span className="text-[8px] text-[var(--text-lo)] shrink-0 w-6 text-right">
@@ -84,7 +96,8 @@ export function TaskAllRow({ task, onToggleDone, onExpand, isExpanded }: TaskAll
 
         {/* XP */}
         <span className="text-[9px] font-bold text-[var(--violet)] w-12 text-right shrink-0">
-          +{task.xp}<span className="text-[7px] opacity-60 ml-0.5">XP</span>
+          +{task.xp}
+          <span className="text-[7px] opacity-60 ml-0.5">XP</span>
         </span>
 
         {/* Est */}
@@ -111,14 +124,16 @@ export function TaskAllRow({ task, onToggleDone, onExpand, isExpanded }: TaskAll
         )}
 
         {/* Expand caret */}
-        <span className="text-[8px] text-[var(--text-lo)] ml-1 shrink-0 transition-transform duration-150" style={{ transform: isExpanded ? 'rotate(90deg)' : 'none' }}>
+        <span
+          className="text-[8px] text-[var(--text-lo)] ml-1 shrink-0 transition-transform duration-150"
+          style={{ transform: isExpanded ? 'rotate(90deg)' : 'none' }}
+        >
           ▶
         </span>
       </div>
 
-      {/* Inline expanded detail */}
       {isExpanded && (
-        <RowDetail task={task} catColor={catColor} />
+        <RowDetail task={task} catColor={catColor} onEdit={onEdit} onDelete={onDelete} />
       )}
     </>
   );
@@ -126,40 +141,61 @@ export function TaskAllRow({ task, onToggleDone, onExpand, isExpanded }: TaskAll
 
 // ─── Inline expanded row ──────────────────────────────────────────────────────
 
-function RowDetail({ task, catColor }: { task: UITask; catColor: string }) {
+function RowDetail({
+  task,
+  catColor,
+  onEdit,
+  onDelete,
+}: {
+  task: UITask;
+  catColor: string;
+  onEdit?: (task: UITask) => void;
+  onDelete?: (task: UITask) => void;
+}) {
   return (
     <div
       className="flex gap-4 px-4 py-3 bg-[oklch(0.66_0.22_295_/_0.04)] border-b border-[var(--border)] border-l-2"
       style={{ borderLeftColor: catColor }}
     >
-      {/* Description + note */}
       <div className="flex-1 min-w-0">
         <p className="text-[10px] text-[var(--text-mid)] leading-[1.5] mb-2">{task.desc}</p>
         {task.expandedNote && (
           <div className="p-2 bg-[oklch(0.66_0.22_295_/_0.06)] border border-[oklch(0.66_0.22_295_/_0.2)] rounded-[var(--r-sm)]">
-            <div className="text-[7px] tracking-[0.12em] text-[var(--violet)] font-bold mb-1">SAGE&apos;S NOTE</div>
-            <div className="text-[9px] text-[var(--text-mid)] leading-[1.5]">{task.expandedNote}</div>
+            <div className="text-[7px] tracking-[0.12em] text-[var(--violet)] font-bold mb-1">
+              SAGE&apos;S NOTE
+            </div>
+            <div className="text-[9px] text-[var(--text-mid)] leading-[1.5]">
+              {task.expandedNote}
+            </div>
           </div>
         )}
       </div>
 
-      {/* Tags */}
-      <div className="flex flex-col gap-1 shrink-0">
-        <div className="text-[7px] text-[var(--text-lo)] tracking-[0.1em] uppercase mb-0.5">Tags</div>
-        <div className="flex flex-wrap gap-1">
-          {task.tags.map((tag) => (
-            <span key={tag} className="text-[8px] text-[var(--text-lo)] bg-[var(--panel2)] border border-[var(--border)] px-1.5 py-0.5 rounded">
-              #{tag}
-            </span>
-          ))}
-        </div>
-      </div>
-
-      {/* Actions */}
       <div className="flex gap-1.5 items-start shrink-0">
-        <button type="button" className={actionBtnPrimary}>▶ Begin</button>
-        <button type="button" className={actionBtnGhost}>✎ Edit</button>
-        <button type="button" className={actionBtnGhost}>⤴ Move</button>
+        {onEdit && (
+          <button
+            type="button"
+            className={actionBtnPrimary}
+            onClick={(e) => {
+              e.stopPropagation();
+              onEdit(task);
+            }}
+          >
+            ✎ Edit
+          </button>
+        )}
+        {onDelete && (
+          <button
+            type="button"
+            className={actionBtnDanger}
+            onClick={(e) => {
+              e.stopPropagation();
+              onDelete(task);
+            }}
+          >
+            ✕ Delete
+          </button>
+        )}
       </div>
     </div>
   );
@@ -169,13 +205,7 @@ function RowDetail({ task, catColor }: { task: UITask; catColor: string }) {
 
 const rowBase =
   'flex items-center gap-3 px-4 py-2 border-b border-[var(--border)] cursor-pointer transition-colors hover:bg-[oklch(0.74_0.17_85_/_0.03)] select-none';
-const rowExpanded =
-  'bg-[oklch(0.66_0.22_295_/_0.04)]';
-
-const checkBtn =
-  'w-[16px] h-[16px] rounded-full border border-[var(--border)] flex items-center justify-center text-[8px] font-bold transition-all hover:border-[var(--mint)] shrink-0';
-const checkBtnDone =
-  'bg-[var(--mint)] border-[var(--mint)] text-[oklch(0.1_0_0)]';
+const rowExpanded = 'bg-[oklch(0.66_0.22_295_/_0.04)]';
 
 const diffBadge =
   'w-[16px] h-[16px] rounded-sm flex items-center justify-center text-[8px] font-black font-[var(--font-title)] shrink-0';
@@ -188,6 +218,6 @@ const catPill =
 const deadlineCol = 'text-[9px] font-semibold w-24 shrink-0';
 
 const actionBtnBase =
-  'text-[8px] font-bold px-2 py-[3px] rounded border font-[var(--font-title)] tracking-[0.06em] transition-all';
+  'text-[8px] font-bold px-2 py-[3px] rounded border font-[var(--font-title)] tracking-[0.06em] transition-all cursor-pointer';
 const actionBtnPrimary = `${actionBtnBase} bg-[oklch(0.66_0.22_295_/_0.1)] border-[oklch(0.66_0.22_295_/_0.35)] text-[var(--violet)] hover:bg-[oklch(0.66_0.22_295_/_0.2)]`;
-const actionBtnGhost = `${actionBtnBase} border-[var(--border)] text-[var(--text-mid)] hover:text-[var(--text-hi)] hover:border-[oklch(0.74_0.17_85_/_0.3)]`;
+const actionBtnDanger = `${actionBtnBase} border-[oklch(0.72_0.18_5_/_0.3)] text-[var(--rose)] hover:bg-[oklch(0.72_0.18_5_/_0.1)] hover:border-[oklch(0.72_0.18_5_/_0.5)]`;

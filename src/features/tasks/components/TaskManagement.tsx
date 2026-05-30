@@ -504,7 +504,9 @@ export function TaskManagement() {
               onToggleDone={handleToggleDone}
             />
           )}
-          {view === 'all' && <TaskAllView tasks={tasks} onToggleDone={handleToggleDone} />}
+          {view === 'all' && (
+            <TaskAllView tasks={tasks} onToggleDone={handleToggleDone} onEdit={handleEditTask} />
+          )}
         </div>
       </div>
 

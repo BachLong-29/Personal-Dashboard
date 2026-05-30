@@ -1,10 +1,13 @@
 'use client';
 
-import { Modal, ModalHead, ModalBody } from '@/components/ui/Modal';
+import { useRef, useState } from 'react';
+
+import { Modal, ModalHead, ModalBody, ModalFoot } from '@/components/ui/Modal';
+import { Button } from '@/components/ui/Button';
 import type { TaskColor, TaskStatus, UpdateTaskPayload } from '@/types';
 
 import type { UITask } from '../../data/mock';
-import { TaskForm, type TaskFormValues } from './TaskForm';
+import { TaskForm, type TaskFormValues, type TaskFormHandle } from './TaskForm';
 
 /** Format a Date using local timezone — avoids UTC off-by-one for UTC+ users. */
 function toLocalDate(d: Date): string {
@@ -21,7 +24,6 @@ export interface EditTaskModalProps {
   task: UITask | null;
   open: boolean;
   onClose: () => void;
-  /** Called when the user confirms edits. Receives the raw task ID + patch payload. */
   onSave: (id: string, payload: UpdateTaskPayload) => void;
   saving?: boolean;
 }
@@ -29,6 +31,9 @@ export interface EditTaskModalProps {
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export function EditTaskModal({ task, open, onClose, onSave, saving }: EditTaskModalProps) {
+  const formRef = useRef<TaskFormHandle>(null);
+  const [canSave, setCanSave] = useState(false);
+
   if (!task) return null;
 
   function handleSubmit(values: TaskFormValues) {
@@ -45,7 +50,6 @@ export function EditTaskModal({ task, open, onClose, onSave, saving }: EditTaskM
       status: values.status,
       duration: durationNum && !Number.isNaN(durationNum) ? durationNum : undefined,
       startDate: values.startDate ? toLocalDate(values.startDate) : undefined,
-      // '' → clear startTime (null); set value → update; unchanged stays undefined
       startTime: values.startTime ? values.startTime : task.startTime ? null : undefined,
       endDate: values.endDate ? toLocalDate(values.endDate) : task.endDate ? null : undefined,
       dependencies: values.dependencies,
@@ -79,18 +83,32 @@ export function EditTaskModal({ task, open, onClose, onSave, saving }: EditTaskM
           </span>
         }
       />
-      <ModalBody className="max-h-[78vh] overflow-y-auto">
-        {/* key forces fresh state when a different task is opened */}
+      <ModalBody className="max-h-[calc(78vh-130px)] overflow-y-auto">
         <TaskForm
+          ref={formRef}
           key={task.id}
           mode="edit"
           defaultValues={defaultValues}
           editingId={task.sourceId}
           onSubmit={handleSubmit}
-          onCancel={onClose}
+          onCanSaveChange={setCanSave}
           saving={saving}
         />
       </ModalBody>
+      <ModalFoot>
+        <div className="flex items-center justify-end gap-3 w-full">
+          <Button variant="ghost" onClick={onClose} disabled={saving}>
+            Cancel
+          </Button>
+          <Button
+            variant="primary"
+            onClick={() => formRef.current?.submit()}
+            disabled={saving || !canSave}
+          >
+            {saving ? '⏳ Saving…' : '✦ Save Changes'}
+          </Button>
+        </div>
+      </ModalFoot>
     </Modal>
   );
 }

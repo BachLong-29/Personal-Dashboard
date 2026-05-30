@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react';
 import data from '@emoji-mart/data';
 import Picker from '@emoji-mart/react';
 
@@ -35,13 +35,18 @@ export interface TaskFormValues {
   dependencies: string[];
 }
 
+export interface TaskFormHandle {
+  submit: () => void;
+}
+
 export interface TaskFormProps {
   mode: 'create' | 'edit';
   defaultValues?: Partial<TaskFormValues>;
   /** sourceId of the task being edited — excluded from dependency options */
   editingId?: string;
   onSubmit: (values: TaskFormValues) => void;
-  onCancel: () => void;
+  /** Called whenever canSave changes so the parent can control the submit button */
+  onCanSaveChange?: (canSave: boolean) => void;
   saving?: boolean;
 }
 
@@ -76,14 +81,10 @@ function getSlotForTime(time: string) {
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-export function TaskForm({
-  mode,
-  defaultValues,
-  editingId,
-  onSubmit,
-  onCancel,
-  saving,
-}: TaskFormProps) {
+export const TaskForm = forwardRef<TaskFormHandle, TaskFormProps>(function TaskForm(
+  { mode, defaultValues, editingId, onSubmit, onCanSaveChange, saving },
+  ref,
+) {
   // ── Form state ───────────────────────────────────────────────────────────────
   const [name, setName] = useState(defaultValues?.name ?? '');
   const [note, setNote] = useState(defaultValues?.note ?? '');
@@ -171,6 +172,17 @@ export function TaskForm({
       dependencies: deps,
     });
   }
+
+  // ── Expose submit handle + notify parent of canSave ──────────────────────────
+  const submitRef = useRef(handleSubmit);
+  submitRef.current = handleSubmit;
+  useImperativeHandle(ref, () => ({ submit: () => submitRef.current() }));
+
+  const onCanSaveChangeRef = useRef(onCanSaveChange);
+  onCanSaveChangeRef.current = onCanSaveChange;
+  useEffect(() => {
+    onCanSaveChangeRef.current?.(canSave);
+  }, [canSave]);
 
   // ─── Render ──────────────────────────────────────────────────────────────────
   return (
@@ -448,19 +460,9 @@ export function TaskForm({
           </p>
         )}
       </div>
-
-      {/* ── Footer buttons ─────────────────────────────────────────────── */}
-      <div className="flex items-center justify-end gap-3 pt-3 border-t border-[var(--border)] mt-1">
-        <Button variant="ghost" onClick={onCancel} disabled={saving}>
-          Cancel
-        </Button>
-        <Button variant="primary" onClick={handleSubmit} disabled={saving || !canSave}>
-          {saving ? '⏳ Saving…' : mode === 'create' ? '✦ Create Task' : '✦ Save Changes'}
-        </Button>
-      </div>
     </div>
   );
-}
+});
 
 // ─── Style constants ──────────────────────────────────────────────────────────
 
