@@ -19,7 +19,7 @@ import {
   SKIP_CONFIRM_STORAGE_KEY,
   QUEST_ROLLOVER_KEY,
 } from '../constants';
-import { MOCK_ACHIEVEMENTS, MOCK_ANALYTICS } from '../data/mock';
+import { MOCK_ACHIEVEMENTS } from '../data/mock';
 import { useProfile } from '@/features/profile/hooks/useProfile';
 import { useCharacterProgress } from '../hooks/useCharacterProgress';
 import { useRolloverQuests } from '../hooks/useRolloverQuests';
@@ -471,7 +471,7 @@ export default function MainDashboard() {
                 <span className={panelHeaderTitle}>{t('analytics.title')}</span>
                 <span className={panelHeaderOrnament}>◆ ◆ ◆</span>
               </div>
-              <AnalyticsPanel analytics={MOCK_ANALYTICS} char={char} />
+              <AnalyticsPanel />
             </div>
           )}
         </div>
