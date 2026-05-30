@@ -46,6 +46,11 @@ type ActiveDrag =
   | { type: 'quest'; item: Quest; dayStr: string }
   | { type: 'habit'; item: Habit; color: string; dayStr: string };
 
+type DayItem =
+  | { kind: 'task'; item: Task; time?: string; color: string }
+  | { kind: 'quest'; item: Quest; time?: string }
+  | { kind: 'habit'; item: Habit; time?: string; color: string };
+
 function addDays(dateStr: string, n: number): string {
   const d = new Date(dateStr);
   d.setDate(d.getDate() + n);
@@ -245,7 +250,6 @@ export function WeekView({
           ) : (
             weekDays.map((dayStr, i) => {
               const dayTasks = getTasksForDay(dayStr);
-              const dayQuests = display.showQuests ? (questsByDate[dayStr] ?? []) : [];
               const isToday = dayStr === todayStr;
               const dayNum = new Date(dayStr).getDate();
 
@@ -272,77 +276,116 @@ export function WeekView({
                     </button>
                   </div>
 
-                  {/* Items */}
+                  {/* Items — unified, sorted by time */}
                   <div className={dayTaskList}>
-                    {dayTasks.map((task) => {
-                      const color = HABIT_COLORS[task.color as TaskColor]?.value ?? 'var(--gold)';
-                      const blocked = isBlocked(task);
-                      return (
-                        <DraggableItem
-                          key={task.id}
-                          id={`task|${task.id}|${dayStr}`}
-                          data={{ type: 'task', item: task, color, dayStr }}
-                        >
-                          <div
-                            className={cn(
-                              miniTask,
-                              task.status === 'done' && miniTaskDone,
-                              blocked && miniTaskBlocked,
-                            )}
-                            style={{ borderLeftColor: color, borderLeftWidth: 2 }}
-                            onClick={() => handleEdit(task)}
-                            title={task.name}
-                          >
-                            <span className={miniTaskIcon}>{task.icon}</span>
-                            <span className={miniTaskName}>{task.name}</span>
-                            {blocked && <span className={miniLock}>🔒</span>}
-                            {task.status === 'done' && <span className={miniDone}>✓</span>}
-                          </div>
-                        </DraggableItem>
-                      );
-                    })}
+                    {(() => {
+                      const dow = DOW_TO_HABIT_DAY[new Date(dayStr).getDay()];
 
-                    {dayQuests.map((q) => (
-                      <DraggableItem
-                        key={q.id}
-                        id={`quest|${q.id}|${dayStr}`}
-                        data={{ type: 'quest', item: q, dayStr }}
-                      >
-                        <div
-                          className={cn(miniTask, miniTaskQuest, q.done && miniTaskDone)}
-                          title={q.title}
-                          onClick={() => onNavigateTab?.('quests')}
-                        >
-                          <span className={miniTaskIcon}>{q.habitIcon ?? '📌'}</span>
-                          <span className={miniTaskName}>{q.title}</span>
-                          {q.done && <span className={miniDone}>✓</span>}
-                        </div>
-                      </DraggableItem>
-                    ))}
+                      const items: DayItem[] = [
+                        ...dayTasks.map((t) => ({
+                          kind: 'task' as const,
+                          item: t,
+                          time: t.startTime || undefined,
+                          color: HABIT_COLORS[t.color as TaskColor]?.value ?? 'var(--gold)',
+                        })),
+                        ...(display.showQuests ? (questsByDate[dayStr] ?? []) : []).map((q) => ({
+                          kind: 'quest' as const,
+                          item: q,
+                          time: undefined,
+                        })),
+                        ...(display.showHabits ? getHabitsForDay(dayStr) : []).map((h) => ({
+                          kind: 'habit' as const,
+                          item: h,
+                          time: dow
+                            ? h.schedule.find((e) => e.days.includes(dow))?.time
+                            : undefined,
+                          color: HABIT_COLORS[h.color as HabitColor]?.value ?? 'var(--violet)',
+                        })),
+                      ];
 
-                    {display.showHabits &&
-                      getHabitsForDay(dayStr).map((h) => {
-                        const color = HABIT_COLORS[h.color as HabitColor]?.value ?? 'var(--violet)';
+                      // Timed items first (ascending), unscheduled at bottom
+                      items.sort((a, b) => {
+                        if (!a.time && !b.time) return 0;
+                        if (!a.time) return 1;
+                        if (!b.time) return -1;
+                        return a.time.localeCompare(b.time);
+                      });
+
+                      return items.map((item) => {
+                        if (item.kind === 'task') {
+                          const task = item.item;
+                          const blocked = isBlocked(task);
+                          return (
+                            <DraggableItem
+                              key={task.id}
+                              id={`task|${task.id}|${dayStr}`}
+                              data={{ type: 'task', item: task, color: item.color, dayStr }}
+                            >
+                              <div
+                                className={cn(
+                                  miniTask,
+                                  task.status === 'done' && miniTaskDone,
+                                  blocked && miniTaskBlocked,
+                                )}
+                                style={{ borderLeftColor: item.color, borderLeftWidth: 2 }}
+                                onClick={() => handleEdit(task)}
+                                title={`${item.time ? item.time + ' ' : ''}${task.name}`}
+                              >
+                                {item.time && <span className={miniTime}>{item.time}</span>}
+                                <span className={miniTaskIcon}>{task.icon}</span>
+                                <span className={miniTaskName}>{task.name}</span>
+                                {blocked && <span className={miniLock}>🔒</span>}
+                                {task.status === 'done' && <span className={miniDone}>✓</span>}
+                              </div>
+                            </DraggableItem>
+                          );
+                        }
+
+                        if (item.kind === 'quest') {
+                          const q = item.item;
+                          return (
+                            <DraggableItem
+                              key={q.id}
+                              id={`quest|${q.id}|${dayStr}`}
+                              data={{ type: 'quest', item: q, dayStr }}
+                            >
+                              <div
+                                className={cn(miniTask, miniTaskQuest, q.done && miniTaskDone)}
+                                title={q.title}
+                                onClick={() => onNavigateTab?.('quests')}
+                              >
+                                <span className={miniTaskIcon}>{q.habitIcon ?? '📌'}</span>
+                                <span className={miniTaskName}>{q.title}</span>
+                                {q.done && <span className={miniDone}>✓</span>}
+                              </div>
+                            </DraggableItem>
+                          );
+                        }
+
+                        // habit — no drag
+                        const h = item.item;
                         const done = isToday ? (habitLogMap[h.id] ?? false) : false;
                         return (
-                          <DraggableItem
+                          <div
                             key={h.id}
-                            id={`habit|${h.id}|${dayStr}`}
-                            data={{ type: 'habit', item: h, color, dayStr }}
+                            className={cn(
+                              miniTask,
+                              miniTaskHabit,
+                              miniTaskNoGrab,
+                              done && miniTaskDone,
+                            )}
+                            style={{ borderLeftColor: item.color, borderLeftWidth: 2 }}
+                            title={`${item.time ? item.time + ' ' : ''}${h.name}`}
+                            onClick={() => onNavigateTab?.('habits')}
                           >
-                            <div
-                              className={cn(miniTask, miniTaskHabit, done && miniTaskDone)}
-                              style={{ borderLeftColor: color, borderLeftWidth: 2 }}
-                              title={h.name}
-                              onClick={() => onNavigateTab?.('habits')}
-                            >
-                              <span className={miniTaskIcon}>{h.icon}</span>
-                              <span className={miniTaskName}>{h.name}</span>
-                              {done && <span className={miniDone}>✓</span>}
-                            </div>
-                          </DraggableItem>
+                            {item.time && <span className={miniTime}>{item.time}</span>}
+                            <span className={miniTaskIcon}>{h.icon}</span>
+                            <span className={miniTaskName}>{h.name}</span>
+                            {done && <span className={miniDone}>✓</span>}
+                          </div>
                         );
-                      })}
+                      });
+                    })()}
                   </div>
                 </DroppableDay>
               );
@@ -547,6 +590,8 @@ const miniTaskIcon = 'text-[10px] shrink-0';
 const miniTaskName = 'flex-1 truncate text-[var(--text-hi)] leading-tight';
 const miniLock = 'text-[8px] shrink-0';
 const miniDone = 'text-[9px] text-[oklch(0.76_0.14_162)] shrink-0';
+const miniTime = 'text-[7px] text-[var(--text-lo)] shrink-0 font-[var(--font-title)]';
+const miniTaskNoGrab = '!cursor-pointer active:!cursor-pointer';
 
 const dragOverlayItem =
   'w-[150px] shadow-[0_8px_28px_rgba(0,0,0,0.55)] scale-105 !cursor-grabbing border-[oklch(0.74_0.17_85_/_0.5)] bg-[var(--panel3)]';
