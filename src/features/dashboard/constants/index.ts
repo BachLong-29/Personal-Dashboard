@@ -8,7 +8,7 @@ export const QUEST_ICONS: Record<QuestType, string> = {
   create: '✨',
   health: '🌿',
   break: '☕',
-  task: '📋',
+  // task: '📋',
 };
 
 export const SCHED_COLORS: Record<QuestType, string> = {
@@ -19,17 +19,29 @@ export const SCHED_COLORS: Record<QuestType, string> = {
   create: '#6ee7b7',
   health: '#86efac',
   break: '#94a3b8',
-  task: '#67e8f9',
+  // task: '#67e8f9',
 };
 
 export const TASK_XP = 60;
 export const TASK_COINS = 15;
 
 export const QUOTES = [
-  { text: "Every quest completed is a step toward the hero you're becoming.", author: '— The Oracle' },
-  { text: 'Small wins compound into legendary feats. Keep your streak alive.', author: '— Aetheria Codex' },
-  { text: 'The discipline you forge today shapes the warrior of tomorrow.', author: '— Shadow Tome' },
-  { text: 'Your focus is your mana. Spend it wisely and recharge often.', author: '— Elder Scroll' },
+  {
+    text: "Every quest completed is a step toward the hero you're becoming.",
+    author: '— The Oracle',
+  },
+  {
+    text: 'Small wins compound into legendary feats. Keep your streak alive.',
+    author: '— Aetheria Codex',
+  },
+  {
+    text: 'The discipline you forge today shapes the warrior of tomorrow.',
+    author: '— Shadow Tome',
+  },
+  {
+    text: 'Your focus is your mana. Spend it wisely and recharge often.',
+    author: '— Elder Scroll',
+  },
 ];
 
 export const XP_MAP: Record<string, number> = { S: 150, A: 120, B: 90, C: 60, D: 50 };
@@ -59,16 +71,14 @@ export const HABIT_XP = 30;
 export const HABIT_COINS = 10;
 
 export const HABIT_COLORS: Record<HabitColor, { label: string; value: string }> = {
-  gold:   { label: 'Gold',   value: 'oklch(0.74 0.17 85)' },
-  mint:   { label: 'Mint',   value: 'oklch(0.76 0.14 162)' },
+  gold: { label: 'Gold', value: 'oklch(0.74 0.17 85)' },
+  mint: { label: 'Mint', value: 'oklch(0.76 0.14 162)' },
   violet: { label: 'Violet', value: 'oklch(0.66 0.22 295)' },
-  cyan:   { label: 'Cyan',   value: 'oklch(0.76 0.16 205)' },
-  rose:   { label: 'Rose',   value: 'oklch(0.72 0.18 5)' },
-  amber:  { label: 'Amber',  value: 'oklch(0.76 0.16 55)' },
-  blue:   { label: 'Blue',   value: 'oklch(0.65 0.18 250)' },
+  cyan: { label: 'Cyan', value: 'oklch(0.76 0.16 205)' },
+  rose: { label: 'Rose', value: 'oklch(0.72 0.18 5)' },
+  amber: { label: 'Amber', value: 'oklch(0.76 0.16 55)' },
+  blue: { label: 'Blue', value: 'oklch(0.65 0.18 250)' },
 };
-
-
 
 /** @deprecated Use ALL_HABIT_DAYS + HABIT_DAY_LABELS instead */
 export const DAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] as const;
@@ -80,10 +90,22 @@ export const ALL_HABIT_DAYS: HabitDay[] = ['mon', 'tue', 'wed', 'thu', 'fri', 's
 
 /** Full label per day */
 export const HABIT_DAY_LABELS: Record<HabitDay, string> = {
-  mon: 'Mon', tue: 'Tue', wed: 'Wed', thu: 'Thu', fri: 'Fri', sat: 'Sat', sun: 'Sun',
+  mon: 'Mon',
+  tue: 'Tue',
+  wed: 'Wed',
+  thu: 'Thu',
+  fri: 'Fri',
+  sat: 'Sat',
+  sun: 'Sun',
 };
 
 /** 2-char abbreviation per day */
 export const HABIT_DAY_SHORT: Record<HabitDay, string> = {
-  mon: 'Mo', tue: 'Tu', wed: 'We', thu: 'Th', fri: 'Fr', sat: 'Sa', sun: 'Su',
+  mon: 'Mo',
+  tue: 'Tu',
+  wed: 'We',
+  thu: 'Th',
+  fri: 'Fr',
+  sat: 'Sa',
+  sun: 'Su',
 };
