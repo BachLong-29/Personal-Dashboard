@@ -6,6 +6,15 @@ import type { TaskColor, TaskStatus, UpdateTaskPayload } from '@/types';
 import type { UITask } from '../../data/mock';
 import { TaskForm, type TaskFormValues } from './TaskForm';
 
+/** Format a Date using local timezone — avoids UTC off-by-one for UTC+ users. */
+function toLocalDate(d: Date): string {
+  return [
+    d.getFullYear(),
+    String(d.getMonth() + 1).padStart(2, '0'),
+    String(d.getDate()).padStart(2, '0'),
+  ].join('-');
+}
+
 // ─── Props ────────────────────────────────────────────────────────────────────
 
 export interface EditTaskModalProps {
@@ -15,19 +24,11 @@ export interface EditTaskModalProps {
   /** Called when the user confirms edits. Receives the raw task ID + patch payload. */
   onSave: (id: string, payload: UpdateTaskPayload) => void;
   saving?: boolean;
-  allTasks?: UITask[];
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-export function EditTaskModal({
-  task,
-  open,
-  onClose,
-  onSave,
-  saving,
-  allTasks = [],
-}: EditTaskModalProps) {
+export function EditTaskModal({ task, open, onClose, onSave, saving }: EditTaskModalProps) {
   if (!task) return null;
 
   function handleSubmit(values: TaskFormValues) {
@@ -43,14 +44,10 @@ export function EditTaskModal({
       color: values.color,
       status: values.status,
       duration: durationNum && !Number.isNaN(durationNum) ? durationNum : undefined,
-      startDate: values.startDate ? values.startDate.toISOString().split('T')[0] : undefined,
+      startDate: values.startDate ? toLocalDate(values.startDate) : undefined,
       // '' → clear startTime (null); set value → update; unchanged stays undefined
       startTime: values.startTime ? values.startTime : task.startTime ? null : undefined,
-      endDate: values.endDate
-        ? values.endDate.toISOString().split('T')[0]
-        : task.endDate
-          ? null
-          : undefined,
+      endDate: values.endDate ? toLocalDate(values.endDate) : task.endDate ? null : undefined,
       dependencies: values.dependencies,
     };
 
@@ -88,7 +85,6 @@ export function EditTaskModal({
           key={task.id}
           mode="edit"
           defaultValues={defaultValues}
-          allTasks={allTasks}
           editingId={task.sourceId}
           onSubmit={handleSubmit}
           onCancel={onClose}

@@ -12,8 +12,9 @@ import { cn } from '@/libs/utils';
 import type { Category, TaskColor, TaskStatus } from '@/types';
 import { useCategories } from '@/features/dashboard/hooks/useCategories';
 import { useCreateCategory } from '@/features/dashboard/hooks/useCreateCategory';
+import { useTaskSearch } from '@/features/dashboard/hooks/useTaskSearch';
 
-import { SLOTS, type UITask } from '../../data/mock';
+import { SLOTS } from '../../data/mock';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -37,8 +38,6 @@ export interface TaskFormValues {
 export interface TaskFormProps {
   mode: 'create' | 'edit';
   defaultValues?: Partial<TaskFormValues>;
-  /** Full task list for the dependency selector */
-  allTasks?: UITask[];
   /** sourceId of the task being edited — excluded from dependency options */
   editingId?: string;
   onSubmit: (values: TaskFormValues) => void;
@@ -80,7 +79,6 @@ function getSlotForTime(time: string) {
 export function TaskForm({
   mode,
   defaultValues,
-  allTasks = [],
   editingId,
   onSubmit,
   onCancel,
@@ -103,10 +101,12 @@ export function TaskForm({
   const [showPicker, setShowPicker] = useState(false);
   const [showAddCat, setShowAddCat] = useState(false);
   const [newCatName, setNewCatName] = useState('');
+  const [depQuery, setDepQuery] = useState('');
 
   // ── Data hooks ───────────────────────────────────────────────────────────────
   const { data: categories = [] } = useCategories();
   const { mutate: createCategory, isPending: isAddingCat } = useCreateCategory();
+  const { data: depResults = [] } = useTaskSearch(depQuery, 10, editingId);
 
   // ── Derived ──────────────────────────────────────────────────────────────────
   const resolvedTagId = tagId || (categories.length > 0 ? (categories[0] as Category).id : '');
@@ -126,9 +126,8 @@ export function TaskForm({
 
   const canSave = name.trim().length > 0 && !!icon && !!resolvedTagId && !dateError;
 
-  const depOptions = allTasks.filter(
-    (t) => t.source === 'task' && t.sourceId !== editingId && t.active !== false,
-  );
+  const visibleDepIds = new Set(depResults.map((t) => t.id));
+  const hiddenSelectedCount = deps.filter((id) => !visibleDepIds.has(id)).length;
 
   // ── Handlers ─────────────────────────────────────────────────────────────────
   function toggleDep(id: string) {
@@ -410,31 +409,45 @@ export function TaskForm({
       </div>
 
       {/* ── Dependencies ──────────────────────────────────────────────── */}
-      {depOptions.length > 0 && (
-        <div className="flex flex-col gap-1.5">
-          <label className={fieldLabel}>
-            Dependencies <span className={optionalMark}>optional</span>
-          </label>
-          <p className="text-[10px] text-[var(--text-lo)] -mt-0.5">
-            This task will be blocked until all selected tasks are done.
-          </p>
-          <div className="flex flex-col gap-1 max-h-[120px] overflow-y-auto">
-            {depOptions.map((t) => (
+      <div className="flex flex-col gap-1.5">
+        <label className={fieldLabel}>
+          Dependencies <span className={optionalMark}>optional</span>
+        </label>
+        <p className="text-[10px] text-[var(--text-lo)] -mt-0.5">
+          This task will be blocked until all selected tasks are done.
+        </p>
+        <input
+          type="text"
+          value={depQuery}
+          onChange={(e) => setDepQuery(e.target.value)}
+          placeholder="Search tasks…"
+          className={depSearchInput}
+        />
+        {depResults.length === 0 ? (
+          <p className="text-[10px] text-[var(--text-lo)] text-center py-2">No tasks found.</p>
+        ) : (
+          <div className="flex flex-col gap-1 max-h-[130px] overflow-y-auto">
+            {depResults.map((t) => (
               <label key={t.id} className={depRow}>
                 <input
                   type="checkbox"
-                  checked={deps.includes(t.sourceId ?? t.id)}
-                  onChange={() => toggleDep(t.sourceId ?? t.id)}
+                  checked={deps.includes(t.id)}
+                  onChange={() => toggleDep(t.id)}
                   className="accent-[var(--gold)] w-3 h-3 cursor-pointer shrink-0"
                 />
-                {t.icon && <span className="text-[14px] shrink-0">{t.icon}</span>}
-                <span className="text-[11px] text-[var(--text-hi)] flex-1 truncate">{t.title}</span>
-                <span className="text-[10px] text-[var(--text-lo)] shrink-0">{t.deadline}</span>
+                <span className="text-[14px] shrink-0">{t.icon}</span>
+                <span className="text-[11px] text-[var(--text-hi)] flex-1 truncate">{t.name}</span>
+                <span className="text-[10px] text-[var(--text-lo)] shrink-0">{t.startDate}</span>
               </label>
             ))}
           </div>
-        </div>
-      )}
+        )}
+        {hiddenSelectedCount > 0 && (
+          <p className="text-[10px] text-[var(--text-lo)]">
+            ✓ {hiddenSelectedCount} more selected (search to view)
+          </p>
+        )}
+      </div>
 
       {/* ── Footer buttons ─────────────────────────────────────────────── */}
       <div className="flex items-center justify-end gap-3 pt-3 border-t border-[var(--border)] mt-1">
@@ -489,6 +502,15 @@ const catChip = cn(
 const catChipActive = cn(
   'border-[var(--gold)] text-[var(--gold)]',
   'bg-[oklch(0.74_0.17_85_/_0.1)] shadow-[0_0_6px_oklch(0.74_0.17_85_/_0.3)]',
+);
+
+const depSearchInput = cn(
+  'w-full rounded-[var(--r-md)] border border-[var(--border)] bg-[var(--bg-2)]',
+  'px-3 py-2 text-[12px] text-[var(--text-hi)] placeholder:text-[var(--text-dim)]',
+  'hover:border-[var(--border-hi)] hover:bg-[var(--bg-3)]',
+  'focus:border-[var(--gold)] focus:outline-none',
+  'focus:shadow-[0_0_0_3px_oklch(0.78_0.16_82_/_0.15)]',
+  'transition-all duration-[180ms]',
 );
 
 const depRow = cn(

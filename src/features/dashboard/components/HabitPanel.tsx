@@ -5,11 +5,12 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import { cn } from '@/libs/utils';
 
+import { ALL_HABIT_DAYS, HABIT_DAY_LABELS } from '../constants';
 import { useCategories } from '../hooks/useCategories';
 import { useDeleteHabit } from '../hooks/useDeleteHabit';
 import { useHabitLogs } from '../hooks/useHabitLogs';
 import { useHabits } from '../hooks/useHabits';
-import type { Habit } from '../types';
+import type { Habit, HabitDay } from '../types';
 import { AddHabitModal } from './AddHabitModal';
 import { CategoryModal } from './CategoryModal';
 import { HabitCard } from './HabitCard';
@@ -28,14 +29,19 @@ export function HabitPanel({ todayStr }: HabitPanelProps) {
   const [editing, setEditing] = useState<Habit | undefined>(undefined);
   const [deletingHabit, setDeletingHabit] = useState<Habit | undefined>(undefined);
   const [showCategoryModal, setShowCategoryModal] = useState(false);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [filterDay, setFilterDay] = useState<HabitDay | null>(null);
 
   const todayDay = new Date().getDay();
   const logMap = Object.fromEntries(logs.map((l) => [l.habitId, l.done]));
 
-  /** Day-of-week index (0=Sun) → HabitDay string */
   const DOW_TO_HABIT_DAY = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'] as const;
-  const todayDayStr = DOW_TO_HABIT_DAY[todayDay];
+  const todayDayStr = DOW_TO_HABIT_DAY[todayDay] as HabitDay;
   const catMap = Object.fromEntries(categories.map((c) => [c.id, c.name]));
+
+  const filteredHabits = filterDay
+    ? habits.filter((h) => h.schedule.some((e) => e.days.includes(filterDay)))
+    : habits;
 
   function handleEdit(habit: Habit) {
     setEditing(habit);
@@ -57,6 +63,10 @@ export function HabitPanel({ todayStr }: HabitPanelProps) {
     setEditing(undefined);
   }
 
+  function handleToggle(id: string) {
+    setExpandedId((prev) => (prev === id ? null : id));
+  }
+
   return (
     <div className={cn(panelBase, panelViolet, panelLayout)}>
       <div className={cornerTL} />
@@ -64,6 +74,7 @@ export function HabitPanel({ todayStr }: HabitPanelProps) {
       <div className={cornerBL} />
       <div className={cornerBR} />
 
+      {/* ── Header ── */}
       <div className={header}>
         <div className={titleGroup}>
           <span className={sparkle}>✦</span>
@@ -84,19 +95,52 @@ export function HabitPanel({ todayStr }: HabitPanelProps) {
         </div>
       </div>
 
+      {/* ── Day filter bar ── */}
+      <div className={filterBar}>
+        <button
+          type="button"
+          className={cn(filterPill, filterDay === null && filterPillActive)}
+          onClick={() => setFilterDay(null)}
+        >
+          All
+        </button>
+        {ALL_HABIT_DAYS.map((day) => (
+          <button
+            key={day}
+            type="button"
+            className={cn(
+              filterPill,
+              filterDay === day && filterPillActive,
+              day === todayDayStr && filterDay !== day && filterPillToday,
+            )}
+            onClick={() => setFilterDay(filterDay === day ? null : day)}
+          >
+            {HABIT_DAY_LABELS[day]}
+            {day === todayDayStr && <span className={todayDot} />}
+          </button>
+        ))}
+      </div>
+
+      {/* ── List ── */}
       <div className={listWrap}>
         {isLoading ? (
           <div className={empty}>◆ Loading habits... ◆</div>
-        ) : habits.length === 0 ? (
-          <div className={empty}>◆ No habits yet. Create one! ◆</div>
+        ) : filteredHabits.length === 0 ? (
+          <div className={empty}>
+            {habits.length === 0
+              ? '◆ No habits yet. Create one! ◆'
+              : `◆ No habits on ${filterDay ? HABIT_DAY_LABELS[filterDay] : ''} ◆`}
+          </div>
         ) : (
-          habits.map((h) => (
+          filteredHabits.map((h) => (
             <HabitCard
               key={h.id}
               habit={h as Habit}
               tagLabel={catMap[h.tagId]}
-              isToday={!!todayDayStr && h.schedule.some((e) => e.days.includes(todayDayStr))}
+              isToday={h.schedule.some((e) => e.days.includes(todayDayStr))}
               todayDone={logMap[h.id] ?? false}
+              expanded={expandedId === h.id}
+              onToggle={() => handleToggle(h.id)}
               onEdit={handleEdit}
               onDelete={(id) => handleDeleteRequest(habits.find((x) => x.id === id) as Habit)}
             />
@@ -104,9 +148,7 @@ export function HabitPanel({ todayStr }: HabitPanelProps) {
         )}
       </div>
 
-      {showModal && (
-        <AddHabitModal editing={editing} onClose={handleClose} onSaved={handleClose} />
-      )}
+      {showModal && <AddHabitModal editing={editing} onClose={handleClose} onSaved={handleClose} />}
 
       {showCategoryModal && <CategoryModal onClose={() => setShowCategoryModal(false)} />}
 
@@ -172,6 +214,7 @@ export function HabitPanel({ todayStr }: HabitPanelProps) {
   );
 }
 
+/* ── Panel shell ── */
 const panelBase =
   "bg-[var(--panel)] border border-[var(--border)] rounded-[var(--r)] overflow-hidden relative before:content-[''] before:absolute before:inset-0 before:pointer-events-none before:rounded-[inherit] before:[background-image:repeating-linear-gradient(0deg,transparent,transparent_28px,oklch(1_0_0_/_0.012)_28px,oklch(1_0_0_/_0.012)_29px),repeating-linear-gradient(90deg,transparent,transparent_28px,oklch(1_0_0_/_0.012)_28px,oklch(1_0_0_/_0.012)_29px)]";
 const panelViolet =
@@ -184,15 +227,27 @@ const cornerTR = cn(cornerBase, 'top-[5px] right-[5px] border-t-[1.5px] border-r
 const cornerBL = cn(cornerBase, 'bottom-[5px] left-[5px] border-b-[1.5px] border-l-[1.5px]');
 const cornerBR = cn(cornerBase, 'bottom-[5px] right-[5px] border-b-[1.5px] border-r-[1.5px]');
 
+/* ── Header ── */
 const header =
   'flex items-center justify-between px-[14px] pt-[10px] pb-[8px] border-b border-[var(--border)] shrink-0';
 const titleGroup = 'flex items-center gap-2';
 const sparkle = 'text-[16px] animate-[spin_4s_linear_infinite]';
 const titleText =
   '[font-family:var(--f-title)] text-[14px] font-bold tracking-[0.08em] text-[var(--text-hi)]';
-
 const manageCatBtn =
   'px-[10px] py-[5px] rounded-[var(--r-sm)] text-[10px] font-bold tracking-[0.08em] uppercase font-[var(--font-title)] border border-[var(--border)] bg-[var(--panel2)] text-[var(--text-mid)] cursor-pointer transition-all hover:border-[oklch(0.66_0.22_295_/_0.5)] hover:text-[var(--violet)]';
 
+/* ── Filter bar ── */
+const filterBar =
+  'flex items-center gap-1.5 px-3 py-[7px] border-b border-[var(--border)] shrink-0 flex-wrap';
+const filterPill =
+  'relative flex flex-col items-center px-[9px] py-[3px] rounded-[3px] text-[9px] font-bold tracking-[0.08em] uppercase font-[var(--font-title)] border border-[var(--border)] bg-[var(--panel2)] text-[var(--text-lo)] cursor-pointer transition-all hover:text-[var(--text-mid)] hover:border-[var(--border-hi)]';
+const filterPillActive =
+  'bg-[oklch(0.66_0.22_295_/_0.12)] text-[var(--violet)] border-[oklch(0.66_0.22_295_/_0.5)] hover:text-[var(--violet)]';
+const filterPillToday = 'text-[var(--text-mid)] border-[var(--border-hi)]';
+const todayDot =
+  'absolute bottom-[2px] left-1/2 -translate-x-1/2 w-[3px] h-[3px] rounded-full bg-[var(--violet)] opacity-70';
+
+/* ── List ── */
 const listWrap = 'flex-1 overflow-y-auto px-3 py-2.5 flex flex-col gap-2';
 const empty = 'text-[var(--text-lo)] text-center py-[30px] text-[12px]';

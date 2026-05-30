@@ -21,6 +21,7 @@ import DashboardTopbar from '@/features/dashboard/components/DashboardTopbar';
 import { AddQuestModal } from '@/features/dashboard/components/AddQuestModal';
 import { AddTaskModal } from './shared/AddTaskModal';
 import { EditTaskModal } from './shared/EditTaskModal';
+import type { TaskFormValues } from './shared/TaskForm';
 
 import { MOCK_TASKS, type TaskCat, type TaskDiff, type UITask } from '../data/mock';
 import {
@@ -41,8 +42,16 @@ import { TaskAllView } from './all/TaskAllView';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
+function toLocalDate(d: Date): string {
+  return [
+    d.getFullYear(),
+    String(d.getMonth() + 1).padStart(2, '0'),
+    String(d.getDate()).padStart(2, '0'),
+  ].join('-');
+}
+
 function todayISO(): string {
-  return new Date().toISOString().split('T')[0] ?? '';
+  return toLocalDate(new Date());
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -54,10 +63,7 @@ export function TaskManagement() {
 
   // ── Selected date for day view ────────────────────────────────────────────────
   const [selectedDate, setSelectedDate] = useState<Date>(() => new Date());
-  const selectedDateStr = useMemo(
-    () => selectedDate.toISOString().split('T')[0] ?? '',
-    [selectedDate],
-  );
+  const selectedDateStr = useMemo(() => toLocalDate(selectedDate), [selectedDate]);
   const selectedOffset = useMemo(() => dayOffset(selectedDateStr), [selectedDateStr]);
 
   // ── Character state (for topbar) ────────────────────────────────────────────
@@ -228,6 +234,23 @@ export function TaskManagement() {
 
   // ── Add task modal ────────────────────────────────────────────────────────────
   const [showAddTaskModal, setShowAddTaskModal] = useState(false);
+  const [cloneDefaults, setCloneDefaults] = useState<Partial<TaskFormValues> | undefined>();
+
+  function handleCloneTask(task: UITask) {
+    setCloneDefaults({
+      name: `Copy of ${task.title}`,
+      icon: task.icon ?? '',
+      note: task.desc ?? '',
+      tagId: task.tagId ?? '',
+      color: (task.color as TaskColor) ?? 'gold',
+      startDate: new Date(),
+      endDate: task.endDate ? new Date(task.endDate) : null,
+      startTime: task.startTime ?? '',
+      duration: task.est != null ? String(task.est) : '',
+      dependencies: task.dependencies ?? [],
+    });
+    setShowAddTaskModal(true);
+  }
 
   function handleQuestForged(quest: QuestLike) {
     // Optimistically prepend the new quest as a UITask so it appears immediately
@@ -459,6 +482,7 @@ export function TaskManagement() {
               onRescheduleHabit={handleRescheduleHabit}
               onCompleteTask={handleCompleteTask}
               onEdit={handleEditTask}
+              onClone={handleCloneTask}
               rescheduleLoading={createTask.isPending}
               splitMode={splitMode}
             />
@@ -493,9 +517,15 @@ export function TaskManagement() {
       <AddTaskModal
         open={showAddTaskModal}
         defaultDate={selectedDateStr}
-        allTasks={tasks}
-        onClose={() => setShowAddTaskModal(false)}
-        onSaved={() => setShowAddTaskModal(false)}
+        defaultValues={cloneDefaults}
+        onClose={() => {
+          setShowAddTaskModal(false);
+          setCloneDefaults(undefined);
+        }}
+        onSaved={() => {
+          setShowAddTaskModal(false);
+          setCloneDefaults(undefined);
+        }}
       />
 
       {/* ── Edit Task modal ───────────────────────────────────────────────── */}
@@ -505,7 +535,6 @@ export function TaskManagement() {
         onClose={() => setEditingTask(null)}
         onSave={handleSaveEdit}
         saving={updateTask.isPending}
-        allTasks={tasks}
       />
     </div>
   );

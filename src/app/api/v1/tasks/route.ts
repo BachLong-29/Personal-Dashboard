@@ -20,44 +20,48 @@ const dateField = z
 const TIME_RE = /^([01]\d|2[0-3]):[0-5]\d$/;
 
 const createSchema = z.object({
-  name:         z.string().min(1).max(100),
-  note:         z.string().max(500).optional(),
-  tagId:        z.string().min(1),
-  color:        z.enum(TASK_COLORS),
-  icon:         z.string().min(1),
-  duration:     z.number().int().min(1).max(1440).optional(),
-  startDate:    dateField,
-  startTime:    z.string().regex(TIME_RE, 'Must be HH:MM').optional(),
-  endDate:      dateField.optional(),
+  name: z.string().min(1).max(100),
+  note: z.string().max(500).optional(),
+  tagId: z.string().min(1),
+  color: z.enum(TASK_COLORS),
+  icon: z.string().min(1),
+  duration: z.number().int().min(1).max(1440).optional(),
+  startDate: dateField,
+  startTime: z.string().regex(TIME_RE, 'Must be HH:MM').optional(),
+  endDate: dateField.optional(),
   /** Habit ObjectId — marks this task as a one-day replacement for that habit */
-  habitRef:     z.string().optional(),
+  habitRef: z.string().optional(),
   dependencies: z.array(z.string()).optional().default([]),
 });
 
 const querySchema = z.object({
   start: z.string().optional(),
-  end:   z.string().optional(),
+  end: z.string().optional(),
+  /** Search by name (case-insensitive). Skips date filter, sorts by createdAt desc. */
+  q: z.string().optional(),
+  /** Max number of results. Applied when q is set or no date range is given. */
+  limit: z.coerce.number().int().min(1).max(50).optional(),
 });
 
 function serialize(t: ITask): Task {
   return {
-    id:           t._id.toString(),
-    userId:       t.userId.toString(),
-    name:         t.name,
-    note:         t.note,
-    tagId:        t.tagId,
-    color:        t.color,
-    icon:         t.icon,
-    status:       t.status,
-    duration:     t.duration,
-    startDate:    t.startDate.toISOString().substring(0, 10),
-    startTime:    t.startTime,
-    endDate:      t.endDate?.toISOString().substring(0, 10),
-    habitRef:     t.habitRef?.toString(),
+    id: t._id.toString(),
+    userId: t.userId.toString(),
+    name: t.name,
+    note: t.note,
+    tagId: t.tagId,
+    color: t.color,
+    icon: t.icon,
+    status: t.status,
+    duration: t.duration,
+    startDate: t.startDate.toISOString().substring(0, 10),
+    startTime: t.startTime,
+    endDate: t.endDate?.toISOString().substring(0, 10),
+    habitRef: t.habitRef?.toString(),
     dependencies: t.dependencies.map((d) => d.toString()),
-    active:       t.active,
-    createdAt:    t.createdAt.toISOString(),
-    updatedAt:    t.updatedAt.toISOString(),
+    active: t.active,
+    createdAt: t.createdAt.toISOString(),
+    updatedAt: t.updatedAt.toISOString(),
   };
 }
 
@@ -67,27 +71,42 @@ export const GET = asyncHandler(async (req: NextRequest) => {
   if (!user) return unauthorizedResponse();
 
   // ✓ Use req.nextUrl.searchParams — not req directly
-  const { data: query, error: queryError } = await validateSearchParams(req.nextUrl.searchParams, querySchema);
+  const { data: query, error: queryError } = await validateSearchParams(
+    req.nextUrl.searchParams,
+    querySchema,
+  );
   if (queryError) return queryError;
 
   await connectDB();
 
   const filter: Record<string, unknown> = { userId: user.sub, active: true };
 
+  // ── Search / recent-list mode (q or limit without date range) ────────────────
+  const isSearchMode = query?.q || (query?.limit && !query?.start && !query?.end);
+
+  if (isSearchMode) {
+    if (query?.q) {
+      filter.name = { $regex: query.q, $options: 'i' };
+    }
+    const tasks = await TaskModel.find(filter)
+      .sort({ createdAt: -1 })
+      .limit(query?.limit ?? 10);
+    return successResponse(tasks.map(serialize));
+  }
+
+  // ── Date-range mode ───────────────────────────────────────────────────────────
   if (query?.start || query?.end) {
     // All dates are stored as UTC midnight (new Date("YYYY-MM-DD")).
     // Add 1 day to the end bound so the query-end day is included ($lt exclusive).
-    const qStart        = query.start ? new Date(query.start) : null;
-    const qEndExclusive = query.end
-      ? new Date(new Date(query.end).getTime() + 86_400_000)
-      : null;
+    const qStart = query.start ? new Date(query.start) : null;
+    const qEndExclusive = query.end ? new Date(new Date(query.end).getTime() + 86_400_000) : null;
 
     // ── Single-day tasks (no endDate) ────────────────────────────────────────
     // Must have startDate within [qStart, qEnd].
     const singleDayFilter: Record<string, unknown> = { endDate: { $exists: false } };
     const startRange: Record<string, Date> = {};
-    if (qStart)        startRange.$gte = qStart;
-    if (qEndExclusive) startRange.$lt  = qEndExclusive;
+    if (qStart) startRange.$gte = qStart;
+    if (qEndExclusive) startRange.$lt = qEndExclusive;
     if (Object.keys(startRange).length > 0) singleDayFilter.startDate = startRange;
 
     // ── Multi-day tasks (has endDate) ─────────────────────────────────────────
@@ -118,24 +137,24 @@ export const POST = asyncHandler(async (req: NextRequest) => {
   await connectDB();
 
   const startDate = new Date(data.startDate);
-  const endDate   = data.endDate ? new Date(data.endDate) : undefined;
+  const endDate = data.endDate ? new Date(data.endDate) : undefined;
 
   if (endDate && endDate < startDate) {
     return successResponse(null, 'endDate must be >= startDate');
   }
 
   const task = await TaskModel.create({
-    userId:       user.sub,
-    name:         data.name,
-    note:         data.note,
-    tagId:        data.tagId,
-    color:        data.color,
-    icon:         data.icon,
-    duration:     data.duration,
+    userId: user.sub,
+    name: data.name,
+    note: data.note,
+    tagId: data.tagId,
+    color: data.color,
+    icon: data.icon,
+    duration: data.duration,
     startDate,
-    startTime:    data.startTime,
+    startTime: data.startTime,
     endDate,
-    habitRef:     data.habitRef ? new mongoose.Types.ObjectId(data.habitRef) : undefined,
+    habitRef: data.habitRef ? new mongoose.Types.ObjectId(data.habitRef) : undefined,
     dependencies: data.dependencies,
   });
 

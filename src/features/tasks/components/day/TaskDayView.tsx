@@ -40,6 +40,7 @@ interface TaskDayViewProps {
   onRescheduleHabit: (task: UITask, newTime: string) => void;
   onCompleteTask: (id: string) => void;
   onEdit?: (task: UITask) => void;
+  onClone?: (task: UITask) => void;
   rescheduleLoading?: boolean;
   splitMode: 'week' | 'month';
 }
@@ -69,6 +70,7 @@ export function TaskDayView({
   onRescheduleHabit,
   onCompleteTask,
   onEdit,
+  onClone,
   rescheduleLoading,
   splitMode,
 }: TaskDayViewProps) {
@@ -187,6 +189,7 @@ export function TaskDayView({
                 onReschedule={setRescheduleTarget}
                 onCompleteTask={onCompleteTask}
                 onEdit={onEdit}
+                onClone={onClone}
                 draggingId={activeId}
               />
             ))}

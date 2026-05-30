@@ -4,8 +4,16 @@ import { Modal, ModalHead, ModalBody } from '@/components/ui/Modal';
 import { useCreateTask } from '@/features/dashboard/hooks/useCreateTask';
 import type { CreateTaskPayload } from '@/types';
 
-import type { UITask } from '../../data/mock';
 import { TaskForm, type TaskFormValues } from './TaskForm';
+
+/** Format a Date using local timezone — avoids UTC off-by-one for UTC+ users. */
+function toLocalDate(d: Date): string {
+  return [
+    d.getFullYear(),
+    String(d.getMonth() + 1).padStart(2, '0'),
+    String(d.getDate()).padStart(2, '0'),
+  ].join('-');
+}
 
 // ─── Props ────────────────────────────────────────────────────────────────────
 
@@ -15,7 +23,8 @@ export interface AddTaskModalProps {
   onSaved?: () => void;
   /** Pre-fill start date (YYYY-MM-DD) */
   defaultDate?: string;
-  allTasks?: UITask[];
+  /** Pre-fill all fields — used when cloning an existing task */
+  defaultValues?: Partial<TaskFormValues>;
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -25,14 +34,14 @@ export function AddTaskModal({
   onClose,
   onSaved,
   defaultDate,
-  allTasks = [],
+  defaultValues,
 }: AddTaskModalProps) {
   const { mutate: createTask, isPending } = useCreateTask();
 
   function handleSubmit(values: TaskFormValues) {
     const startDate = values.startDate
-      ? (values.startDate.toISOString().split('T')[0] ?? '')
-      : (defaultDate ?? new Date().toISOString().split('T')[0] ?? '');
+      ? toLocalDate(values.startDate)
+      : (defaultDate ?? toLocalDate(new Date()));
 
     const payload: CreateTaskPayload = {
       name: values.name,
@@ -42,7 +51,7 @@ export function AddTaskModal({
       color: values.color,
       startDate,
       startTime: values.startTime || undefined,
-      endDate: values.endDate ? values.endDate.toISOString().split('T')[0] : undefined,
+      endDate: values.endDate ? toLocalDate(values.endDate) : undefined,
       duration:
         values.duration && !Number.isNaN(parseInt(values.duration, 10))
           ? parseInt(values.duration, 10)
@@ -58,17 +67,16 @@ export function AddTaskModal({
     });
   }
 
-  const defaultStart = defaultDate ? new Date(defaultDate) : new Date();
+  const defaultStart =
+    defaultValues?.startDate ?? (defaultDate ? new Date(defaultDate) : new Date());
 
   return (
     <Modal open={open} onClose={onClose} maxWidth="560px">
       <ModalHead tag="NEW QUEST" title="＋ Create Task" />
       <ModalBody className="max-h-[78vh] overflow-y-auto">
         <TaskForm
-          key={defaultDate ?? 'add'}
           mode="create"
-          defaultValues={{ startDate: defaultStart }}
-          allTasks={allTasks}
+          defaultValues={{ startDate: defaultStart, ...defaultValues }}
           onSubmit={handleSubmit}
           onCancel={onClose}
           saving={isPending}
