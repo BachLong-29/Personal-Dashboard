@@ -54,7 +54,7 @@ export function PageHeader({
           ✦ &nbsp; CHRONICLE · {monthName} {yr} &nbsp; ✦
         </div>
         <h1 className={titleText}>Quest Log</h1>
-        <p className="text-[10px] mt-0.5">
+        <p className="hidden sm:block text-[10px] mt-0.5">
           <span className="text-[var(--text-hi)] font-semibold">{todayDone}</span>
           <span className="text-[var(--text-lo)]"> of {todayTotal} cleared today · </span>
           <span className="text-[var(--text-hi)] font-semibold">{weekDone}</span>
@@ -65,13 +65,13 @@ export function PageHeader({
       </div>
 
       {/* ── Right: view switch + forge ────────────────────────────────────── */}
-      <div className="flex items-center gap-2 ml-auto">
+      <div className="flex items-center gap-2 ml-auto flex-wrap justify-end">
         <ViewSwitch view={view} onChange={onViewChange} />
         <button type="button" className={addTaskBtn} onClick={onAddTask}>
-          <span>＋</span> Add Task
+          <span>＋</span> <span className="hidden sm:inline">Add Task</span>
         </button>
         <button type="button" className={forgeBtn} onClick={onForge}>
-          <span>＋</span> Forge Quest
+          <span>＋</span> <span className="hidden sm:inline">Forge Quest</span>
         </button>
       </div>
 
@@ -224,7 +224,7 @@ function Chip({ active, activeColor, onClick, children }: ChipProps) {
 // ─── Style constants ──────────────────────────────────────────────────────────
 
 const headerWrap =
-  'bg-[var(--panel)] border border-[var(--border)] rounded-[var(--r)] px-4 pt-3 pb-3 flex flex-wrap gap-2 shrink-0';
+  'bg-[var(--panel)] border border-[var(--border)] rounded-[var(--r)] px-3 md:px-4 pt-3 pb-3 flex flex-wrap gap-2 shrink-0';
 
 const tagLine =
   'text-[8px] tracking-[0.18em] text-[var(--gold)] font-[var(--font-title)] font-bold opacity-70';
@@ -257,7 +257,7 @@ const segBtn =
 const segBtnActive = '!text-[var(--gold)] bg-[oklch(0.74_0.17_85_/_0.1)]';
 
 const searchBox =
-  'flex items-center gap-1.5 bg-[var(--panel2)] border border-[var(--border)] rounded-[var(--r-sm)] px-2 py-1 w-[160px]';
+  'flex items-center gap-1.5 bg-[var(--panel2)] border border-[var(--border)] rounded-[var(--r-sm)] px-2 py-1 w-full sm:w-[160px]';
 const searchInput =
   'flex-1 bg-transparent text-[10px] text-[var(--text-hi)] placeholder:text-[var(--text-lo)] outline-none min-w-0';
 

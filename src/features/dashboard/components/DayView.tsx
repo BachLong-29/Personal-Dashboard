@@ -6,9 +6,12 @@ import { cn } from '@/libs/utils';
 
 import { useCategories } from '../hooks/useCategories';
 import { useDeleteTask } from '../hooks/useDeleteTask';
+import { useHabitLogs } from '../hooks/useHabitLogs';
+import { useHabits } from '../hooks/useHabits';
 import { useTasks } from '../hooks/useTasks';
+import { useToggleHabitLog } from '../hooks/useToggleHabitLog';
 import { useUpdateTask } from '../hooks/useUpdateTask';
-import type { Quest, Task, TaskStatus } from '../types';
+import type { HabitDay, Quest, Task, TaskStatus } from '../types';
 import type { ScheduleDisplayOptions } from '../hooks/useScheduleState';
 import { ScheduleTaskModal } from './ScheduleTaskModal';
 import { TaskCard } from './TaskCard';
@@ -19,6 +22,16 @@ interface DayViewProps {
   quests?: Quest[];
   onDateChange: (date: string) => void;
 }
+
+const DOW_MAP: Record<number, HabitDay> = {
+  0: 'sun',
+  1: 'mon',
+  2: 'tue',
+  3: 'wed',
+  4: 'thu',
+  5: 'fri',
+  6: 'sat',
+};
 
 function addDays(dateStr: string, n: number): string {
   const d = new Date(dateStr);
@@ -34,8 +47,11 @@ function formatDateLabel(dateStr: string): string {
 export function DayView({ date, display, quests = [], onDateChange }: DayViewProps) {
   const { data: allTasks = [], isLoading } = useTasks();
   const { data: categories = [] } = useCategories();
+  const { data: habits = [] } = useHabits();
+  const { data: habitLogs = [] } = useHabitLogs(date);
   const { mutate: updateTask } = useUpdateTask();
   const { mutate: deleteTask } = useDeleteTask();
+  const { mutate: toggleHabitLog } = useToggleHabitLog();
 
   const [editing, setEditing] = useState<Task | undefined>(undefined);
   const [cloning, setCloning] = useState<Task | undefined>(undefined);
@@ -53,8 +69,23 @@ export function DayView({ date, display, quests = [], onDateChange }: DayViewPro
   );
 
   const dayTasks = useMemo(
-    () => (allTasks as Task[]).filter((t) => t.active && t.startDate <= date && (t.endDate ?? t.startDate) >= date),
+    () =>
+      (allTasks as Task[]).filter(
+        (t) => t.active && t.startDate <= date && (t.endDate ?? t.startDate) >= date,
+      ),
     [allTasks, date],
+  );
+
+  const dayOfWeek: HabitDay = DOW_MAP[new Date(date + 'T12:00:00').getDay()] ?? 'mon';
+
+  const dayHabits = useMemo(
+    () => habits.filter((h) => h.active && h.schedule.some((e) => e.days.includes(dayOfWeek))),
+    [habits, dayOfWeek],
+  );
+
+  const logMap = useMemo(
+    () => Object.fromEntries(habitLogs.map((l) => [l.habitId, l])),
+    [habitLogs],
   );
 
   function isBlocked(task: Task): boolean {
@@ -164,6 +195,38 @@ export function DayView({ date, display, quests = [], onDateChange }: DayViewPro
             </div>
           </>
         )}
+
+        {/* Habits section */}
+        {display.showHabits && dayHabits.length > 0 && (
+          <>
+            <div className={cn(sectionHeader, 'mt-3')}>
+              <span className={sectionTitle}>✦ Habits</span>
+              <span className={habitCount}>
+                {dayHabits.filter((h) => logMap[h.id]?.done).length}/{dayHabits.length}
+              </span>
+            </div>
+            <div className={listWrap}>
+              {dayHabits.map((h) => {
+                const done = logMap[h.id]?.done ?? false;
+                return (
+                  <button
+                    key={h.id}
+                    type="button"
+                    className={cn(habitRow, done && habitRowDone)}
+                    onClick={() => toggleHabitLog({ habitId: h.id, date, done: !done })}
+                  >
+                    <span className={cn(habitCheck, done && habitCheckDone)}>
+                      {done ? '✓' : '○'}
+                    </span>
+                    <span className={habitIcon}>{h.icon}</span>
+                    <span className={cn(habitName, done && habitNameDone)}>{h.name}</span>
+                    {h.duration && <span className={habitDuration}>⏱ {h.duration}m</span>}
+                  </button>
+                );
+              })}
+            </div>
+          </>
+        )}
       </div>
 
       {showModal && (
@@ -252,3 +315,14 @@ const questIcon = 'text-[13px] shrink-0';
 const questName = 'flex-1 text-[11px] font-medium text-[var(--text-hi)]';
 const questNameDone = 'line-through text-[var(--text-lo)]';
 const questDone = 'text-[11px] text-[oklch(0.76_0.14_162)]';
+
+const habitCount = 'text-[9px] font-bold text-[var(--text-lo)] font-[var(--font-title)]';
+const habitRow =
+  'w-full flex items-center gap-2 px-2.5 py-1.5 bg-[var(--panel2)] border border-[var(--border)] rounded-[var(--r-sm)] cursor-pointer transition-all hover:border-[var(--border-hi)] text-left';
+const habitRowDone = 'opacity-60';
+const habitCheck = 'text-[11px] shrink-0 text-[var(--text-lo)] w-4 text-center';
+const habitCheckDone = 'text-[var(--mint)]';
+const habitIcon = 'text-[13px] shrink-0';
+const habitName = 'flex-1 text-[11px] font-medium text-[var(--text-hi)] truncate';
+const habitNameDone = 'line-through text-[var(--text-lo)]';
+const habitDuration = 'text-[9px] text-[var(--text-lo)] shrink-0';

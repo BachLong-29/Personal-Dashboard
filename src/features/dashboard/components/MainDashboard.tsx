@@ -62,6 +62,8 @@ import { ScheduleView } from './ScheduleView';
 import { XPToast } from './XPToast';
 import DashboardTopbar from './DashboardTopbar';
 
+type MobilePanel = 'center' | 'character' | 'timer';
+
 function loadSkipConfirm(): boolean {
   if (typeof window === 'undefined') return false;
   try {
@@ -202,6 +204,7 @@ export default function MainDashboard() {
     setChar(profileToCharacter(profile));
     charInitialized.current = true;
   }, [profileData]);
+
   const searchParams = useSearchParams();
   const [achievements, setAchievements] = useState<Achievement[]>(MOCK_ACHIEVEMENTS);
   const [settings] = useState<DashboardSettings>(DEFAULT_SETTINGS);
@@ -210,6 +213,7 @@ export default function MainDashboard() {
     if (tab === 'habits' || tab === 'schedule' || tab === 'stats') return tab;
     return 'quests';
   });
+  const [mobilePanel, setMobilePanel] = useState<MobilePanel>('center');
   const [burst, setBurst] = useState<BurstPos | null>(null);
   const [toast, setToast] = useState<{ xp: number; coins: number } | null>(null);
   const [penaltyState, setPenaltyState] = useState<PenaltyState | null>(null);
@@ -379,6 +383,124 @@ export default function MainDashboard() {
     }, 400);
   };
 
+  // Sets the active center tab and ensures mobile shows the center panel
+  const handleTabChange = (tab: CenterTab) => {
+    setCenterTab(tab);
+    setMobilePanel('center');
+  };
+
+  // ── Shared panel content (used by both desktop and mobile layouts) ──
+
+  const leftPanels = (
+    <>
+      <CharacterPanel char={char} settings={settings} />
+      <AchievementsPanel achievements={achievements} />
+    </>
+  );
+
+  const rightPanels = (
+    <>
+      <FocusTimer duration={settings.timerDuration} />
+      {settings.showQuoteCard && (
+        <div className={motivationCard}>
+          <div className={motivationLabel}>◆ {t('motivation.dailyWisdom')}</div>
+          <div className={motivationText}>&ldquo;{quote?.text}&rdquo;</div>
+          <div className={motivationAuthor}>{quote?.author}</div>
+        </div>
+      )}
+      {settings.showGuildPanel && <GuildPanel />}
+    </>
+  );
+
+  const centerPanels = (
+    <>
+      {centerTab === 'quests' && (
+        <QuestPanel
+          quests={allQuests}
+          onToggle={handleToggleQuest}
+          onAddQuest={handleAddQuest}
+          animationsEnabled={settings.animationsEnabled}
+          isLoading={questsLoading}
+        />
+      )}
+      {centerTab === 'habits' && <HabitPanel todayStr={todayDateStr} />}
+      {centerTab === 'schedule' && (
+        <div className={cn(panelBase, panelGold, 'flex-1 overflow-hidden min-h-0 flex flex-col')}>
+          <div className={cornerTL} />
+          <div className={cornerTR} />
+          <div className={cornerBL} />
+          <div className={cornerBR} />
+          <div className={panelHeader}>
+            <span className={panelHeaderTitle}>{t('schedule.title')}</span>
+            <span className={panelHeaderOrnament}>◆ ◆ ◆</span>
+          </div>
+          <ScheduleView quests={quests} onNavigateTab={handleTabChange} />
+        </div>
+      )}
+      {centerTab === 'stats' && (
+        <div className={cn(panelBase, panelViolet, 'flex-1 overflow-hidden min-h-0 flex flex-col')}>
+          <div className={panelHeader}>
+            <span className={panelHeaderTitle}>{t('analytics.title')}</span>
+            <span className={panelHeaderOrnament}>◆ ◆ ◆</span>
+          </div>
+          <AnalyticsPanel />
+        </div>
+      )}
+    </>
+  );
+
+  const centerTabDefs = [
+    { key: 'quests' as CenterTab, label: t('tabs.quests') },
+    { key: 'habits' as CenterTab, label: t('tabs.habits') },
+    { key: 'schedule' as CenterTab, label: t('tabs.schedule') },
+    { key: 'stats' as CenterTab, label: t('tabs.stats') },
+  ];
+
+  const mobileNavItems = [
+    {
+      id: 'quests',
+      icon: '⚔',
+      label: t('tabs.quests'),
+      isActive: mobilePanel === 'center' && centerTab === 'quests',
+      onClick: () => handleTabChange('quests'),
+    },
+    {
+      id: 'habits',
+      icon: '🔥',
+      label: t('tabs.habits'),
+      isActive: mobilePanel === 'center' && centerTab === 'habits',
+      onClick: () => handleTabChange('habits'),
+    },
+    {
+      id: 'schedule',
+      icon: '📅',
+      label: t('tabs.schedule'),
+      isActive: mobilePanel === 'center' && centerTab === 'schedule',
+      onClick: () => handleTabChange('schedule'),
+    },
+    {
+      id: 'stats',
+      icon: '📊',
+      label: t('tabs.stats'),
+      isActive: mobilePanel === 'center' && centerTab === 'stats',
+      onClick: () => handleTabChange('stats'),
+    },
+    {
+      id: 'character',
+      icon: '🧝',
+      label: 'Hero',
+      isActive: mobilePanel === 'character',
+      onClick: () => setMobilePanel('character'),
+    },
+    {
+      id: 'timer',
+      icon: '⏱',
+      label: 'Timer',
+      isActive: mobilePanel === 'timer',
+      onClick: () => setMobilePanel('timer'),
+    },
+  ];
+
   return (
     <>
       {burst && settings.animationsEnabled && (
@@ -404,90 +526,78 @@ export default function MainDashboard() {
         />
       )}
 
-      <DashboardTopbar char={char} dateStr={dateStr} onEndDay={handleEndDay} />
+      {/* h-screen flex-col: establishes the flex context so flex-1/min-h-0 work on children */}
+      <div className="flex flex-col h-screen">
+        <DashboardTopbar char={char} dateStr={dateStr} onEndDay={handleEndDay} />
 
-      <div className={dashboardLayout}>
-        <div className={scrollCol}>
-          <CharacterPanel char={char} settings={settings} />
-          <AchievementsPanel achievements={achievements} />
-        </div>
+        {/* ── Desktop / Tablet layout (md+) ─────────────────────────────────── */}
+        {/* Tablet: 2 columns [220px + 1fr]. Desktop: 3 columns [220px + 1fr + 260px] */}
+        <div className="hidden md:grid md:grid-cols-[220px_1fr] lg:grid-cols-[220px_1fr_260px] gap-3 p-3 flex-1 overflow-hidden min-h-0">
+          <div className={scrollCol}>{leftPanels}</div>
 
-        <div className={centerCol}>
-          <div className={centerTabs}>
-            {(
-              [
-                { key: 'quests', label: t('tabs.quests') },
-                { key: 'habits', label: t('tabs.habits') },
-                { key: 'schedule', label: t('tabs.schedule') },
-                { key: 'stats', label: t('tabs.stats') },
-              ] satisfies { key: CenterTab; label: string }[]
-            ).map((tab) => (
-              <Button
-                key={tab.key}
-                type="button"
-                variant="ghost"
-                className={cn(
-                  tabButtonBase,
-                  tabButtonHover,
-                  centerTab === tab.key && tabButtonActive,
-                )}
-                onClick={() => setCenterTab(tab.key)}
-              >
-                {tab.label}
-              </Button>
-            ))}
+          <div className={centerCol}>
+            <div className={centerTabs}>
+              {centerTabDefs.map((tab) => (
+                <Button
+                  key={tab.key}
+                  type="button"
+                  variant="ghost"
+                  className={cn(
+                    tabButtonBase,
+                    tabButtonHover,
+                    centerTab === tab.key && tabButtonActive,
+                  )}
+                  onClick={() => setCenterTab(tab.key)}
+                >
+                  {tab.label}
+                </Button>
+              ))}
+            </div>
+            {centerPanels}
           </div>
 
-          {centerTab === 'quests' && (
-            <QuestPanel
-              quests={allQuests}
-              onToggle={handleToggleQuest}
-              onAddQuest={handleAddQuest}
-              animationsEnabled={settings.animationsEnabled}
-              isLoading={questsLoading}
-            />
-          )}
-          {centerTab === 'habits' && <HabitPanel todayStr={todayDateStr} />}
-          {centerTab === 'schedule' && (
-            <div
-              className={cn(panelBase, panelGold, 'flex-1 overflow-hidden min-h-0 flex flex-col')}
-            >
-              <div className={cornerTL} />
-              <div className={cornerTR} />
-              <div className={cornerBL} />
-              <div className={cornerBR} />
-              <div className={panelHeader}>
-                <span className={panelHeaderTitle}>{t('schedule.title')}</span>
-                <span className={panelHeaderOrnament}>◆ ◆ ◆</span>
-              </div>
-              <ScheduleView quests={quests} onNavigateTab={setCenterTab} />
-            </div>
-          )}
-          {centerTab === 'stats' && (
-            <div
-              className={cn(panelBase, panelViolet, 'flex-1 overflow-hidden min-h-0 flex flex-col')}
-            >
-              <div className={panelHeader}>
-                <span className={panelHeaderTitle}>{t('analytics.title')}</span>
-                <span className={panelHeaderOrnament}>◆ ◆ ◆</span>
-              </div>
-              <AnalyticsPanel />
-            </div>
-          )}
+          {/* Right column — desktop only */}
+          <div className="hidden lg:flex flex-col gap-2.5 overflow-y-auto overflow-x-hidden">
+            {rightPanels}
+          </div>
         </div>
 
-        <div className={scrollCol}>
-          <FocusTimer duration={settings.timerDuration} />
-          {settings.showQuoteCard && (
-            <div className={motivationCard}>
-              <div className={motivationLabel}>◆ {t('motivation.dailyWisdom')}</div>
-              <div className={motivationText}>&ldquo;{quote?.text}&rdquo;</div>
-              <div className={motivationAuthor}>{quote?.author}</div>
+        {/* ── Mobile layout (<md) ───────────────────────────────────────────── */}
+        {/* pb-14 reserves space so content never slides under the fixed bottom nav */}
+        <div className="flex flex-col md:hidden flex-1 overflow-hidden min-h-0 pb-14">
+          {mobilePanel === 'character' && (
+            <div className="flex flex-col gap-2.5 overflow-y-auto overflow-x-hidden p-3 flex-1">
+              {leftPanels}
             </div>
           )}
-          {settings.showGuildPanel && <GuildPanel />}
+          {mobilePanel === 'timer' && (
+            <div className="flex flex-col gap-2.5 overflow-y-auto overflow-x-hidden p-3 flex-1">
+              {rightPanels}
+            </div>
+          )}
+          {mobilePanel === 'center' && (
+            <div className="flex flex-col gap-2.5 flex-1 overflow-hidden min-h-0 p-3">
+              {centerPanels}
+            </div>
+          )}
         </div>
       </div>
+
+      {/* Mobile bottom nav — fixed to viewport, outside the h-screen wrapper */}
+      <nav aria-label="Main navigation" className={mobileNav}>
+        {mobileNavItems.map((item) => (
+          <button
+            key={item.id}
+            type="button"
+            aria-current={item.isActive ? 'page' : undefined}
+            onClick={item.onClick}
+            className={cn(mobileNavBtn, item.isActive && mobileNavBtnActive)}
+          >
+            <span className="text-[16px] leading-none">{item.icon}</span>
+            <span className="leading-none">{item.label}</span>
+          </button>
+        ))}
+      </nav>
     </>
   );
 }
@@ -538,17 +648,21 @@ function profileToCharacter(profile: UserProfileData): Character {
   };
 }
 
-const dashboardLayout = 'grid grid-cols-[220px_1fr_260px] gap-3 p-3 flex-1 overflow-hidden min-h-0';
+// ── Layout ───────────────────────────────────────────────────────────────────
 
 const scrollCol = 'flex flex-col gap-2.5 overflow-y-auto overflow-x-hidden';
 const centerCol = 'flex flex-col gap-2.5 overflow-hidden min-h-0';
 const centerTabs = 'flex gap-1 shrink-0';
+
+// ── Center tab buttons ────────────────────────────────────────────────────────
 
 const tabButtonBase =
   'font-[var(--font-title)] text-[10px] tracking-[0.12em] font-bold text-[var(--text-mid)] bg-[var(--panel)] border border-[var(--border)] rounded-[var(--r-sm)] px-[14px] py-[7px] cursor-pointer transition-all duration-200 uppercase';
 const tabButtonHover = 'hover:text-[var(--text-hi)] hover:border-[oklch(0.74_0.17_85_/_0.3)]';
 const tabButtonActive =
   'text-[var(--gold)] bg-[oklch(0.74_0.17_85_/_0.08)] border-[oklch(0.74_0.17_85_/_0.5)] shadow-[0_0_12px_var(--gold-glow)]';
+
+// ── Panel base styles ─────────────────────────────────────────────────────────
 
 const panelBase =
   "bg-[var(--panel)] border border-[var(--border)] rounded-[var(--r)] overflow-hidden relative before:content-[''] before:absolute before:inset-0 before:pointer-events-none before:rounded-[inherit] before:[background-image:repeating-linear-gradient(0deg,transparent,transparent_28px,oklch(1_0_0_/_0.012)_28px,oklch(1_0_0_/_0.012)_29px),repeating-linear-gradient(90deg,transparent,transparent_28px,oklch(1_0_0_/_0.012)_28px,oklch(1_0_0_/_0.012)_29px)]";
@@ -569,9 +683,20 @@ const cornerTR = cn(cornerBase, 'top-[5px] right-[5px] border-t-[1.5px] border-r
 const cornerBL = cn(cornerBase, 'bottom-[5px] left-[5px] border-b-[1.5px] border-l-[1.5px]');
 const cornerBR = cn(cornerBase, 'bottom-[5px] right-[5px] border-b-[1.5px] border-r-[1.5px]');
 
+// ── Motivation card ───────────────────────────────────────────────────────────
+
 const motivationCard =
   'bg-[linear-gradient(135deg,oklch(0.35_0.15_295_/_0.25),oklch(0.28_0.12_270_/_0.2))] border border-[oklch(0.66_0.22_295_/_0.3)] rounded-[var(--r)] px-[14px] py-3 shrink-0';
 const motivationLabel =
   'text-[8px] tracking-[0.12em] uppercase text-[var(--violet)] font-[var(--font-title)] mb-[5px]';
 const motivationText = 'text-[11px] text-[var(--text-hi)] leading-[1.6] italic';
 const motivationAuthor = 'text-[9px] text-[var(--text-mid)] mt-1 text-right';
+
+// ── Mobile bottom navigation ──────────────────────────────────────────────────
+
+const mobileNav =
+  'md:hidden fixed bottom-0 left-0 right-0 grid grid-cols-6 border-t border-[var(--border)] bg-[var(--panel)]/70 backdrop-blur-xl z-20';
+const mobileNavBtn =
+  'flex flex-col items-center justify-center gap-[3px] py-2 px-1 text-[var(--text-lo)] cursor-pointer transition-colors duration-200 select-none text-[8px] font-[var(--font-title)] tracking-[0.05em] uppercase';
+const mobileNavBtnActive =
+  'text-[var(--gold)] [&>span:first-child]:drop-shadow-[0_0_8px_var(--gold-glow)]';

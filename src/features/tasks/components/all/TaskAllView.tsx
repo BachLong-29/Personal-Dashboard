@@ -40,15 +40,12 @@ const PRIORITY_ORDER: Record<string, number> = {
 
 interface TaskAllViewProps {
   tasks: UITask[];
-  onToggleDone: (id: string) => void;
   onEdit?: (task: UITask) => void;
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-export function TaskAllView({ tasks: allItems, onEdit }: TaskAllViewProps) {
-  const tasks = allItems.filter((t) => t.source === 'task');
-
+export function TaskAllView({ tasks, onEdit }: TaskAllViewProps) {
   const [sortBy, setSortBy] = useState<SortByLocal>('deadline');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -137,24 +134,23 @@ export function TaskAllView({ tasks: allItems, onEdit }: TaskAllViewProps) {
         })}
       </div>
 
-      {/* ── Table header ─────────────────────────────────────────────────── */}
-      <div className={tableHeader}>
-        <span className="w-[16px] shrink-0" />
-        <span className="flex-1 min-w-0">Quest</span>
-        <span className="w-20 shrink-0">Status</span>
-        <span className="w-20 shrink-0">Category</span>
-        <span className="w-10 text-center shrink-0">Pri</span>
-        <span className="w-24 shrink-0">Deadline</span>
-        <span className="w-[60px] shrink-0">Progress</span>
-        <span className="w-12 text-right shrink-0">XP</span>
-        <span className="w-10 text-right shrink-0">Est</span>
-        <span className="w-10 text-right shrink-0">Streak</span>
-        <span className="w-8 text-right shrink-0">Sub</span>
-        <span className="w-5 shrink-0" />
-      </div>
+      {/* ── Table: horizontally scrollable on mobile ─────────────────────── */}
+      <div className="flex-1 overflow-auto min-w-0">
+        <div className={tableHeader}>
+          <span className="w-[16px] shrink-0" />
+          <span className="flex-1 min-w-[160px]">Quest</span>
+          <span className="w-20 shrink-0">Status</span>
+          <span className="w-20 shrink-0">Category</span>
+          <span className="w-10 text-center shrink-0">Pri</span>
+          <span className="w-24 shrink-0">Deadline</span>
+          <span className="w-[60px] shrink-0">Progress</span>
+          <span className="w-12 text-right shrink-0">XP</span>
+          <span className="w-10 text-right shrink-0">Est</span>
+          <span className="w-10 text-right shrink-0">Streak</span>
+          <span className="w-8 text-right shrink-0">Sub</span>
+          <span className="w-5 shrink-0" />
+        </div>
 
-      {/* ── Flat list ────────────────────────────────────────────────────── */}
-      <div className="flex-1 overflow-y-auto">
         {sorted.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 gap-2 text-center opacity-50">
             <div className="text-[32px]">◈</div>
@@ -169,7 +165,7 @@ export function TaskAllView({ tasks: allItems, onEdit }: TaskAllViewProps) {
               isExpanded={expandedId === t.id}
               onExpand={() => setExpandedId(expandedId === t.id ? null : t.id)}
               onEdit={onEdit}
-              onDelete={t.source === 'task' ? setDeletingTask : undefined}
+              onDelete={setDeletingTask}
             />
           ))
         )}
@@ -287,4 +283,4 @@ const segBtnActive =
   'text-[var(--gold)] border-[oklch(0.74_0.17_85_/_0.4)] bg-[oklch(0.74_0.17_85_/_0.08)]';
 
 const tableHeader =
-  'flex items-center gap-3 px-4 py-1.5 bg-[var(--panel2)] border-b border-[var(--border)] text-[8px] font-bold text-[var(--text-lo)] tracking-[0.1em] uppercase font-[var(--font-title)] sticky top-0 z-10 shrink-0';
+  'flex items-center gap-3 px-4 py-1.5 bg-[var(--panel2)] border-b border-[var(--border)] text-[8px] font-bold text-[var(--text-lo)] tracking-[0.1em] uppercase font-[var(--font-title)] sticky top-0 z-10 shrink-0 min-w-max';

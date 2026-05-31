@@ -112,9 +112,9 @@ export function TaskDayView({
       onDragEnd={handleDragEnd}
       onDragCancel={() => setActiveId(null)}
     >
-      <div className="flex gap-3 flex-1 min-h-0 overflow-hidden">
+      <div className="flex flex-col md:flex-row gap-3 flex-1 min-h-0 overflow-hidden">
         {/* ── Left: daily ledger ────────────────────────────────────────── */}
-        <section className="flex-1 min-w-0 bg-[var(--panel)] border border-[var(--border)] rounded-[var(--r)] flex flex-col overflow-hidden">
+        <section className="flex-1 min-w-0 min-h-0 bg-[var(--panel)] border border-[var(--border)] rounded-[var(--r)] flex flex-col overflow-hidden">
           {/* Panel head with date navigation */}
           <div className="flex items-center gap-2 px-4 py-2 border-b border-[var(--border)] shrink-0">
             <span className="text-[8px] tracking-[0.18em] text-[var(--text-lo)] font-[var(--font-title)] font-bold shrink-0">
@@ -196,8 +196,8 @@ export function TaskDayView({
           </div>
         </section>
 
-        {/* ── Right: side panels ────────────────────────────────────────── */}
-        <section className="w-[400px] shrink-0 flex flex-col gap-2.5 overflow-y-auto">
+        {/* ── Right: side panels — hidden on mobile ─────────────────────── */}
+        <section className="hidden md:flex w-[400px] shrink-0 flex-col gap-2.5 overflow-y-auto">
           {splitMode === 'week' ? <WeekPeek tasks={allTasks} /> : <MonthPeek tasks={allTasks} />}
           <ScheduleStrip tasks={selectedTasks} />
         </section>

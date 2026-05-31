@@ -38,9 +38,25 @@ const DashboardTopbar = (props: DashboardTopbarProps) => {
 
   const displayName = profile?.heroName || char.name;
 
+  // Desktop: user identity dropdown
   const [showUserModal, setShowUserModal] = useState(false);
   const userModalRef = useRef<HTMLDivElement>(null);
   useOnClickOutside(userModalRef, () => setShowUserModal(false));
+
+  // Mobile: bottom sheet — 2-phase mount/animate pattern for smooth enter + exit
+  const [sheetMounted, setSheetMounted] = useState(false);
+  const [sheetVisible, setSheetVisible] = useState(false);
+
+  const openSheet = () => {
+    setSheetMounted(true);
+    // Double rAF: let the browser paint the hidden element before triggering transition
+    requestAnimationFrame(() => requestAnimationFrame(() => setSheetVisible(true)));
+  };
+
+  const closeSheet = () => {
+    setSheetVisible(false);
+    setTimeout(() => setSheetMounted(false), 380);
+  };
 
   const handleToggleLocale = () => {
     const currentIndex = locales.indexOf(locale);
@@ -49,156 +65,317 @@ const DashboardTopbar = (props: DashboardTopbarProps) => {
   };
 
   return (
-    <div className={cn(topBar)}>
-      {/* User identity trigger */}
-      <div ref={userModalRef} className="relative">
+    <>
+      <div className={topBar}>
+        {/* ── Desktop: user identity trigger → dropdown ───────────────────── */}
+        <div ref={userModalRef} className="relative hidden sm:block">
+          <button type="button" className={userTrigger} onClick={() => setShowUserModal((v) => !v)}>
+            <span className={avatarBadge}>{companion?.glyph ?? '🧝‍♀️'}</span>
+            <span className={topBarLogo}>{displayName}</span>
+            <span className={cn(triggerCaret, 'hidden sm:inline')}>
+              {showUserModal ? '▲' : '▼'}
+            </span>
+          </button>
+
+          {showUserModal && (
+            <div className={userModal}>
+              <div className={userModalCornerTL} />
+              <div className={userModalCornerTR} />
+              <div className={userModalCornerBL} />
+              <div className={userModalCornerBR} />
+
+              <div className={modalAvatarRow}>
+                <div className={modalAvatarRing}>
+                  <div className={modalAvatarInner}>{companion?.glyph ?? '🧝‍♀️'}</div>
+                  <div className={modalRankBadge}>{rank.name[0]?.toUpperCase() ?? char.rank}</div>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className={modalName}>{displayName}</div>
+                  {profile?.title && <div className={modalTitle}>◆ {profile.title} ◆</div>}
+                  <div className={modalMeta}>
+                    <span>
+                      {heroClass?.glyph} {heroClass?.name ?? char.class}
+                    </span>
+                    <span className={modalMetaDot}>·</span>
+                    <span>{rank.name}</span>
+                    <span className={modalMetaDot}>·</span>
+                    <span>Lv.{char.level}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className={modalDivider} />
+
+              <div className={modalCurrencyRow}>
+                <div className={modalCurrencyItem}>
+                  <span className={modalCurrencyIcon}>💠</span>
+                  <div>
+                    <div className={modalCurrencyVal}>{char.gems.toLocaleString()}</div>
+                    <div className={modalCurrencyKey}>Gems</div>
+                  </div>
+                </div>
+                <div className={modalCurrencyDivider} />
+                <div className={modalCurrencyItem}>
+                  <span className={modalCurrencyIcon}>🪙</span>
+                  <div>
+                    <div className={cn(modalCurrencyVal, 'text-[var(--gold)]')}>
+                      {char.coins.toLocaleString()}
+                    </div>
+                    <div className={modalCurrencyKey}>Gold</div>
+                  </div>
+                </div>
+              </div>
+
+              <div className={modalDivider} />
+
+              <div className={modalActions}>
+                <Link
+                  href="/profile"
+                  className={modalActionBtn}
+                  onClick={() => setShowUserModal(false)}
+                >
+                  ✦ {tCommon('edit')} {tNav('profile')}
+                </Link>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* ── ◆ separator (desktop only) ─────────────────────────────────── */}
+        <span className="hidden sm:inline text-[var(--gold)] text-[8px] opacity-50">◆</span>
+
+        {/* ── Gems + Coins: 2 rows on mobile, side-by-side on desktop ──────── */}
+        <div className="flex flex-row gap-1 sm:gap-2 sm:items-center">
+          <div className={cn(currencyPill, gems)}>
+            <span className={currencyIcon}>💠</span>
+            <span>{char.gems}</span>
+          </div>
+          <div className={cn(currencyPill, coins)}>
+            <span className={currencyIcon}>🪙</span>
+            <span>{char.coins}</span>
+          </div>
+        </div>
+
+        {/* Back to dashboard — shown when on a sub-page */}
+        {!pathname.startsWith('/dashboard') && (
+          <Link href="/dashboard" className={backBtn} title="Return to Dashboard">
+            ◂ Dashboard
+          </Link>
+        )}
+
+        <div className="flex-1" />
+
+        {/* ── Desktop nav (hidden on mobile, visible sm+) ─────────────────── */}
+        <div className="hidden sm:flex items-center gap-2 md:gap-3">
+          <Button
+            type="button"
+            variant="ghost"
+            className={penaltyTrigger}
+            onClick={onEndDay}
+            title={tDash('buttons.endDayTitle')}
+          >
+            ⚠ {tDash('endDay')}
+          </Button>
+          <div className={dateLabel}>{dateStr}</div>
+          <Link href="/marketplace" className={cn(navPill, marketplacePill)}>
+            🛍 {tNav('marketplace')}
+          </Link>
+          <Link href="/vault" className={cn(streakPill, 'no-underline cursor-pointer')}>
+            ✦ {tNav('vault')}
+          </Link>
+          <Button
+            type="button"
+            variant="ghost"
+            className={cn(navPill, languagePill)}
+            onClick={handleToggleLocale}
+            aria-label={tDash('buttons.toggleLanguage')}
+            title={localeLabels[locale]}
+          >
+            🌐 {locale.toUpperCase()}
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            className={cn(
+              navPill,
+              'text-[var(--text-lo)] hover:text-[var(--rose)] hover:!border-[oklch(0.74_0.18_5_/_0.4)]',
+            )}
+            onClick={logout}
+            aria-label="Logout"
+          >
+            ⏻
+          </Button>
+          <div className={streakPill}>{tDash('streakDays', { count: char.streak })}</div>
+        </div>
+
+        {/* ── Mobile: avatar + name + menu → RIGHT side, opens bottom sheet ── */}
         <button
           type="button"
-          className={userTrigger}
-          onClick={() => setShowUserModal((v) => !v)}
+          className="sm:hidden flex items-center gap-2 px-2 py-1 rounded-[var(--r-sm)] hover:bg-[oklch(0.74_0.17_85_/_0.06)] transition-colors duration-200 cursor-pointer focus:outline-none shrink-0"
+          onClick={openSheet}
         >
           <span className={avatarBadge}>{companion?.glyph ?? '🧝‍♀️'}</span>
-          <span className={cn(topBarLogo)}>{displayName}</span>
-          <span className={triggerCaret}>{showUserModal ? '▲' : '▼'}</span>
+          <span className="font-[var(--font-title)] text-[13px] font-bold tracking-[0.06em] bg-gradient-to-r from-[var(--gold)] to-[var(--violet)] bg-clip-text text-transparent max-w-[80px] truncate">
+            {displayName}
+          </span>
+          <div className="flex flex-col items-center gap-[4.5px] ml-0.5 shrink-0">
+            <span className="w-[13px] h-[1.5px] bg-[var(--text-mid)] rounded-full" />
+            <span className="w-[13px] h-[1.5px] bg-[var(--text-mid)] rounded-full" />
+            <span className="w-[10px] h-[1.5px] bg-[var(--text-mid)] rounded-full" />
+          </div>
         </button>
+      </div>
 
-        {showUserModal && (
-          <div className={userModal}>
-            <div className={userModalCornerTL} />
-            <div className={userModalCornerTR} />
-            <div className={userModalCornerBL} />
-            <div className={userModalCornerBR} />
+      {/* ── Mobile bottom sheet ─────────────────────────────────────────────── */}
+      {sheetMounted && (
+        <>
+          {/* Backdrop */}
+          <div
+            className={cn(
+              'fixed inset-0 z-40 sm:hidden bg-black/60',
+              'transition-opacity duration-300',
+              sheetVisible ? 'opacity-100' : 'opacity-0',
+            )}
+            onClick={closeSheet}
+          />
 
-            {/* Avatar + identity */}
-            <div className={modalAvatarRow}>
-              <div className={modalAvatarRing}>
-                <div className={modalAvatarInner}>{companion?.glyph ?? '🧝‍♀️'}</div>
-                <div className={modalRankBadge}>{rank.name[0]?.toUpperCase() ?? char.rank}</div>
+          {/* Sheet */}
+          <div
+            className={cn(
+              'fixed bottom-0 left-0 right-0 z-50 sm:hidden',
+              'bg-[var(--panel)] rounded-t-[24px] overflow-hidden',
+              'border-t border-[oklch(0.74_0.17_85_/_0.2)]',
+              'shadow-[0_-8px_40px_oklch(0_0_0_/_0.5)]',
+              'transition-transform duration-[380ms] ease-[cubic-bezier(0.32,0.72,0,1)]',
+              sheetVisible ? 'translate-y-0' : 'translate-y-full',
+            )}
+          >
+            {/* Drag handle */}
+            <div className="flex justify-center pt-3 pb-1">
+              <div className="w-10 h-[3px] rounded-full bg-[var(--border)]" />
+            </div>
+
+            {/* User profile section */}
+            <div className="flex items-center gap-3 px-5 py-4 border-b border-[var(--border)]">
+              <div className="relative w-[52px] h-[52px] shrink-0 rounded-full bg-[linear-gradient(135deg,var(--gold),var(--violet),var(--gold))] p-0.5 shadow-[0_0_16px_var(--gold-glow)]">
+                <div className="w-full h-full rounded-full bg-[var(--panel2)] flex items-center justify-center text-[24px]">
+                  {companion?.glyph ?? '🧝‍♀️'}
+                </div>
+                <div className="absolute -bottom-[1px] -right-[1px] w-5 h-5 bg-[linear-gradient(135deg,var(--gold),#b45309)] rounded-[5px] flex items-center justify-center font-[var(--font-title)] text-[10px] font-black text-[#0a0400] border border-[var(--panel)] shadow-[0_0_8px_var(--gold-glow)]">
+                  {rank.name[0]?.toUpperCase() ?? char.rank}
+                </div>
               </div>
               <div className="flex-1 min-w-0">
-                <div className={modalName}>{displayName}</div>
+                <div className="font-[var(--font-title)] text-[16px] font-bold text-[var(--text-hi)] tracking-[0.04em] truncate">
+                  {displayName}
+                </div>
                 {profile?.title && (
-                  <div className={modalTitle}>◆ {profile.title} ◆</div>
+                  <div className="text-[10px] text-[var(--violet)] tracking-[0.06em] truncate mt-[1px]">
+                    ◆ {profile.title} ◆
+                  </div>
                 )}
-                <div className={modalMeta}>
-                  <span>{heroClass?.glyph} {heroClass?.name ?? char.class}</span>
-                  <span className={modalMetaDot}>·</span>
+                <div className="flex items-center gap-1 text-[9px] text-[var(--text-mid)] tracking-[0.06em] mt-[3px]">
+                  <span>
+                    {heroClass?.glyph} {heroClass?.name ?? char.class}
+                  </span>
+                  <span className="opacity-40">·</span>
                   <span>{rank.name}</span>
-                  <span className={modalMetaDot}>·</span>
+                  <span className="opacity-40">·</span>
                   <span>Lv.{char.level}</span>
                 </div>
               </div>
             </div>
 
-            <div className={modalDivider} />
-
-            {/* Gems & Coins */}
-            <div className={modalCurrencyRow}>
-              <div className={modalCurrencyItem}>
-                <span className={modalCurrencyIcon}>💠</span>
-                <div>
-                  <div className={modalCurrencyVal}>{char.gems.toLocaleString()}</div>
-                  <div className={modalCurrencyKey}>Gems</div>
-                </div>
-              </div>
-              <div className={modalCurrencyDivider} />
-              <div className={modalCurrencyItem}>
-                <span className={modalCurrencyIcon}>🪙</span>
-                <div>
-                  <div className={cn(modalCurrencyVal, 'text-[var(--gold)]')}>
-                    {char.coins.toLocaleString()}
-                  </div>
-                  <div className={modalCurrencyKey}>Gold</div>
-                </div>
-              </div>
+            {/* Streak + date row */}
+            <div className="flex items-center gap-3 px-5 py-3 border-b border-[var(--border)]">
+              <div className={streakPill}>{tDash('streakDays', { count: char.streak })}</div>
+              <div className="flex-1" />
+              <span className={dateLabel}>{dateStr}</span>
             </div>
 
-            <div className={modalDivider} />
-
-            {/* Actions */}
-            <div className={modalActions}>
-              <Link
-                href="/profile"
-                className={modalActionBtn}
-                onClick={() => setShowUserModal(false)}
+            {/* Primary actions */}
+            <div className="px-4 pt-3 pb-2 flex flex-col gap-0.5">
+              <button
+                type="button"
+                className={cn(sheetItem, 'text-[oklch(0.85_0.18_22)]')}
+                onClick={() => {
+                  onEndDay();
+                  closeSheet();
+                }}
               >
-                ✦ {tCommon('edit')} {tNav('profile')}
+                <span className={sheetItemIcon}>⚠</span>
+                <span>{tDash('endDay')}</span>
+              </button>
+
+              <Link href="/profile" className={sheetItem} onClick={closeSheet}>
+                <span className={sheetItemIcon}>✦</span>
+                <span>
+                  {tCommon('edit')} {tNav('profile')}
+                </span>
+              </Link>
+
+              <Link href="/marketplace" className={sheetItem} onClick={closeSheet}>
+                <span className={sheetItemIcon}>🛍</span>
+                <span>{tNav('marketplace')}</span>
+              </Link>
+
+              <Link href="/vault" className={sheetItem} onClick={closeSheet}>
+                <span className={sheetItemIcon}>✦</span>
+                <span>{tNav('vault')}</span>
               </Link>
             </div>
+
+            <div className="h-px bg-[var(--border)] mx-4 my-1" />
+
+            {/* Secondary actions */}
+            <div className="px-4 pb-3 pt-2 grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                className={sheetSecondaryBtn}
+                onClick={() => {
+                  handleToggleLocale();
+                  closeSheet();
+                }}
+              >
+                <span>🌐</span>
+                <span>{locale.toUpperCase()}</span>
+              </button>
+              <button
+                type="button"
+                className={cn(
+                  sheetSecondaryBtn,
+                  'text-[var(--rose)] border-[oklch(0.74_0.18_5_/_0.3)] hover:bg-[oklch(0.74_0.18_5_/_0.08)]',
+                )}
+                onClick={() => {
+                  logout();
+                  closeSheet();
+                }}
+              >
+                <span>⏻</span>
+                <span>Logout</span>
+              </button>
+            </div>
+
+            {/* Safe area for iOS home indicator */}
+            <div className="pb-6" />
           </div>
-        )}
-      </div>
-
-      <span className="text-[var(--gold)] text-[8px] opacity-50">◆</span>
-      <div className={cn(currencyPill, gems)}>
-        <span className={currencyIcon}>💠</span>
-        <span>{char.gems}</span>
-      </div>
-      <div className={cn(currencyPill, coins)}>
-        <span className={currencyIcon}>🪙</span>
-        <span>{char.coins}</span>
-      </div>
-
-      {/* Back to dashboard — shown only when on a sub-page */}
-      {!pathname.startsWith('/dashboard') && (
-        <Link href="/dashboard" className={backBtn} title="Return to Dashboard">
-          ◂ Dashboard
-        </Link>
+        </>
       )}
-
-      <div className="flex-1" />
-      <Button
-        type="button"
-        variant="ghost"
-        className={penaltyTrigger}
-        onClick={onEndDay}
-        title={tDash('buttons.endDayTitle')}
-      >
-        ⚠ {tDash('endDay')}
-      </Button>
-      <div className={dateLabel}>{dateStr}</div>
-      <Link href="/marketplace" className={cn(navPill, marketplacePill)}>
-        🛍 {tNav('marketplace')}
-      </Link>
-      <Link href="/vault" className={cn(streakPill, 'no-underline cursor-pointer')}>
-        ✦ {tNav('vault')}
-      </Link>
-      <Button
-        type="button"
-        variant="ghost"
-        className={cn(navPill, languagePill)}
-        onClick={handleToggleLocale}
-        aria-label={tDash('buttons.toggleLanguage')}
-        title={localeLabels[locale]}
-      >
-        🌐 {locale.toUpperCase()}
-      </Button>
-      <Button
-        type="button"
-        variant="ghost"
-        className={cn(
-          navPill,
-          'text-[var(--text-lo)] hover:text-[var(--rose)] hover:!border-[oklch(0.74_0.18_5_/_0.4)]',
-        )}
-        onClick={logout}
-        aria-label="Logout"
-      >
-        ⏻
-      </Button>
-      <div className={streakPill}>{tDash('streakDays', { count: char.streak })}</div>
-    </div>
+    </>
   );
 };
 
 export default DashboardTopbar;
 
-// ── Top bar base ─────────────────────────────────────────────────────────────
+// ── Top bar ───────────────────────────────────────────────────────────────────
 
 const topBar =
-  'flex items-center gap-3 px-5 py-2.5 bg-[var(--panel)] border-b border-[var(--border)] shrink-0 z-10';
+  'flex items-center gap-2 md:gap-3 px-3 md:px-5 py-2.5 bg-[var(--panel)] border-b border-[var(--border)] shrink-0 z-10';
 
 const topBarLogo =
   'font-[var(--font-title)] text-[18px] font-black tracking-[0.12em] bg-gradient-to-r from-[var(--gold)] to-[var(--violet)] bg-clip-text text-transparent';
+
+// ── Currency ──────────────────────────────────────────────────────────────────
 
 const currencyPill =
   'flex items-center gap-1.5 bg-[var(--panel2)] border border-[var(--border)] rounded-[20px] py-1 pr-3 pl-2 text-[12px] font-semibold text-[var(--text-hi)] cursor-default';
@@ -206,8 +383,9 @@ const currencyIcon = 'text-[14px]';
 const gems = '!border-[oklch(0.66_0.22_295_/_0.4)]';
 const coins = '!border-[oklch(0.74_0.17_85_/_0.4)]';
 
-const dateLabel =
-  'text-[11px] text-[var(--text-mid)] tracking-[0.08em] font-[var(--font-title)]';
+// ── Misc pills ────────────────────────────────────────────────────────────────
+
+const dateLabel = 'text-[11px] text-[var(--text-mid)] tracking-[0.08em] font-[var(--font-title)]';
 
 const streakPill =
   'flex items-center gap-[5px] bg-[oklch(0.74_0.17_85_/_0.1)] border border-[oklch(0.74_0.17_85_/_0.3)] rounded-[20px] px-[10px] py-1 text-[11px] font-bold text-[var(--gold)] font-[var(--font-title)] tracking-[0.05em]';
@@ -225,16 +403,13 @@ const backBtn =
 const penaltyTrigger =
   'inline-flex items-center gap-[6px] bg-[oklch(0.62_0.24_22_/_0.1)] border border-[oklch(0.62_0.24_22_/_0.4)] text-[oklch(0.85_0.18_22)] px-[11px] py-[5px] rounded-[var(--r-sm)] text-[10px] font-[var(--font-title)] tracking-[0.12em] font-bold cursor-pointer transition-all duration-200 ml-1 hover:bg-[oklch(0.62_0.24_22_/_0.2)] hover:shadow-[0_0_12px_var(--danger-glow)]';
 
-// ── User trigger button ──────────────────────────────────────────────────────
+// ── User trigger & modal ──────────────────────────────────────────────────────
 
 const userTrigger =
   'flex items-center gap-2 rounded-[var(--r-sm)] px-2 py-1 transition-colors duration-200 cursor-pointer hover:bg-[oklch(0.74_0.17_85_/_0.06)] focus:outline-none';
 const avatarBadge =
   'w-7 h-7 rounded-full bg-[var(--panel2)] border border-[oklch(0.74_0.17_85_/_0.3)] flex items-center justify-center text-[16px] shrink-0';
-const triggerCaret =
-  'text-[8px] text-[var(--text-lo)] ml-[-2px] transition-transform duration-200';
-
-// ── User modal ───────────────────────────────────────────────────────────────
+const triggerCaret = 'text-[8px] text-[var(--text-lo)] ml-[-2px] transition-transform duration-200';
 
 const userModal =
   'absolute top-[calc(100%+8px)] left-0 z-50 w-[280px] bg-[var(--panel)] border border-[oklch(0.74_0.17_85_/_0.35)] rounded-[var(--r)] shadow-[0_8px_32px_oklch(0_0_0_/_0.4),0_0_20px_oklch(0.74_0.17_85_/_0.08)] overflow-hidden';
@@ -242,8 +417,14 @@ const userModal =
 const cornerBase = 'absolute w-3 h-3 pointer-events-none border-[var(--gold-dim)]';
 const userModalCornerTL = cn(cornerBase, 'top-[5px] left-[5px] border-t-[1.5px] border-l-[1.5px]');
 const userModalCornerTR = cn(cornerBase, 'top-[5px] right-[5px] border-t-[1.5px] border-r-[1.5px]');
-const userModalCornerBL = cn(cornerBase, 'bottom-[5px] left-[5px] border-b-[1.5px] border-l-[1.5px]');
-const userModalCornerBR = cn(cornerBase, 'bottom-[5px] right-[5px] border-b-[1.5px] border-r-[1.5px]');
+const userModalCornerBL = cn(
+  cornerBase,
+  'bottom-[5px] left-[5px] border-b-[1.5px] border-l-[1.5px]',
+);
+const userModalCornerBR = cn(
+  cornerBase,
+  'bottom-[5px] right-[5px] border-b-[1.5px] border-r-[1.5px]',
+);
 
 const modalAvatarRow = 'flex items-center gap-3 px-4 pt-4 pb-3';
 const modalAvatarRing =
@@ -261,17 +442,24 @@ const modalMeta =
 const modalMetaDot = 'opacity-40';
 
 const modalDivider = 'h-px bg-[var(--border)] mx-4';
-
-const modalCurrencyRow =
-  'flex items-center px-4 py-3 gap-4';
+const modalCurrencyRow = 'flex items-center px-4 py-3 gap-4';
 const modalCurrencyItem = 'flex items-center gap-2 flex-1';
 const modalCurrencyIcon = 'text-[22px] leading-none';
 const modalCurrencyVal =
   'font-[var(--font-title)] text-[16px] font-bold text-[var(--text-hi)] leading-none';
-const modalCurrencyKey =
-  'text-[9px] text-[var(--text-mid)] tracking-[0.1em] uppercase mt-[2px]';
+const modalCurrencyKey = 'text-[9px] text-[var(--text-mid)] tracking-[0.1em] uppercase mt-[2px]';
 const modalCurrencyDivider = 'w-px h-[36px] bg-[var(--border)]';
 
 const modalActions = 'px-4 pb-4 pt-1';
 const modalActionBtn =
   'flex items-center justify-center gap-1.5 w-full py-[7px] rounded-[var(--r-sm)] border border-[oklch(0.74_0.17_85_/_0.35)] text-[var(--gold)] font-[var(--font-title)] text-[10px] tracking-[0.12em] font-bold no-underline transition-all duration-200 hover:bg-[oklch(0.74_0.17_85_/_0.08)] hover:border-[oklch(0.74_0.17_85_/_0.6)]';
+
+// ── Bottom sheet items ────────────────────────────────────────────────────────
+
+const sheetItem =
+  'flex items-center gap-3 w-full px-3 py-[11px] rounded-[var(--r-sm)] text-[13px] font-semibold text-[var(--text-hi)] font-[var(--font-title)] tracking-[0.03em] cursor-pointer transition-colors duration-150 hover:bg-[var(--panel2)] no-underline';
+
+const sheetItemIcon = 'w-[22px] text-center text-[16px] leading-none shrink-0';
+
+const sheetSecondaryBtn =
+  'flex items-center justify-center gap-2 py-[10px] px-3 rounded-[var(--r-sm)] border border-[var(--border)] text-[12px] font-bold font-[var(--font-title)] tracking-[0.06em] text-[var(--text-mid)] cursor-pointer transition-colors duration-150 hover:bg-[var(--panel2)] hover:text-[var(--text-hi)]';
