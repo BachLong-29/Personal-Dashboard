@@ -1,14 +1,36 @@
+'use client';
+
+import { useEffect, useRef, useState } from 'react';
+
 import { cn } from '@/libs/utils';
 
-import { DIFF_LIST, TASK_CATEGORIES, type TaskCat, type TaskDiff } from '../data/mock';
+import { DIFF_LIST, type TaskDiff } from '../data/mock';
 
 export type ViewMode = 'day' | 'week' | 'month' | 'all';
+
+// Max number of category chips shown before collapsing into "+N more"
+const VISIBLE_LIMIT = 5;
+
+// Color palette cycled by category index (API categories have no color field)
+const CHIP_COLORS = [
+  'var(--gold)',
+  'var(--mint)',
+  'var(--violet)',
+  'var(--cyan)',
+  'var(--rose)',
+  'var(--amber)',
+  'var(--blue)',
+];
+
+// ─── Props ────────────────────────────────────────────────────────────────────
 
 interface PageHeaderProps {
   view: ViewMode;
   onViewChange: (v: ViewMode) => void;
-  filterCat: TaskCat | 'all';
-  onFilterCat: (c: TaskCat | 'all') => void;
+  /** API categories — id used for filtering, name displayed */
+  categories: { id: string; name: string }[];
+  filterCat: string;
+  onFilterCat: (c: string) => void;
   filterDiff: TaskDiff | 'all';
   onFilterDiff: (d: TaskDiff | 'all') => void;
   splitMode: 'week' | 'month';
@@ -17,16 +39,18 @@ interface PageHeaderProps {
   onSearch: (s: string) => void;
   onForge: () => void;
   onAddTask: () => void;
-  /** Counts for the subtitle */
   todayDone: number;
   todayTotal: number;
   weekDone: number;
   weekTotal: number;
 }
 
+// ─── Component ────────────────────────────────────────────────────────────────
+
 export function PageHeader({
   view,
   onViewChange,
+  categories,
   filterCat,
   onFilterCat,
   filterDiff,
@@ -42,9 +66,28 @@ export function PageHeader({
   weekDone,
   weekTotal,
 }: PageHeaderProps) {
+  const [moreOpen, setMoreOpen] = useState(false);
+  const moreRef = useRef<HTMLDivElement>(null);
+
   const now = new Date();
   const monthName = now.toLocaleString('en-US', { month: 'long' }).toUpperCase();
   const yr = now.getFullYear();
+
+  const visibleCats = categories.slice(0, VISIBLE_LIMIT);
+  const moreCats = categories.slice(VISIBLE_LIMIT);
+  const moreHasActive = moreCats.some((c) => c.id === filterCat);
+
+  // Close the "More" dropdown when clicking outside
+  useEffect(() => {
+    if (!moreOpen) return;
+    function onMouseDown(e: MouseEvent) {
+      if (moreRef.current && !moreRef.current.contains(e.target as Node)) {
+        setMoreOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', onMouseDown);
+    return () => document.removeEventListener('mousedown', onMouseDown);
+  }, [moreOpen]);
 
   return (
     <div className={headerWrap}>
@@ -64,7 +107,7 @@ export function PageHeader({
         </p>
       </div>
 
-      {/* ── Right: view switch + forge ────────────────────────────────────── */}
+      {/* ── Right: view switch + actions ─────────────────────────────────── */}
       <div className="flex items-center gap-2 ml-auto flex-wrap justify-end">
         <ViewSwitch view={view} onChange={onViewChange} />
         <button type="button" className={addTaskBtn} onClick={onAddTask}>
@@ -77,22 +120,60 @@ export function PageHeader({
 
       {/* ── Filter bar ───────────────────────────────────────────────────── */}
       <div className={filterBar}>
-        {/* Realm chips */}
+        {/* Realm chips — API categories */}
         <FilterGroup label="Realm">
           <Chip active={filterCat === 'all'} onClick={() => onFilterCat('all')}>
             All
           </Chip>
-          {TASK_CATEGORIES.map((c) => (
+
+          {visibleCats.map((c, i) => (
             <Chip
               key={c.id}
               active={filterCat === c.id}
-              activeColor={`var(--${c.color})`}
-              onClick={() => onFilterCat(filterCat === c.id ? 'all' : (c.id as TaskCat))}
+              activeColor={CHIP_COLORS[i % CHIP_COLORS.length]}
+              onClick={() => onFilterCat(filterCat === c.id ? 'all' : c.id)}
             >
-              <span className="mr-0.5">{c.icon}</span>
-              {c.label}
+              {c.name}
             </Chip>
           ))}
+
+          {/* "+N more" collapse button */}
+          {moreCats.length > 0 && (
+            <div className="relative" ref={moreRef}>
+              <button
+                type="button"
+                className={cn(chipBase, moreHasActive && chipActive)}
+                onClick={() => setMoreOpen((v) => !v)}
+              >
+                {moreHasActive ? '✓ ' : ''}+{moreCats.length}
+              </button>
+
+              {moreOpen && (
+                <div className={morePanel}>
+                  <span className={morePanelTitle}>More categories</span>
+                  {moreCats.map((c, i) => {
+                    const color = CHIP_COLORS[(i + VISIBLE_LIMIT) % CHIP_COLORS.length];
+                    const active = filterCat === c.id;
+                    return (
+                      <button
+                        key={c.id}
+                        type="button"
+                        className={cn(moreItem, active && moreItemActive)}
+                        style={active ? { color } : undefined}
+                        onClick={() => {
+                          onFilterCat(active ? 'all' : c.id);
+                          setMoreOpen(false);
+                        }}
+                      >
+                        {active && <span className="mr-1 opacity-70">✓</span>}
+                        {c.name}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
         </FilterGroup>
 
         {/* Rank chips */}
@@ -268,3 +349,12 @@ const DIFF_ACTIVE_COLORS: Record<string, string> = {
   C: 'var(--cyan)',
   D: 'var(--mint)',
 };
+
+// More panel dropdown
+const morePanel =
+  'absolute left-0 top-full mt-1 z-50 bg-[var(--panel)] border border-[var(--border)] rounded-[var(--r-sm)] shadow-xl min-w-[160px] py-1.5 flex flex-col';
+const morePanelTitle =
+  'text-[7px] font-bold tracking-[0.12em] uppercase text-[var(--text-lo)] px-3 pb-1 font-[var(--font-title)]';
+const moreItem =
+  'text-left px-3 py-1.5 text-[9px] text-[var(--text-mid)] hover:text-[var(--text-hi)] hover:bg-[var(--panel2)] transition-colors cursor-pointer font-[var(--font-title)] tracking-[0.04em]';
+const moreItemActive = '!text-[var(--gold)] bg-[oklch(0.74_0.17_85_/_0.06)]';

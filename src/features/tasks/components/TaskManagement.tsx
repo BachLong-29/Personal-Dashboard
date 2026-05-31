@@ -13,6 +13,7 @@ import { useCreateTask } from '@/features/dashboard/hooks/useCreateTask';
 import { useTaskLogs } from '@/features/dashboard/hooks/useTaskLogs';
 import { useToggleHabitLog } from '@/features/dashboard/hooks/useToggleHabitLog';
 import { useToggleTaskLog } from '@/features/dashboard/hooks/useToggleTaskLog';
+import { useCategories } from '@/features/dashboard/hooks/useCategories';
 import { useUpdateQuestStatus } from '@/features/dashboard/hooks/useUpdateQuestStatus';
 import { useUpdateTask } from '@/features/dashboard/hooks/useUpdateTask';
 import type { Character } from '@/features/dashboard/types';
@@ -23,7 +24,7 @@ import { AddTaskModal } from './shared/AddTaskModal';
 import { EditTaskModal } from './shared/EditTaskModal';
 import type { TaskFormValues } from './shared/TaskForm';
 
-import { MOCK_TASKS, type TaskCat, type TaskDiff, type UITask } from '../data/mock';
+import { MOCK_TASKS, type TaskDiff, type UITask } from '../data/mock';
 import {
   taskToUITask,
   questToUITask,
@@ -281,7 +282,8 @@ export function TaskManagement() {
 
   // ── View / filter state ─────────────────────────────────────────────────────
   const [view, setView] = useState<ViewMode>('day');
-  const [filterCat, setFilterCat] = useState<TaskCat | 'all'>('all');
+  const { data: categories = [] } = useCategories();
+  const [filterCat, setFilterCat] = useState<string>('all');
   const [filterDiff, setFilterDiff] = useState<TaskDiff | 'all'>('all');
   const [search, setSearch] = useState('');
   const [splitMode, setSplitMode] = useState<'week' | 'month'>('week');
@@ -290,7 +292,7 @@ export function TaskManagement() {
   const visible = useMemo(
     () =>
       tasks.filter((t) => {
-        if (filterCat !== 'all' && t.cat !== filterCat) return false;
+        if (filterCat !== 'all' && t.tagId !== filterCat) return false;
         if (filterDiff !== 'all' && t.diff !== filterDiff) return false;
         if (search) {
           const s = search.toLowerCase();
@@ -450,6 +452,7 @@ export function TaskManagement() {
         <PageHeader
           view={view}
           onViewChange={setView}
+          categories={categories}
           filterCat={filterCat}
           onFilterCat={setFilterCat}
           filterDiff={filterDiff}
@@ -504,7 +507,9 @@ export function TaskManagement() {
               onToggleDone={handleToggleDone}
             />
           )}
-          {view === 'all' && <TaskAllView tasks={tasks} onEdit={handleEditTask} />}
+          {view === 'all' && (
+            <TaskAllView tasks={tasks} filterCat={filterCat} onEdit={handleEditTask} />
+          )}
         </div>
       </div>
 

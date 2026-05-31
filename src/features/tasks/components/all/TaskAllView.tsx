@@ -1,12 +1,14 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 import { cn } from '@/libs/utils';
+import { useCategories } from '@/features/dashboard/hooks/useCategories';
 import { useDeleteTask } from '@/features/dashboard/hooks/useDeleteTask';
 
 import { type UITask } from '../../data/mock';
-import { TaskAllRow } from './TaskAllRow';
+import { TaskAllTable, COL_DEFS, DEFAULT_VISIBLE_COLS, type ColDef } from './TaskAllTable';
+import type { ColKey } from './TaskAllRow';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -40,21 +42,58 @@ const PRIORITY_ORDER: Record<string, number> = {
 
 interface TaskAllViewProps {
   tasks: UITask[];
+  filterCat: string;
   onEdit?: (task: UITask) => void;
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-export function TaskAllView({ tasks, onEdit }: TaskAllViewProps) {
+export function TaskAllView({ tasks, filterCat, onEdit }: TaskAllViewProps) {
   const [sortBy, setSortBy] = useState<SortByLocal>('deadline');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
-  const [expandedId, setExpandedId] = useState<string | null>(null);
   const [deletingTask, setDeletingTask] = useState<UITask | null>(null);
+  const [visibleCols, setVisibleCols] = useState<Set<ColKey>>(DEFAULT_VISIBLE_COLS);
+  const [colPickerOpen, setColPickerOpen] = useState(false);
+
+  const pickerRef = useRef<HTMLDivElement>(null);
 
   const { mutate: deleteTask } = useDeleteTask();
+  const { data: categories = [] } = useCategories();
+
+  const catMap = useMemo(
+    () => Object.fromEntries(categories.map((c) => [c.id, c.name])),
+    [categories],
+  );
+
+  // Close picker when clicking outside
+  useEffect(() => {
+    if (!colPickerOpen) return;
+    function onMouseDown(e: MouseEvent) {
+      if (pickerRef.current && !pickerRef.current.contains(e.target as Node)) {
+        setColPickerOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', onMouseDown);
+    return () => document.removeEventListener('mousedown', onMouseDown);
+  }, [colPickerOpen]);
+
+  function toggleCol(key: ColKey) {
+    setVisibleCols((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  }
+
+  const taskOnly = useMemo(
+    () =>
+      tasks.filter((t) => t.source === 'task' && (filterCat === 'all' || t.tagId === filterCat)),
+    [tasks, filterCat],
+  );
 
   const sorted = useMemo(() => {
-    let list = [...tasks];
+    let list = [...taskOnly];
 
     if (statusFilter !== 'all') {
       list = list.filter((t) => t.status === statusFilter);
@@ -69,27 +108,27 @@ export function TaskAllView({ tasks, onEdit }: TaskAllViewProps) {
     });
 
     return list;
-  }, [tasks, sortBy, statusFilter]);
+  }, [taskOnly, sortBy, statusFilter]);
 
-  const total = tasks.length;
-  const done = tasks.filter((t) => t.status === 'done').length;
-  const xpTotal = tasks.reduce((s, t) => s + t.xp, 0);
-  const xpEarned = tasks.filter((t) => t.status === 'done').reduce((s, t) => s + t.xp, 0);
+  const total = taskOnly.length;
+  const done = taskOnly.filter((t) => t.status === 'done').length;
+  const xpTotal = taskOnly.reduce((s, t) => s + t.xp, 0);
+  const xpEarned = taskOnly.filter((t) => t.status === 'done').reduce((s, t) => s + t.xp, 0);
 
   return (
     <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
       {/* ── Toolbar ──────────────────────────────────────────────────────── */}
       <div className={toolbar}>
-        {/* Summary */}
+        {/* Summary pills */}
         <div className="flex items-center gap-3 shrink-0">
           <SummaryPill value={`${done}/${total}`} label="done" color="mint" />
           <SummaryPill value={`+${xpEarned}`} label={`/ ${xpTotal} XP`} color="violet" />
-          <SummaryPill value={tasks.filter((t) => t.saga).length} label="sagas" color="gold" />
+          <SummaryPill value={taskOnly.filter((t) => t.saga).length} label="sagas" color="gold" />
         </div>
 
         <div className="flex-1" />
 
-        {/* Sort by */}
+        {/* Sort */}
         <div className={controlGroup}>
           <span className={controlLabel}>Sort</span>
           {SORT_BY_OPTIONS.map((opt) => (
@@ -103,6 +142,35 @@ export function TaskAllView({ tasks, onEdit }: TaskAllViewProps) {
             </button>
           ))}
         </div>
+
+        {/* Column picker */}
+        <div className="relative shrink-0" ref={pickerRef}>
+          <button
+            type="button"
+            className={cn(segBtn, colPickerOpen && segBtnActive)}
+            onClick={() => setColPickerOpen((v) => !v)}
+            title="Show / hide columns"
+          >
+            ⊞ Cols
+          </button>
+
+          {colPickerOpen && (
+            <div className={colPicker}>
+              <span className={colPickerTitle}>Columns</span>
+              {COL_DEFS.map((c: ColDef) => (
+                <label key={c.key} className={colPickerRow}>
+                  <input
+                    type="checkbox"
+                    checked={visibleCols.has(c.key)}
+                    onChange={() => toggleCol(c.key)}
+                    className="accent-[var(--gold)] shrink-0 cursor-pointer"
+                  />
+                  {c.label}
+                </label>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* ── Status filter bar ────────────────────────────────────────────── */}
@@ -110,7 +178,7 @@ export function TaskAllView({ tasks, onEdit }: TaskAllViewProps) {
         {STATUS_FILTER_OPTIONS.map((opt) => {
           const active = statusFilter === opt.id;
           const count =
-            opt.id === 'all' ? tasks.length : tasks.filter((t) => t.status === opt.id).length;
+            opt.id === 'all' ? taskOnly.length : taskOnly.filter((t) => t.status === opt.id).length;
           return (
             <button
               key={opt.id}
@@ -134,42 +202,14 @@ export function TaskAllView({ tasks, onEdit }: TaskAllViewProps) {
         })}
       </div>
 
-      {/* ── Table: horizontally scrollable on mobile ─────────────────────── */}
-      <div className="flex-1 overflow-auto min-w-0">
-        <div className={tableHeader}>
-          <span className="w-[16px] shrink-0" />
-          <span className="flex-1 min-w-[160px]">Quest</span>
-          <span className="w-20 shrink-0">Status</span>
-          <span className="w-20 shrink-0">Category</span>
-          <span className="w-10 text-center shrink-0">Pri</span>
-          <span className="w-24 shrink-0">Deadline</span>
-          <span className="w-[60px] shrink-0">Progress</span>
-          <span className="w-12 text-right shrink-0">XP</span>
-          <span className="w-10 text-right shrink-0">Est</span>
-          <span className="w-10 text-right shrink-0">Streak</span>
-          <span className="w-8 text-right shrink-0">Sub</span>
-          <span className="w-5 shrink-0" />
-        </div>
-
-        {sorted.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-16 gap-2 text-center opacity-50">
-            <div className="text-[32px]">◈</div>
-            <div className="text-[12px] font-bold text-[var(--text-mid)]">No tasks found</div>
-            <div className="text-[10px] text-[var(--text-lo)]">Try a different status filter</div>
-          </div>
-        ) : (
-          sorted.map((t) => (
-            <TaskAllRow
-              key={t.id}
-              task={t}
-              isExpanded={expandedId === t.id}
-              onExpand={() => setExpandedId(expandedId === t.id ? null : t.id)}
-              onEdit={onEdit}
-              onDelete={setDeletingTask}
-            />
-          ))
-        )}
-      </div>
+      {/* ── Table ────────────────────────────────────────────────────────── */}
+      <TaskAllTable
+        sorted={sorted}
+        visibleCols={visibleCols}
+        catMap={catMap}
+        onEdit={onEdit}
+        onDelete={setDeletingTask}
+      />
 
       {/* ── Delete confirm modal ─────────────────────────────────────────── */}
       {deletingTask && (
@@ -278,9 +318,13 @@ const controlLabel =
   'text-[7px] font-bold tracking-[0.12em] text-[var(--text-lo)] font-[var(--font-title)] uppercase mr-0.5';
 
 const segBtn =
-  'text-[8px] font-bold px-1.5 py-0.5 rounded border border-[var(--border)] text-[var(--text-lo)] font-[var(--font-title)] tracking-[0.06em] transition-all hover:text-[var(--text-mid)]';
+  'text-[8px] font-bold px-1.5 py-0.5 rounded border border-[var(--border)] text-[var(--text-lo)] font-[var(--font-title)] tracking-[0.06em] transition-all hover:text-[var(--text-mid)] cursor-pointer';
 const segBtnActive =
   'text-[var(--gold)] border-[oklch(0.74_0.17_85_/_0.4)] bg-[oklch(0.74_0.17_85_/_0.08)]';
 
-const tableHeader =
-  'flex items-center gap-3 px-4 py-1.5 bg-[var(--panel2)] border-b border-[var(--border)] text-[8px] font-bold text-[var(--text-lo)] tracking-[0.1em] uppercase font-[var(--font-title)] sticky top-0 z-10 shrink-0 min-w-max';
+const colPicker =
+  'absolute right-0 top-full mt-1 z-50 bg-[var(--panel)] border border-[var(--border)] rounded-[var(--r-sm)] shadow-xl min-w-[140px] p-2 flex flex-col gap-0.5';
+const colPickerTitle =
+  'text-[7px] font-bold tracking-[0.12em] uppercase text-[var(--text-lo)] mb-1 font-[var(--font-title)] px-1 block';
+const colPickerRow =
+  'flex items-center gap-2 px-1 py-[3px] cursor-pointer text-[10px] text-[var(--text-mid)] hover:text-[var(--text-hi)] rounded transition-colors select-none';

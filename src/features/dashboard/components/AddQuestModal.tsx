@@ -95,7 +95,7 @@ export function AddQuestModal({ onAdd, onClose }: AddQuestModalProps) {
             disabled={isPending}
           />
         </div>
-        <div className="grid grid-cols-2 gap-2.5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
           <Select
             label="Type"
             options={TYPE_OPTIONS}

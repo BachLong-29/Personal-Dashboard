@@ -3,6 +3,19 @@ import { cn } from '@/libs/utils';
 import { catOf, fmtEst, priOf, COLOR_VAR, type UITask } from '../../data/mock';
 import { diffColors, urgencyColors } from '../shared/styles';
 
+// ─── Column key type ──────────────────────────────────────────────────────────
+
+export type ColKey =
+  | 'status'
+  | 'category'
+  | 'priority'
+  | 'deadline'
+  | 'progress'
+  | 'xp'
+  | 'est'
+  | 'streak'
+  | 'subtasks';
+
 // ─── Status display ───────────────────────────────────────────────────────────
 
 const STATUS_META: Record<string, { label: string; color: string; bg: string }> = {
@@ -34,14 +47,25 @@ interface TaskAllRowProps {
   isExpanded: boolean;
   onEdit?: (task: UITask) => void;
   onDelete?: (task: UITask) => void;
+  visibleCols: Set<ColKey>;
+  /** Real category name from API (tagId lookup). Falls back to mock label. */
+  catLabel?: string;
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-export function TaskAllRow({ task, onExpand, isExpanded, onEdit, onDelete }: TaskAllRowProps) {
+export function TaskAllRow({
+  task,
+  onExpand,
+  isExpanded,
+  onEdit,
+  onDelete,
+  visibleCols,
+  catLabel,
+}: TaskAllRowProps) {
   const c = catOf(task.cat);
   const p = priOf(task.priority);
-  const catColor = COLOR_VAR[c.color] ?? 'var(--text-lo)';
+  const catColor = COLOR_VAR[task.color ?? c.color] ?? 'var(--text-lo)';
 
   return (
     <>
@@ -53,75 +77,80 @@ export function TaskAllRow({ task, onExpand, isExpanded, onEdit, onDelete }: Tas
         {/* Diff */}
         <span className={cn(diffBadge, diffColors[task.diff])}>{task.diff}</span>
 
-        {/* Title */}
+        {/* Title — always visible */}
         <span className={titleCol}>{task.title}</span>
 
-        {/* Status */}
-        <StatusBadge status={task.status} />
+        {visibleCols.has('status') && <StatusBadge status={task.status} />}
 
-        {/* Category */}
-        <span
-          className={catPill}
-          style={{ color: catColor, borderColor: `${catColor}44`, background: `${catColor}0E` }}
-        >
-          {c.icon} {c.label}
-        </span>
+        {visibleCols.has('category') && (
+          <span
+            className={catPill}
+            style={{ color: catColor, borderColor: `${catColor}44`, background: `${catColor}0E` }}
+          >
+            {c.icon} {catLabel ?? c.label}
+          </span>
+        )}
 
-        {/* Priority */}
-        <span
-          className="text-[9px] font-bold w-10 text-center shrink-0"
-          style={{ color: COLOR_VAR[p.color] ?? 'var(--text-lo)' }}
-          title={p.label}
-        >
-          {p.token}
-        </span>
+        {visibleCols.has('priority') && (
+          <span
+            className="text-[9px] font-bold w-10 text-center shrink-0"
+            style={{ color: COLOR_VAR[p.color] ?? 'var(--text-lo)' }}
+            title={p.label}
+          >
+            {p.token}
+          </span>
+        )}
 
-        {/* Deadline */}
-        <span className={cn(deadlineCol, urgencyColors[task.deadlineUrgency])}>
-          {task.deadline}
-        </span>
+        {visibleCols.has('deadline') && (
+          <span className={cn(deadlineCol, urgencyColors[task.deadlineUrgency])}>
+            {task.deadline}
+          </span>
+        )}
 
-        {/* Progress */}
-        <div className="w-[60px] shrink-0 flex items-center gap-1.5">
-          <div className="flex-1 h-[3px] bg-[var(--panel2)] rounded-full overflow-hidden">
-            <div
-              className="h-full rounded-full"
-              style={{ width: `${(task.progress || 0) * 100}%`, background: catColor }}
-            />
+        {visibleCols.has('progress') && (
+          <div className="w-[60px] shrink-0 flex items-center gap-1.5">
+            <div className="flex-1 h-[3px] bg-[var(--panel2)] rounded-full overflow-hidden">
+              <div
+                className="h-full rounded-full"
+                style={{ width: `${(task.progress || 0) * 100}%`, background: catColor }}
+              />
+            </div>
+            <span className="text-[8px] text-[var(--text-lo)] shrink-0 w-6 text-right">
+              {Math.round((task.progress || 0) * 100)}%
+            </span>
           </div>
-          <span className="text-[8px] text-[var(--text-lo)] shrink-0 w-6 text-right">
-            {Math.round((task.progress || 0) * 100)}%
-          </span>
-        </div>
-
-        {/* XP */}
-        <span className="text-[9px] font-bold text-[var(--violet)] w-12 text-right shrink-0">
-          +{task.xp}
-          <span className="text-[7px] opacity-60 ml-0.5">XP</span>
-        </span>
-
-        {/* Est */}
-        <span className="text-[9px] text-[var(--text-lo)] w-10 text-right shrink-0">
-          {fmtEst(task.est)}
-        </span>
-
-        {/* Streak */}
-        {task.streak > 0 ? (
-          <span className="text-[8px] font-bold text-[var(--gold)] w-10 text-right shrink-0">
-            ✦{task.streak}d
-          </span>
-        ) : (
-          <span className="w-10 shrink-0" />
         )}
 
-        {/* Subtasks */}
-        {task.subtasks > 0 ? (
-          <span className="text-[8px] text-[var(--text-lo)] w-8 text-right shrink-0">
-            {task.subtasksDone}/{task.subtasks}
+        {visibleCols.has('xp') && (
+          <span className="text-[9px] font-bold text-[var(--violet)] w-12 text-right shrink-0">
+            +{task.xp}
+            <span className="text-[7px] opacity-60 ml-0.5">XP</span>
           </span>
-        ) : (
-          <span className="w-8 shrink-0" />
         )}
+
+        {visibleCols.has('est') && (
+          <span className="text-[9px] text-[var(--text-lo)] w-10 text-right shrink-0">
+            {fmtEst(task.est)}
+          </span>
+        )}
+
+        {visibleCols.has('streak') &&
+          (task.streak > 0 ? (
+            <span className="text-[8px] font-bold text-[var(--gold)] w-10 text-right shrink-0">
+              ✦{task.streak}d
+            </span>
+          ) : (
+            <span className="w-10 shrink-0" />
+          ))}
+
+        {visibleCols.has('subtasks') &&
+          (task.subtasks > 0 ? (
+            <span className="text-[8px] text-[var(--text-lo)] w-8 text-right shrink-0">
+              {task.subtasksDone}/{task.subtasks}
+            </span>
+          ) : (
+            <span className="w-8 shrink-0" />
+          ))}
 
         {/* Expand caret */}
         <span
@@ -204,13 +233,13 @@ function RowDetail({
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
 const rowBase =
-  'flex items-center gap-3 px-4 py-2 border-b border-[var(--border)] cursor-pointer transition-colors hover:bg-[oklch(0.74_0.17_85_/_0.03)] select-none';
+  'flex items-center gap-3 px-4 py-2 border-b border-[var(--border)] cursor-pointer transition-colors hover:bg-[oklch(0.74_0.17_85_/_0.03)] select-none min-w-max';
 const rowExpanded = 'bg-[oklch(0.66_0.22_295_/_0.04)]';
 
 const diffBadge =
   'w-[16px] h-[16px] rounded-sm flex items-center justify-center text-[8px] font-black font-[var(--font-title)] shrink-0';
 
-const titleCol = 'flex-1 min-w-0 text-[11px] font-semibold text-[var(--text-hi)] truncate';
+const titleCol = 'flex-1 min-w-[160px] text-[11px] font-semibold text-[var(--text-hi)] truncate';
 
 const catPill =
   'text-[8px] font-bold px-1.5 py-0.5 rounded border tracking-[0.06em] font-[var(--font-title)] shrink-0 w-20 overflow-hidden whitespace-nowrap text-ellipsis';

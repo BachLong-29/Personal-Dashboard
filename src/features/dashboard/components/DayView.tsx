@@ -13,7 +13,10 @@ import { useToggleHabitLog } from '../hooks/useToggleHabitLog';
 import { useUpdateTask } from '../hooks/useUpdateTask';
 import type { HabitDay, Quest, Task, TaskStatus } from '../types';
 import type { ScheduleDisplayOptions } from '../hooks/useScheduleState';
-import { ScheduleTaskModal } from './ScheduleTaskModal';
+import { AddTaskModal } from '@/features/tasks/components/shared/AddTaskModal';
+import { EditTaskModal } from '@/features/tasks/components/shared/EditTaskModal';
+import { taskToUITask } from '@/features/tasks/data/adapters';
+import type { UpdateTaskPayload } from '@/types';
 import { TaskCard } from './TaskCard';
 
 interface DayViewProps {
@@ -49,12 +52,12 @@ export function DayView({ date, display, quests = [], onDateChange }: DayViewPro
   const { data: categories = [] } = useCategories();
   const { data: habits = [] } = useHabits();
   const { data: habitLogs = [] } = useHabitLogs(date);
-  const { mutate: updateTask } = useUpdateTask();
+  const { mutate: updateTask, isPending: isSavingTask } = useUpdateTask();
   const { mutate: deleteTask } = useDeleteTask();
   const { mutate: toggleHabitLog } = useToggleHabitLog();
 
-  const [editing, setEditing] = useState<Task | undefined>(undefined);
-  const [cloning, setCloning] = useState<Task | undefined>(undefined);
+  const [editing, setEditing] = useState<Task | null>(null);
+  const [cloning, setCloning] = useState<Task | null>(null);
   const [showModal, setShowModal] = useState(false);
   const [deletingTask, setDeletingTask] = useState<Task | undefined>(undefined);
 
@@ -103,16 +106,26 @@ export function DayView({ date, display, quests = [], onDateChange }: DayViewPro
     updateTask({ id, status });
   }
 
+  function closeModal() {
+    setShowModal(false);
+    setEditing(null);
+    setCloning(null);
+  }
+
   function handleEdit(task: Task) {
     setEditing(task);
-    setCloning(undefined);
+    setCloning(null);
     setShowModal(true);
   }
 
   function handleClone(task: Task) {
     setCloning(task);
-    setEditing(undefined);
+    setEditing(null);
     setShowModal(true);
+  }
+
+  function handleSaveEdit(id: string, payload: UpdateTaskPayload) {
+    updateTask({ id, ...payload }, { onSuccess: closeModal });
   }
 
   function handleDeleteConfirm() {
@@ -148,7 +161,8 @@ export function DayView({ date, display, quests = [], onDateChange }: DayViewPro
             type="button"
             className={addBtn}
             onClick={() => {
-              setEditing(undefined);
+              setEditing(null);
+              setCloning(null);
               setShowModal(true);
             }}
           >
@@ -229,24 +243,34 @@ export function DayView({ date, display, quests = [], onDateChange }: DayViewPro
         )}
       </div>
 
-      {showModal && (
-        <ScheduleTaskModal
-          editing={editing}
-          cloneFrom={cloning}
-          allTasks={allTasks as Task[]}
-          defaultDate={date}
-          onClose={() => {
-            setShowModal(false);
-            setEditing(undefined);
-            setCloning(undefined);
-          }}
-          onSaved={() => {
-            setShowModal(false);
-            setEditing(undefined);
-            setCloning(undefined);
-          }}
-        />
-      )}
+      <AddTaskModal
+        open={showModal && !editing}
+        defaultDate={date}
+        defaultValues={
+          cloning
+            ? {
+                name: `Copy of ${cloning.name}`,
+                note: cloning.note ?? '',
+                icon: cloning.icon,
+                tagId: cloning.tagId,
+                color: cloning.color as never,
+                startDate: new Date(date),
+                startTime: cloning.startTime ?? '',
+                duration: cloning.duration != null ? String(cloning.duration) : '',
+                dependencies: cloning.dependencies,
+              }
+            : undefined
+        }
+        onClose={closeModal}
+        onSaved={closeModal}
+      />
+      <EditTaskModal
+        task={editing ? taskToUITask(editing) : null}
+        open={showModal && !!editing}
+        onClose={closeModal}
+        onSave={handleSaveEdit}
+        saving={isSavingTask}
+      />
 
       {deletingTask && (
         <div
