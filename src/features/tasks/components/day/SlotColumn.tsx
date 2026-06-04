@@ -23,6 +23,7 @@ interface SlotColumnProps {
   onCompleteTask?: (id: string) => void;
   onEdit?: (task: UITask) => void;
   onClone?: (task: UITask) => void;
+  onMoveToNextDay?: (task: UITask) => void;
   draggingId: string | null;
 }
 
@@ -36,6 +37,7 @@ export function SlotColumn({
   onCompleteTask,
   onEdit,
   onClone,
+  onMoveToNextDay,
   draggingId,
 }: SlotColumnProps) {
   const { setNodeRef, isOver } = useDroppable({ id: slot.id });
@@ -70,6 +72,7 @@ export function SlotColumn({
               onCompleteTask={onCompleteTask}
               onEdit={onEdit}
               onClone={onClone}
+              onMoveToNextDay={onMoveToNextDay}
               isDragging={draggingId === t.id}
             />
           ))}
@@ -166,6 +169,7 @@ interface DraggableCardProps {
   onCompleteTask?: (id: string) => void;
   onEdit?: (task: UITask) => void;
   onClone?: (task: UITask) => void;
+  onMoveToNextDay?: (task: UITask) => void;
   isDragging: boolean;
 }
 
@@ -178,6 +182,7 @@ function DraggableCard({
   onCompleteTask,
   onEdit,
   onClone,
+  onMoveToNextDay,
   isDragging,
 }: DraggableCardProps) {
   const { attributes, listeners, setNodeRef, transform } = useDraggable({ id: task.id });
@@ -203,6 +208,7 @@ function DraggableCard({
         onCompleteTask={onCompleteTask}
         onEdit={onEdit}
         onClone={onClone}
+        onMoveToNextDay={onMoveToNextDay}
       />
     </div>
   );

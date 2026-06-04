@@ -111,7 +111,7 @@ export function TaskAllTable({ sorted, visibleCols, catMap, onEdit, onDelete }: 
       {/* ── Header ───────────────────────────────────────────────────────── */}
       <div className={tableHeader}>
         <span className="w-[16px] shrink-0" />
-        <span className="flex-1 min-w-[160px]">Task</span>
+        <span className="w-[140px] shrink-0 md:flex-1 md:w-auto md:min-w-0 truncate">Task</span>
         {visibleDefs.map((c) => (
           <span key={c.key} className={c.headerClass}>
             {c.headerLabel}

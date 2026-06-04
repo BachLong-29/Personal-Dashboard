@@ -560,10 +560,11 @@ const navBtn =
 const navLabel = 'text-[11px] font-semibold text-[var(--text-hi)]';
 const loadingMsg = 'text-[11px] text-[var(--text-lo)] col-span-7 text-center py-8';
 
-const gridWrap = 'flex-1 overflow-hidden grid grid-cols-7 gap-px bg-[var(--border)] min-h-0';
+const gridWrap =
+  'flex-1 overflow-y-auto md:overflow-hidden grid grid-cols-1 md:grid-cols-7 gap-px bg-[var(--border)] min-h-0';
 
 const dayCol =
-  'flex flex-col bg-[var(--panel)] overflow-hidden min-h-0 transition-colors duration-150';
+  'flex flex-col bg-[var(--panel)] md:overflow-hidden md:min-h-0 transition-colors duration-150';
 const dayColToday = 'bg-[oklch(0.74_0.17_85_/_0.04)]';
 const dayColOver =
   'bg-[oklch(0.74_0.17_85_/_0.1)] ring-1 ring-inset ring-[oklch(0.74_0.17_85_/_0.45)]';
@@ -578,7 +579,7 @@ const dayNum2 = 'text-[13px] font-bold leading-none mt-0.5';
 const dayAddBtn =
   'w-4 h-4 flex items-center justify-center text-[11px] text-[var(--text-lo)] hover:text-[var(--gold)] cursor-pointer transition-colors leading-none';
 
-const dayTaskList = 'flex-1 overflow-y-auto px-1 py-1 flex flex-col gap-0.5 min-h-0';
+const dayTaskList = 'px-1 py-1 flex flex-col gap-0.5 md:flex-1 md:overflow-y-auto md:min-h-0';
 
 const miniTask =
   'flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] bg-[var(--panel2)] border border-[var(--border)] cursor-grab active:cursor-grabbing hover:border-[oklch(0.74_0.17_85_/_0.4)] transition-all overflow-hidden';

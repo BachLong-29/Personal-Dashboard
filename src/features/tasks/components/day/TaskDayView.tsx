@@ -105,6 +105,10 @@ export function TaskDayView({
     onMoveToSlot(active.id as string, over.id as UITask['slot'], selectedOffset);
   }
 
+  function handleMoveToNextDay(task: UITask) {
+    onMoveToSlot(task.id, task.slot, selectedOffset + 1);
+  }
+
   return (
     <DndContext
       sensors={sensors}
@@ -190,6 +194,7 @@ export function TaskDayView({
                 onCompleteTask={onCompleteTask}
                 onEdit={onEdit}
                 onClone={onClone}
+                onMoveToNextDay={handleMoveToNextDay}
                 draggingId={activeId}
               />
             ))}

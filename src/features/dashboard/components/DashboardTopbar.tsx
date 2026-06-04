@@ -180,8 +180,8 @@ const DashboardTopbar = (props: DashboardTopbarProps) => {
           <Link href="/marketplace" className={cn(navPill, marketplacePill)}>
             🛍 {tNav('marketplace')}
           </Link>
-          <Link href="/vault" className={cn(streakPill, 'no-underline cursor-pointer')}>
-            ✦ {tNav('vault')}
+          <Link href="/tasks" className={cn(streakPill, 'no-underline cursor-pointer')}>
+            ✦ Quest Log
           </Link>
           <Button
             type="button"
@@ -319,9 +319,9 @@ const DashboardTopbar = (props: DashboardTopbarProps) => {
                 <span>{tNav('marketplace')}</span>
               </Link>
 
-              <Link href="/vault" className={sheetItem} onClick={closeSheet}>
+              <Link href="/tasks" className={sheetItem} onClick={closeSheet}>
                 <span className={sheetItemIcon}>✦</span>
-                <span>{tNav('vault')}</span>
+                <span>Quest Log</span>
               </Link>
             </div>
 

@@ -239,7 +239,8 @@ const rowExpanded = 'bg-[oklch(0.66_0.22_295_/_0.04)]';
 const diffBadge =
   'w-[16px] h-[16px] rounded-sm flex items-center justify-center text-[8px] font-black font-[var(--font-title)] shrink-0';
 
-const titleCol = 'flex-1 min-w-[160px] text-[11px] font-semibold text-[var(--text-hi)] truncate';
+const titleCol =
+  'w-[140px] shrink-0 md:flex-1 md:w-auto md:min-w-0 text-[11px] font-semibold text-[var(--text-hi)] truncate';
 
 const catPill =
   'text-[8px] font-bold px-1.5 py-0.5 rounded border tracking-[0.06em] font-[var(--font-title)] shrink-0 w-20 overflow-hidden whitespace-nowrap text-ellipsis';

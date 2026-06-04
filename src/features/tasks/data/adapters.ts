@@ -238,7 +238,7 @@ export function habitToUITask(h: Habit, log?: HabitLog, cancelled = false, forDa
   let deadlineUrgency: string;
 
   if (forDate) {
-    const dateStr = forDate.toISOString().split('T')[0] ?? '';
+    const dateStr = `${forDate.getFullYear()}-${String(forDate.getMonth() + 1).padStart(2, '0')}-${String(forDate.getDate()).padStart(2, '0')}`;
     day = dayOffset(dateStr);
     const label = formatDeadline(dateStr);
     deadline = done ? `Done · ${label}` : entry?.time ? `${label} · ${entry.time}` : label;

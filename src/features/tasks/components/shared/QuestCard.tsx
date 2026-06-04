@@ -16,6 +16,7 @@ export interface QuestCardProps {
   onCompleteTask?: (id: string) => void;
   onEdit?: (task: UITask) => void;
   onClone?: (task: UITask) => void;
+  onMoveToNextDay?: (task: UITask) => void;
   isOverlay?: boolean;
   compact?: boolean;
 }
@@ -31,6 +32,7 @@ export function QuestCard({
   onCompleteTask,
   onEdit,
   onClone,
+  onMoveToNextDay,
   isOverlay,
   compact,
 }: QuestCardProps) {
@@ -193,10 +195,23 @@ export function QuestCard({
             <span className="text-[7px] ml-0.5 opacity-70">◎</span>
           </div>
 
-          {/* Action strip: edit + clone hover-only, chevron always visible */}
+          {/* Action strip: edit + clone + move hover-only, chevron always visible */}
           {!isOverlay && (
             <div className="flex items-center gap-0.5 mt-auto">
               <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity duration-150">
+                {onMoveToNextDay && !task.done && !task.cancelled && (
+                  <button
+                    type="button"
+                    title="Move to next day"
+                    className={actionBtn}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onMoveToNextDay(task);
+                    }}
+                  >
+                    →
+                  </button>
+                )}
                 {onClone && task.source === 'task' && (
                   <button
                     type="button"
@@ -241,6 +256,7 @@ export function QuestCard({
           onCompleteTask={onCompleteTask}
           onEdit={onEdit}
           onClone={onClone}
+          onMoveToNextDay={onMoveToNextDay}
         />
       )}
     </article>
@@ -257,6 +273,7 @@ function ExpandedPanel({
   onCompleteTask,
   onEdit,
   onClone,
+  onMoveToNextDay,
 }: {
   task: UITask;
   catColor: string;
@@ -265,6 +282,7 @@ function ExpandedPanel({
   onCompleteTask?: (id: string) => void;
   onEdit?: (task: UITask) => void;
   onClone?: (task: UITask) => void;
+  onMoveToNextDay?: (task: UITask) => void;
 }) {
   const c = catOf(task.cat);
   const p = priOf(task.priority);
@@ -428,6 +446,18 @@ function ExpandedPanel({
                   }}
                 >
                   ⏱ Reschedule
+                </button>
+              )}
+              {onMoveToNextDay && !task.done && (
+                <button
+                  type="button"
+                  className={qcxBtnGhost}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onMoveToNextDay(task);
+                  }}
+                >
+                  → Next day
                 </button>
               )}
             </>
