@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, startTransition } from 'react';
 import { cn } from '@/libs/utils';
 import {
   findAccent,
@@ -19,7 +19,7 @@ function useCountUp(target: number, duration = 1400, run = true) {
   const [v, setV] = useState(0);
   useEffect(() => {
     if (!run) {
-      setV(0);
+      startTransition(() => setV(0));
       return;
     }
     let raf: number;
@@ -46,20 +46,19 @@ interface ParticlesDef {
 }
 
 function Particles({ count = 60, accent }: { count?: number; accent: string }) {
-  const parts = useRef<ParticlesDef[] | null>(null);
-  if (!parts.current) {
-    parts.current = Array.from({ length: count }).map(() => ({
+  const [parts] = useState<ParticlesDef[]>(() =>
+    Array.from({ length: count }).map(() => ({
       x: Math.random() * 100,
       y: Math.random() * 100,
       d: 4 + Math.random() * 10,
       del: -Math.random() * 8,
       s: 2 + Math.random() * 3,
-    }));
-  }
+    })),
+  );
 
   return (
     <div className="absolute inset-0 z-[2] pointer-events-none">
-      {parts.current.map((p, i) => (
+      {parts.map((p, i) => (
         <span
           key={i}
           className="absolute rounded-full"
@@ -414,24 +413,29 @@ export function RevealModal({ form, onClose, onConfirm }: RevealModalProps) {
       {/* stage */}
       <div
         className={cn(
-          'relative z-[3] w-full max-w-[calc(100vw-64px)] px-14 py-12',
+          'relative z-[3] w-full px-4 sm:px-8 md:px-14 py-6 sm:py-8 md:py-12',
           `phase-${phase}`,
         )}
         style={{ maxWidth: 1080, animation: 'stage-enter 1000ms cubic-bezier(.16,1,.3,1) both' }}
       >
         {/* title bar */}
-        <div className="flex justify-between [font-family:var(--f-mono)] text-[9px] tracking-[0.32em] uppercase text-text-lo mb-8 pb-3 border-b border-border-lo">
+        <div className="flex flex-wrap justify-between gap-1 [font-family:var(--f-mono)] text-[9px] tracking-[0.32em] uppercase text-text-lo mb-6 sm:mb-8 pb-3 border-b border-border-lo">
           <span>CHAPTER OPENING · {player.season.toUpperCase()}</span>
           <span style={{ color: accent.glow }}>RANK · {rank.name.toUpperCase()}</span>
         </div>
 
         {/* hero entrance */}
         <div
-          className="grid gap-9 mb-10"
+          className="flex flex-col items-center text-center gap-6 mb-8 sm:grid sm:text-left sm:gap-9 sm:mb-10"
           style={{ gridTemplateColumns: 'auto 1fr', alignItems: 'center' }}
         >
           <div style={{ animation: 'sigil-enter 1200ms cubic-bezier(.16,1,.3,1) both' }}>
-            <HeroSigil glyph={form.sigil} accent={accent} size={220} />
+            <div className="sm:hidden">
+              <HeroSigil glyph={form.sigil} accent={accent} size={120} />
+            </div>
+            <div className="hidden sm:block">
+              <HeroSigil glyph={form.sigil} accent={accent} size={220} />
+            </div>
           </div>
           <div>
             <div
@@ -466,14 +470,14 @@ export function RevealModal({ form, onClose, onConfirm }: RevealModalProps) {
                 className="text-[20px] leading-none align-[-6px] mr-1"
                 style={{ color: accent.glow }}
               >
-                "
+                &ldquo;
               </span>
               {form.motto || 'A hero without a motto is a candle without a wick.'}
               <span
                 className="text-[20px] leading-none align-[-6px] ml-1"
                 style={{ color: accent.glow }}
               >
-                "
+                &rdquo;
               </span>
             </div>
             <div
@@ -490,7 +494,7 @@ export function RevealModal({ form, onClose, onConfirm }: RevealModalProps) {
         </div>
 
         {/* middle grid */}
-        <div className="grid grid-cols-[1fr_1fr_1.2fr] gap-4 mb-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-[1fr_1fr_1.2fr] gap-4 mb-6">
           {[
             {
               eyebrow: 'CLASS',
@@ -567,7 +571,7 @@ export function RevealModal({ form, onClose, onConfirm }: RevealModalProps) {
 
         {/* progress row */}
         <div
-          className="grid grid-cols-5 gap-3 mb-7"
+          className="grid grid-cols-3 sm:grid-cols-5 gap-3 mb-7"
           style={{ animation: 'text-enter 800ms ease-out 1.1s both' }}
         >
           <ProgCell
@@ -603,7 +607,7 @@ export function RevealModal({ form, onClose, onConfirm }: RevealModalProps) {
             <div className="[font-family:var(--f-mono)] text-[9px] tracking-[0.26em] uppercase text-text-lo mb-3">
               WORN BADGES
             </div>
-            <div className="grid grid-cols-4 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               {showcase.map((b, i) => {
                 const ba = findAccent(b.color);
                 return (
@@ -635,7 +639,7 @@ export function RevealModal({ form, onClose, onConfirm }: RevealModalProps) {
         )}
 
         {/* footer */}
-        <div className="flex justify-end gap-3 pt-6 border-t border-border-lo">
+        <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-3 pt-6 border-t border-border-lo">
           <button
             className="px-7 py-[13px] [font-family:var(--f-body)] text-[12px] tracking-[0.06em] font-medium rounded-xs bg-transparent border border-border text-text-md cursor-pointer transition-all hover:text-text-hi hover:border-text-md disabled:opacity-50 disabled:cursor-not-allowed"
             onClick={onClose}
@@ -698,7 +702,7 @@ export function SuccessToast({ accentGlow, onDismiss }: SuccessToastProps) {
 
   return (
     <div
-      className="fixed right-8 bottom-8 z-[250] grid items-center gap-4 px-5 py-[18px] border rounded-md max-w-[360px]"
+      className="fixed right-4 sm:right-8 bottom-20 sm:bottom-8 left-4 sm:left-auto z-[250] grid items-center gap-4 px-5 py-[18px] border rounded-md sm:max-w-[360px]"
       style={{
         gridTemplateColumns: 'auto 1fr auto',
         background: 'oklch(16% 0.04 270/0.95)',

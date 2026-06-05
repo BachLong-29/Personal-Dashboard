@@ -7,6 +7,7 @@ import { findClass } from '@/constants/hero-data';
 import { useProfile } from '@/features/profile/hooks/useProfile';
 import { useHabits } from '@/features/dashboard/hooks/useHabits';
 import { useHabitLogs } from '@/features/dashboard/hooks/useHabitLogs';
+import { useHabitLogsRange } from '@/features/dashboard/hooks/useHabitLogsRange';
 import { useQuests } from '@/features/dashboard/hooks/useQuests';
 import { useTasks } from '@/features/dashboard/hooks/useTasks';
 import { useCreateTask } from '@/features/dashboard/hooks/useCreateTask';
@@ -29,7 +30,6 @@ import {
   taskToUITask,
   questToUITask,
   habitToUITask,
-  isHabitScheduledToday,
   isHabitScheduledForDate,
   dayOffset,
   slotToDefaultTime,
@@ -60,6 +60,39 @@ function todayISO(): string {
 export function TaskManagement() {
   const todayStr = todayISO();
   const router = useRouter();
+
+  // ── Week view offset — shared with TaskWeekView ──────────────────────────────
+  const [weekViewOffset, setWeekViewOffset] = useState(0);
+
+  // Monday of the current calendar week (stable — never changes mid-session)
+  const currentWeekStartDate = useMemo(() => {
+    const today = new Date();
+    const monBased = (today.getDay() + 6) % 7;
+    const d = new Date(today);
+    d.setDate(today.getDate() - monBased);
+    d.setHours(0, 0, 0, 0);
+    return d;
+  }, []);
+
+  // Monday of the week being viewed (changes with weekViewOffset)
+  const viewedWeekStartDate = useMemo(() => {
+    const d = new Date(currentWeekStartDate);
+    d.setDate(currentWeekStartDate.getDate() + weekViewOffset * 7);
+    return d;
+  }, [currentWeekStartDate, weekViewOffset]);
+
+  // Log range covering both the current week and the viewed week (contiguous)
+  const logRangeFrom = useMemo(() => {
+    const earlier = weekViewOffset < 0 ? viewedWeekStartDate : currentWeekStartDate;
+    return toLocalDate(earlier);
+  }, [weekViewOffset, viewedWeekStartDate, currentWeekStartDate]);
+
+  const logRangeTo = useMemo(() => {
+    const laterStart = weekViewOffset > 0 ? viewedWeekStartDate : currentWeekStartDate;
+    const d = new Date(laterStart);
+    d.setDate(laterStart.getDate() + 6);
+    return toLocalDate(d);
+  }, [weekViewOffset, viewedWeekStartDate, currentWeekStartDate]);
   const params = useParams<{ locale: string }>();
 
   // ── Selected date for day view ────────────────────────────────────────────────
@@ -89,8 +122,9 @@ export function TaskManagement() {
   const { data: apiTasks = [] } = useTasks();
   const { data: apiQuests = [] } = useQuests();
   const { data: apiHabits = [] } = useHabits();
-  const { data: apiHabitLogs = [] } = useHabitLogs(todayStr);
   const { data: apiTaskLogs = [] } = useTaskLogs(todayStr);
+  // Habit logs covering current week + viewed week (contiguous range)
+  const { data: weekHabitLogs = [] } = useHabitLogsRange(logRangeFrom, logRangeTo);
 
   // Day-specific queries — fire whenever selectedDate changes
   const { data: apiTasksForDay = [], isFetching: isFetchingDayTasks } = useTasks(
@@ -134,21 +168,50 @@ export function TaskManagement() {
   );
 
   const apiMerged = useMemo<UITask[]>(() => {
-    // Pass today's TaskLog (if any) so multi-day tasks know if today is logged
     const tasks = apiTasks.map((t) => {
       const log = apiTaskLogs.find((l) => l.taskId === t.id);
       return taskToUITask(t, log);
     });
     const quests = apiQuests.map((q) => questToUITask(q));
+
+    // Generate habit UITasks for every scheduled day across:
+    //   1. The current calendar week (always — keeps day-view today-habits intact)
+    //   2. The viewed week when different from the current week
+    // IDs include the date so React keys never collide across days.
+    const habitWeekStarts =
+      weekViewOffset === 0 ? [currentWeekStartDate] : [currentWeekStartDate, viewedWeekStartDate];
+
     const habits = apiHabits
-      .filter((h) => h.active && isHabitScheduledToday(h))
-      .map((h) => {
-        const log = apiHabitLogs.find((l) => l.habitId === h.id);
-        const cancelled = cancelledHabitIds.has(h.id);
-        return habitToUITask(h, log, cancelled);
-      });
+      .filter((h) => h.active)
+      .flatMap((h) =>
+        habitWeekStarts.flatMap((weekStart) =>
+          Array.from({ length: 7 }, (_, i) => {
+            const date = new Date(weekStart);
+            date.setDate(weekStart.getDate() + i);
+            if (!isHabitScheduledForDate(h, date)) return null;
+
+            const dateStr = toLocalDate(date);
+            const log = weekHabitLogs.find((l) => l.habitId === h.id && l.date.startsWith(dateStr));
+            const cancelled = dateStr === todayStr && cancelledHabitIds.has(h.id);
+            const ui = habitToUITask(h, log, cancelled, date);
+            return { ...ui, id: `habit-${h.id}-${dateStr}` };
+          }).filter((x): x is UITask => x !== null),
+        ),
+      );
+
     return [...tasks, ...quests, ...habits];
-  }, [apiTasks, apiTaskLogs, apiQuests, apiHabits, apiHabitLogs, cancelledHabitIds]);
+  }, [
+    apiTasks,
+    apiTaskLogs,
+    apiQuests,
+    apiHabits,
+    weekHabitLogs,
+    cancelledHabitIds,
+    currentWeekStartDate,
+    viewedWeekStartDate,
+    weekViewOffset,
+    todayStr,
+  ]);
 
   // ── Local task state ──────────────────────────────────────────────────────
   // Seed with MOCK_TASKS while API loads; replace once real data arrives.
@@ -346,7 +409,14 @@ export function TaskManagement() {
     } else if (task.source === 'task' && task.sourceId) {
       updateTask.mutate({ id: task.sourceId, status: nextDone ? 'done' : 'todo' });
     } else if (task.source === 'habit' && task.sourceId) {
-      toggleHabitLog.mutate({ habitId: task.sourceId, date: selectedDateStr, done: nextDone });
+      // Derive the exact calendar date from the task's day offset so toggling
+      // a habit on Wed in the week view writes a log for Wed, not selectedDate.
+      const habitDate = (() => {
+        const d = new Date();
+        d.setDate(d.getDate() + task.day);
+        return toLocalDate(d);
+      })();
+      toggleHabitLog.mutate({ habitId: task.sourceId, date: habitDate, done: nextDone });
     }
     // 'mock' source: local-only
   }
@@ -493,6 +563,8 @@ export function TaskManagement() {
           {view === 'week' && (
             <TaskWeekView
               tasks={visible}
+              weekOffset={weekViewOffset}
+              onWeekChange={setWeekViewOffset}
               expandedId={expandedId}
               setExpandedId={setExpandedId}
               onToggleDone={handleToggleDone}

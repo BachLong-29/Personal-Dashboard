@@ -9,6 +9,7 @@ import { QuestCardMini } from './QuestCardMini';
 
 interface WeekColumnProps {
   dayLabel: string;
+  date: Date;
   dayOffset: number;
   isToday: boolean;
   tasks: UITask[];
@@ -22,6 +23,7 @@ interface WeekColumnProps {
 
 export function WeekColumn({
   dayLabel,
+  date,
   dayOffset,
   isToday,
   tasks,
@@ -37,7 +39,10 @@ export function WeekColumn({
   return (
     <div
       className={cn(colBase, isToday && colToday, over && colOver)}
-      onDragOver={(e) => { e.preventDefault(); setOver(true); }}
+      onDragOver={(e) => {
+        e.preventDefault();
+        setOver(true);
+      }}
       onDragLeave={() => setOver(false)}
       onDrop={(e) => {
         e.preventDefault();
@@ -52,6 +57,7 @@ export function WeekColumn({
           <span className="text-[12px] font-black text-[var(--text-hi)] font-[var(--font-title)]">
             {dayLabel}
           </span>
+          <span className="text-[11px] text-[var(--text-lo)]">{date.getDate()}</span>
           {isToday && (
             <span className="text-[7px] font-bold text-[var(--gold)] bg-[oklch(0.74_0.17_85_/_0.12)] border border-[oklch(0.74_0.17_85_/_0.3)] px-1 py-0.5 rounded tracking-[0.1em]">
               TODAY
@@ -65,33 +71,42 @@ export function WeekColumn({
               style={{ width: `${pct}%` }}
             />
           </div>
-          <span className="text-[8px] text-[var(--text-lo)] shrink-0">{done}/{tasks.length}</span>
+          <span className="text-[8px] text-[var(--text-lo)] shrink-0">
+            {done}/{tasks.length}
+          </span>
         </div>
       </div>
 
       {/* Task list */}
-      <div className="flex-1 overflow-y-auto p-2">
+      <div className="p-2 md:flex-1 md:overflow-y-auto">
         {tasks.length === 0 ? (
           <EmptyColumn />
         ) : (
-          tasks.map((t) => (
-            <div
-              key={t.id}
-              draggable
-              onDragStart={(e) => {
-                e.stopPropagation();
-                e.dataTransfer.setData('taskId', t.id);
-                e.dataTransfer.effectAllowed = 'move';
-              }}
-            >
-              <QuestCardMini
-                task={t}
-                expanded={expandedId === t.id}
-                onExpand={() => setExpandedId(expandedId === t.id ? null : t.id)}
-                onToggleDone={onToggleDone}
-              />
-            </div>
-          ))
+          tasks.map((t) => {
+            const isHabit = t.source === 'habit' || t.cat === 'habit';
+            return (
+              <div
+                key={t.id}
+                draggable={!isHabit}
+                onDragStart={
+                  isHabit
+                    ? undefined
+                    : (e) => {
+                        e.stopPropagation();
+                        e.dataTransfer.setData('taskId', t.id);
+                        e.dataTransfer.effectAllowed = 'move';
+                      }
+                }
+              >
+                <QuestCardMini
+                  task={t}
+                  expanded={expandedId === t.id}
+                  onExpand={() => setExpandedId(expandedId === t.id ? null : t.id)}
+                  onToggleDone={onToggleDone}
+                />
+              </div>
+            );
+          })
         )}
       </div>
     </div>
@@ -108,8 +123,7 @@ function EmptyColumn() {
 }
 
 const colBase =
-  'bg-[var(--panel)] border border-[var(--border)] rounded-[var(--r)] flex flex-col min-h-0 overflow-hidden transition-colors duration-150';
-const colToday =
-  'border-[oklch(0.74_0.17_85_/_0.4)] bg-[oklch(0.74_0.17_85_/_0.02)]';
+  'bg-[var(--panel)] border border-[var(--border)] rounded-[var(--r)] flex flex-col transition-colors duration-150 md:min-h-0 md:overflow-hidden';
+const colToday = 'border-[oklch(0.74_0.17_85_/_0.4)] bg-[oklch(0.74_0.17_85_/_0.02)]';
 const colOver =
   'bg-[oklch(0.74_0.17_85_/_0.08)] ring-1 ring-inset ring-[oklch(0.74_0.17_85_/_0.4)]';

@@ -11,6 +11,8 @@ import type { IHabitLog } from '@/server/models/habit-log.model';
 
 const listSchema = z.object({
   date: z.string().optional(),
+  from: z.string().optional(),
+  to: z.string().optional(),
 });
 
 const upsertSchema = z.object({
@@ -45,14 +47,18 @@ export const GET = asyncHandler(async (req: NextRequest) => {
   const { data: params, error } = validateSearchParams(req.nextUrl.searchParams, listSchema);
   if (error) return error;
 
-  const targetDate = params?.date ? new Date(params.date) : new Date();
-
   await connectDB();
 
-  const logs = await HabitLogModel.find({
-    userId: user.sub,
-    date: { $gte: startOfDay(targetDate), $lte: endOfDay(targetDate) },
-  });
+  const { date, from, to } = params ?? {};
+  const dateFilter =
+    from && to
+      ? { $gte: startOfDay(new Date(from)), $lte: endOfDay(new Date(to)) }
+      : (() => {
+          const d = date ? new Date(date) : new Date();
+          return { $gte: startOfDay(d), $lte: endOfDay(d) };
+        })();
+
+  const logs = await HabitLogModel.find({ userId: user.sub, date: dateFilter });
 
   return successResponse(logs.map(serialize));
 });
