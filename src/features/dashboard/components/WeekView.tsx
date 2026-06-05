@@ -331,11 +331,13 @@ export function WeekView({
                                 onClick={() => handleEdit(task)}
                                 title={`${item.time ? item.time + ' ' : ''}${task.name}`}
                               >
+                                <div className="flex items-center gap-1 w-full min-w-0">
+                                  <span className={miniTaskIcon}>{task.icon}</span>
+                                  <span className={miniTaskName}>{task.name}</span>
+                                  {blocked && <span className={miniLock}>🔒</span>}
+                                  {task.status === 'done' && <span className={miniDone}>✓</span>}
+                                </div>
                                 {item.time && <span className={miniTime}>{item.time}</span>}
-                                <span className={miniTaskIcon}>{task.icon}</span>
-                                <span className={miniTaskName}>{task.name}</span>
-                                {blocked && <span className={miniLock}>🔒</span>}
-                                {task.status === 'done' && <span className={miniDone}>✓</span>}
                               </div>
                             </DraggableItem>
                           );
@@ -378,10 +380,12 @@ export function WeekView({
                             title={`${item.time ? item.time + ' ' : ''}${h.name}`}
                             onClick={() => onNavigateTab?.('habits')}
                           >
+                            <div className="flex items-center gap-1 w-full min-w-0">
+                              <span className={miniTaskIcon}>{h.icon}</span>
+                              <span className={miniTaskName}>{h.name}</span>
+                              {done && <span className={miniDone}>✓</span>}
+                            </div>
                             {item.time && <span className={miniTime}>{item.time}</span>}
-                            <span className={miniTaskIcon}>{h.icon}</span>
-                            <span className={miniTaskName}>{h.name}</span>
-                            {done && <span className={miniDone}>✓</span>}
                           </div>
                         );
                       });
@@ -582,7 +586,7 @@ const dayAddBtn =
 const dayTaskList = 'px-1 py-1 flex flex-col gap-0.5 md:flex-1 md:overflow-y-auto md:min-h-0';
 
 const miniTask =
-  'flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] bg-[var(--panel2)] border border-[var(--border)] cursor-grab active:cursor-grabbing hover:border-[oklch(0.74_0.17_85_/_0.4)] transition-all overflow-hidden';
+  'flex flex-col gap-0.5 px-1.5 py-1.5 rounded text-[9px] bg-[var(--panel2)] border border-[var(--border)] cursor-grab active:cursor-grabbing hover:border-[oklch(0.74_0.17_85_/_0.4)] transition-all overflow-hidden';
 const miniTaskDone = 'opacity-50';
 const miniTaskBlocked = 'opacity-60 cursor-default';
 const miniTaskQuest = 'border-[oklch(0.74_0.17_85_/_0.25)] bg-[oklch(0.74_0.17_85_/_0.05)]';

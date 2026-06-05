@@ -67,12 +67,14 @@ const DashboardTopbar = (props: DashboardTopbarProps) => {
   return (
     <>
       <div className={topBar}>
-        {/* ── Desktop: user identity trigger → dropdown ───────────────────── */}
-        <div ref={userModalRef} className="relative hidden sm:block">
+        {/* ── User identity trigger → dropdown (all sizes) ────────────────── */}
+        <div ref={userModalRef} className="relative block">
           <button type="button" className={userTrigger} onClick={() => setShowUserModal((v) => !v)}>
             <span className={avatarBadge}>{companion?.glyph ?? '🧝‍♀️'}</span>
-            <span className={topBarLogo}>{displayName}</span>
-            <span className={cn(triggerCaret, 'hidden sm:inline')}>
+            <span className={cn(topBarLogo, 'max-w-[80px] truncate md:max-w-none')}>
+              {displayName}
+            </span>
+            <span className={cn(triggerCaret, 'hidden md:inline')}>
               {showUserModal ? '▲' : '▼'}
             </span>
           </button>
@@ -141,8 +143,8 @@ const DashboardTopbar = (props: DashboardTopbarProps) => {
           )}
         </div>
 
-        {/* ── ◆ separator (desktop only) ─────────────────────────────────── */}
-        <span className="hidden sm:inline text-[var(--gold)] text-[8px] opacity-50">◆</span>
+        {/* ── ◆ separator ─────────────────────────────────────────────────── */}
+        <span className="hidden md:inline text-[var(--gold)] text-[8px] opacity-50">◆</span>
 
         {/* ── Gems + Coins: 2 rows on mobile, side-by-side on desktop ──────── */}
         <div className="flex flex-row gap-1 sm:gap-2 sm:items-center">
@@ -165,8 +167,25 @@ const DashboardTopbar = (props: DashboardTopbarProps) => {
 
         <div className="flex-1" />
 
-        {/* ── Desktop nav (hidden on mobile, visible sm+) ─────────────────── */}
-        <div className="hidden sm:flex items-center gap-2 md:gap-3">
+        {/* ── Date — tablet only (md → 1024px) ────────────────────────────── */}
+        <div className={cn(dateLabel, 'hidden md:block min-[1025px]:hidden')}>{dateStr}</div>
+
+        {/* ── Menu button — all sizes ≤ 1024px (mobile + tablet) ──────────── */}
+        <button
+          type="button"
+          className={cn(tabletMenuBtn, 'flex min-[1025px]:hidden')}
+          onClick={openSheet}
+          aria-label="Open menu"
+        >
+          <svg width="14" height="11" viewBox="0 0 14 11" fill="currentColor">
+            <rect y="0" width="14" height="1.5" rx="0.75" />
+            <rect y="4.75" width="14" height="1.5" rx="0.75" />
+            <rect y="9.5" width="10" height="1.5" rx="0.75" />
+          </svg>
+        </button>
+
+        {/* ── Desktop nav (1025px+) ───────────────────────────────────────── */}
+        <div className="hidden min-[1025px]:flex items-center gap-2">
           <Button
             type="button"
             variant="ghost"
@@ -207,23 +226,6 @@ const DashboardTopbar = (props: DashboardTopbarProps) => {
           </Button>
           <div className={streakPill}>{tDash('streakDays', { count: char.streak })}</div>
         </div>
-
-        {/* ── Mobile: avatar + name + menu → RIGHT side, opens bottom sheet ── */}
-        <button
-          type="button"
-          className="sm:hidden flex items-center gap-2 px-2 py-1 rounded-[var(--r-sm)] hover:bg-[oklch(0.74_0.17_85_/_0.06)] transition-colors duration-200 cursor-pointer focus:outline-none shrink-0"
-          onClick={openSheet}
-        >
-          <span className={avatarBadge}>{companion?.glyph ?? '🧝‍♀️'}</span>
-          <span className="font-[var(--font-title)] text-[13px] font-bold tracking-[0.06em] bg-gradient-to-r from-[var(--gold)] to-[var(--violet)] bg-clip-text text-transparent max-w-[80px] truncate">
-            {displayName}
-          </span>
-          <div className="flex flex-col items-center gap-[4.5px] ml-0.5 shrink-0">
-            <span className="w-[13px] h-[1.5px] bg-[var(--text-mid)] rounded-full" />
-            <span className="w-[13px] h-[1.5px] bg-[var(--text-mid)] rounded-full" />
-            <span className="w-[10px] h-[1.5px] bg-[var(--text-mid)] rounded-full" />
-          </div>
-        </button>
       </div>
 
       {/* ── Mobile bottom sheet ─────────────────────────────────────────────── */}
@@ -232,7 +234,7 @@ const DashboardTopbar = (props: DashboardTopbarProps) => {
           {/* Backdrop */}
           <div
             className={cn(
-              'fixed inset-0 z-40 sm:hidden bg-black/60',
+              'fixed inset-0 z-40 bg-black/60 min-[1025px]:hidden',
               'transition-opacity duration-300',
               sheetVisible ? 'opacity-100' : 'opacity-0',
             )}
@@ -242,7 +244,7 @@ const DashboardTopbar = (props: DashboardTopbarProps) => {
           {/* Sheet */}
           <div
             className={cn(
-              'fixed bottom-0 left-0 right-0 z-50 sm:hidden',
+              'fixed bottom-0 left-0 right-0 z-50 min-[1025px]:hidden',
               'bg-[var(--panel)] rounded-t-[24px] overflow-hidden',
               'border-t border-[oklch(0.74_0.17_85_/_0.2)]',
               'shadow-[0_-8px_40px_oklch(0_0_0_/_0.5)]',
@@ -463,3 +465,6 @@ const sheetItemIcon = 'w-[22px] text-center text-[16px] leading-none shrink-0';
 
 const sheetSecondaryBtn =
   'flex items-center justify-center gap-2 py-[10px] px-3 rounded-[var(--r-sm)] border border-[var(--border)] text-[12px] font-bold font-[var(--font-title)] tracking-[0.06em] text-[var(--text-mid)] cursor-pointer transition-colors duration-150 hover:bg-[var(--panel2)] hover:text-[var(--text-hi)]';
+
+const tabletMenuBtn =
+  'w-8 h-8 flex items-center justify-center rounded-[var(--r-sm)] border border-[var(--border)] text-[var(--text-mid)] hover:text-[var(--text-hi)] hover:bg-[var(--panel2)] transition-colors shrink-0';

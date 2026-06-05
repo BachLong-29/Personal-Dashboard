@@ -530,9 +530,9 @@ export default function MainDashboard() {
       <div className="flex flex-col h-screen">
         <DashboardTopbar char={char} dateStr={dateStr} onEndDay={handleEndDay} />
 
-        {/* ── Desktop / Tablet layout (md+) ─────────────────────────────────── */}
-        {/* Tablet: 2 columns [220px + 1fr]. Desktop: 3 columns [220px + 1fr + 260px] */}
-        <div className="hidden md:grid md:grid-cols-[220px_1fr] lg:grid-cols-[220px_1fr_260px] gap-3 p-3 flex-1 overflow-hidden min-h-0">
+        {/* ── Desktop / Tablet layout (1025px+) ────────────────────────────── */}
+        {/* 1025–1279px: 2 columns [220px + 1fr]. 1280px+: 3 columns [220px + 1fr + 260px] */}
+        <div className="hidden min-[1025px]:grid min-[1025px]:grid-cols-[220px_1fr] xl:grid-cols-[220px_1fr_260px] gap-3 p-3 flex-1 overflow-hidden min-h-0">
           <div className={scrollCol}>{leftPanels}</div>
 
           <div className={centerCol}>
@@ -556,15 +556,15 @@ export default function MainDashboard() {
             {centerPanels}
           </div>
 
-          {/* Right column — desktop only */}
-          <div className="hidden lg:flex flex-col gap-2.5 overflow-y-auto overflow-x-hidden">
+          {/* Right column — wide desktop only (xl+) */}
+          <div className="hidden xl:flex flex-col gap-2.5 overflow-y-auto overflow-x-hidden">
             {rightPanels}
           </div>
         </div>
 
-        {/* ── Mobile layout (<md) ───────────────────────────────────────────── */}
+        {/* ── Mobile layout (≤ 1024px) ─────────────────────────────────────── */}
         {/* pb-14 reserves space so content never slides under the fixed bottom nav */}
-        <div className="flex flex-col md:hidden flex-1 overflow-hidden min-h-0 pb-14">
+        <div className="flex flex-col min-[1025px]:hidden flex-1 overflow-hidden min-h-0 pb-14">
           {mobilePanel === 'character' && (
             <div className="flex flex-col gap-2.5 overflow-y-auto overflow-x-hidden p-3 flex-1">
               {leftPanels}
@@ -695,7 +695,7 @@ const motivationAuthor = 'text-[9px] text-[var(--text-mid)] mt-1 text-right';
 // ── Mobile bottom navigation ──────────────────────────────────────────────────
 
 const mobileNav =
-  'md:hidden fixed bottom-0 left-0 right-0 grid grid-cols-6 border-t border-[var(--border)] bg-[var(--panel)]/70 backdrop-blur-xl z-20';
+  'min-[1025px]:hidden fixed bottom-0 left-0 right-0 grid grid-cols-6 border-t border-[var(--border)] bg-[var(--panel)]/70 backdrop-blur-xl z-20';
 const mobileNavBtn =
   'flex flex-col items-center justify-center gap-[3px] py-2 px-1 text-[var(--text-lo)] cursor-pointer transition-colors duration-200 select-none text-[8px] font-[var(--font-title)] tracking-[0.05em] uppercase';
 const mobileNavBtnActive =
