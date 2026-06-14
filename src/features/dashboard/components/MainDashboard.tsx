@@ -17,11 +17,14 @@ import {
   QUOTES,
   SKIP_CONFIRM_STORAGE_KEY,
   QUEST_ROLLOVER_KEY,
+  SUNDAY_REMINDER_KEY,
+  MONTHLY_REMINDER_KEY,
 } from '../constants';
 import { MOCK_ACHIEVEMENTS } from '../data/mock';
 import { useProfile } from '@/features/profile/hooks/useProfile';
 import { useCharacterProgress } from '../hooks/useCharacterProgress';
 import { useRolloverQuests } from '../hooks/useRolloverQuests';
+import { useCreateNotification } from '../hooks/useNotificationActions';
 import { findClass } from '@/constants/hero-data';
 import type { UserProfileData } from '@/types';
 import { useHabitLogs } from '../hooks/useHabitLogs';
@@ -101,6 +104,55 @@ export default function MainDashboard() {
     rolloverRef.current(undefined, {
       onSuccess: () => localStorage.setItem(QUEST_ROLLOVER_KEY, today),
     });
+  }, []);
+
+  const { mutate: createNotification } = useCreateNotification();
+  const createNotificationRef = useRef(createNotification);
+  useEffect(() => {
+    createNotificationRef.current = createNotification;
+  }, [createNotification]);
+
+  useEffect(() => {
+    const isSunday = new Date().getDay() === 0;
+    if (!isSunday) return;
+    const today = new Date().toDateString();
+    if (localStorage.getItem(SUNDAY_REMINDER_KEY) === today) return;
+
+    const endOfDay = new Date();
+    endOfDay.setHours(23, 59, 59, 999);
+
+    createNotificationRef.current(
+      {
+        type: 'planning',
+        title: 'Plan Your Week 📋',
+        message: "It's Sunday! Take a moment to plan your quests and goals for tomorrow.",
+        expiresAt: endOfDay.toISOString(),
+      },
+      {
+        onSuccess: () => localStorage.setItem(SUNDAY_REMINDER_KEY, today),
+      },
+    );
+  }, []);
+
+  useEffect(() => {
+    const now = new Date();
+    if (now.getDate() !== 29) return;
+    const monthKey = `${now.getFullYear()}-${now.getMonth()}`;
+    if (localStorage.getItem(MONTHLY_REMINDER_KEY) === monthKey) return;
+
+    const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+    const nextMonthName = nextMonth.toLocaleString('en-US', { month: 'long' });
+
+    createNotificationRef.current(
+      {
+        type: 'monthly-plan',
+        title: `Plan for ${nextMonthName} 🗓`,
+        message: `${nextMonthName} is coming up. Take time today to set your goals and quests for the month ahead.`,
+      },
+      {
+        onSuccess: () => localStorage.setItem(MONTHLY_REMINDER_KEY, monthKey),
+      },
+    );
   }, []);
 
   const { data: serverQuests, isLoading: questsLoading } = useQuests();
@@ -361,12 +413,25 @@ export default function MainDashboard() {
     }));
     createPenalty(items);
     setPenaltyState({ tier: 1, unfinished: unfinished.length ? unfinished : quests.slice(0, 1) });
+
+    if (unfinished.length > 0) {
+      createNotificationRef.current({
+        type: 'reminder',
+        title: '⚠ Penalty Quest Issued',
+        message: `You left ${unfinished.length} quest${unfinished.length > 1 ? 's' : ''} unfinished. A corrective penalty task has been assigned.`,
+      });
+    }
   };
 
   const handlePenaltyComplete = () => {
     completePenalty();
     setToast({ xp: 50, coins: 10 });
     setPenaltyState(null);
+    createNotificationRef.current({
+      type: 'reward',
+      title: '✓ Penalty Quest Complete',
+      message: 'You completed the corrective task. Consequences averted. Well done.',
+    });
   };
 
   const handlePenaltyFail = () => {
@@ -382,6 +447,12 @@ export default function MainDashboard() {
     failPenalty();
     setPenaltyFailed(true);
     setPenaltyState(null);
+    const nextTier = Math.min(penaltyState.tier + 1, 4);
+    createNotificationRef.current({
+      type: 'system',
+      title: '☠ Penalty Escalated',
+      message: `You failed the penalty quest. Consequences applied. ${nextTier <= 4 ? `Tier ${nextTier} now active.` : 'Maximum penalty reached.'}`,
+    });
   };
 
   const handleFailureContinue = () => {

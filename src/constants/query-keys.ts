@@ -23,4 +23,8 @@ export const queryKeys = {
     all: ['penalty'] as const,
     active: () => [...queryKeys.penalty.all, 'active'] as const,
   },
+  notifications: {
+    all: ['notifications'] as const,
+    list: () => [...queryKeys.notifications.all, 'list'] as const,
+  },
 } as const;

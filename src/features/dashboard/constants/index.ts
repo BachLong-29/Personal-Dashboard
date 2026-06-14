@@ -76,6 +76,8 @@ export const RANK_LEVEL_THRESHOLDS: Partial<Record<(typeof RANKS)[number], numbe
 
 export const SKIP_CONFIRM_STORAGE_KEY = 'aetheria_skip_quest_confirm';
 export const QUEST_ROLLOVER_KEY = 'aetheria_quest_rollover_date';
+export const SUNDAY_REMINDER_KEY = 'aetheria_sunday_planning_reminded';
+export const MONTHLY_REMINDER_KEY = 'aetheria_monthly_planning_reminded';
 
 export const HABIT_XP = 30;
 export const HABIT_COINS = 10;

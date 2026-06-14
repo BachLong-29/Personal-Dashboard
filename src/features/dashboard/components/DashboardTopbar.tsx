@@ -12,6 +12,7 @@ import { findClass, findCompanion, findRank } from '@/constants/hero-data';
 import type { Character } from '../types';
 import { cn } from '@/libs/utils';
 import { useOnClickOutside } from '@/hooks/useOnClickOutside';
+import { NotificationBell } from './NotificationBell';
 
 interface DashboardTopbarProps {
   char: Character;
@@ -49,7 +50,6 @@ const DashboardTopbar = (props: DashboardTopbarProps) => {
 
   const openSheet = () => {
     setSheetMounted(true);
-    // Double rAF: let the browser paint the hidden element before triggering transition
     requestAnimationFrame(() => requestAnimationFrame(() => setSheetVisible(true)));
   };
 
@@ -67,7 +67,7 @@ const DashboardTopbar = (props: DashboardTopbarProps) => {
   return (
     <>
       <div className={topBar}>
-        {/* ── User identity trigger → dropdown (all sizes) ────────────────── */}
+        {/* ── User identity trigger → dropdown ────────────────────────────── */}
         <div ref={userModalRef} className="relative block">
           <button type="button" className={userTrigger} onClick={() => setShowUserModal((v) => !v)}>
             <span className={avatarBadge}>{companion?.glyph ?? '🧝‍♀️'}</span>
@@ -86,6 +86,7 @@ const DashboardTopbar = (props: DashboardTopbarProps) => {
               <div className={userModalCornerBL} />
               <div className={userModalCornerBR} />
 
+              {/* Avatar + identity */}
               <div className={modalAvatarRow}>
                 <div className={modalAvatarRing}>
                   <div className={modalAvatarInner}>{companion?.glyph ?? '🧝‍♀️'}</div>
@@ -108,6 +109,7 @@ const DashboardTopbar = (props: DashboardTopbarProps) => {
 
               <div className={modalDivider} />
 
+              {/* Currencies */}
               <div className={modalCurrencyRow}>
                 <div className={modalCurrencyItem}>
                   <span className={modalCurrencyIcon}>💠</span>
@@ -130,14 +132,53 @@ const DashboardTopbar = (props: DashboardTopbarProps) => {
 
               <div className={modalDivider} />
 
-              <div className={modalActions}>
+              {/* Nav links */}
+              <div className={modalNavLinks}>
                 <Link
                   href="/profile"
-                  className={modalActionBtn}
+                  className={modalNavLink}
                   onClick={() => setShowUserModal(false)}
                 >
-                  ✦ {tCommon('edit')} {tNav('profile')}
+                  <span>✦</span>
+                  <span>
+                    {tCommon('edit')} {tNav('profile')}
+                  </span>
                 </Link>
+                <Link
+                  href="/tasks"
+                  className={modalNavLink}
+                  onClick={() => setShowUserModal(false)}
+                >
+                  <span>📋</span>
+                  <span>Quest Log</span>
+                </Link>
+                <Link
+                  href="/marketplace"
+                  className={cn(modalNavLink, 'text-[var(--violet)]')}
+                  onClick={() => setShowUserModal(false)}
+                >
+                  <span>🛍</span>
+                  <span>{tNav('marketplace')}</span>
+                </Link>
+              </div>
+
+              <div className={modalDivider} />
+
+              {/* Language */}
+              <div className="px-4 pb-3 pt-2">
+                <button
+                  type="button"
+                  className={modalLangBtn}
+                  onClick={() => {
+                    handleToggleLocale();
+                    setShowUserModal(false);
+                  }}
+                  title={localeLabels[locale]}
+                >
+                  <span>🌐</span>
+                  <span>{localeLabels[locale]}</span>
+                  <span className="ml-auto opacity-50 text-[9px]">→ switch</span>
+                </button>
               </div>
             </div>
           )}
@@ -146,7 +187,7 @@ const DashboardTopbar = (props: DashboardTopbarProps) => {
         {/* ── ◆ separator ─────────────────────────────────────────────────── */}
         <span className="hidden md:inline text-[var(--gold)] text-[8px] opacity-50">◆</span>
 
-        {/* ── Gems + Coins: 2 rows on mobile, side-by-side on desktop ──────── */}
+        {/* ── Gems + Coins ─────────────────────────────────────────────────── */}
         <div className="flex flex-row gap-1 sm:gap-2 sm:items-center">
           <div className={cn(currencyPill, gems)}>
             <span className={currencyIcon}>💠</span>
@@ -167,48 +208,28 @@ const DashboardTopbar = (props: DashboardTopbarProps) => {
 
         <div className="flex-1" />
 
-        {/* ── Menu button — all sizes ≤ 1024px (mobile + tablet) ──────────── */}
-        <button
-          type="button"
-          className={cn(tabletMenuBtn, 'flex min-[1025px]:hidden')}
-          onClick={openSheet}
-          aria-label="Open menu"
-        >
-          <svg width="14" height="11" viewBox="0 0 14 11" fill="currentColor">
-            <rect y="0" width="14" height="1.5" rx="0.75" />
-            <rect y="4.75" width="14" height="1.5" rx="0.75" />
-            <rect y="9.5" width="10" height="1.5" rx="0.75" />
-          </svg>
-        </button>
+        {/* ── Mobile: Bell + hamburger ─────────────────────────────────────── */}
+        <div className="flex min-[1025px]:hidden items-center gap-2">
+          <NotificationBell onEndDay={onEndDay} />
+          <button
+            type="button"
+            className={tabletMenuBtn}
+            onClick={openSheet}
+            aria-label="Open menu"
+          >
+            <svg width="14" height="11" viewBox="0 0 14 11" fill="currentColor">
+              <rect y="0" width="14" height="1.5" rx="0.75" />
+              <rect y="4.75" width="14" height="1.5" rx="0.75" />
+              <rect y="9.5" width="10" height="1.5" rx="0.75" />
+            </svg>
+          </button>
+        </div>
 
-        {/* ── Desktop nav (1025px+) ───────────────────────────────────────── */}
+        {/* ── Desktop nav (1025px+): Date | Streak | Bell | Logout ─────────── */}
         <div className="hidden min-[1025px]:flex items-center gap-2">
-          <Button
-            type="button"
-            variant="ghost"
-            className={penaltyTrigger}
-            onClick={onEndDay}
-            title={tDash('buttons.endDayTitle')}
-          >
-            ⚠ {tDash('endDay')}
-          </Button>
-          <div className={dateLabel}>{dateStr}</div>
-          <Link href="/marketplace" className={cn(navPill, marketplacePill)}>
-            🛍 {tNav('marketplace')}
-          </Link>
-          <Link href="/tasks" className={cn(streakPill, 'no-underline cursor-pointer')}>
-            ✦ Quest Log
-          </Link>
-          <Button
-            type="button"
-            variant="ghost"
-            className={cn(navPill, languagePill)}
-            onClick={handleToggleLocale}
-            aria-label={tDash('buttons.toggleLanguage')}
-            title={localeLabels[locale]}
-          >
-            🌐 {locale.toUpperCase()}
-          </Button>
+          <span className={dateLabel}>{dateStr}</span>
+          <div className={streakPill}>{tDash('streakDays', { count: char.streak })}</div>
+          <NotificationBell onEndDay={onEndDay} />
           <Button
             type="button"
             variant="ghost"
@@ -221,14 +242,12 @@ const DashboardTopbar = (props: DashboardTopbarProps) => {
           >
             ⏻
           </Button>
-          <div className={streakPill}>{tDash('streakDays', { count: char.streak })}</div>
         </div>
       </div>
 
       {/* ── Mobile bottom sheet ─────────────────────────────────────────────── */}
       {sheetMounted && (
         <>
-          {/* Backdrop */}
           <div
             className={cn(
               'fixed inset-0 z-40 bg-black/60 min-[1025px]:hidden',
@@ -238,7 +257,6 @@ const DashboardTopbar = (props: DashboardTopbarProps) => {
             onClick={closeSheet}
           />
 
-          {/* Sheet */}
           <div
             className={cn(
               'fixed bottom-0 left-0 right-0 z-50 min-[1025px]:hidden',
@@ -292,34 +310,20 @@ const DashboardTopbar = (props: DashboardTopbarProps) => {
               <span className={dateLabel}>{dateStr}</span>
             </div>
 
-            {/* Primary actions */}
+            {/* Nav links */}
             <div className="px-4 pt-3 pb-2 flex flex-col gap-0.5">
-              <button
-                type="button"
-                className={cn(sheetItem, 'text-[oklch(0.85_0.18_22)]')}
-                onClick={() => {
-                  onEndDay();
-                  closeSheet();
-                }}
-              >
-                <span className={sheetItemIcon}>⚠</span>
-                <span>{tDash('endDay')}</span>
-              </button>
-
               <Link href="/profile" className={sheetItem} onClick={closeSheet}>
                 <span className={sheetItemIcon}>✦</span>
                 <span>
                   {tCommon('edit')} {tNav('profile')}
                 </span>
               </Link>
-
               <Link href="/marketplace" className={sheetItem} onClick={closeSheet}>
                 <span className={sheetItemIcon}>🛍</span>
                 <span>{tNav('marketplace')}</span>
               </Link>
-
               <Link href="/tasks" className={sheetItem} onClick={closeSheet}>
-                <span className={sheetItemIcon}>✦</span>
+                <span className={sheetItemIcon}>📋</span>
                 <span>Quest Log</span>
               </Link>
             </div>
@@ -355,7 +359,6 @@ const DashboardTopbar = (props: DashboardTopbarProps) => {
               </button>
             </div>
 
-            {/* Safe area for iOS home indicator */}
             <div className="pb-6" />
           </div>
         </>
@@ -382,7 +385,7 @@ const currencyIcon = 'text-[14px]';
 const gems = '!border-[oklch(0.66_0.22_295_/_0.4)]';
 const coins = '!border-[oklch(0.74_0.17_85_/_0.4)]';
 
-// ── Misc pills ────────────────────────────────────────────────────────────────
+// ── Misc pills / labels ───────────────────────────────────────────────────────
 
 const dateLabel = 'text-[11px] text-[var(--text-mid)] tracking-[0.08em] font-[var(--font-title)]';
 
@@ -391,16 +394,9 @@ const streakPill =
 
 const navPill =
   'flex items-center gap-[6px] bg-[var(--panel2)] border border-[var(--border)] rounded-[20px] px-[10px] py-1 text-[11px] font-bold font-[var(--font-title)] tracking-[0.05em] transition-colors duration-200 no-underline cursor-pointer hover:border-[oklch(0.74_0.17_85_/_0.35)]';
-const marketplacePill =
-  'text-[var(--violet)] border-[oklch(0.66_0.22_295_/_0.35)] hover:border-[oklch(0.66_0.22_295_/_0.55)]';
-const languagePill =
-  'text-[var(--text-mid)] hover:text-[var(--text-hi)] focus:outline-none focus:ring-2 focus:ring-[var(--border)]';
 
 const backBtn =
   'flex items-center gap-1 px-2.5 py-1 bg-[oklch(0.74_0.17_85_/_0.08)] border border-[oklch(0.74_0.17_85_/_0.3)] rounded-[var(--r-sm)] text-[9px] font-bold text-[var(--gold)] font-[var(--font-title)] tracking-[0.08em] no-underline transition-all hover:bg-[oklch(0.74_0.17_85_/_0.15)] hover:border-[oklch(0.74_0.17_85_/_0.55)] cursor-pointer shrink-0';
-
-const penaltyTrigger =
-  'inline-flex items-center gap-[6px] bg-[oklch(0.62_0.24_22_/_0.1)] border border-[oklch(0.62_0.24_22_/_0.4)] text-[oklch(0.85_0.18_22)] px-[11px] py-[5px] rounded-[var(--r-sm)] text-[10px] font-[var(--font-title)] tracking-[0.12em] font-bold cursor-pointer transition-all duration-200 ml-1 hover:bg-[oklch(0.62_0.24_22_/_0.2)] hover:shadow-[0_0_12px_var(--danger-glow)]';
 
 // ── User trigger & modal ──────────────────────────────────────────────────────
 
@@ -411,7 +407,7 @@ const avatarBadge =
 const triggerCaret = 'text-[8px] text-[var(--text-lo)] ml-[-2px] transition-transform duration-200';
 
 const userModal =
-  'absolute top-[calc(100%+8px)] left-0 z-50 w-[280px] bg-[var(--panel)] border border-[oklch(0.74_0.17_85_/_0.35)] rounded-[var(--r)] shadow-[0_8px_32px_oklch(0_0_0_/_0.4),0_0_20px_oklch(0.74_0.17_85_/_0.08)] overflow-hidden';
+  'absolute top-[calc(100%+8px)] left-0 z-50 w-[260px] bg-[var(--panel)] border border-[oklch(0.74_0.17_85_/_0.35)] rounded-[var(--r)] shadow-[0_8px_32px_oklch(0_0_0_/_0.4),0_0_20px_oklch(0.74_0.17_85_/_0.08)] overflow-hidden';
 
 const cornerBase = 'absolute w-3 h-3 pointer-events-none border-[var(--gold-dim)]';
 const userModalCornerTL = cn(cornerBase, 'top-[5px] left-[5px] border-t-[1.5px] border-l-[1.5px]');
@@ -449,9 +445,12 @@ const modalCurrencyVal =
 const modalCurrencyKey = 'text-[9px] text-[var(--text-mid)] tracking-[0.1em] uppercase mt-[2px]';
 const modalCurrencyDivider = 'w-px h-[36px] bg-[var(--border)]';
 
-const modalActions = 'px-4 pb-4 pt-1';
-const modalActionBtn =
-  'flex items-center justify-center gap-1.5 w-full py-[7px] rounded-[var(--r-sm)] border border-[oklch(0.74_0.17_85_/_0.35)] text-[var(--gold)] font-[var(--font-title)] text-[10px] tracking-[0.12em] font-bold no-underline transition-all duration-200 hover:bg-[oklch(0.74_0.17_85_/_0.08)] hover:border-[oklch(0.74_0.17_85_/_0.6)]';
+const modalNavLinks = 'px-3 py-2 flex flex-col gap-0.5';
+const modalNavLink =
+  'flex items-center gap-2.5 px-3 py-[9px] rounded-[var(--r-sm)] text-[11px] font-semibold text-[var(--text-hi)] font-[var(--font-title)] tracking-[0.04em] no-underline transition-colors duration-150 hover:bg-[var(--panel2)]';
+
+const modalLangBtn =
+  'flex items-center gap-2 w-full px-3 py-[9px] rounded-[var(--r-sm)] text-[11px] font-semibold text-[var(--text-mid)] font-[var(--font-title)] tracking-[0.04em] transition-colors duration-150 hover:bg-[var(--panel2)] hover:text-[var(--text-hi)] cursor-pointer';
 
 // ── Bottom sheet items ────────────────────────────────────────────────────────
 
