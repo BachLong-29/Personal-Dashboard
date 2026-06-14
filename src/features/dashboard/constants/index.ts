@@ -64,6 +64,16 @@ export const DEFAULT_SETTINGS: DashboardSettings = {
 
 export const RANKS = ['F', 'E', 'D', 'C', 'B', 'A', 'S'] as const;
 
+/** Minimum level required to auto-promote to each rank */
+export const RANK_LEVEL_THRESHOLDS: Partial<Record<(typeof RANKS)[number], number>> = {
+  E: 5,
+  D: 10,
+  C: 20,
+  B: 35,
+  A: 55,
+  S: 80,
+};
+
 export const SKIP_CONFIRM_STORAGE_KEY = 'aetheria_skip_quest_confirm';
 export const QUEST_ROLLOVER_KEY = 'aetheria_quest_rollover_date';
 

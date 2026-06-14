@@ -1,6 +1,6 @@
 'use client';
 
-import { startTransition, useEffect, useMemo, useRef, useState } from 'react';
+import { startTransition, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 
@@ -15,7 +15,6 @@ import {
   TASK_XP,
   TASK_COINS,
   QUOTES,
-  RANKS,
   SKIP_CONFIRM_STORAGE_KEY,
   QUEST_ROLLOVER_KEY,
 } from '../constants';
@@ -27,6 +26,7 @@ import { findClass } from '@/constants/hero-data';
 import type { UserProfileData } from '@/types';
 import { useHabitLogs } from '../hooks/useHabitLogs';
 import { useHabits } from '../hooks/useHabits';
+import { useCompletePenalty, useCreatePenalty, useFailPenalty } from '../hooks/usePenalty';
 import { useQuests } from '../hooks/useQuests';
 import { useTasks } from '../hooks/useTasks';
 import { useToggleHabitLog } from '../hooks/useToggleHabitLog';
@@ -56,6 +56,7 @@ import { ConfirmQuestModal } from './ConfirmQuestModal';
 import { FocusTimer } from './FocusTimer';
 import { GuildPanel } from './GuildPanel';
 import { HabitPanel } from './HabitPanel';
+import { LevelUpToast } from './LevelUpToast';
 import { PenaltyFailureModal, PenaltyModal } from './PenaltyModal';
 import { QuestPanel } from './QuestPanel';
 import { ScheduleView } from './ScheduleView';
@@ -83,6 +84,10 @@ export default function MainDashboard() {
   const todayDay = new Date().getDay();
   const DOW_TO_HABIT_DAY = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'] as const;
   const todayDayStr = DOW_TO_HABIT_DAY[todayDay];
+
+  const { mutate: createPenalty } = useCreatePenalty();
+  const { mutate: completePenalty } = useCompletePenalty();
+  const { mutate: failPenalty } = useFailPenalty();
 
   const { mutate: rolloverQuests } = useRolloverQuests();
   const rolloverRef = useRef(rolloverQuests);
@@ -196,7 +201,6 @@ export default function MainDashboard() {
   const charInitialized = useRef(false);
 
   const [char, setChar] = useState<Character>(() => buildEmptyChar());
-  const { awardProgress, applyGamePatch } = useCharacterProgress(char, setChar);
 
   useEffect(() => {
     const profile = profileData?.profile;
@@ -216,6 +220,13 @@ export default function MainDashboard() {
   const [mobilePanel, setMobilePanel] = useState<MobilePanel>('center');
   const [burst, setBurst] = useState<BurstPos | null>(null);
   const [toast, setToast] = useState<{ xp: number; coins: number } | null>(null);
+  const [levelUp, setLevelUp] = useState<{ level: number; rank?: string } | null>(null);
+
+  const handleLevelUp = useCallback((newLevel: number, promotedRank?: string) => {
+    setLevelUp({ level: newLevel, rank: promotedRank });
+  }, []);
+
+  const { awardProgress, applyGamePatch } = useCharacterProgress(char, setChar, handleLevelUp);
   const [penaltyState, setPenaltyState] = useState<PenaltyState | null>(null);
   const [penaltyFailed, setPenaltyFailed] = useState(false);
   const [pendingQuest, setPendingQuest] = useState<PendingQuest | null>(null);
@@ -343,10 +354,17 @@ export default function MainDashboard() {
 
   const handleEndDay = () => {
     const unfinished = quests.filter((q) => !q.done);
+    const items = (unfinished.length ? unfinished : quests.slice(0, 1)).map((q) => ({
+      id: q.id,
+      title: q.title,
+      difficulty: q.difficulty,
+    }));
+    createPenalty(items);
     setPenaltyState({ tier: 1, unfinished: unfinished.length ? unfinished : quests.slice(0, 1) });
   };
 
   const handlePenaltyComplete = () => {
+    completePenalty();
     setToast({ xp: 50, coins: 10 });
     setPenaltyState(null);
   };
@@ -355,18 +373,13 @@ export default function MainDashboard() {
     if (!penaltyState) return;
     const esc = ESCALATIONS[Math.min(penaltyState.tier - 1, ESCALATIONS.length - 1)];
     if (!esc) return;
-    applyGamePatch((c) => {
-      const curIdx = RANKS.indexOf(c.rank as (typeof RANKS)[number]);
-      const demotedRank = RANKS[curIdx - 1];
-      return {
-        ...c,
-        xp: Math.max(0, c.xp - esc.xpLoss),
-        coins: Math.max(0, c.coins - esc.coinLoss),
-        streak: esc.streakBreak ? 0 : c.streak,
-        stats: c.stats.map((s) => ({ ...s, value: Math.max(0, s.value - esc.statLoss) })),
-        rank: esc.rankDemote && curIdx > 0 && demotedRank ? demotedRank : c.rank,
-      };
-    });
+    // Apply stat loss client-side (stats not stored server-side via penalty/fail)
+    applyGamePatch((c) => ({
+      ...c,
+      stats: c.stats.map((s) => ({ ...s, value: Math.max(0, s.value - esc.statLoss) })),
+    }));
+    // XP, coins, streak, rank are applied server-side by POST /api/v1/penalty/fail
+    failPenalty();
     setPenaltyFailed(true);
     setPenaltyState(null);
   };
@@ -507,6 +520,9 @@ export default function MainDashboard() {
         <BurstParticles x={burst.x} y={burst.y} onDone={() => setBurst(null)} />
       )}
       {toast && <XPToast xp={toast.xp} coins={toast.coins} onDone={() => setToast(null)} />}
+      {levelUp && (
+        <LevelUpToast level={levelUp.level} rank={levelUp.rank} onDone={() => setLevelUp(null)} />
+      )}
       {penaltyState && (
         <PenaltyModal
           unfinished={penaltyState.unfinished}

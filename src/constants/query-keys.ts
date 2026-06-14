@@ -19,4 +19,8 @@ export const queryKeys = {
     all: ['profile'] as const,
     me: () => [...queryKeys.profile.all, 'me'] as const,
   },
+  penalty: {
+    all: ['penalty'] as const,
+    active: () => [...queryKeys.penalty.all, 'active'] as const,
+  },
 } as const;
