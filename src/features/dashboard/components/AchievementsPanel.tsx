@@ -1,35 +1,77 @@
 'use client';
 
+import { useMemo } from 'react';
 import { useTranslations } from 'next-intl';
 
-import type { Achievement } from '../types';
-
 import { cn } from '@/libs/utils';
+import { Link } from '@/i18n/navigation';
+import { useGoals } from '@/features/achievements/hooks/useGoals';
 
-interface AchievementsPanelProps {
-  achievements: Achievement[];
-}
+const CAT_ICON: Record<string, string> = {
+  career:   '⚜',
+  health:   '❀',
+  learning: '◈',
+  finance:  '◆',
+  personal: '✦',
+};
 
-export function AchievementsPanel({ achievements }: AchievementsPanelProps) {
+export function AchievementsPanel() {
   const t = useTranslations('dashboard');
+  const { data: goals = [] } = useGoals();
+
+  const achievements = useMemo(() => {
+    const completed   = goals.filter((g) => g.status === 'completed');
+    const inProgress  = goals.filter((g) => g.status === 'in-progress' || g.status === 'not-started');
+
+    const earnedSlots = completed.slice(0, 6).map((g) => ({
+      id:     g.id,
+      title:  g.title.length > 12 ? g.title.slice(0, 11) + '…' : g.title,
+      desc:   g.desc ?? '',
+      icon:   CAT_ICON[g.cat] ?? '✦',
+      earned: true,
+    }));
+
+    const remaining = 6 - earnedSlots.length;
+    const lockedSlots = inProgress.slice(0, remaining).map((g) => ({
+      id:     g.id,
+      title:  g.title.length > 12 ? g.title.slice(0, 11) + '…' : g.title,
+      desc:   g.desc ?? '',
+      icon:   CAT_ICON[g.cat] ?? '✦',
+      earned: false,
+    }));
+
+    return [...earnedSlots, ...lockedSlots];
+  }, [goals]);
 
   return (
     <div className={cn(panelBase, panelGold)}>
       <div className={panelHeader}>
         <span className={panelHeaderTitle}>{t('achievements')}</span>
-        <span className={panelHeaderOrnament}>◆ ◆ ◆</span>
+        <Link
+          href="/achievements"
+          className="text-[8px] font-bold tracking-[0.1em] text-[var(--text-lo)] hover:text-[var(--gold)] font-[var(--font-title)] transition-colors no-underline"
+        >
+          VIEW ALL →
+        </Link>
       </div>
       <div className={achGrid}>
-        {achievements.map((a) => (
-          <div
-            key={a.id}
-            className={cn(achChipBase, a.earned ? achChipEarned : achChipNotEarned)}
-            title={a.desc}
-          >
-            <span className={achIcon}>{a.icon}</span>
-            <span className={cn(achLabel, a.earned && achLabelEarned)}>{a.title}</span>
-          </div>
-        ))}
+        {achievements.length === 0
+          ? Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className={cn(achChipBase, achChipNotEarned)}>
+                <span className={achIcon}>✦</span>
+                <span className={achLabel}>—</span>
+              </div>
+            ))
+          : achievements.map((a) => (
+              <div
+                key={a.id}
+                className={cn(achChipBase, a.earned ? achChipEarned : achChipNotEarned)}
+                title={a.desc}
+              >
+                <span className={achIcon}>{a.icon}</span>
+                <span className={cn(achLabel, a.earned && achLabelEarned)}>{a.title}</span>
+              </div>
+            ))}
       </div>
     </div>
   );
@@ -44,8 +86,6 @@ const panelHeader =
   'flex items-center gap-2 px-[14px] pt-[10px] pb-[8px] border-b border-[var(--border)]';
 const panelHeaderTitle =
   'font-[var(--font-title)] text-[10px] font-bold tracking-[0.15em] text-[var(--gold)] uppercase flex-1';
-const panelHeaderOrnament = 'text-[var(--gold-dim)] text-[8px] tracking-[3px] opacity-60';
-
 const achGrid = 'grid grid-cols-3 gap-1.5 px-3 py-2.5';
 const achChipBase =
   'flex flex-col items-center gap-0.5 px-1 py-1.5 bg-[var(--panel2)] border border-[var(--border)] rounded-[var(--r-sm)] cursor-default relative transition-[border-color,box-shadow] duration-200';
@@ -54,5 +94,5 @@ const achChipEarned =
 const achChipNotEarned = 'opacity-35 grayscale';
 
 const achIcon = 'text-[16px]';
-const achLabel = 'text-[8px] text-[var(--text-mid)] tracking-[0.05em] text-center';
+const achLabel = 'text-[8px] text-[var(--text-mid)] tracking-[0.05em] text-center line-clamp-1';
 const achLabelEarned = 'text-[var(--gold)]';

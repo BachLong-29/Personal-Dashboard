@@ -20,7 +20,6 @@ import {
   SUNDAY_REMINDER_KEY,
   MONTHLY_REMINDER_KEY,
 } from '../constants';
-import { MOCK_ACHIEVEMENTS } from '../data/mock';
 import { useProfile } from '@/features/profile/hooks/useProfile';
 import { useCharacterProgress } from '../hooks/useCharacterProgress';
 import { useRolloverQuests } from '../hooks/useRolloverQuests';
@@ -38,7 +37,6 @@ import { useTaskLogs } from '../hooks/useTaskLogs';
 import { useToggleTaskLog } from '../hooks/useToggleTaskLog';
 import type { Task } from '@/types';
 import type {
-  Achievement,
   BurstPos,
   Character,
   CenterTab,
@@ -262,7 +260,6 @@ export default function MainDashboard() {
   }, [profileData]);
 
   const searchParams = useSearchParams();
-  const [achievements, setAchievements] = useState<Achievement[]>(MOCK_ACHIEVEMENTS);
   const [settings] = useState<DashboardSettings>(DEFAULT_SETTINGS);
   const [centerTab, setCenterTab] = useState<CenterTab>(() => {
     const tab = searchParams.get('tab');
@@ -294,7 +291,6 @@ export default function MainDashboard() {
 
   const completeQuest = (quest: Quest, burstPos: BurstPos | null) => {
     const newQuests = quests.map((q) => (q.id === quest.id ? { ...q, done: true } : q));
-    const allDone = newQuests.length > 0 && newQuests.every((q) => q.done);
 
     awardProgress({
       xp: quest.xp,
@@ -303,14 +299,6 @@ export default function MainDashboard() {
     });
     if (burstPos && settings.animationsEnabled) setBurst(burstPos);
     setToast({ xp: quest.xp, coins: quest.coins });
-    setAchievements((prev) => {
-      const withFirstS = prev.map((a) =>
-        a.id === 'firstS' && quest.difficulty === 'S' ? { ...a, earned: true } : a,
-      );
-      return allDone
-        ? withFirstS.map((a) => (a.id === 'perfect' ? { ...a, earned: true } : a))
-        : withFirstS;
-    });
     setQuests(newQuests);
   };
 
@@ -478,7 +466,7 @@ export default function MainDashboard() {
   const leftPanels = (
     <>
       <CharacterPanel char={char} settings={settings} />
-      <AchievementsPanel achievements={achievements} />
+      <AchievementsPanel />
     </>
   );
 

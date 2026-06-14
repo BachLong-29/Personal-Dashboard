@@ -71,7 +71,7 @@ const DashboardTopbar = (props: DashboardTopbarProps) => {
         <div ref={userModalRef} className="relative block">
           <button type="button" className={userTrigger} onClick={() => setShowUserModal((v) => !v)}>
             <span className={avatarBadge}>{companion?.glyph ?? '🧝‍♀️'}</span>
-            <span className={cn(topBarLogo, 'max-w-[80px] truncate md:max-w-none')}>
+            <span className={cn(topBarLogo, 'text-[14px] sm:text-[16px] md:text-[18px] max-w-[110px] sm:max-w-[160px] md:max-w-none truncate')}>
               {displayName}
             </span>
             <span className={cn(triggerCaret, 'hidden md:inline')}>
@@ -187,22 +187,23 @@ const DashboardTopbar = (props: DashboardTopbarProps) => {
         {/* ── ◆ separator ─────────────────────────────────────────────────── */}
         <span className="hidden md:inline text-[var(--gold)] text-[8px] opacity-50">◆</span>
 
-        {/* ── Gems + Coins ─────────────────────────────────────────────────── */}
-        <div className="flex flex-row gap-1 sm:gap-2 sm:items-center">
-          <div className={cn(currencyPill, gems)}>
-            <span className={currencyIcon}>💠</span>
-            <span>{char.gems}</span>
-          </div>
-          <div className={cn(currencyPill, coins)}>
-            <span className={currencyIcon}>🪙</span>
-            <span>{char.coins}</span>
-          </div>
+        {/* ── Gems + Coins (single unified bar) ──────────────────────────── */}
+        <div className={cn(currencyBar, 'hidden sm:flex')}>
+          <span className="flex items-center gap-1">
+            <span className="text-[13px] leading-none">💠</span>
+            <span className="text-[var(--cyan)]">{char.gems.toLocaleString()}</span>
+          </span>
+          <span className="w-px h-3 bg-[var(--border)] opacity-60" />
+          <span className="flex items-center gap-1">
+            <span className="text-[13px] leading-none">🪙</span>
+            <span className="text-[var(--gold)]">{char.coins.toLocaleString()}</span>
+          </span>
         </div>
 
         {/* Back to dashboard — shown when on a sub-page */}
         {!pathname.startsWith('/dashboard') && (
           <Link href="/dashboard" className={backBtn} title="Return to Dashboard">
-            ◂ Dashboard
+            ◂ <span className="hidden sm:inline">Dashboard</span>
           </Link>
         )}
 
@@ -379,11 +380,8 @@ const topBarLogo =
 
 // ── Currency ──────────────────────────────────────────────────────────────────
 
-const currencyPill =
-  'flex items-center gap-1.5 bg-[var(--panel2)] border border-[var(--border)] rounded-[20px] py-1 pr-3 pl-2 text-[12px] font-semibold text-[var(--text-hi)] cursor-default';
-const currencyIcon = 'text-[14px]';
-const gems = '!border-[oklch(0.66_0.22_295_/_0.4)]';
-const coins = '!border-[oklch(0.74_0.17_85_/_0.4)]';
+const currencyBar =
+  'flex items-center gap-2 bg-[var(--panel2)] border border-[var(--border)] rounded-[20px] px-3 py-[5px] text-[11px] font-bold font-[var(--font-title)] cursor-default shrink-0';
 
 // ── Misc pills / labels ───────────────────────────────────────────────────────
 
@@ -396,7 +394,7 @@ const navPill =
   'flex items-center gap-[6px] bg-[var(--panel2)] border border-[var(--border)] rounded-[20px] px-[10px] py-1 text-[11px] font-bold font-[var(--font-title)] tracking-[0.05em] transition-colors duration-200 no-underline cursor-pointer hover:border-[oklch(0.74_0.17_85_/_0.35)]';
 
 const backBtn =
-  'flex items-center gap-1 px-2.5 py-1 bg-[oklch(0.74_0.17_85_/_0.08)] border border-[oklch(0.74_0.17_85_/_0.3)] rounded-[var(--r-sm)] text-[9px] font-bold text-[var(--gold)] font-[var(--font-title)] tracking-[0.08em] no-underline transition-all hover:bg-[oklch(0.74_0.17_85_/_0.15)] hover:border-[oklch(0.74_0.17_85_/_0.55)] cursor-pointer shrink-0';
+  'flex items-center gap-1 px-2 sm:px-2.5 py-1 bg-[oklch(0.74_0.17_85_/_0.07)] border border-[oklch(0.74_0.17_85_/_0.25)] rounded-[var(--r-sm)] text-[9px] font-bold text-[var(--gold)] font-[var(--font-title)] tracking-[0.06em] no-underline transition-all hover:bg-[oklch(0.74_0.17_85_/_0.14)] hover:border-[oklch(0.74_0.17_85_/_0.45)] cursor-pointer shrink-0';
 
 // ── User trigger & modal ──────────────────────────────────────────────────────
 

@@ -4397,6 +4397,31 @@ body {
     inset 0 0 6px oklch(1 0 0 / 0.3);
 }
 
+@media (max-width: 767px) {
+  .lp-nav {
+    gap: 10px;
+    padding: 8px 10px 8px 12px;
+  }
+  .lp-nav-links {
+    display: none;
+  }
+  .lp-nav-mark {
+    width: 28px;
+    height: 28px;
+    font-size: 14px;
+  }
+  .lp-nav-name {
+    font-size: 12px;
+    letter-spacing: 0.14em;
+  }
+  .lp-nav-cta {
+    font-size: 10px;
+    padding: 7px 14px;
+    letter-spacing: 0.1em;
+    white-space: nowrap;
+  }
+}
+
 /* ── Section scaffold ── */
 .lp-scene {
   position: relative;
@@ -6308,6 +6333,141 @@ body {
   }
   .lp-nav-links {
     display: none;
+  }
+}
+
+@media (max-width: 640px) {
+  /* Section scaffold */
+  .lp-scene {
+    padding: 56px 16px;
+  }
+  .lp-lead {
+    font-size: 15px;
+    margin-bottom: var(--s-5);
+  }
+
+  /* Hero */
+  .lp-hero {
+    padding: 90px 16px 50px;
+    gap: var(--s-5);
+  }
+  .lp-hero h1 {
+    font-size: clamp(28px, 9vw, 46px);
+    line-height: 1.02;
+  }
+  .lp-hero-sub {
+    font-size: 15px;
+    margin-bottom: var(--s-5);
+  }
+  .lp-hero-trust {
+    gap: var(--s-4);
+  }
+  .lp-trust-item .num {
+    font-size: 20px;
+  }
+  .lp-btn-epic,
+  .lp-btn-ghost {
+    font-size: 12px;
+    padding: 12px 18px;
+    letter-spacing: 0.12em;
+  }
+
+  /* Hero art: smaller sigil, hide float cards */
+  .lp-hero-art {
+    height: 280px;
+  }
+  .lp-float-card {
+    display: none;
+  }
+  .lp-hero-sigil {
+    width: 220px;
+    height: 220px;
+  }
+  .lp-sigil-ring.r2 {
+    inset: 22px;
+  }
+  .lp-sigil-ring.r3 {
+    inset: 44px;
+  }
+  .lp-sigil-ring.r4 {
+    inset: 67px;
+  }
+  .lp-sigil-tick {
+    transform-origin: center 103px;
+    margin-top: -103px;
+  }
+  .lp-sigil-core {
+    width: 86px;
+    height: 86px;
+    font-size: 46px;
+  }
+
+  /* Darkness */
+  .lp-dark-grid {
+    grid-template-columns: 1fr;
+  }
+
+  /* System */
+  .lp-system-grid {
+    grid-template-columns: 1fr;
+  }
+
+  /* Arsenal */
+  .lp-arsenal-grid {
+    grid-template-columns: 1fr;
+  }
+  .lp-feat.span-3,
+  .lp-feat.span-2,
+  .lp-feat.span-4 {
+    grid-column: span 1;
+  }
+
+  /* Metrics */
+  .lp-giant-stat .num {
+    font-size: 56px;
+  }
+  .lp-chart-head {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--s-2);
+  }
+
+  /* Guild */
+  .lp-guild-grid {
+    grid-template-columns: 1fr;
+  }
+
+  /* Callout */
+  .lp-callout {
+    margin: 32px 12px;
+    padding: var(--s-6) var(--s-3);
+    border-radius: 14px;
+  }
+  .lp-callout .sub {
+    font-size: 15px;
+  }
+
+  /* Footer */
+  .lp-foot-bottom {
+    padding: 0 16px 24px;
+    flex-direction: column;
+    gap: 6px;
+    text-align: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .lp-ascent-grid {
+    grid-template-columns: 1fr;
+  }
+  .lp-vault-grid {
+    grid-template-columns: 1fr;
+  }
+  .lp-metric-strip {
+    grid-template-columns: 1fr 1fr;
+  }
+  .lp-foot {
+    grid-template-columns: 1fr;
   }
 }
 
