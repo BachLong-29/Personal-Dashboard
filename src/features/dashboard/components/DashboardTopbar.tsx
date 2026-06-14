@@ -167,9 +167,6 @@ const DashboardTopbar = (props: DashboardTopbarProps) => {
 
         <div className="flex-1" />
 
-        {/* ── Date — tablet only (md → 1024px) ────────────────────────────── */}
-        <div className={cn(dateLabel, 'hidden md:block min-[1025px]:hidden')}>{dateStr}</div>
-
         {/* ── Menu button — all sizes ≤ 1024px (mobile + tablet) ──────────── */}
         <button
           type="button"
