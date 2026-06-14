@@ -59,6 +59,10 @@
   },
   "dashboard": {
     "endDay": "สิ้นสุดวัน",
+    "buttons": {
+      "endDayTitle": "เรียกบทลงโทษสำหรับภารกิจที่ยังไม่เสร็จ",
+      "toggleLanguage": "เปลี่ยนภาษา"
+    },
     "streakDays": "🔥 {count} วันติดต่อกัน",
     "achievements": "ความสำเร็จ",
     "tabs": {
@@ -101,7 +105,29 @@
       "title": "ตัวจับเวลาโฟกัส",
       "pause": "หยุดชั่วคราว",
       "replay": "เริ่มใหม่",
-      "start": "เริ่ม"
+      "start": "เริ่ม",
+      "reset": "รีเซ็ต"
+    },
+    "confirmQuest": {
+      "buttons": {
+        "cancel": "ยังไม่ตอนนี้",
+        "confirm": "รับรางวัล",
+        "pending": "กำลังบันทึก..."
+      }
+    },
+    "addQuest": {
+      "buttons": {
+        "cancel": "ยกเลิก",
+        "confirm": "เพิ่มภารกิจ",
+        "pending": "กำลังสร้าง..."
+      }
+    },
+    "penalty": {
+      "buttons": {
+        "acceptQuest": "ยอมรับภารกิจบทลงโทษ",
+        "markCompleted": "ทำเครื่องหมายว่าเสร็จแล้ว",
+        "acceptConsequences": "ยอมรับผลที่ตามมา"
+      }
     },
     "motivation": {
       "dailyWisdom": "คติประจำวัน"
@@ -109,6 +135,28 @@
     "guild": {
       "title": "กิลด์ ◆ Aetheria",
       "online": "{count} ออนไลน์"
+    }
+  },
+  "marketplace": {
+    "buttons": {
+      "view": "ดู",
+      "redeem": "แลก",
+      "close": "ปิด",
+      "cancel": "ยกเลิก",
+      "sealed": "ปิดผนึก",
+      "needHigherLevel": "ต้องการเลเวลสูงกว่า",
+      "insufficientFunds": "ทรัพยากรไม่เพียงพอ",
+      "outOfStock": "หมดสต็อก",
+      "redeemNow": "แลกเลย",
+      "claimMythicReward": "รับรางวัล Mythic"
+    },
+    "categories": {
+      "all": "รางวัลทั้งหมด",
+      "real": "โลกจริง",
+      "cosmetic": "ตกแต่ง",
+      "game": "สิ่งประดิษฐ์",
+      "booster": "บูสเตอร์",
+      "quest": "โหมดใหม่"
     }
   },
   "landing": {
