@@ -1,7 +1,7 @@
 'use client';
 
 import { cn } from '@/libs/utils';
-import { CATEGORIES, MOTIV_LINES } from '../types';
+import { CATEGORIES, MOTIV_LINES } from '../constants';
 import type { Goal, Trophy, AmbitionsStats } from '../types';
 import { ProgressRing } from './ProgressRing';
 

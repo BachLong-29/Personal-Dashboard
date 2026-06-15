@@ -4,7 +4,7 @@ import { useRef, useState } from 'react';
 
 import { cn } from '@/libs/utils';
 import { useOnClickOutside } from '@/hooks/useOnClickOutside';
-import { CAT_MAP, RANK_DESC, RANK_STYLE, PRIORITY_STYLE } from '../types';
+import { CAT_MAP, RANK_DESC, RANK_STYLE, PRIORITY_STYLE } from '../constants';
 import type { Goal, GoalCategory } from '../types';
 import { ProgressRing } from './ProgressRing';
 

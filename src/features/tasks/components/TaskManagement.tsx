@@ -3,8 +3,9 @@
 import { startTransition, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 
-import { findClass } from '@/constants/hero-data';
 import { useProfile } from '@/features/profile/hooks/useProfile';
+import { buildEmptyChar, profileToCharacter } from '@/features/dashboard/utils/character.utils';
+import { toLocalDate, todayISO } from '../utils/date.utils';
 import { useHabits } from '@/features/dashboard/hooks/useHabits';
 import { useHabitLogs } from '@/features/dashboard/hooks/useHabitLogs';
 import { useHabitLogsRange } from '@/features/dashboard/hooks/useHabitLogsRange';
@@ -18,7 +19,7 @@ import { useCategories } from '@/features/dashboard/hooks/useCategories';
 import { useUpdateQuestStatus } from '@/features/dashboard/hooks/useUpdateQuestStatus';
 import { useUpdateTask } from '@/features/dashboard/hooks/useUpdateTask';
 import type { Character } from '@/features/dashboard/types';
-import type { UpdateTaskPayload, UserProfileData, TaskColor } from '@/types';
+import type { UpdateTaskPayload, TaskColor } from '@/types';
 import DashboardTopbar from '@/features/dashboard/components/DashboardTopbar';
 import { AddQuestModal } from '@/features/dashboard/components/AddQuestModal';
 import { AddTaskModal } from './shared/AddTaskModal';
@@ -40,20 +41,6 @@ import { TaskDayView } from './day/TaskDayView';
 import { TaskWeekView } from './week/TaskWeekView';
 import { TaskMonthView } from './month/TaskMonthView';
 import { TaskAllView } from './all/TaskAllView';
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
-function toLocalDate(d: Date): string {
-  return [
-    d.getFullYear(),
-    String(d.getMonth() + 1).padStart(2, '0'),
-    String(d.getDate()).padStart(2, '0'),
-  ].join('-');
-}
-
-function todayISO(): string {
-  return toLocalDate(new Date());
-}
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
@@ -617,50 +604,3 @@ export function TaskManagement() {
   );
 }
 
-// ─── Character helpers (private to this module) ───────────────────────────────
-
-function buildEmptyChar(): Character {
-  return {
-    name: '',
-    title: '',
-    level: 1,
-    rank: 'E',
-    class: '',
-    streak: 0,
-    xp: 0,
-    xpNext: 1000,
-    coins: 0,
-    gems: 0,
-    stats: [
-      { key: 'DIS', value: 0, color: 'var(--gold)' },
-      { key: 'WIS', value: 0, color: 'var(--violet)' },
-      { key: 'END', value: 0, color: 'var(--mint)' },
-      { key: 'COM', value: 0, color: 'var(--cyan)' },
-      { key: 'SER', value: 0, color: 'var(--rose)' },
-    ],
-  };
-}
-
-function profileToCharacter(profile: UserProfileData): Character {
-  const heroClass = findClass(profile.classId);
-  const scale = (v: number) => Math.round((v / Math.max(profile.statPool, 1)) * 100);
-  return {
-    name: profile.heroName || 'Hero',
-    title: profile.title,
-    level: profile.level,
-    rank: profile.rank || 'E',
-    class: heroClass.name,
-    streak: profile.streak,
-    xp: profile.xp ?? 0,
-    xpNext: profile.xpNext ?? 0,
-    coins: profile.coins ?? 0,
-    gems: profile.gems ?? 0,
-    stats: [
-      { key: 'DIS', value: scale(profile.stats.discipline), color: 'var(--gold)' },
-      { key: 'WIS', value: scale(profile.stats.wisdom), color: 'var(--violet)' },
-      { key: 'END', value: scale(profile.stats.endurance), color: 'var(--mint)' },
-      { key: 'COM', value: scale(profile.stats.composition), color: 'var(--cyan)' },
-      { key: 'SER', value: scale(profile.stats.serenity), color: 'var(--rose)' },
-    ],
-  };
-}

@@ -4,7 +4,7 @@ import { useMemo, useRef, useState } from 'react';
 
 import { cn } from '@/libs/utils';
 import { useOnClickOutside } from '@/hooks/useOnClickOutside';
-import { CATEGORIES } from '../types';
+import { CATEGORIES } from '../constants';
 import type { Goal, AmbitionsStats, GoalCategory, GoalSortBy, GoalStatus } from '../types';
 import { StatCard } from './StatCard';
 import { GoalCard } from './GoalCard';

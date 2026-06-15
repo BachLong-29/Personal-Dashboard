@@ -5,7 +5,7 @@ import { useState } from 'react';
 import { cn } from '@/libs/utils';
 import { Modal, ModalHead, ModalBody, ModalFoot } from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
-import { CATEGORIES, RANK_DESC } from '../types';
+import { CATEGORIES, RANK_DESC } from '../constants';
 import type { GoalCategory, GoalPriority, GoalRank, Goal } from '../types';
 
 export interface GoalFormData {

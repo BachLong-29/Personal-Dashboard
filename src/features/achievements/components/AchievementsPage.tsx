@@ -14,6 +14,7 @@ import type { Goal, Trophy, AmbitionsTab, AmbitionsStats } from '../types';
 import { GoalsView }    from './GoalsView';
 import { OverviewView } from './OverviewView';
 import { TrophiesView } from './TrophiesView';
+import { BingoView }    from './BingoView';
 import type { GoalFormData } from './GoalModal';
 import { GoalModal }    from './GoalModal';
 
@@ -27,6 +28,7 @@ const TABS: { key: AmbitionsTab; icon: string; label: string }[] = [
   { key: 'goals',    icon: '◈', label: 'Goals' },
   { key: 'overview', icon: '▦', label: 'Overview' },
   { key: 'trophies', icon: '✧', label: 'Trophies' },
+  { key: 'bingo',    icon: '⊞', label: 'Bingo' },
 ];
 
 function dtoToGoal(dto: GoalDTO): Goal {
@@ -261,6 +263,16 @@ export function AchievementsPage() {
             )}
             {tab === 'trophies' && (
               <TrophiesView trophies={trophies} stats={stats} />
+            )}
+            {tab === 'bingo' && (
+              <BingoView
+                goals={goals}
+                streak={char.streak}
+                coins={char.coins}
+                gems={char.gems}
+                onCompleteGoal={(goal) => handleAction('complete', goal)}
+                onToggleMilestone={handleToggleMilestone}
+              />
             )}
           </div>
         </div>
