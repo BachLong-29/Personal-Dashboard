@@ -370,7 +370,7 @@ function BingoBoardGrid({
 }) {
   return (
     <div
-      className="relative rounded-[var(--r-xl)] p-5 overflow-hidden border border-[var(--border)]"
+      className="relative rounded-[var(--r-xl)] p-3 sm:p-5 overflow-hidden border border-[var(--border)] w-full"
       style={{ background: 'linear-gradient(180deg,var(--surface),var(--bg-1))' }}
     >
       {/* Corner ticks */}
@@ -410,8 +410,8 @@ function BingoBoardGrid({
 
       {/* Grid */}
       <div
-        className="relative z-[1] grid grid-cols-4 gap-3"
-        style={{ width: 'min(52vh, 520px)', aspectRatio: '1' }}
+        className="relative z-[1] grid grid-cols-4 gap-2 sm:gap-3"
+        style={{ width: 'min(52vh, 520px)', maxWidth: '100%', aspectRatio: '1' }}
         role="grid"
         aria-label="Goal bingo board, 4 by 4"
       >
@@ -1348,7 +1348,7 @@ export function BingoView({ goals, streak, coins, gems, onCompleteGoal, onToggle
       </div>
 
       {/* HUD */}
-      <div className="grid grid-cols-4 sm:grid-cols-7 gap-2.5">
+      <div className="grid grid-cols-2 min-[540px]:grid-cols-4 sm:grid-cols-7 gap-2.5">
         <HudTile label="Ambitions"   ico="◈" accent="var(--violet)" glow="var(--violet-glow)" value={stats.filled}    sub="on the board" />
         <HudTile label="Conquered"   ico="✓" accent="var(--mint)"   glow="var(--mint-glow)"   value={stats.completed} of={stats.filled} sub="cells daubed" />
         <HudTile label="Progress"    ico="◐" accent="var(--cyan)"   glow="var(--cyan-glow)"   value={stats.avg}       suffix="%" sub="board average" />
@@ -1359,15 +1359,17 @@ export function BingoView({ goals, streak, coins, gems, onCompleteGoal, onToggle
       </div>
 
       {/* Board + Aside */}
-      <div className="flex flex-col xl:flex-row gap-5 items-start">
-        <BingoBoardGrid
-          cells={boardCells}
-          dealt={dealt}
-          justDoneId={justDoneId}
-          lineWinCells={lineWinCells}
-          onOpen={setSelectedIdx}
-        />
-        <div className="w-full xl:w-[270px] flex flex-col xl:flex-col gap-3.5">
+      <div className="flex flex-col xl:flex-row gap-5 xl:items-start">
+        <div className="w-full xl:w-auto shrink-0">
+          <BingoBoardGrid
+            cells={boardCells}
+            dealt={dealt}
+            justDoneId={justDoneId}
+            lineWinCells={lineWinCells}
+            onOpen={setSelectedIdx}
+          />
+        </div>
+        <div className="w-full xl:w-[270px] grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-1 gap-3.5">
           <BingoLinesPanel cells={boardCells} wonLineIds={wonLineIds} />
           <BingoLegend />
         </div>
