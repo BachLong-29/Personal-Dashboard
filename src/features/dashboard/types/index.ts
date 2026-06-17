@@ -62,6 +62,8 @@ export interface Task {
   startTime?: string;
   /** Optional — omit for open-ended / point-in-time tasks */
   endDate?: string;
+  /** Reason the task was deferred to a later date */
+  deferReason?: string;
   dependencies: string[];
   active: boolean;
   createdAt: string;

@@ -372,5 +372,26 @@
       "tagline": "XÂY DỰNG CHO NHỮNG AI KIÊN NHẪN VÀ THAM VỌNG",
       "vault": "Kho báu"
     }
+  },
+  "tasks": {
+    "editModal": {
+      "tag": "CHỈNH SỬA NHIỆM VỤ",
+      "cancel": "Hủy",
+      "save": "✦ Lưu thay đổi",
+      "saving": "⏳ Đang lưu…",
+      "reschedule": "↺ Dời lịch"
+    },
+    "defer": {
+      "checkboxLabel": "Không thể hoàn thành hôm nay",
+      "reasonLabel": "Lý do",
+      "reasonPlaceholder": "Hoặc nhập lý do khác…",
+      "dateLabel": "Dời sang ngày",
+      "reasons": {
+        "tooBusy": "Quá bận / hết thời gian",
+        "blocked": "Bị chặn / chờ người khác",
+        "priorityShift": "Ưu tiên thay đổi đột xuất",
+        "health": "Sức khỏe / cá nhân"
+      }
+    }
   }
 }

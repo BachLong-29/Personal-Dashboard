@@ -32,6 +32,7 @@ const updateSchema = z.object({
   endDate: dateField.optional().nullable(),
   dependencies: z.array(z.string()).optional(),
   active: z.boolean().optional(),
+  deferReason: z.string().max(200).optional().nullable(),
 });
 
 function serialize(t: ITask): Task {
@@ -48,6 +49,7 @@ function serialize(t: ITask): Task {
     startDate: t.startDate.toISOString().substring(0, 10),
     startTime: t.startTime,
     endDate: t.endDate?.toISOString().substring(0, 10),
+    deferReason: t.deferReason,
     dependencies: t.dependencies.map((d) => d.toString()),
     active: t.active,
     createdAt: t.createdAt.toISOString(),

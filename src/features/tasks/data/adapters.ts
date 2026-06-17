@@ -153,6 +153,7 @@ export function taskToUITask(t: Task, taskLog?: TaskLog): UITask {
     startTime: t.startTime,
     habitRef: t.habitRef,
     active: t.active,
+    deferReason: t.deferReason,
     // multi-day extras
     isMultiDay,
     totalDays: isMultiDay ? totalDays : undefined,

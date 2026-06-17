@@ -21,6 +21,8 @@ export interface ITask extends Document {
   endDate?: Date;
   /** Reference to a Habit that this task replaces for startDate's day */
   habitRef?: mongoose.Types.ObjectId;
+  /** Reason the task was deferred to a later date */
+  deferReason?: string;
   dependencies: mongoose.Types.ObjectId[];
   active: boolean;
   createdAt: Date;
@@ -90,6 +92,11 @@ const taskSchema = new Schema<ITask>(
       type: Schema.Types.ObjectId,
       ref: 'Habit',
       // optional — only set when this task replaces a habit occurrence
+    },
+    deferReason: {
+      type: String,
+      trim: true,
+      maxlength: 200,
     },
     dependencies: [
       {

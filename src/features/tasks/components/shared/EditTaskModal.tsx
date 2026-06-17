@@ -2,8 +2,13 @@
 
 import { useRef, useState } from 'react';
 
+import { useTranslations } from 'next-intl';
+
 import { Modal, ModalHead, ModalBody, ModalFoot } from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
+import { Checkbox } from '@/components/ui/Checkbox';
+import { DatePicker } from '@/components/ui/DatePicker';
+import { Input } from '@/components/ui/Input';
 import type { TaskColor, TaskStatus, UpdateTaskPayload } from '@/types';
 
 import type { UITask } from '../../data/mock';
@@ -18,6 +23,15 @@ function toLocalDate(d: Date): string {
   ].join('-');
 }
 
+function tomorrow(): Date {
+  const d = new Date();
+  d.setDate(d.getDate() + 1);
+  return d;
+}
+
+const DEFER_REASON_KEYS = ['tooBusy', 'blocked', 'priorityShift', 'health'] as const;
+type DeferReasonKey = (typeof DEFER_REASON_KEYS)[number];
+
 // ─── Props ────────────────────────────────────────────────────────────────────
 
 export interface EditTaskModalProps {
@@ -31,10 +45,29 @@ export interface EditTaskModalProps {
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export function EditTaskModal({ task, open, onClose, onSave, saving }: EditTaskModalProps) {
+  const t = useTranslations('tasks');
   const formRef = useRef<TaskFormHandle>(null);
   const [canSave, setCanSave] = useState(false);
 
+  // Defer state — reset whenever task changes (key prop on outer element handles this)
+  const [isDeferred, setIsDeferred] = useState(false);
+  const [deferChipKey, setDeferChipKey] = useState<DeferReasonKey | null>(null);
+  const [deferCustom, setDeferCustom] = useState('');
+  const [deferDate, setDeferDate] = useState<Date>(tomorrow);
+
   if (!task) return null;
+
+  function resetDefer() {
+    setIsDeferred(false);
+    setDeferChipKey(null);
+    setDeferCustom('');
+    setDeferDate(tomorrow());
+  }
+
+  function handleClose() {
+    resetDefer();
+    onClose();
+  }
 
   function handleSubmit(values: TaskFormValues) {
     if (!task?.sourceId) return;
@@ -55,6 +88,16 @@ export function EditTaskModal({ task, open, onClose, onSave, saving }: EditTaskM
       dependencies: values.dependencies,
     };
 
+    if (isDeferred) {
+      const reason = deferChipKey
+        ? t(`defer.reasons.${deferChipKey}`)
+        : deferCustom.trim() || t('defer.checkboxLabel');
+      payload.deferReason = reason;
+      payload.startDate = toLocalDate(deferDate);
+    } else if (task.deferReason) {
+      payload.deferReason = null;
+    }
+
     onSave(task.sourceId, payload);
   }
 
@@ -72,10 +115,15 @@ export function EditTaskModal({ task, open, onClose, onSave, saving }: EditTaskM
     dependencies: task.dependencies ?? [],
   };
 
+  const isSingleDay = !task.endDate || task.endDate === task.startDate;
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
   return (
-    <Modal open={open} onClose={onClose} maxWidth="560px">
+    <Modal open={open} onClose={handleClose} maxWidth="560px">
       <ModalHead
-        tag="EDIT QUEST"
+        tag={t('editModal.tag')}
         title={
           <span className="flex items-center gap-2 truncate max-w-[420px]">
             {task.icon && <span className="text-[18px] leading-none shrink-0">{task.icon}</span>}
@@ -94,18 +142,79 @@ export function EditTaskModal({ task, open, onClose, onSave, saving }: EditTaskM
           onCanSaveChange={setCanSave}
           saving={saving}
         />
+
+        {/* ── Defer section — single-day tasks only ──────────────────────── */}
+        {isSingleDay && (
+          <div className="mt-4 border-t border-[var(--border)] pt-4">
+            <Checkbox
+              checked={isDeferred}
+              onChange={(checked) => {
+                setIsDeferred(checked);
+                if (!checked) resetDefer();
+              }}
+            >
+              {t('defer.checkboxLabel')}
+            </Checkbox>
+
+            {isDeferred && (
+              <div className="mt-3 space-y-3">
+                {/* Reason chips */}
+                <div>
+                  <p className="text-[9px] font-bold tracking-[0.1em] text-[var(--text-lo)] uppercase mb-2">
+                    {t('defer.reasonLabel')}
+                  </p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {DEFER_REASON_KEYS.map((key) => (
+                      <Button
+                        key={key}
+                        type="button"
+                        size="sm"
+                        variant={deferChipKey === key ? 'primary' : 'ghost'}
+                        onClick={() => setDeferChipKey(deferChipKey === key ? null : key)}
+                      >
+                        {t(`defer.reasons.${key}`)}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Custom reason */}
+                <Input
+                  value={deferChipKey ? t(`defer.reasons.${deferChipKey}`) : deferCustom}
+                  disabled={!!deferChipKey}
+                  maxLength={200}
+                  placeholder={t('defer.reasonPlaceholder')}
+                  onChange={(e) => setDeferCustom(e.target.value)}
+                />
+
+                {/* Date picker */}
+                <DatePicker
+                  label={t('defer.dateLabel')}
+                  value={deferDate}
+                  onChange={(d) => {
+                    if (d >= today) setDeferDate(d);
+                  }}
+                />
+              </div>
+            )}
+          </div>
+        )}
       </ModalBody>
       <ModalFoot>
         <div className="flex items-center justify-end gap-3 w-full">
-          <Button variant="ghost" onClick={onClose} disabled={saving}>
-            Cancel
+          <Button variant="ghost" onClick={handleClose} disabled={saving}>
+            {t('editModal.cancel')}
           </Button>
           <Button
             variant="primary"
             onClick={() => formRef.current?.submit()}
             disabled={saving || !canSave}
           >
-            {saving ? '⏳ Saving…' : '✦ Save Changes'}
+            {saving
+              ? t('editModal.saving')
+              : isDeferred
+                ? t('editModal.reschedule')
+                : t('editModal.save')}
           </Button>
         </div>
       </ModalFoot>

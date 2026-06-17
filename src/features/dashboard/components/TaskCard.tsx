@@ -173,6 +173,11 @@ export function TaskCard({
                 {blocked ? 'Blocked' : meta.label}
               </span>
               {tagLabel && <span className={tagBadge}>{tagLabel}</span>}
+              {task.deferReason && !task.endDate && (
+                <span className={rescheduledBadge} title={task.deferReason}>
+                  ↺ Rescheduled
+                </span>
+              )}
               <span className={dateBadge}>
                 {task.startDate === task.endDate
                   ? task.startDate
@@ -210,7 +215,10 @@ export function TaskCard({
                 <button
                   type="button"
                   className={actionsItem}
-                  onClick={() => { setActionsOpen(false); onEdit?.(task); }}
+                  onClick={() => {
+                    setActionsOpen(false);
+                    onEdit?.(task);
+                  }}
                 >
                   <span className={actionsItemIcon}>✎</span> Edit
                 </button>
@@ -219,7 +227,10 @@ export function TaskCard({
                   <button
                     type="button"
                     className={actionsItem}
-                    onClick={() => { setActionsOpen(false); onClone(task); }}
+                    onClick={() => {
+                      setActionsOpen(false);
+                      onClone(task);
+                    }}
                   >
                     <span className={cn(actionsItemIcon, 'text-[var(--cyan)]')}>⎘</span> Clone
                   </button>
@@ -230,7 +241,10 @@ export function TaskCard({
                 <button
                   type="button"
                   className={cn(actionsItem, 'hover:text-[var(--rose)]')}
-                  onClick={() => { setActionsOpen(false); onDelete?.(task.id); }}
+                  onClick={() => {
+                    setActionsOpen(false);
+                    onDelete?.(task.id);
+                  }}
                 >
                   <span className={cn(actionsItemIcon, 'text-[var(--rose)]')}>✕</span> Delete
                 </button>
@@ -273,6 +287,8 @@ const statusBadge =
   'text-[9px] font-bold tracking-[0.08em] uppercase px-1.5 py-0.5 rounded border font-[var(--font-title)]';
 const tagBadge =
   'text-[9px] text-[var(--text-lo)] border border-[var(--border)] px-1.5 py-0.5 rounded bg-[var(--panel)]';
+const rescheduledBadge =
+  'text-[9px] font-bold tracking-[0.06em] border px-1.5 py-0.5 rounded font-[var(--font-title)] text-[var(--gold)] border-[oklch(0.74_0.17_85_/_0.4)] bg-[oklch(0.74_0.17_85_/_0.08)]';
 const dateBadge = 'text-[9px] text-[var(--text-lo)] ml-auto shrink-0';
 
 const blockedMsg = 'text-[9px] text-[var(--text-lo)] mt-0.5 leading-[1.4] italic';
@@ -280,14 +296,11 @@ const taskNote = 'text-[10px] text-[var(--text-lo)] mt-0.5 leading-[1.4] truncat
 
 const actionBtn =
   'w-5 h-5 flex items-center justify-center rounded text-[9px] tracking-[-1px] text-[var(--text-lo)] hover:text-[var(--text-hi)] hover:bg-[var(--panel)] transition-all border border-transparent hover:border-[var(--border)]';
-const actionBtnOpen =
-  'text-[var(--text-hi)] bg-[var(--panel)] border-[var(--border)]';
+const actionBtnOpen = 'text-[var(--text-hi)] bg-[var(--panel)] border-[var(--border)]';
 
 const actionsDropdown =
   'absolute right-0 top-[22px] z-50 bg-[var(--panel)] border border-[var(--border)] rounded-[var(--r-sm)] shadow-[0_4px_20px_oklch(0_0_0_/_0.4)] py-1 min-w-[110px] flex flex-col';
 const actionsItem =
   'flex items-center gap-2 px-2.5 py-[5px] text-[10px] font-medium text-[var(--text-mid)] cursor-pointer hover:bg-[var(--panel2)] hover:text-[var(--text-hi)] transition-colors whitespace-nowrap';
-const actionsItemIcon =
-  'text-[11px] w-4 text-center shrink-0 text-[var(--text-lo)]';
-const actionsDivider =
-  'my-1 border-t border-[var(--border)]';
+const actionsItemIcon = 'text-[11px] w-4 text-center shrink-0 text-[var(--text-lo)]';
+const actionsDivider = 'my-1 border-t border-[var(--border)]';

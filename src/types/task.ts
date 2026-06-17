@@ -19,6 +19,8 @@ export interface Task {
   endDate?: string;
   /** Habit ID this task replaces for the startDate day */
   habitRef?: string;
+  /** Reason the task was deferred to a later date */
+  deferReason?: string;
   dependencies: string[];
   active: boolean;
   createdAt: string;
@@ -55,6 +57,8 @@ export interface UpdateTaskPayload {
   /** HH:MM scheduled time — null to clear */
   startTime?: string | null;
   endDate?: string | null;
+  /** null to clear the defer reason */
+  deferReason?: string | null;
   dependencies?: string[];
   active?: boolean;
 }

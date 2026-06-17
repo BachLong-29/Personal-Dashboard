@@ -372,5 +372,26 @@
       "tagline": "BUILT FOR THE PATIENTLY AMBITIOUS",
       "vault": "Vault"
     }
+  },
+  "tasks": {
+    "editModal": {
+      "tag": "EDIT QUEST",
+      "cancel": "Cancel",
+      "save": "✦ Save Changes",
+      "saving": "⏳ Saving…",
+      "reschedule": "↺ Reschedule"
+    },
+    "defer": {
+      "checkboxLabel": "Cannot complete today",
+      "reasonLabel": "Reason",
+      "reasonPlaceholder": "Or enter a custom reason…",
+      "dateLabel": "Reschedule to",
+      "reasons": {
+        "tooBusy": "Too busy / out of time",
+        "blocked": "Blocked / waiting on someone",
+        "priorityShift": "Priority changed unexpectedly",
+        "health": "Health / personal"
+      }
+    }
   }
 }

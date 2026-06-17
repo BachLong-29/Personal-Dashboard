@@ -146,7 +146,11 @@ export function DayView({ date, display, quests = [], onDateChange }: DayViewPro
         </button>
         <div className={navCenter}>
           <span className={cn(navDateLabel, isToday && navDateToday)}>{formatDateLabel(date)}</span>
-          {isToday && <span className={todayBadge}>Today</span>}
+          {!isToday && (
+            <button type="button" className={todayBadge} onClick={() => onDateChange(todayStr)}>
+              Today
+            </button>
+          )}
         </div>
         <button type="button" className={navBtn} onClick={() => onDateChange(addDays(date, 1))}>
           ›
@@ -322,7 +326,7 @@ const navCenter = 'flex-1 flex items-center justify-center gap-2';
 const navDateLabel = 'text-[12px] font-semibold text-[var(--text-hi)]';
 const navDateToday = 'text-[var(--gold)]';
 const todayBadge =
-  'text-[9px] font-bold tracking-[0.1em] uppercase px-1.5 py-0.5 rounded border border-[var(--gold)] text-[var(--gold)] font-[var(--font-title)]';
+  'text-[9px] font-bold tracking-[0.1em] uppercase px-1.5 py-0.5 rounded border border-[var(--gold)] text-[var(--gold)] font-[var(--font-title)] hover:bg-[oklch(0.74_0.17_85_/_0.12)] transition-colors cursor-pointer';
 
 const contentWrap = 'flex-1 overflow-y-auto px-3 py-2.5 min-h-0';
 const sectionHeader = 'flex items-center justify-between mb-1.5';
