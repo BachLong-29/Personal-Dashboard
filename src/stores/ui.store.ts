@@ -7,13 +7,17 @@ interface Toast {
   message: string;
 }
 
+type ProjectViewMode = 'kanban' | 'list';
+
 interface UIState {
   toasts: Toast[];
   isSidebarOpen: boolean;
+  projectViewMode: ProjectViewMode;
   addToast: (toast: Omit<Toast, 'id'>) => void;
   removeToast: (id: string) => void;
   toggleSidebar: () => void;
   setSidebarOpen: (open: boolean) => void;
+  setProjectViewMode: (mode: ProjectViewMode) => void;
 }
 
 export const useUIStore = create<UIState>()(
@@ -21,6 +25,8 @@ export const useUIStore = create<UIState>()(
     (set) => ({
       toasts: [],
       isSidebarOpen: false,
+      projectViewMode: 'kanban',
+      setProjectViewMode: (mode) => set({ projectViewMode: mode }),
       addToast: (toast) =>
         set((state) => ({
           toasts: [...state.toasts, { ...toast, id: crypto.randomUUID() }],

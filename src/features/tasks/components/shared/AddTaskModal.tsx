@@ -28,6 +28,8 @@ export interface AddTaskModalProps {
   defaultDate?: string;
   /** Pre-fill all fields — used when cloning an existing task */
   defaultValues?: Partial<TaskFormValues>;
+  /** Attach the created task to this project */
+  projectId?: string;
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -38,6 +40,7 @@ export function AddTaskModal({
   onSaved,
   defaultDate,
   defaultValues,
+  projectId,
 }: AddTaskModalProps) {
   const { mutate: createTask, isPending } = useCreateTask();
   const formRef = useRef<TaskFormHandle>(null);
@@ -62,6 +65,7 @@ export function AddTaskModal({
           ? parseInt(values.duration, 10)
           : undefined,
       dependencies: values.dependencies,
+      projectId,
     };
 
     createTask(payload, {

@@ -8,6 +8,7 @@
     "profile": "Profile",
     "settings": "Settings",
     "marketplace": "Marketplace",
+    "projects": "Projects",
     "vault": "Vault"
   },
   "auth": {

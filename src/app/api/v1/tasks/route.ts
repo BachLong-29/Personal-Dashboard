@@ -31,12 +31,16 @@ const createSchema = z.object({
   endDate: dateField.optional(),
   /** Habit ObjectId — marks this task as a one-day replacement for that habit */
   habitRef: z.string().optional(),
+  /** Project ObjectId — marks this task as belonging to a project */
+  projectId: z.string().optional(),
   dependencies: z.array(z.string()).optional().default([]),
 });
 
 const querySchema = z.object({
   start: z.string().optional(),
   end: z.string().optional(),
+  /** Filter to a single project's tasks (skips date filter). */
+  projectId: z.string().optional(),
   /** Search by name (case-insensitive). Skips date filter, sorts by createdAt desc. */
   q: z.string().optional(),
   /** Max number of results. Applied when q is set or no date range is given. */
@@ -58,6 +62,7 @@ function serialize(t: ITask): Task {
     startTime: t.startTime,
     endDate: t.endDate?.toISOString().substring(0, 10),
     habitRef: t.habitRef?.toString(),
+    projectId: t.projectId?.toString(),
     dependencies: t.dependencies.map((d) => d.toString()),
     active: t.active,
     createdAt: t.createdAt.toISOString(),
@@ -80,6 +85,13 @@ export const GET = asyncHandler(async (req: NextRequest) => {
   await connectDB();
 
   const filter: Record<string, unknown> = { userId: user.sub, active: true };
+
+  // ── Project mode — all tasks of a single project, no date filtering ───────────
+  if (query?.projectId) {
+    filter.projectId = query.projectId;
+    const tasks = await TaskModel.find(filter).sort({ createdAt: 1 });
+    return successResponse(tasks.map(serialize));
+  }
 
   // ── Search / recent-list mode (q or limit without date range) ────────────────
   const isSearchMode = query?.q || (query?.limit && !query?.start && !query?.end);
@@ -155,6 +167,7 @@ export const POST = asyncHandler(async (req: NextRequest) => {
     startTime: data.startTime,
     endDate,
     habitRef: data.habitRef ? new mongoose.Types.ObjectId(data.habitRef) : undefined,
+    projectId: data.projectId ? new mongoose.Types.ObjectId(data.projectId) : undefined,
     dependencies: data.dependencies,
   });
 

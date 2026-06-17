@@ -71,7 +71,12 @@ const DashboardTopbar = (props: DashboardTopbarProps) => {
         <div ref={userModalRef} className="relative block">
           <button type="button" className={userTrigger} onClick={() => setShowUserModal((v) => !v)}>
             <span className={avatarBadge}>{companion?.glyph ?? '🧝‍♀️'}</span>
-            <span className={cn(topBarLogo, 'text-[14px] sm:text-[16px] md:text-[18px] max-w-[110px] sm:max-w-[160px] md:max-w-none truncate')}>
+            <span
+              className={cn(
+                topBarLogo,
+                'text-[14px] sm:text-[16px] md:text-[18px] max-w-[110px] sm:max-w-[160px] md:max-w-none truncate',
+              )}
+            >
               {displayName}
             </span>
             <span className={cn(triggerCaret, 'hidden md:inline')}>
@@ -151,6 +156,14 @@ const DashboardTopbar = (props: DashboardTopbarProps) => {
                 >
                   <span>📋</span>
                   <span>Quest Log</span>
+                </Link>
+                <Link
+                  href="/projects"
+                  className={modalNavLink}
+                  onClick={() => setShowUserModal(false)}
+                >
+                  <span>🚀</span>
+                  <span>{tNav('projects')}</span>
                 </Link>
                 <Link
                   href="/marketplace"
@@ -326,6 +339,10 @@ const DashboardTopbar = (props: DashboardTopbarProps) => {
               <Link href="/tasks" className={sheetItem} onClick={closeSheet}>
                 <span className={sheetItemIcon}>📋</span>
                 <span>Quest Log</span>
+              </Link>
+              <Link href="/projects" className={sheetItem} onClick={closeSheet}>
+                <span className={sheetItemIcon}>🚀</span>
+                <span>{tNav('projects')}</span>
               </Link>
             </div>
 

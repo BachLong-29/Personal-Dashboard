@@ -21,6 +21,8 @@ export interface ITask extends Document {
   endDate?: Date;
   /** Reference to a Habit that this task replaces for startDate's day */
   habitRef?: mongoose.Types.ObjectId;
+  /** Reference to a Project this task belongs to — undefined means standalone task */
+  projectId?: mongoose.Types.ObjectId;
   /** Reason the task was deferred to a later date */
   deferReason?: string;
   dependencies: mongoose.Types.ObjectId[];
@@ -93,6 +95,11 @@ const taskSchema = new Schema<ITask>(
       ref: 'Habit',
       // optional — only set when this task replaces a habit occurrence
     },
+    projectId: {
+      type: Schema.Types.ObjectId,
+      ref: 'Project',
+      // optional — only set when this task belongs to a project
+    },
     deferReason: {
       type: String,
       trim: true,
@@ -114,6 +121,7 @@ const taskSchema = new Schema<ITask>(
 
 taskSchema.index({ userId: 1, startDate: 1 });
 taskSchema.index({ userId: 1, active: 1 });
+taskSchema.index({ userId: 1, projectId: 1 });
 
 // Force re-register in dev to avoid stale schema after hot-reload
 if (process.env.NODE_ENV === 'development') {

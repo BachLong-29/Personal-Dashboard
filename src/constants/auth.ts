@@ -16,4 +16,4 @@ export const AUTH_ROUTES = {
   FORGOT_PASSWORD: '/forgot-password',
 } as const;
 
-export const PROTECTED_ROUTES = ['/dashboard', '/marketplace'] as const;
+export const PROTECTED_ROUTES = ['/dashboard', '/marketplace', '/projects'] as const;

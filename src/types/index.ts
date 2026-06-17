@@ -8,3 +8,4 @@ export type * from './profile';
 export type * from './reward';
 export type * from './task-log';
 export type * from './goal';
+export type * from './project';

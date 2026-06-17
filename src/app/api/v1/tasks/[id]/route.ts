@@ -33,6 +33,8 @@ const updateSchema = z.object({
   dependencies: z.array(z.string()).optional(),
   active: z.boolean().optional(),
   deferReason: z.string().max(200).optional().nullable(),
+  /** null detaches the task from its project */
+  projectId: z.string().optional().nullable(),
 });
 
 function serialize(t: ITask): Task {
@@ -50,6 +52,7 @@ function serialize(t: ITask): Task {
     startTime: t.startTime,
     endDate: t.endDate?.toISOString().substring(0, 10),
     deferReason: t.deferReason,
+    projectId: t.projectId?.toString(),
     dependencies: t.dependencies.map((d) => d.toString()),
     active: t.active,
     createdAt: t.createdAt.toISOString(),

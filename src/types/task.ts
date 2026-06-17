@@ -19,6 +19,8 @@ export interface Task {
   endDate?: string;
   /** Habit ID this task replaces for the startDate day */
   habitRef?: string;
+  /** Project ID this task belongs to — omitted for standalone tasks */
+  projectId?: string;
   /** Reason the task was deferred to a later date */
   deferReason?: string;
   dependencies: string[];
@@ -42,6 +44,8 @@ export interface CreateTaskPayload {
   endDate?: string;
   /** Habit ObjectId this task is replacing */
   habitRef?: string;
+  /** Project ObjectId this task belongs to */
+  projectId?: string;
   dependencies?: string[];
 }
 
@@ -59,6 +63,8 @@ export interface UpdateTaskPayload {
   endDate?: string | null;
   /** null to clear the defer reason */
   deferReason?: string | null;
+  /** Project ObjectId — null to detach the task from its project */
+  projectId?: string | null;
   dependencies?: string[];
   active?: boolean;
 }
