@@ -3,6 +3,7 @@
 import { Input } from '@/components/ui';
 import { cn } from '@/libs/utils';
 import type { ProfileFormData } from '@/types/profile';
+import { AvatarUpload } from '../AvatarUpload';
 
 interface Props {
   form: ProfileFormData;
@@ -62,6 +63,8 @@ function TextareaField({
 export function IdentitySection({ form, onChange }: Props) {
   return (
     <div className="flex flex-col gap-4">
+      <AvatarUpload />
+
       <div className="grid grid-cols-2 gap-4">
         <div className="flex flex-col gap-1.5">
           <Input

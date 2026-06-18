@@ -1,12 +1,14 @@
 'use client';
 
 import { useRef, useState } from 'react';
+import Image from 'next/image';
 import { useLocale, useTranslations } from 'next-intl';
 
 import { Button } from '@/components/ui/Button';
 import { locales, localeLabels, type Locale } from '@/i18n/config';
 import { Link, usePathname, useRouter } from '@/i18n/navigation';
 import { useLogout } from '@/features/auth/hooks/useLogout';
+import { useAuthStore } from '@/features/auth/stores/auth.store';
 import { useProfile } from '@/features/profile/hooks/useProfile';
 import { findClass, findCompanion, findRank } from '@/constants/hero-data';
 import type { Character } from '../types';
@@ -35,6 +37,7 @@ const DashboardTopbar = (props: DashboardTopbarProps) => {
 
   const { data: profileData } = useProfile();
   const profile = profileData?.profile;
+  const avatar = useAuthStore((s) => s.user?.avatar);
   const companion = profile ? findCompanion(profile.companionId) : null;
   const heroClass = profile ? findClass(profile.classId) : null;
   const rank = findRank(char.level);
@@ -72,7 +75,19 @@ const DashboardTopbar = (props: DashboardTopbarProps) => {
         {/* ── User identity trigger → dropdown ────────────────────────────── */}
         <div ref={userModalRef} className="relative block">
           <button type="button" className={userTrigger} onClick={() => setShowUserModal((v) => !v)}>
-            <span className={avatarBadge}>{companion?.glyph ?? '🧝‍♀️'}</span>
+            <span className={avatarBadge}>
+              {avatar ? (
+                <Image
+                  src={avatar}
+                  alt="Avatar"
+                  fill
+                  sizes="28px"
+                  className="object-cover rounded-full"
+                />
+              ) : (
+                (companion?.glyph ?? '🧝‍♀️')
+              )}
+            </span>
             <span
               className={cn(
                 topBarLogo,
@@ -96,7 +111,19 @@ const DashboardTopbar = (props: DashboardTopbarProps) => {
               {/* Avatar + identity */}
               <div className={modalAvatarRow}>
                 <div className={modalAvatarRing}>
-                  <div className={modalAvatarInner}>{companion?.glyph ?? '🧝‍♀️'}</div>
+                  <div className={modalAvatarInner}>
+                    {avatar ? (
+                      <Image
+                        src={avatar}
+                        alt="Avatar"
+                        fill
+                        sizes="48px"
+                        className="object-cover rounded-full"
+                      />
+                    ) : (
+                      (companion?.glyph ?? '🧝‍♀️')
+                    )}
+                  </div>
                   <div className={modalRankBadge}>{rank.name[0]?.toUpperCase() ?? char.rank}</div>
                 </div>
                 <div className="flex-1 min-w-0">
@@ -301,8 +328,18 @@ const DashboardTopbar = (props: DashboardTopbarProps) => {
             {/* User profile section */}
             <div className="flex items-center gap-3 px-5 py-4 border-b border-[var(--border)]">
               <div className="relative w-[52px] h-[52px] shrink-0 rounded-full bg-[linear-gradient(135deg,var(--gold),var(--violet),var(--gold))] p-0.5 shadow-[0_0_16px_var(--gold-glow)]">
-                <div className="w-full h-full rounded-full bg-[var(--panel2)] flex items-center justify-center text-[24px]">
-                  {companion?.glyph ?? '🧝‍♀️'}
+                <div className="w-full h-full rounded-full bg-[var(--panel2)] flex items-center justify-center text-[24px] overflow-hidden">
+                  {avatar ? (
+                    <Image
+                      src={avatar}
+                      alt="Avatar"
+                      fill
+                      sizes="48px"
+                      className="object-cover rounded-full"
+                    />
+                  ) : (
+                    (companion?.glyph ?? '🧝‍♀️')
+                  )}
                 </div>
                 <div className="absolute -bottom-[1px] -right-[1px] w-5 h-5 bg-[linear-gradient(135deg,var(--gold),#b45309)] rounded-[5px] flex items-center justify-center font-[var(--font-title)] text-[10px] font-black text-[#0a0400] border border-[var(--panel)] shadow-[0_0_8px_var(--gold-glow)]">
                   {rank.name[0]?.toUpperCase() ?? char.rank}
@@ -433,7 +470,7 @@ const backBtn =
 const userTrigger =
   'flex items-center gap-2 rounded-[var(--r-sm)] px-2 py-1 transition-colors duration-200 cursor-pointer hover:bg-[oklch(0.74_0.17_85_/_0.06)] focus:outline-none';
 const avatarBadge =
-  'w-7 h-7 rounded-full bg-[var(--panel2)] border border-[oklch(0.74_0.17_85_/_0.3)] flex items-center justify-center text-[16px] shrink-0';
+  'relative w-7 h-7 rounded-full bg-[var(--panel2)] border border-[oklch(0.74_0.17_85_/_0.3)] flex items-center justify-center text-[16px] shrink-0 overflow-hidden';
 const triggerCaret = 'text-[8px] text-[var(--text-lo)] ml-[-2px] transition-transform duration-200';
 
 const userModal =
@@ -455,7 +492,7 @@ const modalAvatarRow = 'flex items-center gap-3 px-4 pt-4 pb-3';
 const modalAvatarRing =
   'relative w-[52px] h-[52px] rounded-full bg-[linear-gradient(135deg,var(--gold),var(--violet),var(--gold))] p-0.5 shadow-[0_0_16px_var(--gold-glow)] shrink-0';
 const modalAvatarInner =
-  'w-full h-full rounded-full bg-[var(--panel2)] flex items-center justify-center text-[24px]';
+  'relative w-full h-full rounded-full bg-[var(--panel2)] flex items-center justify-center text-[24px] overflow-hidden';
 const modalRankBadge =
   'absolute -bottom-[1px] -right-[1px] w-5 h-5 bg-[linear-gradient(135deg,var(--gold),#b45309)] rounded-[5px] flex items-center justify-center font-[var(--font-title)] text-[10px] font-black text-[#0a0400] border border-[var(--panel)] shadow-[0_0_8px_var(--gold-glow)]';
 const modalName =
