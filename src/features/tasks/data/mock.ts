@@ -62,6 +62,8 @@ export interface UITask {
   habitRef?: string;
   /** Habit occurrence was cancelled — a replacement task exists for this day */
   cancelled?: boolean;
+  /** Cloudinary image URLs attached to this task (max 3) */
+  attachments?: string[];
 
   // ── Multi-day task fields ───────────────────────────────────────────────────
   /** True when endDate exists and spans ≥ 1 full calendar day after startDate */

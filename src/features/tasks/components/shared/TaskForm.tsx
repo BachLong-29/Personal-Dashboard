@@ -15,6 +15,7 @@ import { useCreateCategory } from '@/features/dashboard/hooks/useCreateCategory'
 import { useTaskSearch } from '@/features/dashboard/hooks/useTaskSearch';
 
 import { SLOTS } from '../../data/mock';
+import { TaskAttachmentsField } from './TaskAttachmentsField';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -33,6 +34,7 @@ export interface TaskFormValues {
   duration: string;
   /** array of sourceIds */
   dependencies: string[];
+  attachments: string[];
 }
 
 export interface TaskFormHandle {
@@ -97,6 +99,7 @@ export const TaskForm = forwardRef<TaskFormHandle, TaskFormProps>(function TaskF
   const [startTime, setStartTime] = useState(defaultValues?.startTime ?? '');
   const [duration, setDuration] = useState(defaultValues?.duration ?? '');
   const [deps, setDeps] = useState<string[]>(defaultValues?.dependencies ?? []);
+  const [attachments, setAttachments] = useState<string[]>(defaultValues?.attachments ?? []);
 
   // ── UI state ─────────────────────────────────────────────────────────────────
   const [showPicker, setShowPicker] = useState(false);
@@ -170,6 +173,7 @@ export const TaskForm = forwardRef<TaskFormHandle, TaskFormProps>(function TaskF
       startTime,
       duration,
       dependencies: deps,
+      attachments,
     });
   }
 
@@ -418,6 +422,14 @@ export const TaskForm = forwardRef<TaskFormHandle, TaskFormProps>(function TaskF
           placeholder="Optional description…"
           className={textareaClass}
         />
+      </div>
+
+      {/* ── Attachments ───────────────────────────────────────────────── */}
+      <div className="flex flex-col gap-1.5">
+        <label className={fieldLabel}>
+          Attachments <span className={optionalMark}>optional · max 3</span>
+        </label>
+        <TaskAttachmentsField value={attachments} onChange={setAttachments} />
       </div>
 
       {/* ── Dependencies ──────────────────────────────────────────────── */}

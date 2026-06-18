@@ -154,6 +154,7 @@ export function taskToUITask(t: Task, taskLog?: TaskLog): UITask {
     habitRef: t.habitRef,
     active: t.active,
     deferReason: t.deferReason,
+    attachments: t.attachments,
     // multi-day extras
     isMultiDay,
     totalDays: isMultiDay ? totalDays : undefined,

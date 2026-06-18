@@ -23,6 +23,7 @@ export interface Task {
   projectId?: string;
   /** Reason the task was deferred to a later date */
   deferReason?: string;
+  attachments: string[];
   dependencies: string[];
   active: boolean;
   createdAt: string;
@@ -47,6 +48,7 @@ export interface CreateTaskPayload {
   /** Project ObjectId this task belongs to */
   projectId?: string;
   dependencies?: string[];
+  attachments?: string[];
 }
 
 export interface UpdateTaskPayload {
@@ -67,4 +69,5 @@ export interface UpdateTaskPayload {
   projectId?: string | null;
   dependencies?: string[];
   active?: boolean;
+  attachments?: string[];
 }

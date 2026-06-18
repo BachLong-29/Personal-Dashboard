@@ -64,6 +64,7 @@ export interface Task {
   endDate?: string;
   /** Reason the task was deferred to a later date */
   deferReason?: string;
+  attachments: string[];
   dependencies: string[];
   active: boolean;
   createdAt: string;

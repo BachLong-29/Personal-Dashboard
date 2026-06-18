@@ -34,6 +34,7 @@ const createSchema = z.object({
   /** Project ObjectId — marks this task as belonging to a project */
   projectId: z.string().optional(),
   dependencies: z.array(z.string()).optional().default([]),
+  attachments: z.array(z.string().url()).max(3).optional().default([]),
 });
 
 const querySchema = z.object({
@@ -63,6 +64,7 @@ function serialize(t: ITask): Task {
     endDate: t.endDate?.toISOString().substring(0, 10),
     habitRef: t.habitRef?.toString(),
     projectId: t.projectId?.toString(),
+    attachments: t.attachments ?? [],
     dependencies: t.dependencies.map((d) => d.toString()),
     active: t.active,
     createdAt: t.createdAt.toISOString(),
@@ -169,6 +171,7 @@ export const POST = asyncHandler(async (req: NextRequest) => {
     habitRef: data.habitRef ? new mongoose.Types.ObjectId(data.habitRef) : undefined,
     projectId: data.projectId ? new mongoose.Types.ObjectId(data.projectId) : undefined,
     dependencies: data.dependencies,
+    attachments: data.attachments,
   });
 
   return createdResponse(serialize(task), 'Task created successfully');

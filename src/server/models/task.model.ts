@@ -25,6 +25,7 @@ export interface ITask extends Document {
   projectId?: mongoose.Types.ObjectId;
   /** Reason the task was deferred to a later date */
   deferReason?: string;
+  attachments: string[];
   dependencies: mongoose.Types.ObjectId[];
   active: boolean;
   createdAt: Date;
@@ -104,6 +105,11 @@ const taskSchema = new Schema<ITask>(
       type: String,
       trim: true,
       maxlength: 200,
+    },
+    attachments: {
+      type: [String],
+      default: [],
+      validate: [(v: string[]) => v.length <= 3, 'Maximum 3 attachments allowed'],
     },
     dependencies: [
       {

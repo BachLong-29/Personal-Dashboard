@@ -66,6 +66,7 @@ export function AddTaskModal({
           : undefined,
       dependencies: values.dependencies,
       projectId,
+      attachments: values.attachments.length > 0 ? values.attachments : undefined,
     };
 
     createTask(payload, {

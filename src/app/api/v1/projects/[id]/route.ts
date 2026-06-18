@@ -48,6 +48,7 @@ function serializeTask(t: ITask): Task {
     habitRef: t.habitRef?.toString(),
     projectId: t.projectId?.toString(),
     deferReason: t.deferReason,
+    attachments: t.attachments ?? [],
     dependencies: t.dependencies.map((d) => d.toString()),
     active: t.active,
     createdAt: t.createdAt.toISOString(),
