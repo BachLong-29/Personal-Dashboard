@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation';
 import { verifyAccessToken } from '@/libs/jwt';
 import { TOKEN_KEYS } from '@/constants/auth';
 import { defaultLocale } from '@/i18n/config';
+import { GlobalSearch } from '@/features/search/components/GlobalSearch';
 
 async function getSession() {
   const cookieStore = await cookies();
@@ -31,5 +32,10 @@ export default async function ProtectedLayout({
     redirect(locale === defaultLocale ? '/login' : `/${locale}/login`);
   }
 
-  return <>{children}</>;
+  return (
+    <>
+      {children}
+      <GlobalSearch />
+    </>
+  );
 }

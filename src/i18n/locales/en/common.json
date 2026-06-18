@@ -9,7 +9,17 @@
     "settings": "Settings",
     "marketplace": "Marketplace",
     "projects": "Projects",
-    "vault": "Vault"
+    "vault": "Vault",
+    "search": "Search"
+  },
+  "search": {
+    "placeholder": "Search tasks, habits, quests, projects…",
+    "tasks": "Tasks",
+    "habits": "Habits",
+    "quests": "Quests",
+    "projects": "Projects",
+    "hint": "Type to search tasks, habits, quests, projects…",
+    "empty": "No results for \"{query}\""
   },
   "auth": {
     "login": "Login",

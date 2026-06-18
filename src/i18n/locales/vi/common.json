@@ -9,7 +9,17 @@
     "settings": "Cài đặt",
     "marketplace": "Cửa hàng",
     "projects": "Dự án",
-    "vault": "Kho báu"
+    "vault": "Kho báu",
+    "search": "Tìm kiếm"
+  },
+  "search": {
+    "placeholder": "Tìm task, habit, quest, dự án…",
+    "tasks": "Task",
+    "habits": "Habit",
+    "quests": "Quest",
+    "projects": "Dự án",
+    "hint": "Gõ để tìm task, habit, quest, dự án…",
+    "empty": "Không có kết quả cho \"{query}\""
   },
   "auth": {
     "login": "Đăng nhập",

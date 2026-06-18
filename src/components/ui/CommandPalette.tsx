@@ -1,7 +1,7 @@
 'use client';
 
 import type { ReactNode, ChangeEvent, KeyboardEvent } from 'react';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { cn } from '@/libs/utils';
 
 export interface CommandItem {
@@ -23,6 +23,16 @@ export interface CommandPaletteProps {
   groups: CommandGroup[];
   placeholder?: string;
   className?: string;
+  /** Controlled input value. When provided, pair with `onQueryChange`. */
+  query?: string;
+  /** Fires on every input change (controlled mode). */
+  onQueryChange?: (value: string) => void;
+  /** Skip the built-in `label.includes` filter — items are already filtered (e.g. server-side). */
+  disableFilter?: boolean;
+  /** Show a loading row instead of "no results" while results are being fetched. */
+  loading?: boolean;
+  /** Text shown when there are no results. */
+  emptyLabel?: string;
 }
 
 export function CommandPalette({
@@ -31,52 +41,80 @@ export function CommandPalette({
   groups,
   placeholder = 'Run a command…',
   className,
+  query: queryProp,
+  onQueryChange,
+  disableFilter = false,
+  loading = false,
+  emptyLabel,
 }: CommandPaletteProps) {
-  const [query, setQuery] = useState('');
-  const [focusedKey, setFocusedKey] = useState<string | null>(null);
+  const [innerQuery, setInnerQuery] = useState('');
+  const isControlled = queryProp !== undefined;
+  const query = isControlled ? queryProp : innerQuery;
+
+  const setQuery = (value: string) => {
+    if (!isControlled) setInnerQuery(value);
+    onQueryChange?.(value);
+  };
+
+  // User's explicit arrow/hover choice; null = follow the first result.
+  const [selectedKey, setSelectedKey] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const allItems = groups.flatMap((g) => g.items);
 
-  const filtered = query.trim()
-    ? allItems.filter((item) => item.label.toLowerCase().includes(query.toLowerCase()))
-    : allItems;
+  const filtered =
+    !disableFilter && query.trim()
+      ? allItems.filter((item) => item.label.toLowerCase().includes(query.toLowerCase()))
+      : allItems;
 
-  const filteredGroups: CommandGroup[] = query.trim() ? [{ items: filtered }] : groups;
+  const filteredGroups: CommandGroup[] =
+    !disableFilter && query.trim() ? [{ items: filtered }] : groups;
 
+  // Effective highlight: the explicit selection if still present, else the first item.
+  const focusedKey =
+    selectedKey && filtered.some((it) => it.key === selectedKey)
+      ? selectedKey
+      : (filtered[0]?.key ?? null);
+
+  const handleClose = useCallback(() => {
+    if (!isControlled) setInnerQuery('');
+    setSelectedKey(null);
+    onClose();
+  }, [isControlled, onClose]);
+
+  // Focus the input when the palette opens (DOM sync, no React state here).
   useEffect(() => {
-    if (open) {
-      setQuery('');
-      setFocusedKey(filtered[0]?.key ?? null);
-      setTimeout(() => inputRef.current?.focus(), 0);
-    }
+    if (!open) return;
+    const id = setTimeout(() => inputRef.current?.focus(), 0);
+    return () => clearTimeout(id);
   }, [open]);
 
   useEffect(() => {
     if (!open) return;
     const handle = (e: globalThis.KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
+      if (e.key === 'Escape') handleClose();
     };
     document.addEventListener('keydown', handle);
     return () => document.removeEventListener('keydown', handle);
-  }, [open, onClose]);
+  }, [open, handleClose]);
 
   const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+    if (filtered.length === 0) return;
     const idx = filtered.findIndex((it) => it.key === focusedKey);
 
     if (e.key === 'ArrowDown') {
       e.preventDefault();
       const next = filtered[(idx + 1) % filtered.length];
-      if (next) setFocusedKey(next.key);
+      if (next) setSelectedKey(next.key);
     } else if (e.key === 'ArrowUp') {
       e.preventDefault();
       const prev = filtered[(idx - 1 + filtered.length) % filtered.length];
-      if (prev) setFocusedKey(prev.key);
+      if (prev) setSelectedKey(prev.key);
     } else if (e.key === 'Enter') {
       const item = filtered[idx];
       if (item) {
         item.onSelect();
-        onClose();
+        handleClose();
       }
     }
   };
@@ -87,7 +125,7 @@ export function CommandPalette({
     <div
       className="fixed inset-0 z-[1100] flex items-start justify-center pt-24 px-4"
       style={{ background: 'oklch(0.03 0.02 270 / 0.7)', backdropFilter: 'blur(6px)' }}
-      onClick={(e) => e.target === e.currentTarget && onClose()}
+      onClick={(e) => e.target === e.currentTarget && handleClose()}
     >
       <div
         className={cn(
@@ -105,7 +143,7 @@ export function CommandPalette({
             placeholder={placeholder}
             onChange={(e: ChangeEvent<HTMLInputElement>) => {
               setQuery(e.target.value);
-              setFocusedKey(null);
+              setSelectedKey(null);
             }}
             onKeyDown={handleKeyDown}
             className="flex-1 bg-transparent border-none outline-none text-[var(--text-hi)] text-[18px] placeholder:text-[var(--text-dim)]"
@@ -131,10 +169,10 @@ export function CommandPalette({
                     <button
                       key={item.key}
                       type="button"
-                      onMouseEnter={() => setFocusedKey(item.key)}
+                      onMouseEnter={() => setSelectedKey(item.key)}
                       onClick={() => {
                         item.onSelect();
-                        onClose();
+                        handleClose();
                       }}
                       className={cn(
                         'w-full flex items-center gap-3 px-3 py-2 rounded-[var(--r-sm)]',
@@ -165,9 +203,13 @@ export function CommandPalette({
             </div>
           ))}
 
-          {filtered.length === 0 && (
+          {loading && filtered.length === 0 && (
+            <div className="text-center py-6 text-[var(--text-lo)] text-[13px]">Searching…</div>
+          )}
+
+          {!loading && filtered.length === 0 && (
             <div className="text-center py-6 text-[var(--text-lo)] text-[13px]">
-              {`No results for "${query}"`}
+              {emptyLabel ?? `No results for "${query}"`}
             </div>
           )}
         </div>

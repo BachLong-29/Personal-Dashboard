@@ -2,6 +2,8 @@
 
 import { motion } from 'framer-motion';
 
+import { Link } from '@/i18n/navigation';
+
 export function HeroSection() {
   return (
     <section className="flex min-h-[calc(100vh-4rem)] flex-col items-center justify-center px-4 text-center">
@@ -21,18 +23,18 @@ export function HeroSection() {
         </p>
 
         <div className="flex flex-wrap items-center justify-center gap-3">
-          <a
+          <Link
             href="/dashboard"
             className="inline-flex h-11 items-center justify-center rounded-md bg-primary px-6 text-base font-medium text-primary-foreground transition-colors hover:bg-primary/90"
           >
             Get Started
-          </a>
-          <a
+          </Link>
+          <Link
             href="/login"
             className="inline-flex h-11 items-center justify-center rounded-md border border-input bg-background px-6 text-base font-medium transition-colors hover:bg-accent hover:text-accent-foreground"
           >
             Sign In
-          </a>
+          </Link>
         </div>
       </motion.div>
     </section>

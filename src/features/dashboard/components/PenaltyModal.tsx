@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useTranslations } from 'next-intl';
 
 import { Button } from '@/components/ui/Button';
@@ -60,16 +60,21 @@ export function PenaltyModal({
   const t = useTranslations('dashboard');
   const escalation = PENALTY_ESCALATIONS[Math.min(tier - 1, PENALTY_ESCALATIONS.length - 1)]!;
 
-  const penalty = useRef<PenaltyTask>(pickPenalty(unfinished.length + tier * 7)).current;
+  // Computed once on mount and kept stable — a plain value, not a ref read in render.
+  const [penalty] = useState<PenaltyTask>(() => pickPenalty(unfinished.length + tier * 7));
 
   const totalSecs = useMemo(() => TIME_BY_TIER[tier] ?? 60 * 60, [tier]);
   const [secsLeft, setSecsLeft] = useState(totalSecs);
   const [accepted, setAccepted] = useState(false);
 
-  useEffect(() => {
+  // Reset the countdown when the duration changes — the render-phase "adjust state
+  // on prop change" pattern (same as FocusTimer), avoiding a setState-in-effect.
+  const [prevTotalSecs, setPrevTotalSecs] = useState(totalSecs);
+  if (prevTotalSecs !== totalSecs) {
+    setPrevTotalSecs(totalSecs);
     setSecsLeft(totalSecs);
     setAccepted(false);
-  }, [totalSecs]);
+  }
 
   useEffect(() => {
     if (!accepted) return;
@@ -421,4 +426,3 @@ const penaltyBtnComplete =
   'bg-[linear-gradient(135deg,oklch(0.45_0.18_145),oklch(0.6_0.2_145))] border-[oklch(0.75_0.2_145)] shadow-[0_0_20px_oklch(0.6_0.2_145_/_0.4)] hover:-translate-y-px hover:shadow-[0_0_30px_oklch(0.6_0.2_145_/_0.5)]';
 const penaltyFooterText =
   'font-[var(--font-title)] text-[9px] tracking-[0.2em] text-[oklch(0.55_0.1_22)] text-center italic';
-

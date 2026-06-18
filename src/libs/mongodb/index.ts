@@ -23,7 +23,6 @@ export const connectDB = async () => {
   if (!uri) throw new Error('MONGODB_URI is not defined in environment variables');
 
   if (mongoose.connection.readyState >= 1) {
-    console.log('✅ Đã kết nối MongoDB (cached)');
     return;
   }
 

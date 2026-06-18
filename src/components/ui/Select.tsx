@@ -95,14 +95,19 @@ export function Select({
 
   const state = error ? 'error' : success ? 'success' : 'default';
 
-  useEffect(() => {
-    if (!open) return;
-
-    const nextFocusedValue =
-      selectedOption && !selectedOption.disabled ? selectedOption.value : enabledOptions[0]?.value;
-
-    setFocusedValue(nextFocusedValue);
-  }, [open, selectedOption, enabledOptions]);
+  // On open, highlight the selected option (or the first enabled one). Render-phase
+  // "adjust state on transition" pattern — avoids a setState-in-effect.
+  const [prevOpen, setPrevOpen] = useState(open);
+  if (open !== prevOpen) {
+    setPrevOpen(open);
+    if (open) {
+      setFocusedValue(
+        selectedOption && !selectedOption.disabled
+          ? selectedOption.value
+          : enabledOptions[0]?.value,
+      );
+    }
+  }
 
   useEffect(() => {
     if (!open) return;

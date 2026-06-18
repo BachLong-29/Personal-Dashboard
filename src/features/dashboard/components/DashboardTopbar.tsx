@@ -12,6 +12,7 @@ import { findClass, findCompanion, findRank } from '@/constants/hero-data';
 import type { Character } from '../types';
 import { cn } from '@/libs/utils';
 import { useOnClickOutside } from '@/hooks/useOnClickOutside';
+import { useUIStore } from '@/stores/ui.store';
 import { NotificationBell } from './NotificationBell';
 
 interface DashboardTopbarProps {
@@ -30,6 +31,7 @@ const DashboardTopbar = (props: DashboardTopbarProps) => {
   const router = useRouter();
   const pathname = usePathname();
   const logout = useLogout();
+  const openSearch = useUIStore((s) => s.openSearch);
 
   const { data: profileData } = useProfile();
   const profile = profileData?.profile;
@@ -222,8 +224,11 @@ const DashboardTopbar = (props: DashboardTopbarProps) => {
 
         <div className="flex-1" />
 
-        {/* ── Mobile: Bell + hamburger ─────────────────────────────────────── */}
+        {/* ── Mobile: Search + Bell + hamburger ────────────────────────────── */}
         <div className="flex min-[1025px]:hidden items-center gap-2">
+          <button type="button" className={tabletMenuBtn} onClick={openSearch} aria-label="Search">
+            <span className="text-[15px] leading-none text-[var(--gold)]">⌕</span>
+          </button>
           <NotificationBell onEndDay={onEndDay} />
           <button
             type="button"
@@ -239,8 +244,15 @@ const DashboardTopbar = (props: DashboardTopbarProps) => {
           </button>
         </div>
 
-        {/* ── Desktop nav (1025px+): Date | Streak | Bell | Logout ─────────── */}
+        {/* ── Desktop nav (1025px+): Search | Date | Streak | Bell | Logout ─ */}
         <div className="hidden min-[1025px]:flex items-center gap-2">
+          <button type="button" onClick={openSearch} className={searchTrigger} aria-label="Search">
+            <span className="text-[13px] leading-none text-[var(--gold)]">⌕</span>
+            <span className="text-[var(--text-lo)]">{tNav('search')}…</span>
+            <span className="font-[var(--f-mono)] text-[9px] tracking-[0.1em] text-[var(--text-md)] bg-[var(--bg-3)] border border-b-2 border-[var(--border)] rounded-[3px] px-1.5 py-0.5">
+              ⌘K
+            </span>
+          </button>
           <span className={dateLabel}>{dateStr}</span>
           <div className={streakPill}>{tDash('streakDays', { count: char.streak })}</div>
           <NotificationBell onEndDay={onEndDay} />
@@ -409,6 +421,9 @@ const streakPill =
 
 const navPill =
   'flex items-center gap-[6px] bg-[var(--panel2)] border border-[var(--border)] rounded-[20px] px-[10px] py-1 text-[11px] font-bold font-[var(--font-title)] tracking-[0.05em] transition-colors duration-200 no-underline cursor-pointer hover:border-[oklch(0.74_0.17_85_/_0.35)]';
+
+const searchTrigger =
+  'flex items-center gap-2 bg-[var(--panel2)] border border-[var(--border)] rounded-[20px] pl-[10px] pr-[6px] py-[5px] text-[11px] font-[var(--font-title)] tracking-[0.04em] transition-colors duration-200 cursor-pointer hover:border-[oklch(0.74_0.17_85_/_0.35)]';
 
 const backBtn =
   'flex items-center gap-1 px-2 sm:px-2.5 py-1 bg-[oklch(0.74_0.17_85_/_0.07)] border border-[oklch(0.74_0.17_85_/_0.25)] rounded-[var(--r-sm)] text-[9px] font-bold text-[var(--gold)] font-[var(--font-title)] tracking-[0.06em] no-underline transition-all hover:bg-[oklch(0.74_0.17_85_/_0.14)] hover:border-[oklch(0.74_0.17_85_/_0.45)] cursor-pointer shrink-0';

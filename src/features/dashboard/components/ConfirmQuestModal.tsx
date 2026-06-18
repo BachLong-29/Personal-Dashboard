@@ -19,10 +19,7 @@ export function ConfirmQuestModal({ quest, onConfirm, onCancel }: ConfirmQuestMo
   const { mutate: updateStatus, isPending, error } = useUpdateQuestStatus();
 
   function handleConfirm() {
-    updateStatus(
-      { id: quest.id, done: true },
-      { onSuccess: () => onConfirm(skipNextPrompt) },
-    );
+    updateStatus({ id: quest.id, done: true }, { onSuccess: () => onConfirm(skipNextPrompt) });
   }
 
   return (
@@ -41,15 +38,20 @@ export function ConfirmQuestModal({ quest, onConfirm, onCancel }: ConfirmQuestMo
           <span className="confirm-reward-pill coin">🪙 +{quest.coins}</span>
         </div>
         {error && (
-          <div style={{ color: 'var(--danger)', fontSize: 11, textAlign: 'center', margin: '4px 0' }}>
+          <div
+            style={{ color: 'var(--danger)', fontSize: 11, textAlign: 'center', margin: '4px 0' }}
+          >
             ✕ Failed to update quest. Please try again.
           </div>
         )}
-        <div className="confirm-checkbox-row" onClick={() => !isPending && setSkipNextPrompt((v) => !v)}>
+        <div
+          className="confirm-checkbox-row"
+          onClick={() => !isPending && setSkipNextPrompt((v) => !v)}
+        >
           <span className={`confirm-checkbox${skipNextPrompt ? ' checked' : ''}`}>
             {skipNextPrompt ? '✓' : ''}
           </span>
-          <span>{"Don't ask again for the rest of the day"}</span>
+          <span>Don&apos;t ask again for the rest of the day</span>
         </div>
         <div className="confirm-actions">
           <Button
@@ -68,7 +70,9 @@ export function ConfirmQuestModal({ quest, onConfirm, onCancel }: ConfirmQuestMo
             onClick={handleConfirm}
             disabled={isPending}
           >
-            {isPending ? t('confirmQuest.buttons.pending') : `✓ ${t('confirmQuest.buttons.confirm')}`}
+            {isPending
+              ? t('confirmQuest.buttons.pending')
+              : `✓ ${t('confirmQuest.buttons.confirm')}`}
           </Button>
         </div>
       </div>

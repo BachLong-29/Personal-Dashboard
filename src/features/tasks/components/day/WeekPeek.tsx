@@ -38,7 +38,7 @@ export function WeekPeek({ tasks }: WeekPeekProps) {
    *   Wednesday (today) = 2 - 2 = 0
    *   Friday = 4 - 2 = 2  (in 2 days)
    */
-  const todayMonBased = useMemo(getTodayMonBased, []);
+  const todayMonBased = useMemo(() => getTodayMonBased(), []);
 
   return (
     <div className={sidePanel}>
@@ -74,14 +74,21 @@ export function WeekPeek({ tasks }: WeekPeekProps) {
 
 interface WeekPeekDayProps {
   shortLabel: string;
-  dateLabel:  string;
-  tasks:      UITask[];
-  done:       number;
-  isToday:    boolean;
-  isPast:     boolean;
+  dateLabel: string;
+  tasks: UITask[];
+  done: number;
+  isToday: boolean;
+  isPast: boolean;
 }
 
-function WeekPeekDay({ shortLabel, dateLabel: dateLbl, tasks, done, isToday, isPast }: WeekPeekDayProps) {
+function WeekPeekDay({
+  shortLabel,
+  dateLabel: dateLbl,
+  tasks,
+  done,
+  isToday,
+  isPast,
+}: WeekPeekDayProps) {
   const allDone = tasks.length > 0 && done === tasks.length;
 
   return (
@@ -91,7 +98,11 @@ function WeekPeekDay({ shortLabel, dateLabel: dateLbl, tasks, done, isToday, isP
         <div
           className={cn(
             'text-[9px] font-bold font-[var(--font-title)]',
-            isToday ? 'text-[var(--gold)]' : isPast ? 'text-[var(--text-dim)]' : 'text-[var(--text-mid)]',
+            isToday
+              ? 'text-[var(--gold)]'
+              : isPast
+                ? 'text-[var(--text-dim)]'
+                : 'text-[var(--text-mid)]',
           )}
         >
           {shortLabel}
@@ -108,7 +119,12 @@ function WeekPeekDay({ shortLabel, dateLabel: dateLbl, tasks, done, isToday, isP
             <span className="text-[8px] text-[var(--text-dim)] italic">— free —</span>
           ) : (
             <>
-              <span className={cn('text-[9px]', isPast && !isToday ? 'text-[var(--text-dim)]' : 'text-[var(--text-lo)]')}>
+              <span
+                className={cn(
+                  'text-[9px]',
+                  isPast && !isToday ? 'text-[var(--text-dim)]' : 'text-[var(--text-lo)]',
+                )}
+              >
                 {tasks.length} {tasks.length === 1 ? 'quest' : 'quests'}
               </span>
               <span
@@ -161,7 +177,8 @@ function WeekPeekDay({ shortLabel, dateLabel: dateLbl, tasks, done, isToday, isP
                   style={{ background: t.done ? 'var(--text-dim)' : catColor }}
                 />
                 <span className="text-[9px] text-[var(--text-mid)] truncate flex-1">
-                  {t.icon ? `${t.icon} ` : ''}{t.title}
+                  {t.icon ? `${t.icon} ` : ''}
+                  {t.title}
                 </span>
                 <span
                   className={cn(
@@ -190,7 +207,5 @@ function WeekPeekDay({ shortLabel, dateLabel: dateLbl, tasks, done, isToday, isP
 
 const dayRow =
   'flex items-start gap-2 p-2 rounded-[var(--r-sm)] transition-colors hover:bg-[var(--panel2)]';
-const dayRowToday =
-  'bg-[oklch(0.74_0.17_85_/_0.06)] border border-[oklch(0.74_0.17_85_/_0.2)]';
-const dayRowPast =
-  'opacity-60';
+const dayRowToday = 'bg-[oklch(0.74_0.17_85_/_0.06)] border border-[oklch(0.74_0.17_85_/_0.2)]';
+const dayRowPast = 'opacity-60';

@@ -56,14 +56,8 @@ function RunicGate() {
     <div className="runic-gate">
       <svg className="rg-outer" viewBox="0 0 1000 1000" xmlns="http://www.w3.org/2000/svg">
         <defs>
-          <path
-            id="outerArc"
-            d={`M ${cx - 448},${cy} A 448,448 0 1,1 ${cx + 447},${cy}`}
-          />
-          <path
-            id="innerArc"
-            d={`M ${cx - 318},${cy} A 318,318 0 1,1 ${cx + 317},${cy}`}
-          />
+          <path id="outerArc" d={`M ${cx - 448},${cy} A 448,448 0 1,1 ${cx + 447},${cy}`} />
+          <path id="innerArc" d={`M ${cx - 318},${cy} A 318,318 0 1,1 ${cx + 317},${cy}`} />
         </defs>
 
         <circle className="rg-c rg-c1" cx={cx} cy={cy} r={466} />
@@ -88,7 +82,7 @@ function RunicGate() {
         </text>
 
         {sigils.map((sigil, i) => {
-          const angle = (i * 60) * (Math.PI / 180);
+          const angle = i * 60 * (Math.PI / 180);
           const r = 380;
           const x = cx + r * Math.cos(angle);
           const y = cy + r * Math.sin(angle);
@@ -111,6 +105,10 @@ export function AuthScene() {
   const [stars, setStars] = useState<Star[]>([]);
   const [motes, setMotes] = useState<Mote[]>([]);
 
+  // Random decorations are generated on the client only (after mount) so the server
+  // and first client render match — no hydration mismatch. Deferring to an effect is
+  // required here, so these setState calls intentionally live inside one.
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     setStars(
       Array.from({ length: 40 }, (_, i) => ({
@@ -135,6 +133,7 @@ export function AuthScene() {
       })),
     );
   }, []);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   return (
     <div className="auth-scene">
