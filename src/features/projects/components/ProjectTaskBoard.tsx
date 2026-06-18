@@ -10,9 +10,24 @@ import { COLOR_CSS, STATUS_COLUMNS } from '../constants';
 interface Props {
   tasks: Task[];
   onChangeStatus: (taskId: string, status: TaskStatus) => void;
+  onEdit?: (task: Task) => void;
 }
 
-export function ProjectTaskBoard({ tasks, onChangeStatus }: Props) {
+function formatSchedule(startDate: string, startTime?: string): string {
+  const d = new Date(`${startDate}T00:00:00`);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  d.setHours(0, 0, 0, 0);
+  const diff = Math.round((d.getTime() - today.getTime()) / 86_400_000);
+  let dateLabel: string;
+  if (diff === 0) dateLabel = 'Today';
+  else if (diff === 1) dateLabel = 'Tomorrow';
+  else if (diff < 0) dateLabel = `${Math.abs(diff)}d ago`;
+  else dateLabel = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  return startTime ? `${startTime} · ${dateLabel}` : dateLabel;
+}
+
+export function ProjectTaskBoard({ tasks, onChangeStatus, onEdit }: Props) {
   const [dragId, setDragId] = useState<string | null>(null);
   const [overCol, setOverCol] = useState<TaskStatus | null>(null);
 
@@ -39,7 +54,7 @@ export function ProjectTaskBoard({ tasks, onChangeStatus }: Props) {
             onDragLeave={() => setOverCol((c) => (c === col.value ? null : c))}
             onDrop={() => handleDrop(col.value)}
             className={cn(
-              'flex flex-col w-[230px] shrink-0 rounded-[var(--r)] border transition-colors',
+              'flex flex-col flex-1 min-w-[140px] rounded-[var(--r)] border transition-colors',
               overCol === col.value
                 ? 'border-[var(--gold)] bg-[oklch(0.74_0.17_85_/_0.04)]'
                 : 'border-[var(--border)] bg-[var(--panel)]',
@@ -62,9 +77,11 @@ export function ProjectTaskBoard({ tasks, onChangeStatus }: Props) {
                     setDragId(null);
                     setOverCol(null);
                   }}
+                  onClick={() => onEdit?.(t)}
                   className={cn(
-                    'group flex items-start gap-2 p-2.5 rounded-[var(--r-sm)] border bg-[var(--surface-2)] cursor-grab active:cursor-grabbing transition-all',
+                    'group flex items-start gap-2 p-2 rounded-[var(--r-sm)] border bg-[var(--surface-2)] transition-all',
                     'border-[var(--border)] hover:border-[var(--border-hi)]',
+                    onEdit ? 'cursor-pointer' : 'cursor-grab active:cursor-grabbing',
                     dragId === t.id && 'opacity-40',
                   )}
                 >
@@ -72,18 +89,16 @@ export function ProjectTaskBoard({ tasks, onChangeStatus }: Props) {
                     className="w-1 self-stretch rounded-full shrink-0"
                     style={{ background: COLOR_CSS[t.color] }}
                   />
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-[13px] leading-none">{t.icon}</span>
-                      <span className="text-[12px] text-[var(--text-hi)] font-medium truncate">
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[9px] text-[var(--text-lo)] [font-family:var(--f-title)] tracking-[0.04em] mb-1 leading-tight whitespace-nowrap">
+                      {formatSchedule(t.startDate, t.startTime)}
+                    </p>
+                    <div className="flex items-center gap-1.5 min-w-0">
+                      <span className="text-[12px] leading-none shrink-0">{t.icon}</span>
+                      <span className="text-[11px] text-[var(--text-hi)] truncate leading-tight">
                         {t.name}
                       </span>
                     </div>
-                    {t.note && (
-                      <p className="text-[10px] text-[var(--text-lo)] mt-1 line-clamp-2">
-                        {t.note}
-                      </p>
-                    )}
                   </div>
                 </div>
               ))}

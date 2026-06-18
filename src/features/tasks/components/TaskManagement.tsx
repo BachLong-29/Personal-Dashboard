@@ -178,7 +178,11 @@ export function TaskManagement() {
             if (!isHabitScheduledForDate(h, date)) return null;
 
             const dateStr = toLocalDate(date);
-            const log = weekHabitLogs.find((l) => l.habitId === h.id && l.date.startsWith(dateStr));
+            // Compare as local dates: the server stores dates at local midnight, so the
+            // ISO string may be a previous UTC day (e.g. 2026-06-17T17:00Z = June 18 UTC+7).
+            const log = weekHabitLogs.find(
+              (l) => l.habitId === h.id && toLocalDate(new Date(l.date)) === dateStr,
+            );
             const cancelled = dateStr === todayStr && cancelledHabitIds.has(h.id);
             const ui = habitToUITask(h, log, cancelled, date);
             return { ...ui, id: `habit-${h.id}-${dateStr}` };
@@ -603,4 +607,3 @@ export function TaskManagement() {
     </div>
   );
 }
-

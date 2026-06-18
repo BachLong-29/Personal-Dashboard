@@ -24,8 +24,16 @@ type MobilePanel = 'center' | 'character' | 'timer';
 const DOW_TO_HABIT_DAY = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'] as const;
 
 export default function MainDashboard() {
-  // Stable date strings — computed once on mount, never stale within a session
-  const todayDateStr = useMemo(() => new Date().toISOString().substring(0, 10), []);
+  // Stable date strings — computed once on mount, never stale within a session.
+  // Local date (not UTC) so habit/task logs match the same format used by /tasks.
+  const todayDateStr = useMemo(() => {
+    const d = new Date();
+    return [
+      d.getFullYear(),
+      String(d.getMonth() + 1).padStart(2, '0'),
+      String(d.getDate()).padStart(2, '0'),
+    ].join('-');
+  }, []);
   const todayDayStr = useMemo(() => DOW_TO_HABIT_DAY[new Date().getDay()]!, []);
   const dateStr = useMemo(
     () =>

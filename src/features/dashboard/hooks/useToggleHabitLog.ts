@@ -13,8 +13,10 @@ export function useToggleHabitLog() {
       const { data } = await apiClient.post<ApiResponse<HabitLog>>('/habits/logs', payload);
       return data.data;
     },
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['habit-logs', variables.date] });
+    onSuccess: () => {
+      // Invalidate all habit-log queries (both single-date and range keys) so
+      // every consumer — dashboard, tasks day view, week view — stays in sync.
+      queryClient.invalidateQueries({ queryKey: ['habit-logs'] });
     },
   });
 }

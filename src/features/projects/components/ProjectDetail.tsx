@@ -8,11 +8,13 @@ import { useProfile } from '@/features/profile/hooks/useProfile';
 import { buildEmptyChar, profileToCharacter } from '@/features/dashboard/utils/character.utils';
 import { useUpdateTask } from '@/features/dashboard/hooks/useUpdateTask';
 import { AddTaskModal } from '@/features/tasks/components/shared/AddTaskModal';
+import { EditTaskModal } from '@/features/tasks/components/shared/EditTaskModal';
+import { taskToUITask } from '@/features/tasks/data/adapters';
 import type { Character } from '@/features/dashboard/types';
 import { Link } from '@/i18n/navigation';
 import { useUIStore } from '@/stores/ui.store';
 import { cn } from '@/libs/utils';
-import type { Task, TaskStatus } from '@/types';
+import type { Task, TaskStatus, UpdateTaskPayload } from '@/types';
 
 import { COLOR_CSS } from '../constants';
 import { useProject } from '../hooks/useProject';
@@ -49,11 +51,23 @@ export function ProjectDetail({ id }: { id: string }) {
 
   const [showEdit, setShowEdit] = useState(false);
   const [showAddTask, setShowAddTask] = useState(false);
+  const [editingTask, setEditingTask] = useState<Task | null>(null);
 
   const refetchProject = () => queryClient.invalidateQueries({ queryKey: ['project', id] });
 
   function handleChangeStatus(taskId: string, status: TaskStatus) {
     updateTask.mutate({ id: taskId, status }, { onSuccess: refetchProject });
+  }
+  function handleSaveEdit(taskId: string, payload: UpdateTaskPayload) {
+    updateTask.mutate(
+      { id: taskId, ...payload },
+      {
+        onSuccess: () => {
+          setEditingTask(null);
+          refetchProject();
+        },
+      },
+    );
   }
   function handleToggleDone(task: Task) {
     const next: TaskStatus = task.status === 'done' ? 'todo' : 'done';
@@ -209,10 +223,18 @@ export function ProjectDetail({ id }: { id: string }) {
         {/* Body */}
         <div className="flex-1 min-h-0 overflow-hidden">
           {viewMode === 'kanban' ? (
-            <ProjectTaskBoard tasks={project.tasks} onChangeStatus={handleChangeStatus} />
+            <ProjectTaskBoard
+              tasks={project.tasks}
+              onChangeStatus={handleChangeStatus}
+              onEdit={setEditingTask}
+            />
           ) : (
             <div className="h-full overflow-y-auto">
-              <ProjectTaskList tasks={project.tasks} onToggleDone={handleToggleDone} />
+              <ProjectTaskList
+                tasks={project.tasks}
+                onToggleDone={handleToggleDone}
+                onEdit={setEditingTask}
+              />
             </div>
           )}
         </div>
@@ -229,6 +251,13 @@ export function ProjectDetail({ id }: { id: string }) {
         projectId={id}
         onClose={() => setShowAddTask(false)}
         onSaved={refetchProject}
+      />
+      <EditTaskModal
+        task={editingTask ? taskToUITask(editingTask) : null}
+        open={editingTask !== null}
+        onClose={() => setEditingTask(null)}
+        onSave={handleSaveEdit}
+        saving={updateTask.isPending}
       />
     </div>
   );
