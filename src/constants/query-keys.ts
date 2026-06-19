@@ -27,4 +27,15 @@ export const queryKeys = {
     all: ['notifications'] as const,
     list: () => [...queryKeys.notifications.all, 'list'] as const,
   },
+  calendar: {
+    all: ['calendar'] as const,
+    range: (from: string, to: string) => [...queryKeys.calendar.all, 'range', from, to] as const,
+    insights: (from: string, to: string) =>
+      [...queryKeys.calendar.all, 'insights', from, to] as const,
+  },
+  scheduleBlocks: {
+    all: ['schedule-blocks'] as const,
+    list: (params: Record<string, unknown>) =>
+      [...queryKeys.scheduleBlocks.all, 'list', params] as const,
+  },
 } as const;

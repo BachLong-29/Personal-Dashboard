@@ -3,6 +3,7 @@ import type { NextRequest } from 'next/server';
 import { connectDB } from '@/libs/mongodb';
 import { getAuthUser } from '@/server/helpers/get-auth-user';
 import { NotificationModel, type NotificationType } from '@/server/models/notification.model';
+import { generateScheduleNotifications } from '@/server/services/schedule-notifications';
 import { asyncHandler, createdResponse, successResponse, unauthorizedResponse } from '@/server';
 import mongoose from 'mongoose';
 
@@ -12,6 +13,13 @@ export const GET = asyncHandler(async (req: NextRequest) => {
   if (!user) return unauthorizedResponse();
 
   await connectDB();
+
+  // Lazily materialise schedule-derived notifications (best-effort)
+  try {
+    await generateScheduleNotifications(user.sub);
+  } catch (err) {
+    console.error('[notifications] schedule generation failed', err);
+  }
 
   const now = new Date();
   const notifications = await NotificationModel.find({

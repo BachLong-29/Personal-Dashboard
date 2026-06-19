@@ -5,6 +5,7 @@ import { useRef, useState } from 'react';
 import { Modal, ModalHead, ModalBody, ModalFoot } from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
 import { useCreateTask } from '@/features/dashboard/hooks/useCreateTask';
+import { SessionPlanner, type PlannerTask } from '@/features/schedule/components/SessionPlanner';
 import type { CreateTaskPayload } from '@/types';
 
 import { TaskForm, type TaskFormValues, type TaskFormHandle } from './TaskForm';
@@ -45,6 +46,8 @@ export function AddTaskModal({
   const { mutate: createTask, isPending } = useCreateTask();
   const formRef = useRef<TaskFormHandle>(null);
   const [canSave, setCanSave] = useState(false);
+  // Task awaiting session planning (opened after a create that carried an estimate)
+  const [plannerTask, setPlannerTask] = useState<PlannerTask | null>(null);
 
   function handleSubmit(values: TaskFormValues) {
     const startDate = values.startDate
@@ -70,9 +73,21 @@ export function AddTaskModal({
     };
 
     createTask(payload, {
-      onSuccess: () => {
+      onSuccess: (created) => {
         onSaved?.();
         onClose();
+        // Offer session planning when the task carries a time estimate
+        if (created?.duration) {
+          setPlannerTask({
+            id: created.id,
+            name: created.name,
+            icon: created.icon,
+            color: created.color,
+            duration: created.duration,
+            startDate: created.startDate,
+            endDate: created.endDate,
+          });
+        }
       },
     });
   }
@@ -81,32 +96,41 @@ export function AddTaskModal({
     defaultValues?.startDate ?? (defaultDate ? new Date(defaultDate) : new Date());
 
   return (
-    <Modal open={open} onClose={onClose} maxWidth="560px">
-      <ModalHead tag="NEW QUEST" title="＋ Create Task" />
-      <ModalBody className="max-h-[calc(78vh-130px)] overflow-y-auto">
-        <TaskForm
-          ref={formRef}
-          mode="create"
-          defaultValues={{ startDate: defaultStart, ...defaultValues }}
-          onSubmit={handleSubmit}
-          onCanSaveChange={setCanSave}
-          saving={isPending}
-        />
-      </ModalBody>
-      <ModalFoot>
-        <div className="flex items-center justify-end gap-3 w-full">
-          <Button variant="ghost" onClick={onClose} disabled={isPending}>
-            Cancel
-          </Button>
-          <Button
-            variant="primary"
-            onClick={() => formRef.current?.submit()}
-            disabled={isPending || !canSave}
-          >
-            {isPending ? '⏳ Saving…' : '✦ Create Task'}
-          </Button>
-        </div>
-      </ModalFoot>
-    </Modal>
+    <>
+      <Modal open={open} onClose={onClose} maxWidth="560px">
+        <ModalHead tag="NEW QUEST" title="＋ Create Task" />
+        <ModalBody className="max-h-[calc(78vh-130px)] overflow-y-auto">
+          <TaskForm
+            ref={formRef}
+            mode="create"
+            defaultValues={{ startDate: defaultStart, ...defaultValues }}
+            onSubmit={handleSubmit}
+            onCanSaveChange={setCanSave}
+            saving={isPending}
+          />
+        </ModalBody>
+        <ModalFoot>
+          <div className="flex items-center justify-end gap-3 w-full">
+            <Button variant="ghost" onClick={onClose} disabled={isPending}>
+              Cancel
+            </Button>
+            <Button
+              variant="primary"
+              onClick={() => formRef.current?.submit()}
+              disabled={isPending || !canSave}
+            >
+              {isPending ? '⏳ Saving…' : '✦ Create Task'}
+            </Button>
+          </div>
+        </ModalFoot>
+      </Modal>
+
+      {/* Session planner — opens after creating a task that has an estimate */}
+      <SessionPlanner
+        open={plannerTask !== null}
+        task={plannerTask}
+        onClose={() => setPlannerTask(null)}
+      />
+    </>
   );
 }

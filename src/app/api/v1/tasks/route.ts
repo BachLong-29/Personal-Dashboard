@@ -4,6 +4,7 @@ import type { NextRequest } from 'next/server';
 
 import { connectDB } from '@/libs/mongodb';
 import { getAuthUser } from '@/server/helpers/get-auth-user';
+import { getProgressMap, toTaskProgress } from '@/server/helpers/schedule-block.helpers';
 import { TaskModel } from '@/server/models/task.model';
 import { asyncHandler, createdResponse, successResponse, unauthorizedResponse } from '@/server';
 import { validateBody, validateSearchParams } from '@/server/validate';
@@ -72,6 +73,16 @@ function serialize(t: ITask): Task {
   };
 }
 
+/** Serialize tasks and attach derived schedule-block progress to each. */
+async function serializeWithProgress(userId: string, tasks: ITask[]): Promise<Task[]> {
+  const ids = tasks.map((t) => t._id);
+  const progressMap = await getProgressMap(userId, 'task', ids);
+  return tasks.map((t) => ({
+    ...serialize(t),
+    progress: toTaskProgress(progressMap.get(t._id.toString()), t.duration),
+  }));
+}
+
 // GET /api/v1/tasks?start=YYYY-MM-DD&end=YYYY-MM-DD
 export const GET = asyncHandler(async (req: NextRequest) => {
   const user = getAuthUser(req);
@@ -92,7 +103,7 @@ export const GET = asyncHandler(async (req: NextRequest) => {
   if (query?.projectId) {
     filter.projectId = query.projectId;
     const tasks = await TaskModel.find(filter).sort({ createdAt: 1 });
-    return successResponse(tasks.map(serialize));
+    return successResponse(await serializeWithProgress(user.sub, tasks));
   }
 
   // ── Search / recent-list mode (q or limit without date range) ────────────────
@@ -105,7 +116,7 @@ export const GET = asyncHandler(async (req: NextRequest) => {
     const tasks = await TaskModel.find(filter)
       .sort({ createdAt: -1 })
       .limit(query?.limit ?? 10);
-    return successResponse(tasks.map(serialize));
+    return successResponse(await serializeWithProgress(user.sub, tasks));
   }
 
   // ── Date-range mode ───────────────────────────────────────────────────────────
@@ -137,7 +148,7 @@ export const GET = asyncHandler(async (req: NextRequest) => {
 
   const tasks = await TaskModel.find(filter).sort({ startDate: 1 });
 
-  return successResponse(tasks.map(serialize));
+  return successResponse(await serializeWithProgress(user.sub, tasks));
 });
 
 // POST /api/v1/tasks

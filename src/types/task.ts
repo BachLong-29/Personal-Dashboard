@@ -1,3 +1,5 @@
+import type { TaskProgress } from './schedule-block';
+
 export type TaskStatus = 'todo' | 'in_progress' | 'pending' | 'waiting' | 'done';
 export type TaskColor = 'gold' | 'mint' | 'violet' | 'cyan' | 'rose' | 'amber' | 'blue';
 
@@ -26,6 +28,8 @@ export interface Task {
   attachments: string[];
   dependencies: string[];
   active: boolean;
+  /** Derived from schedule blocks — present in list responses, omitted otherwise */
+  progress?: TaskProgress;
   createdAt: string;
   updatedAt: string;
 }

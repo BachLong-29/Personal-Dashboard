@@ -5,7 +5,9 @@ import { getAuthUser } from '@/server/helpers/get-auth-user';
 import { HabitLogModel } from '@/server/models/habit-log.model';
 import { HabitModel } from '@/server/models/habit.model';
 import { TaskModel } from '@/server/models/task.model';
+import { buildCalendar } from '@/server/services/schedule-engine';
 import { asyncHandler, successResponse, unauthorizedResponse } from '@/server';
+import type { CalendarSource } from '@/types/calendar';
 import type { HabitDay } from '@/types/habit';
 
 const DOW_TO_HABIT_DAY: HabitDay[] = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
@@ -125,7 +127,46 @@ export const GET = asyncHandler(async (req: NextRequest) => {
     return totalDone > 0 ? Math.round((totalDone / Math.max(totalScheduled, 1)) * 100) : 0;
   })();
 
+  // ── Schedule engine — hour-based workload (last 7 days) ──────────────────────
+  const scheduleFrom = toDateStr(weekStart);
+  const calItems = await buildCalendar(user.sub, scheduleFrom, todayStr);
+
+  let plannedMin = 0;
+  let completedMin = 0;
+  let missedMin = 0;
+  const bySource: Record<CalendarSource, number> = { habit: 0, quest: 0, task: 0 };
+  const trendMap = new Map<string, { planned: number; completed: number }>();
+
+  for (const item of calItems) {
+    plannedMin += item.duration;
+    if (item.status === 'done') {
+      completedMin += item.duration;
+      bySource[item.sourceType] += item.duration;
+    } else if (item.status === 'missed') {
+      missedMin += item.duration;
+    }
+    const t = trendMap.get(item.date) ?? { planned: 0, completed: 0 };
+    t.planned += item.duration;
+    if (item.status === 'done') t.completed += item.duration;
+    trendMap.set(item.date, t);
+  }
+
+  const scheduleTrend = dates.map((mmdd, i) => {
+    const day = localMidnight(-(6 - i));
+    const t = trendMap.get(toDateStr(day)) ?? { planned: 0, completed: 0 };
+    return { date: mmdd, planned: t.planned, completed: t.completed };
+  });
+
   return successResponse({
+    schedule: {
+      range: { from: scheduleFrom, to: todayStr },
+      plannedMinutes: plannedMin,
+      completedMinutes: completedMin,
+      missedMinutes: missedMin,
+      completionRate: plannedMin > 0 ? Math.round((completedMin / plannedMin) * 100) : 0,
+      trend: scheduleTrend,
+      bySource,
+    },
     tasks: {
       total: allTasks.length,
       done: tasksDone,
