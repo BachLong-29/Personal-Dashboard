@@ -385,6 +385,13 @@
     }
   },
   "tasks": {
+    "weekPeek": {
+      "today": "วันนี้",
+      "done": "เสร็จ",
+      "missed": "พลาด",
+      "more": "+ อีก {count}…",
+      "collapse": "ย่อ"
+    },
     "editModal": {
       "tag": "แก้ไขภารกิจ",
       "cancel": "ยกเลิก",

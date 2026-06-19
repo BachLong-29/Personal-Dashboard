@@ -2,7 +2,10 @@ import type { Metadata, Viewport } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
 import { NextIntlClientProvider } from 'next-intl';
 import { getMessages } from 'next-intl/server';
+import { cookies } from 'next/headers';
 import { notFound } from 'next/navigation';
+
+import { THEME_COOKIE_KEY } from '@/components/providers/ThemeProvider';
 
 import { Providers } from '@/components/providers';
 import { routing } from '@/i18n/routing';
@@ -54,8 +57,18 @@ export default async function LocaleLayout({
 
   const messages = await getMessages();
 
+  // Resolve the theme on the server from a cookie so the correct <html> class is
+  // present in the initial HTML — avoids a flash without an inline script.
+  const cookieStore = await cookies();
+  const themeClass = cookieStore.get(THEME_COOKIE_KEY)?.value === 'light' ? 'light' : 'dark';
+
   return (
-    <html lang={locale} suppressHydrationWarning>
+    <html
+      lang={locale}
+      className={themeClass}
+      style={{ colorScheme: themeClass }}
+      suppressHydrationWarning
+    >
       <body
         className={`${geistSans.variable} ${geistMono.variable} min-h-screen bg-background font-sans antialiased`}
       >

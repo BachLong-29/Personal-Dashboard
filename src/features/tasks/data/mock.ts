@@ -112,7 +112,7 @@ export const PRIORITIES: Record<TaskPriority, PriMeta> = {
   low: { label: 'Low', color: 'mint', token: '·' },
 };
 
-export const DIFF_LIST: TaskDiff[] = ['S', 'A', 'B', 'C', 'D'];
+// export const DIFF_LIST: TaskDiff[] = ['S', 'A', 'B', 'C', 'D'];
 
 // ─── Slot meta ────────────────────────────────────────────────────────────────
 export interface SlotMeta {
@@ -248,8 +248,9 @@ export const TODAY_SCHEDULE: ScheduleEntry[] = [
 ];
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
+const [DEFAULT_CAT] = TASK_CATEGORIES;
 export function catOf(id: string): CatMeta {
-  return TASK_CAT_MAP[id as TaskCat] ?? TASK_CATEGORIES[0]!;
+  return TASK_CAT_MAP[id as TaskCat] ?? DEFAULT_CAT;
 }
 
 export function priOf(id: string): PriMeta {

@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 
 import { cn } from '@/libs/utils';
 
-import { DIFF_LIST, type TaskDiff } from '../data/mock';
+import { type TaskDiff } from '../data/mock';
 
 export type ViewMode = 'day' | 'week' | 'month' | 'all';
 
@@ -53,8 +53,6 @@ export function PageHeader({
   categories,
   filterCat,
   onFilterCat,
-  filterDiff,
-  onFilterDiff,
   splitMode,
   onSplitMode,
   search,
@@ -101,9 +99,7 @@ export function PageHeader({
           <span className="text-[var(--text-hi)] font-semibold">{todayDone}</span>
           <span className="text-[var(--text-lo)]"> of {todayTotal} cleared today · </span>
           <span className="text-[var(--text-hi)] font-semibold">{weekDone}</span>
-          <span className="text-[var(--text-lo)]"> of {weekTotal} this week · combo </span>
-          <span className="text-[var(--violet)] font-bold">×3</span>
-          <span className="text-[var(--text-lo)]"> active until midnight.</span>
+          <span className="text-[var(--text-lo)]"> of {weekTotal} this week </span>
         </p>
       </div>
 
@@ -174,23 +170,6 @@ export function PageHeader({
               )}
             </div>
           )}
-        </FilterGroup>
-
-        {/* Rank chips */}
-        <FilterGroup label="Rank">
-          <Chip active={filterDiff === 'all'} onClick={() => onFilterDiff('all')}>
-            Any
-          </Chip>
-          {DIFF_LIST.map((d) => (
-            <Chip
-              key={d}
-              active={filterDiff === d}
-              activeColor={DIFF_ACTIVE_COLORS[d]}
-              onClick={() => onFilterDiff(filterDiff === d ? 'all' : d)}
-            >
-              {d}
-            </Chip>
-          ))}
         </FilterGroup>
 
         {/* Side panel toggle — day view only */}
@@ -341,14 +320,6 @@ const searchBox =
   'flex items-center gap-1.5 bg-[var(--panel2)] border border-[var(--border)] rounded-[var(--r-sm)] px-2 py-1 w-full sm:w-[160px]';
 const searchInput =
   'flex-1 bg-transparent text-[10px] text-[var(--text-hi)] placeholder:text-[var(--text-lo)] outline-none min-w-0';
-
-const DIFF_ACTIVE_COLORS: Record<string, string> = {
-  S: 'var(--gold)',
-  A: 'var(--rose)',
-  B: 'var(--violet)',
-  C: 'var(--cyan)',
-  D: 'var(--mint)',
-};
 
 // More panel dropdown
 const morePanel =
