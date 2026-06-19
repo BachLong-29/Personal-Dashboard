@@ -1,6 +1,8 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
+
+import { useTranslations } from 'next-intl';
 
 import { cn } from '@/libs/utils';
 
@@ -89,7 +91,10 @@ function WeekPeekDay({
   isToday,
   isPast,
 }: WeekPeekDayProps) {
+  const t = useTranslations('tasks.weekPeek');
+  const [expanded, setExpanded] = useState(false);
   const allDone = tasks.length > 0 && done === tasks.length;
+  const visibleTasks = expanded ? tasks : tasks.slice(0, 3);
 
   return (
     <div className={cn(dayRow, isToday && dayRowToday, isPast && !isToday && dayRowPast)}>
@@ -144,23 +149,23 @@ function WeekPeekDay({
 
           {isToday && (
             <span className="text-[7px] font-bold text-[var(--gold)] bg-[oklch(0.74_0.17_85_/_0.12)] border border-[oklch(0.74_0.17_85_/_0.25)] px-1 py-0.5 rounded tracking-[0.1em]">
-              TODAY
+              {t('today')}
             </span>
           )}
           {allDone && !isToday && (
             <span className="text-[7px] font-bold text-[var(--mint)] bg-[oklch(0.76_0.14_162_/_0.1)] border border-[oklch(0.76_0.14_162_/_0.25)] px-1 py-0.5 rounded tracking-[0.1em]">
-              DONE
+              {t('done')}
             </span>
           )}
           {isPast && !isToday && tasks.length > 0 && done < tasks.length && (
             <span className="text-[7px] font-bold text-[var(--rose)] bg-[oklch(0.72_0.18_5_/_0.1)] border border-[oklch(0.72_0.18_5_/_0.25)] px-1 py-0.5 rounded tracking-[0.1em]">
-              MISSED
+              {t('missed')}
             </span>
           )}
         </div>
 
         <div className="flex flex-col gap-[2px]">
-          {tasks.slice(0, 3).map((t) => {
+          {visibleTasks.map((t) => {
             const c = catOf(t.cat);
             const catColor = COLOR_VAR[c.color] ?? 'var(--text-lo)';
             return (
@@ -177,7 +182,7 @@ function WeekPeekDay({
                   style={{ background: t.done ? 'var(--text-dim)' : catColor }}
                 />
                 <span className="text-[9px] text-[var(--text-mid)] truncate flex-1">
-                  {t.icon ? `${t.icon} ` : ''}
+                  {t.icon && t.source !== 'habit' ? `${t.icon} ` : ''}
                   {t.title}
                 </span>
                 <span
@@ -193,9 +198,13 @@ function WeekPeekDay({
           })}
 
           {tasks.length > 3 && (
-            <div className="text-[8px] text-[var(--text-lo)] italic">
-              + {tasks.length - 3} more…
-            </div>
+            <button
+              type="button"
+              onClick={() => setExpanded((v) => !v)}
+              className="text-[8px] text-[var(--text-lo)] italic text-left hover:text-[var(--gold)] transition-colors cursor-pointer"
+            >
+              {expanded ? t('collapse') : t('more', { count: tasks.length - 3 })}
+            </button>
           )}
         </div>
       </div>

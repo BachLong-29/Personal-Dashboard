@@ -5,7 +5,7 @@ import { useRouter, useParams } from 'next/navigation';
 
 import { useProfile } from '@/features/profile/hooks/useProfile';
 import { buildEmptyChar, profileToCharacter } from '@/features/dashboard/utils/character.utils';
-import { toLocalDate, todayISO } from '../utils/date.utils';
+import { isInRange, offsetToISO, toLocalDate, todayISO } from '../utils/date.utils';
 import { useHabits } from '@/features/dashboard/hooks/useHabits';
 import { useHabitLogs } from '@/features/dashboard/hooks/useHabitLogs';
 import { useHabitLogsRange } from '@/features/dashboard/hooks/useHabitLogsRange';
@@ -17,6 +17,7 @@ import { useToggleHabitLog } from '@/features/dashboard/hooks/useToggleHabitLog'
 import { useToggleTaskLog } from '@/features/dashboard/hooks/useToggleTaskLog';
 import { useCategories } from '@/features/dashboard/hooks/useCategories';
 import { useUpdateQuestStatus } from '@/features/dashboard/hooks/useUpdateQuestStatus';
+import { useMoveQuest } from '@/features/dashboard/hooks/useMoveQuest';
 import { useUpdateTask } from '@/features/dashboard/hooks/useUpdateTask';
 import type { Character } from '@/features/dashboard/types';
 import type { UpdateTaskPayload, TaskColor } from '@/types';
@@ -39,6 +40,7 @@ import {
 import { PageHeader, type ViewMode } from './PageHeader';
 import { TaskDayView } from './day/TaskDayView';
 import { TaskWeekView } from './week/TaskWeekView';
+import { WeekDropDialog } from './week/WeekDropDialog';
 import { TaskMonthView } from './month/TaskMonthView';
 import { TaskAllView } from './all/TaskAllView';
 
@@ -124,6 +126,7 @@ export function TaskManagement() {
   // ── Mutations ────────────────────────────────────────────────────────────────
   const updateTask = useUpdateTask();
   const updateQuestStatus = useUpdateQuestStatus();
+  const moveQuest = useMoveQuest();
   const toggleHabitLog = useToggleHabitLog();
   const toggleTaskLog = useToggleTaskLog();
   const createTask = useCreateTask();
@@ -440,8 +443,65 @@ export function TaskManagement() {
     }
   }
 
+  // Out-of-range drop awaiting a Strict/Flexible decision
+  const [pendingMove, setPendingMove] = useState<{
+    sourceId: string;
+    title: string;
+    targetISO: string;
+    startDate?: string;
+    endDate?: string;
+  } | null>(null);
+
   function handleMoveToDay(id: string, day: number) {
+    // Always reflect the move locally first (keeps the card under the cursor)
     setTasks((ts) => ts.map((t) => (t.id === id ? { ...t, day } : t)));
+
+    const task = tasks.find((t) => t.id === id);
+    if (!task?.sourceId) return;
+    const targetISO = offsetToISO(day);
+
+    // ── Quest — moving its deadline ────────────────────────────────────────
+    if (task.source === 'quest') {
+      moveQuest.mutate({ id: task.sourceId, dueDate: targetISO });
+      return;
+    }
+
+    // ── Task — persist the new day, guarding the [start, due] span ──────────
+    if (task.source === 'task') {
+      const inRange = isInRange(targetISO, task.startDate, task.endDate);
+      if (task.endDate && !inRange) {
+        // Multi-day task dropped outside its span → ask how to resolve (Flexible)
+        setPendingMove({
+          sourceId: task.sourceId,
+          title: task.title,
+          targetISO,
+          startDate: task.startDate,
+          endDate: task.endDate,
+        });
+        return;
+      }
+      // Single-day (or in-range) move → just shift the start date
+      updateTask.mutate({ id: task.sourceId, startDate: targetISO });
+    }
+  }
+
+  /** Flexible: grow the task's span to include the dropped day. */
+  function handleExtendPending() {
+    if (!pendingMove) return;
+    const { sourceId, targetISO, endDate } = pendingMove;
+    const patch: UpdateTaskPayload =
+      endDate && targetISO > endDate ? { endDate: targetISO } : { startDate: targetISO };
+    updateTask.mutate({ id: sourceId, ...patch }, { onSettled: () => setPendingMove(null) });
+  }
+
+  /** Flexible: move the task to the dropped day as a single-day task. */
+  function handleMovePending() {
+    if (!pendingMove) return;
+    const { sourceId, targetISO } = pendingMove;
+    updateTask.mutate(
+      { id: sourceId, startDate: targetISO, endDate: null },
+      { onSettled: () => setPendingMove(null) },
+    );
   }
 
   function handleRescheduleHabit(habitTask: UITask, newTime: string) {
@@ -604,6 +664,21 @@ export function TaskManagement() {
         onSave={handleSaveEdit}
         saving={updateTask.isPending}
       />
+
+      {/* ── Out-of-range drop dialog (Flexible mode) ──────────────────────── */}
+      {pendingMove && (
+        <WeekDropDialog
+          taskTitle={pendingMove.title}
+          targetDateLabel={new Date(pendingMove.targetISO).toLocaleDateString('en-US', {
+            month: 'short',
+            day: 'numeric',
+          })}
+          onExtend={handleExtendPending}
+          onMove={handleMovePending}
+          onCancel={() => setPendingMove(null)}
+          loading={updateTask.isPending}
+        />
+      )}
     </div>
   );
 }

@@ -385,6 +385,13 @@
     }
   },
   "tasks": {
+    "weekPeek": {
+      "today": "TODAY",
+      "done": "DONE",
+      "missed": "MISSED",
+      "more": "+ {count} more…",
+      "collapse": "Show less"
+    },
     "editModal": {
       "tag": "EDIT QUEST",
       "cancel": "Cancel",

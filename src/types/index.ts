@@ -10,3 +10,6 @@ export type * from './task-log';
 export type * from './goal';
 export type * from './project';
 export type * from './search';
+export type * from './schedule-block';
+export type * from './calendar';
+export type * from './calendar-insights';

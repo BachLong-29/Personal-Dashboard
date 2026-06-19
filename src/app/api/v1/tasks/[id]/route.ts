@@ -3,6 +3,7 @@ import type { NextRequest } from 'next/server';
 
 import { connectDB } from '@/libs/mongodb';
 import { getAuthUser } from '@/server/helpers/get-auth-user';
+import { ScheduleBlockModel } from '@/server/models/schedule-block.model';
 import { TaskModel } from '@/server/models/task.model';
 import { asyncHandler, notFoundResponse, successResponse, unauthorizedResponse } from '@/server';
 import { validateBody } from '@/server/validate';
@@ -122,6 +123,9 @@ export const DELETE = asyncHandler(async (req: NextRequest, ctx) => {
   );
 
   if (!task) return notFoundResponse('Task not found');
+
+  // Cascade: drop scheduling blocks tied to this task
+  await ScheduleBlockModel.deleteMany({ userId: user.sub, sourceType: 'task', sourceId: id });
 
   return successResponse(null, 'Task deleted');
 });

@@ -385,6 +385,13 @@
     }
   },
   "tasks": {
+    "weekPeek": {
+      "today": "HÔM NAY",
+      "done": "XONG",
+      "missed": "BỎ LỠ",
+      "more": "+ {count} nữa…",
+      "collapse": "Thu gọn"
+    },
     "editModal": {
       "tag": "CHỈNH SỬA NHIỆM VỤ",
       "cancel": "Hủy",
