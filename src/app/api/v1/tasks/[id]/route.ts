@@ -12,7 +12,6 @@ import type { ITask } from '@/server/models/task.model';
 
 const TASK_COLORS = ['gold', 'mint', 'violet', 'cyan', 'rose', 'amber', 'blue'] as const;
 const TASK_STATUSES = ['todo', 'in_progress', 'pending', 'waiting', 'done'] as const;
-const TIME_RE = /^([01]\d|2[0-3]):[0-5]\d$/;
 
 const dateField = z
   .string()
@@ -28,8 +27,6 @@ const updateSchema = z.object({
   status: z.enum(TASK_STATUSES).optional(),
   duration: z.number().int().min(1).max(1440).optional().nullable(),
   startDate: dateField.optional(),
-  /** HH:MM — null to clear the field */
-  startTime: z.string().regex(TIME_RE, 'Must be HH:MM').optional().nullable(),
   endDate: dateField.optional().nullable(),
   dependencies: z.array(z.string()).optional(),
   active: z.boolean().optional(),
@@ -51,7 +48,6 @@ function serialize(t: ITask): Task {
     status: t.status,
     duration: t.duration,
     startDate: t.startDate.toISOString().substring(0, 10),
-    startTime: t.startTime,
     endDate: t.endDate?.toISOString().substring(0, 10),
     deferReason: t.deferReason,
     projectId: t.projectId?.toString(),

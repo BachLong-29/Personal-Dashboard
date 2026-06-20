@@ -18,8 +18,6 @@ const dateField = z
   .datetime({ offset: true })
   .or(z.string().regex(/^\d{4}-\d{2}-\d{2}$/));
 
-const TIME_RE = /^([01]\d|2[0-3]):[0-5]\d$/;
-
 const createSchema = z.object({
   name: z.string().min(1).max(100),
   note: z.string().max(500).optional(),
@@ -28,7 +26,6 @@ const createSchema = z.object({
   icon: z.string().min(1),
   duration: z.number().int().min(1).max(1440).optional(),
   startDate: dateField,
-  startTime: z.string().regex(TIME_RE, 'Must be HH:MM').optional(),
   endDate: dateField.optional(),
   /** Habit ObjectId — marks this task as a one-day replacement for that habit */
   habitRef: z.string().optional(),
@@ -61,7 +58,6 @@ function serialize(t: ITask): Task {
     status: t.status,
     duration: t.duration,
     startDate: t.startDate.toISOString().substring(0, 10),
-    startTime: t.startTime,
     endDate: t.endDate?.toISOString().substring(0, 10),
     habitRef: t.habitRef?.toString(),
     projectId: t.projectId?.toString(),
@@ -177,7 +173,6 @@ export const POST = asyncHandler(async (req: NextRequest) => {
     icon: data.icon,
     duration: data.duration,
     startDate,
-    startTime: data.startTime,
     endDate,
     habitRef: data.habitRef ? new mongoose.Types.ObjectId(data.habitRef) : undefined,
     projectId: data.projectId ? new mongoose.Types.ObjectId(data.projectId) : undefined,

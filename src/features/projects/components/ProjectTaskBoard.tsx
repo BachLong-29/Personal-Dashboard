@@ -5,7 +5,7 @@ import { useState } from 'react';
 import { cn } from '@/libs/utils';
 import type { Task, TaskStatus } from '@/types';
 
-import { COLOR_CSS, STATUS_COLUMNS } from '../constants';
+import { COLOR_CSS, STATUS_COLUMNS, STATUS_CSS } from '../constants';
 
 interface Props {
   tasks: Task[];
@@ -44,6 +44,7 @@ export function ProjectTaskBoard({ tasks, onChangeStatus, onEdit }: Props) {
     <div className="flex gap-3 h-full overflow-x-auto pb-2">
       {STATUS_COLUMNS.map((col) => {
         const colTasks = tasks.filter((t) => t.status === col.value);
+        const statusColor = STATUS_CSS[col.value];
         return (
           <div
             key={col.value}
@@ -54,17 +55,40 @@ export function ProjectTaskBoard({ tasks, onChangeStatus, onEdit }: Props) {
             onDragLeave={() => setOverCol((c) => (c === col.value ? null : c))}
             onDrop={() => handleDrop(col.value)}
             className={cn(
-              'flex flex-col flex-1 min-w-[140px] rounded-[var(--r)] border transition-colors',
+              'flex flex-col flex-1 min-w-[140px] rounded-[var(--r)] border transition-colors overflow-hidden',
               overCol === col.value
                 ? 'border-[var(--gold)] bg-[oklch(0.74_0.17_85_/_0.04)]'
                 : 'border-[var(--border)] bg-[var(--panel)]',
             )}
           >
-            <div className="flex items-center justify-between px-3 py-2 border-b border-[var(--border)]">
-              <span className="text-[10px] font-bold uppercase tracking-[0.1em] text-[var(--text-mid)] [font-family:var(--f-title)]">
-                {col.label}
+            {/* Status accent bar */}
+            <span className="h-[3px] w-full shrink-0" style={{ background: statusColor }} />
+
+            <div
+              className="flex items-center justify-between px-3 py-2 border-b border-[var(--border)]"
+              style={{ background: `color-mix(in oklch, ${statusColor} 8%, transparent)` }}
+            >
+              <span className="flex items-center gap-1.5 min-w-0">
+                <span
+                  className="w-1.5 h-1.5 rounded-full shrink-0"
+                  style={{ background: statusColor, boxShadow: `0 0 6px ${statusColor}` }}
+                />
+                <span
+                  className="text-[10px] font-bold uppercase tracking-[0.1em] [font-family:var(--f-title)] truncate"
+                  style={{ color: statusColor }}
+                >
+                  {col.label}
+                </span>
               </span>
-              <span className="text-[10px] text-[var(--text-lo)] font-bold">{colTasks.length}</span>
+              <span
+                className="text-[10px] font-bold px-1.5 rounded-[var(--r-xs)] shrink-0"
+                style={{
+                  color: statusColor,
+                  background: `color-mix(in oklch, ${statusColor} 16%, transparent)`,
+                }}
+              >
+                {colTasks.length}
+              </span>
             </div>
 
             <div className="flex flex-col gap-2 p-2 flex-1 min-h-[60px] overflow-y-auto">
@@ -91,7 +115,7 @@ export function ProjectTaskBoard({ tasks, onChangeStatus, onEdit }: Props) {
                   />
                   <div className="min-w-0 flex-1">
                     <p className="text-[9px] text-[var(--text-lo)] [font-family:var(--f-title)] tracking-[0.04em] mb-1 leading-tight whitespace-nowrap">
-                      {formatSchedule(t.startDate, t.startTime)}
+                      {formatSchedule(t.startDate)}
                     </p>
                     <div className="flex items-center gap-1.5 min-w-0">
                       <span className="text-[12px] leading-none shrink-0">{t.icon}</span>

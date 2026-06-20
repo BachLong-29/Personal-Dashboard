@@ -43,7 +43,6 @@ function serializeTask(t: ITask): Task {
     status: t.status,
     duration: t.duration,
     startDate: t.startDate.toISOString().substring(0, 10),
-    startTime: t.startTime,
     endDate: t.endDate?.toISOString().substring(0, 10),
     habitRef: t.habitRef?.toString(),
     projectId: t.projectId?.toString(),

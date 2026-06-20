@@ -286,7 +286,8 @@ export function WeekView({
                         ...dayTasks.map((t) => ({
                           kind: 'task' as const,
                           item: t,
-                          time: t.startTime || undefined,
+                          // Time-of-day now lives in schedule blocks, not on the task itself.
+                          time: undefined,
                           color: HABIT_COLORS[t.color as TaskColor]?.value ?? 'var(--gold)',
                         })),
                         ...(display.showQuests ? (questsByDate[dayStr] ?? []) : []).map((q) => ({

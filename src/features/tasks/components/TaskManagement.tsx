@@ -17,6 +17,12 @@ import { useToggleHabitLog } from '@/features/dashboard/hooks/useToggleHabitLog'
 import { useToggleTaskLog } from '@/features/dashboard/hooks/useToggleTaskLog';
 import { useCategories } from '@/features/dashboard/hooks/useCategories';
 import { useProjects } from '@/features/projects/hooks/useProjects';
+import {
+  useScheduleBlocks,
+  useCreateScheduleBlock,
+  useUpdateScheduleBlock,
+} from '@/features/schedule/hooks/useScheduleBlocks';
+import type { ScheduleBlock } from '@/types';
 import { useUpdateQuestStatus } from '@/features/dashboard/hooks/useUpdateQuestStatus';
 import { useMoveQuest } from '@/features/dashboard/hooks/useMoveQuest';
 import { useUpdateTask } from '@/features/dashboard/hooks/useUpdateTask';
@@ -125,6 +131,29 @@ export function TaskManagement() {
   const { data: apiTaskLogsForDay = [] } = useTaskLogs(selectedDateStr);
   const { data: apiHabitLogsForDay = [] } = useHabitLogs(selectedDateStr);
 
+  // Task schedule blocks — drive each card's slot. Cover the week range + selected day.
+  const { data: weekTaskBlocks = [] } = useScheduleBlocks({
+    from: logRangeFrom,
+    to: logRangeTo,
+    sourceType: 'task',
+  });
+  const { data: dayTaskBlocks = [] } = useScheduleBlocks({
+    from: selectedDateStr,
+    to: selectedDateStr,
+    sourceType: 'task',
+  });
+
+  /** `${taskId}|${YYYY-MM-DD}` → earliest schedule block on that date. */
+  const blockMap = useMemo(() => {
+    const m = new Map<string, ScheduleBlock>();
+    for (const b of [...weekTaskBlocks, ...dayTaskBlocks]) {
+      const key = `${b.sourceId}|${b.date}`;
+      const cur = m.get(key);
+      if (!cur || b.startTime < cur.startTime) m.set(key, b);
+    }
+    return m;
+  }, [weekTaskBlocks, dayTaskBlocks]);
+
   // ── Mutations ────────────────────────────────────────────────────────────────
   const updateTask = useUpdateTask();
   const updateQuestStatus = useUpdateQuestStatus();
@@ -132,6 +161,8 @@ export function TaskManagement() {
   const toggleHabitLog = useToggleHabitLog();
   const toggleTaskLog = useToggleTaskLog();
   const createTask = useCreateTask();
+  const createBlock = useCreateScheduleBlock();
+  const updateBlock = useUpdateScheduleBlock();
 
   // ── Merge API data → UITask[] ─────────────────────────────────────────────
 
@@ -179,7 +210,8 @@ export function TaskManagement() {
   const apiMerged = useMemo<UITask[]>(() => {
     const tasks = apiTasks.map((t) => {
       const log = apiTaskLogs.find((l) => l.taskId === t.id);
-      return withProject(taskToUITask(t, log));
+      const blockTime = blockMap.get(`${t.id}|${t.startDate}`)?.startTime;
+      return withProject(taskToUITask(t, log, blockTime));
     });
     const quests = apiQuests.map((q) => questToUITask(q));
 
@@ -225,6 +257,7 @@ export function TaskManagement() {
     weekViewOffset,
     todayStr,
     withProject,
+    blockMap,
   ]);
 
   // ── Local task state ──────────────────────────────────────────────────────
@@ -241,22 +274,12 @@ export function TaskManagement() {
       ? []
       : apiTasksForDay.map((t) => {
           const log = apiTaskLogsForDay.find((l) => l.taskId === t.id);
-          const ui = taskToUITask(t, log);
-          // Assign slot by startTime regardless of day offset
-          const h = t.startTime ? parseInt(t.startTime.split(':')[0] ?? '0', 10) : null;
-          const slot: UITask['slot'] =
-            h === null
-              ? 'morning'
-              : h < 10
-                ? 'morning'
-                : h < 13
-                  ? 'deep'
-                  : h < 17
-                    ? 'afternoon'
-                    : 'evening';
+          // Slot comes from the task's block on the selected date (if any).
+          const blockTime = blockMap.get(`${t.id}|${selectedDateStr}`)?.startTime;
+          const ui = taskToUITask(t, log, blockTime);
           // For multi-day tasks: done = log exists for this date OR task is fully done
           const done = ui.isMultiDay ? !!log || t.status === 'done' : t.status === 'done';
-          return withProject({ ...ui, slot, day: selectedOffset, done });
+          return withProject({ ...ui, day: selectedOffset, done });
         });
 
     // ── Habit UITasks for non-today selected dates ───────────────────────────────
@@ -304,8 +327,10 @@ export function TaskManagement() {
     apiHabitLogsForDay,
     cancelledHabitIdsForDay,
     selectedDate,
+    selectedDateStr,
     selectedOffset,
     withProject,
+    blockMap,
   ]);
 
   // ── Forge modal ──────────────────────────────────────────────────────────────
@@ -324,7 +349,6 @@ export function TaskManagement() {
       color: (task.color as TaskColor) ?? 'gold',
       startDate: new Date(),
       endDate: task.endDate ? new Date(task.endDate) : null,
-      startTime: task.startTime ?? '',
       duration: task.est != null ? String(task.est) : '',
       dependencies: task.dependencies ?? [],
     });
@@ -449,19 +473,29 @@ export function TaskManagement() {
   }
 
   function handleMoveToSlot(id: string, slot: UITask['slot'], day = 0) {
-    // When dragging to a slot on the current day, assign the slot's default startTime
-    const newStartTime = day === 0 ? slotToDefaultTime(slot) : undefined;
+    // Dropping into a slot sets the slot's default time as the card's block time.
+    const newStartTime = slotToDefaultTime(slot);
 
     setTasks((ts) =>
-      ts.map((t) =>
-        t.id === id ? { ...t, slot, day, ...(newStartTime ? { startTime: newStartTime } : {}) } : t,
-      ),
+      ts.map((t) => (t.id === id ? { ...t, slot, day, startTime: newStartTime } : t)),
     );
 
-    // Persist startTime to API for real tasks on the current day
+    // Persist by creating (or moving) a schedule block on the target date.
     const task = tasks.find((t) => t.id === id);
-    if (task?.source === 'task' && task.sourceId && day === 0) {
-      updateTask.mutate({ id: task.sourceId, startTime: newStartTime });
+    if (task?.source === 'task' && task.sourceId) {
+      const targetDate = offsetToISO(day);
+      const existing = blockMap.get(`${task.sourceId}|${targetDate}`);
+      if (existing) {
+        updateBlock.mutate({ id: existing.id, startTime: newStartTime });
+      } else {
+        createBlock.mutate({
+          sourceType: 'task',
+          sourceId: task.sourceId,
+          date: targetDate,
+          startTime: newStartTime,
+          duration: task.est ?? 60,
+        });
+      }
     }
   }
 
@@ -554,7 +588,8 @@ export function TaskManagement() {
       newTask,
     ]);
 
-    // Persist — on success the query refetch replaces the temp task with a real one
+    // Persist — on success the query refetch replaces the temp task with a real one.
+    // The chosen time becomes a schedule block on the new task.
     createTask.mutate(
       {
         name: habitTask.title.replace(/^\S+\s+/, ''), // strip leading icon
@@ -562,11 +597,21 @@ export function TaskManagement() {
         color: (habitTask.color ?? 'gold') as TaskColor,
         tagId: habitTask.tagId ?? 'habit',
         startDate: todayStr,
-        startTime: newTime,
         duration: habitTask.est,
         habitRef: habitTask.sourceId,
       },
       {
+        onSuccess: (created) => {
+          if (created?.id) {
+            createBlock.mutate({
+              sourceType: 'task',
+              sourceId: created.id,
+              date: todayStr,
+              startTime: newTime,
+              duration: habitTask.est ?? 30,
+            });
+          }
+        },
         // On error: roll back the optimistic update
         onError: () => {
           setTasks((ts) => [

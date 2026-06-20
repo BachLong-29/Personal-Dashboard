@@ -15,7 +15,6 @@ import { useCreateCategory } from '@/features/dashboard/hooks/useCreateCategory'
 import { useTaskSearch } from '@/features/dashboard/hooks/useTaskSearch';
 import { useProjects } from '@/features/projects/hooks/useProjects';
 
-import { SLOTS } from '../../data/mock';
 import { TaskAttachmentsField } from './TaskAttachmentsField';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -29,8 +28,6 @@ export interface TaskFormValues {
   status: TaskStatus;
   startDate: Date | null;
   endDate: Date | null;
-  /** 'HH:MM' or empty string */
-  startTime: string;
   /** minutes as numeric string, or empty */
   duration: string;
   /** array of sourceIds */
@@ -77,15 +74,6 @@ const STATUS_OPTIONS: { value: TaskStatus; label: string }[] = [
   { value: 'done', label: '✓  Done' },
 ];
 
-// ─── Slot helper ──────────────────────────────────────────────────────────────
-
-function getSlotForTime(time: string) {
-  if (!time) return null;
-  const h = parseInt(time.split(':')[0] ?? '0', 10);
-  const id = h < 10 ? 'morning' : h < 13 ? 'deep' : h < 17 ? 'afternoon' : 'evening';
-  return SLOTS.find((s) => s.id === id) ?? null;
-}
-
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export const TaskForm = forwardRef<TaskFormHandle, TaskFormProps>(function TaskForm(
@@ -101,7 +89,6 @@ export const TaskForm = forwardRef<TaskFormHandle, TaskFormProps>(function TaskF
   const [status, setStatus] = useState<TaskStatus>(defaultValues?.status ?? 'todo');
   const [startDate, setStartDate] = useState<Date | null>(defaultValues?.startDate ?? new Date());
   const [endDate, setEndDate] = useState<Date | null>(defaultValues?.endDate ?? null);
-  const [startTime, setStartTime] = useState(defaultValues?.startTime ?? '');
   const [duration, setDuration] = useState(defaultValues?.duration ?? '');
   const [deps, setDeps] = useState<string[]>(defaultValues?.dependencies ?? []);
   const [attachments, setAttachments] = useState<string[]>(defaultValues?.attachments ?? []);
@@ -132,8 +119,6 @@ export const TaskForm = forwardRef<TaskFormHandle, TaskFormProps>(function TaskF
     !Number.isNaN(durationNum) && durationNum > 0
       ? `≈ ${Math.floor(durationNum / 60) > 0 ? `${Math.floor(durationNum / 60)}h ` : ''}${durationNum % 60}m`
       : '';
-
-  const slotMeta = getSlotForTime(startTime);
 
   const canSave = name.trim().length > 0 && !!icon && !!resolvedTagId && !dateError;
 
@@ -177,7 +162,6 @@ export const TaskForm = forwardRef<TaskFormHandle, TaskFormProps>(function TaskF
       status,
       startDate,
       endDate,
-      startTime,
       duration,
       dependencies: deps,
       attachments,
@@ -245,6 +229,42 @@ export const TaskForm = forwardRef<TaskFormHandle, TaskFormProps>(function TaskF
         )}
       </div>
 
+      {/* ── Project ───────────────────────────────────────────────────── */}
+      {!hideProject && (
+        <div className="flex flex-col gap-1.5">
+          <label className={fieldLabel}>
+            Project <span className={optionalMark}>optional</span>
+          </label>
+          {projects.length === 0 ? (
+            <p className="text-[10px] text-[var(--text-lo)]">
+              No projects yet — create one in the Projects page to group tasks.
+            </p>
+          ) : (
+            <div className="flex flex-wrap gap-1.5 max-h-[88px] overflow-y-auto">
+              <button
+                type="button"
+                onClick={() => setProjectId('')}
+                className={cn(catChip, projectId === '' && catChipActive)}
+              >
+                None
+              </button>
+              {projects.map((p) => (
+                <button
+                  key={p.id}
+                  type="button"
+                  onClick={() => setProjectId(p.id)}
+                  className={cn(catChip, projectId === p.id && catChipActive)}
+                  title={p.name}
+                >
+                  <span className="mr-1">{p.icon}</span>
+                  {p.name}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* ── Name ──────────────────────────────────────────────────────── */}
       <Input
         label="Name"
@@ -282,53 +302,6 @@ export const TaskForm = forwardRef<TaskFormHandle, TaskFormProps>(function TaskF
         />
       </div>
       {dateError && <p className="text-[10px] text-[var(--rose)] -mt-2">{dateError}</p>}
-
-      {/* ── Start Time + Slot badge ────────────────────────────────────── */}
-      <div className="flex flex-col gap-1.5">
-        <label className={fieldLabel}>
-          Start Time <span className={optionalMark}>optional</span>
-        </label>
-        <div className="flex items-center gap-3 flex-wrap">
-          <div className="relative">
-            <input
-              type="time"
-              value={startTime}
-              onChange={(e) => setStartTime(e.target.value)}
-              className={timeInputCls}
-            />
-            {startTime && (
-              <button
-                type="button"
-                onClick={() => setStartTime('')}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[9px] text-[var(--text-lo)] hover:text-[var(--rose)] transition-colors cursor-pointer leading-none"
-                title="Clear time"
-              >
-                ✕
-              </button>
-            )}
-          </div>
-
-          {startTime && slotMeta && (
-            <span
-              className="flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-[10px] font-bold font-[var(--font-title)] tracking-[0.08em] shrink-0"
-              style={{
-                borderColor: slotMeta.color.replace(')', ' / 0.4)'),
-                color: slotMeta.color,
-                background: slotMeta.bg,
-              }}
-            >
-              {slotMeta.glyph} {slotMeta.label}
-              <span className="font-normal opacity-70 ml-0.5">({slotMeta.time})</span>
-            </span>
-          )}
-
-          {!startTime && (
-            <span className="text-[10px] text-[var(--text-lo)] italic">
-              Slot assigned automatically after drag
-            </span>
-          )}
-        </div>
-      </div>
 
       {/* ── Duration ──────────────────────────────────────────────────── */}
       <div className="flex items-end gap-3">
@@ -394,42 +367,6 @@ export const TaskForm = forwardRef<TaskFormHandle, TaskFormProps>(function TaskF
           ))}
         </div>
       </div>
-
-      {/* ── Project ───────────────────────────────────────────────────── */}
-      {!hideProject && (
-        <div className="flex flex-col gap-1.5">
-          <label className={fieldLabel}>
-            Project <span className={optionalMark}>optional</span>
-          </label>
-          {projects.length === 0 ? (
-            <p className="text-[10px] text-[var(--text-lo)]">
-              No projects yet — create one in the Projects page to group tasks.
-            </p>
-          ) : (
-            <div className="flex flex-wrap gap-1.5 max-h-[88px] overflow-y-auto">
-              <button
-                type="button"
-                onClick={() => setProjectId('')}
-                className={cn(catChip, projectId === '' && catChipActive)}
-              >
-                None
-              </button>
-              {projects.map((p) => (
-                <button
-                  key={p.id}
-                  type="button"
-                  onClick={() => setProjectId(p.id)}
-                  className={cn(catChip, projectId === p.id && catChipActive)}
-                  title={p.name}
-                >
-                  <span className="mr-1">{p.icon}</span>
-                  {p.name}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
 
       {/* ── Color ─────────────────────────────────────────────────────── */}
       <div className="flex flex-col gap-1.5">
@@ -532,15 +469,6 @@ const iconBtn = cn(
   'w-11 h-11 rounded-[var(--r-md)] border border-[var(--border)] bg-[var(--bg-2)]',
   'flex items-center justify-center cursor-pointer transition-all duration-150',
   'hover:border-[var(--border-hi)] hover:bg-[var(--bg-3)]',
-);
-
-const timeInputCls = cn(
-  'rounded-[var(--r-md)] border border-[var(--border)] bg-[var(--bg-2)]',
-  'px-3 py-2 pr-8 text-[13px] text-[var(--text-hi)] min-w-[130px]',
-  'hover:border-[var(--border-hi)] hover:bg-[var(--bg-3)]',
-  'focus:border-[var(--gold)] focus:outline-none',
-  'focus:shadow-[0_0_0_3px_oklch(0.78_0.16_82_/_0.15)]',
-  'transition-all duration-[180ms] [color-scheme:dark]',
 );
 
 const textareaClass = cn(

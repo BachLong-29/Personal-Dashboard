@@ -63,8 +63,6 @@ export interface Task {
   /** Estimated duration in minutes */
   duration?: number;
   startDate: string;
-  /** HH:MM scheduled time within startDate */
-  startTime?: string;
   /** Optional — omit for open-ended / point-in-time tasks */
   endDate?: string;
   /** Reason the task was deferred to a later date */

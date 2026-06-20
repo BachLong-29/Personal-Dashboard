@@ -43,6 +43,15 @@ export const STATUS_COLUMNS: { value: TaskStatus; label: string }[] = [
   { value: 'done', label: 'Done' },
 ];
 
+/** Per-status accent color — used to distinguish Kanban columns. */
+export const STATUS_CSS: Record<TaskStatus, string> = {
+  todo: 'oklch(0.65 0.02 280)', // neutral gray
+  in_progress: 'oklch(0.65 0.18 250)', // blue
+  pending: 'oklch(0.76 0.16 55)', // orange
+  waiting: 'oklch(0.86 0.16 95)', // yellow
+  done: 'oklch(0.72 0.18 145)', // green
+};
+
 export const PROJECT_ICONS = [
   '🚀',
   '📦',

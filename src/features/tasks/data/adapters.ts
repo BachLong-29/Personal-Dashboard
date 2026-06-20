@@ -86,7 +86,12 @@ const COLOR_TO_CAT: Record<string, TaskCat> = {
 
 // ─── Task → UITask ────────────────────────────────────────────────────────────
 
-export function taskToUITask(t: Task, taskLog?: TaskLog): UITask {
+/**
+ * @param blockTime  HH:MM of the task's earliest schedule block on its day, if any.
+ *                   Drives the slot + the card's displayed time. When omitted the task
+ *                   falls back to a default slot (morning / current-hour for today).
+ */
+export function taskToUITask(t: Task, taskLog?: TaskLog, blockTime?: string): UITask {
   const startOffset = dayOffset(t.startDate);
   const endOffset = t.endDate ? dayOffset(t.endDate) : startOffset;
   const totalDays = Math.max(endOffset - startOffset + 1, 1);
@@ -137,7 +142,7 @@ export function taskToUITask(t: Task, taskLog?: TaskLog): UITask {
     subtasks: 0,
     subtasksDone: 0,
     day,
-    slot: offsetToSlot(day, t.startTime),
+    slot: offsetToSlot(day, blockTime),
     tags: [],
     streak: 0,
     combo: 0,
@@ -150,7 +155,7 @@ export function taskToUITask(t: Task, taskLog?: TaskLog): UITask {
     dependencies: t.dependencies,
     startDate: t.startDate,
     endDate: t.endDate,
-    startTime: t.startTime,
+    startTime: blockTime,
     habitRef: t.habitRef,
     active: t.active,
     deferReason: t.deferReason,

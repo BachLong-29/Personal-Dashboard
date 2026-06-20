@@ -177,8 +177,9 @@ export async function buildCalendar(
       id: `task:${task._id.toString()}:${key}`,
       title: task.name,
       date: key,
-      startTime: task.startTime ?? null,
-      endTime: task.startTime ? addMinutes(task.startTime, task.duration ?? 0) : null,
+      // Tasks carry no time-of-day anymore — only their schedule blocks do.
+      startTime: null,
+      endTime: null,
       duration: task.duration ?? 0,
       status: resolveStatus(key, todayKey, task.status === 'done'),
       sourceType: 'task',

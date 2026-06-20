@@ -277,7 +277,6 @@ export function DayView({ date, display, quests = [], onDateChange }: DayViewPro
                 tagId: cloning.tagId,
                 color: cloning.color as never,
                 startDate: new Date(date),
-                startTime: cloning.startTime ?? '',
                 duration: cloning.duration != null ? String(cloning.duration) : '',
                 dependencies: cloning.dependencies,
               }

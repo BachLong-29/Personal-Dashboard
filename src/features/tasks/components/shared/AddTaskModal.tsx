@@ -61,7 +61,6 @@ export function AddTaskModal({
       tagId: values.tagId,
       color: values.color,
       startDate,
-      startTime: values.startTime || undefined,
       endDate: values.endDate ? toLocalDate(values.endDate) : undefined,
       duration:
         values.duration && !Number.isNaN(parseInt(values.duration, 10))
