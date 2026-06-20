@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 
 import { cn } from '@/libs/utils';
+import { ProjectBadge } from '@/components/common/ProjectBadge';
 
 import { HABIT_COLORS } from '../constants';
 import type { Task, TaskColor, TaskStatus } from '../types';
@@ -10,6 +11,8 @@ import type { Task, TaskColor, TaskStatus } from '../types';
 interface TaskCardProps {
   task: Task;
   tagLabel?: string;
+  /** Resolved project meta — shows a label when the task belongs to a project */
+  project?: { name: string; icon?: string; color?: string };
   isBlocked?: boolean;
   blockedByNames?: string[];
   onEdit?: (task: Task) => void;
@@ -55,6 +58,7 @@ const ALL_STATUSES = Object.keys(STATUS_META) as TaskStatus[];
 export function TaskCard({
   task,
   tagLabel,
+  project,
   isBlocked = false,
   blockedByNames = [],
   onEdit,
@@ -173,6 +177,9 @@ export function TaskCard({
                 {blocked ? 'Blocked' : meta.label}
               </span>
               {tagLabel && <span className={tagBadge}>{tagLabel}</span>}
+              {project && (
+                <ProjectBadge name={project.name} icon={project.icon} color={project.color} />
+              )}
               {task.deferReason && !task.endDate && (
                 <span className={rescheduledBadge} title={task.deferReason}>
                   ↺ Rescheduled

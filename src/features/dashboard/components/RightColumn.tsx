@@ -3,7 +3,7 @@ import { memo } from 'react';
 import { useTranslations } from 'next-intl';
 
 import type { DashboardSettings } from '../types';
-import { FocusTimer } from './FocusTimer';
+import { ProjectsPanel } from './ProjectsPanel';
 import { GuildPanel } from './GuildPanel';
 
 interface Quote {
@@ -21,7 +21,7 @@ export const RightColumn = memo(function RightColumn({ settings, quote }: Props)
 
   return (
     <>
-      <FocusTimer duration={settings.timerDuration} />
+      <ProjectsPanel />
       {settings.showQuoteCard && quote && (
         <div className={motivationCard}>
           <div className={motivationLabel}>◆ {t('motivation.dailyWisdom')}</div>

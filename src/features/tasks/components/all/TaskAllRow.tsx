@@ -1,5 +1,7 @@
 import { cn } from '@/libs/utils';
 
+import { ProjectBadge } from '@/components/common/ProjectBadge';
+
 import { catOf, fmtEst, priOf, COLOR_VAR, type UITask } from '../../data/mock';
 import { diffColors, urgencyColors } from '../shared/styles';
 
@@ -79,6 +81,10 @@ export function TaskAllRow({
 
         {/* Title — always visible */}
         <span className={titleCol}>{task.title}</span>
+
+        {task.projectName && (
+          <ProjectBadge name={task.projectName} icon={task.projectIcon} color={task.projectColor} />
+        )}
 
         {visibleCols.has('status') && <StatusBadge status={task.status} />}
 

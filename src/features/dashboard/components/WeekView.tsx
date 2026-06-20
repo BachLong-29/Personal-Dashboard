@@ -28,6 +28,7 @@ import { useUpdateHabit } from '../hooks/useUpdateHabit';
 import { useUpdateTask } from '../hooks/useUpdateTask';
 import type { CenterTab, Habit, HabitColor, Quest, Task, TaskColor } from '../types';
 import type { ScheduleDisplayOptions } from '../hooks/useScheduleState';
+import { Modal, ModalBody, ModalFoot, ModalHead } from '@/components/ui/Modal';
 import { AddTaskModal } from '@/features/tasks/components/shared/AddTaskModal';
 import { EditTaskModal } from '@/features/tasks/components/shared/EditTaskModal';
 import { taskToUITask } from '@/features/tasks/data/adapters';
@@ -466,43 +467,42 @@ export function WeekView({
         }}
       />
 
-      {deletingTask && (
-        <div
-          className="modal-backdrop"
-          onClick={(e) => e.target === e.currentTarget && setDeletingTask(undefined)}
-        >
-          <div className="modal-box" style={{ width: 380 }}>
-            <div className="modal-title">
+      <Modal open={!!deletingTask} onClose={() => setDeletingTask(undefined)} maxWidth="380px">
+        <ModalHead
+          title={
+            <>
               <span style={{ color: 'var(--rose)' }}>⚠</span> Delete Task
-            </div>
-            <p style={{ fontSize: 12, color: 'var(--text-mid)', marginBottom: 16 }}>
-              Delete <strong style={{ color: 'var(--text-hi)' }}>{deletingTask.name}</strong>?
-            </p>
-            <div className="modal-actions">
-              <button
-                type="button"
-                className="modal-btn cancel"
-                onClick={() => setDeletingTask(undefined)}
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                className="modal-btn"
-                onClick={handleDeleteConfirm}
-                style={{
-                  flex: 1,
-                  background: 'linear-gradient(135deg, oklch(0.45 0.18 5), var(--rose))',
-                  borderColor: 'var(--rose)',
-                  color: '#fff',
-                }}
-              >
-                Delete
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+            </>
+          }
+        />
+        <ModalBody>
+          <p style={{ fontSize: 12, color: 'var(--text-mid)', margin: 0 }}>
+            Delete <strong style={{ color: 'var(--text-hi)' }}>{deletingTask?.name}</strong>?
+          </p>
+        </ModalBody>
+        <ModalFoot>
+          <button
+            type="button"
+            className="modal-btn cancel"
+            onClick={() => setDeletingTask(undefined)}
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            className="modal-btn"
+            onClick={handleDeleteConfirm}
+            style={{
+              flex: 1,
+              background: 'linear-gradient(135deg, oklch(0.45 0.18 5), var(--rose))',
+              borderColor: 'var(--rose)',
+              color: '#fff',
+            }}
+          >
+            Delete
+          </button>
+        </ModalFoot>
+      </Modal>
     </div>
   );
 }

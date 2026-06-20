@@ -65,6 +65,16 @@ export interface UITask {
   /** Cloudinary image URLs attached to this task (max 3) */
   attachments?: string[];
 
+  // ── Project tagging ─────────────────────────────────────────────────────────
+  /** Project ObjectId this task belongs to (omitted for standalone tasks) */
+  projectId?: string;
+  /** Resolved project name — shown as a label on the card */
+  projectName?: string;
+  /** Resolved project icon glyph */
+  projectIcon?: string;
+  /** Resolved project color token (TaskColor) */
+  projectColor?: string;
+
   // ── Multi-day task fields ───────────────────────────────────────────────────
   /** True when endDate exists and spans ≥ 1 full calendar day after startDate */
   isMultiDay?: boolean;

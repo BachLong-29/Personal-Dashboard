@@ -4,6 +4,7 @@ import { useState } from 'react';
 import type { AxiosError } from 'axios';
 
 import { cn } from '@/libs/utils';
+import { Modal, ModalBody, ModalFoot, ModalHead } from '@/components/ui/Modal';
 import type { Category } from '@/types';
 
 import { useCategories } from '../hooks/useCategories';
@@ -63,12 +64,9 @@ export function CategoryModal({ onClose }: CategoryModalProps) {
   }
 
   return (
-    <div className="modal-backdrop" onClick={(e) => e.target === e.currentTarget && onClose()}>
-      <div className="modal-box" style={{ width: 440 }}>
-        <div className="modal-title">
-          <span>◈</span> Manage Categories
-        </div>
-
+    <Modal open onClose={onClose} maxWidth="440px">
+      <ModalHead tag="◈" title="Manage Categories" />
+      <ModalBody>
         {/* Add new */}
         <div className="modal-field">
           <div className="modal-label">Add Category</div>
@@ -94,17 +92,38 @@ export function CategoryModal({ onClose }: CategoryModalProps) {
           </div>
         </div>
 
-        {/* Divider */}
         <div style={{ borderTop: '1px solid var(--border)', margin: '12px 0 10px' }} />
 
         {/* List */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 6, maxHeight: 300, overflowY: 'auto' }}>
+        <div
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 6,
+            maxHeight: 300,
+            overflowY: 'auto',
+          }}
+        >
           {isLoading ? (
-            <div style={{ color: 'var(--text-lo)', fontSize: 12, textAlign: 'center', padding: '20px 0' }}>
+            <div
+              style={{
+                color: 'var(--text-lo)',
+                fontSize: 12,
+                textAlign: 'center',
+                padding: '20px 0',
+              }}
+            >
               Loading...
             </div>
           ) : categories.length === 0 ? (
-            <div style={{ color: 'var(--text-lo)', fontSize: 12, textAlign: 'center', padding: '20px 0' }}>
+            <div
+              style={{
+                color: 'var(--text-lo)',
+                fontSize: 12,
+                textAlign: 'center',
+                padding: '20px 0',
+              }}
+            >
               No categories yet.
             </div>
           ) : (
@@ -176,14 +195,13 @@ export function CategoryModal({ onClose }: CategoryModalProps) {
             ))
           )}
         </div>
-
-        <div className="modal-actions" style={{ marginTop: 16 }}>
-          <button type="button" className="modal-btn cancel" onClick={onClose}>
-            Close
-          </button>
-        </div>
-      </div>
-    </div>
+      </ModalBody>
+      <ModalFoot>
+        <button type="button" className="modal-btn cancel" onClick={onClose}>
+          Close
+        </button>
+      </ModalFoot>
+    </Modal>
   );
 }
 

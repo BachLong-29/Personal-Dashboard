@@ -11,6 +11,7 @@ import { useDeleteHabit } from '../hooks/useDeleteHabit';
 import { useHabitLogs } from '../hooks/useHabitLogs';
 import { useHabits } from '../hooks/useHabits';
 import type { Habit, HabitDay } from '../types';
+import { Modal, ModalBody, ModalFoot, ModalHead } from '@/components/ui/Modal';
 import { AddHabitModal } from './AddHabitModal';
 import { CategoryModal } from './CategoryModal';
 import { HabitCard } from './HabitCard';
@@ -152,16 +153,17 @@ export function HabitPanel({ todayStr }: HabitPanelProps) {
 
       {showCategoryModal && <CategoryModal onClose={() => setShowCategoryModal(false)} />}
 
-      {deletingHabit && (
-        <div
-          className="modal-backdrop"
-          onClick={(e) => e.target === e.currentTarget && setDeletingHabit(undefined)}
-        >
-          <div className="modal-box" style={{ width: 400 }}>
-            <div className="modal-title">
+      <Modal open={!!deletingHabit} onClose={() => setDeletingHabit(undefined)} maxWidth="400px">
+        <ModalHead
+          title={
+            <>
               <span style={{ color: 'var(--rose)' }}>⚠</span> Delete Habit
-            </div>
-            <div style={{ marginBottom: 16 }}>
+            </>
+          }
+        />
+        <ModalBody>
+          {deletingHabit && (
+            <>
               <div
                 style={{
                   display: 'flex',
@@ -183,33 +185,33 @@ export function HabitPanel({ todayStr }: HabitPanelProps) {
                 This habit will be permanently removed and will no longer appear in your daily
                 quests. This action cannot be undone.
               </p>
-            </div>
-            <div className="modal-actions">
-              <button
-                type="button"
-                className="modal-btn cancel"
-                onClick={() => setDeletingHabit(undefined)}
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                className="modal-btn"
-                onClick={handleDeleteConfirm}
-                style={{
-                  flex: 1,
-                  background: 'linear-gradient(135deg, oklch(0.45 0.18 5), var(--rose))',
-                  borderColor: 'var(--rose)',
-                  color: '#fff',
-                  boxShadow: '0 0 12px var(--rose-glow)',
-                }}
-              >
-                Delete Habit
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+            </>
+          )}
+        </ModalBody>
+        <ModalFoot>
+          <button
+            type="button"
+            className="modal-btn cancel"
+            onClick={() => setDeletingHabit(undefined)}
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            className="modal-btn"
+            onClick={handleDeleteConfirm}
+            style={{
+              flex: 1,
+              background: 'linear-gradient(135deg, oklch(0.45 0.18 5), var(--rose))',
+              borderColor: 'var(--rose)',
+              color: '#fff',
+              boxShadow: '0 0 12px var(--rose-glow)',
+            }}
+          >
+            Delete Habit
+          </button>
+        </ModalFoot>
+      </Modal>
     </div>
   );
 }

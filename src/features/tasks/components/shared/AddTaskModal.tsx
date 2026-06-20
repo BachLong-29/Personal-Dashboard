@@ -68,7 +68,7 @@ export function AddTaskModal({
           ? parseInt(values.duration, 10)
           : undefined,
       dependencies: values.dependencies,
-      projectId,
+      projectId: projectId ?? (values.projectId || undefined),
       attachments: values.attachments.length > 0 ? values.attachments : undefined,
     };
 
@@ -104,6 +104,7 @@ export function AddTaskModal({
             ref={formRef}
             mode="create"
             defaultValues={{ startDate: defaultStart, ...defaultValues }}
+            hideProject={!!projectId}
             onSubmit={handleSubmit}
             onCanSaveChange={setCanSave}
             saving={isPending}

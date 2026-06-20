@@ -2,6 +2,8 @@
 
 import { cn } from '@/libs/utils';
 
+import { ProjectBadge } from '@/components/common/ProjectBadge';
+
 import { catOf, fmtEst, priOf, COLOR_VAR, type UITask } from '../../data/mock';
 import { qcxBtnPrimary, qcxBtnGhost } from '../shared/styles';
 
@@ -172,6 +174,15 @@ function TaskRow({ task, expanded, onExpand, onToggleDone }: QuestCardMiniProps)
           {c.icon}
         </span>
         <span className="text-[7px] text-[var(--text-lo)]">{fmtEst(task.est)}</span>
+        {task.projectName && (
+          <ProjectBadge
+            name={task.projectName}
+            icon={task.projectIcon}
+            color={task.projectColor}
+            iconOnly
+            className="px-1 py-0 text-[7px]"
+          />
+        )}
         <div className="flex-1" />
         <span className="text-[7px] font-bold text-[var(--violet)]">
           +{task.xp}

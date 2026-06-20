@@ -115,3 +115,5 @@ Structure of docs and requirements.
 - Limit 150 rows each file .md in folder rules/docs
 
 - **Branch Management**: Before adding any features or fix bugs, always work on a new git branch. Never commit directly on main. Bug branches must follow naming convention bug/[desc], feature branches follow naming convention feature/[desc]
+
+- **Responsive UI**: Every new feature or new page MUST be responsive across mobile, tablet, and desktop. Build mobile-first with Tailwind responsive prefixes (`sm:` / `md:` / `lg:`); never ship a layout that only works at desktop width. Verify the page reflows correctly at small viewports before considering the work done.

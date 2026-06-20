@@ -6,6 +6,7 @@ import Picker from '@emoji-mart/react';
 
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui';
+import { Modal, ModalBody, ModalFoot, ModalHead } from '@/components/ui/Modal';
 import { cn } from '@/libs/utils';
 import type { Category } from '@/types';
 
@@ -208,12 +209,9 @@ export function ScheduleTaskModal({
   const canSave = name.trim().length > 0 && !!icon && !!resolvedTagId && !dateError;
 
   return (
-    <div className="modal-backdrop" onClick={(e) => e.target === e.currentTarget && onClose()}>
-      <div className="modal-box" style={{ width: 520, maxHeight: '85vh', overflowY: 'auto' }}>
-        <div className="modal-title">
-          {editing ? '✎ Edit Task' : isCloning ? '⎘ Clone Task' : '＋ New Task'}
-        </div>
-
+    <Modal open onClose={onClose} maxWidth="520px" scrollable>
+      <ModalHead title={editing ? '✎ Edit Task' : isCloning ? '⎘ Clone Task' : '＋ New Task'} />
+      <ModalBody scrollable>
         {/* Name */}
         <div className={fieldGroup}>
           <label className={fieldLabel}>Task Name *</label>
@@ -584,35 +582,34 @@ export function ScheduleTaskModal({
         {apiError && (
           <p className={errorText}>{(apiError as Error).message ?? 'Something went wrong.'}</p>
         )}
-
-        <div className="modal-actions">
-          <button type="button" className="modal-btn cancel" onClick={onClose}>
-            Cancel
-          </button>
-          <button
-            type="button"
-            className="modal-btn"
-            onClick={handleSave}
-            disabled={isPending || !canSave}
-            style={{
-              flex: 1,
-              background: 'linear-gradient(135deg, oklch(0.55 0.17 85), var(--gold))',
-              borderColor: 'var(--gold)',
-              color: '#000',
-              opacity: isPending || !canSave ? 0.5 : 1,
-            }}
-          >
-            {isPending
-              ? 'Saving...'
-              : editing
-                ? 'Save Changes'
-                : isCloning
-                  ? 'Clone Task'
-                  : 'Create Task'}
-          </button>
-        </div>
-      </div>
-    </div>
+      </ModalBody>
+      <ModalFoot>
+        <button type="button" className="modal-btn cancel" onClick={onClose}>
+          Cancel
+        </button>
+        <button
+          type="button"
+          className="modal-btn"
+          onClick={handleSave}
+          disabled={isPending || !canSave}
+          style={{
+            flex: 1,
+            background: 'linear-gradient(135deg, oklch(0.55 0.17 85), var(--gold))',
+            borderColor: 'var(--gold)',
+            color: '#000',
+            opacity: isPending || !canSave ? 0.5 : 1,
+          }}
+        >
+          {isPending
+            ? 'Saving...'
+            : editing
+              ? 'Save Changes'
+              : isCloning
+                ? 'Clone Task'
+                : 'Create Task'}
+        </button>
+      </ModalFoot>
+    </Modal>
   );
 }
 

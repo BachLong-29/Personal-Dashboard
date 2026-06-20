@@ -13,6 +13,7 @@ import type { Category, TaskColor, TaskStatus } from '@/types';
 import { useCategories } from '@/features/dashboard/hooks/useCategories';
 import { useCreateCategory } from '@/features/dashboard/hooks/useCreateCategory';
 import { useTaskSearch } from '@/features/dashboard/hooks/useTaskSearch';
+import { useProjects } from '@/features/projects/hooks/useProjects';
 
 import { SLOTS } from '../../data/mock';
 import { TaskAttachmentsField } from './TaskAttachmentsField';
@@ -35,6 +36,8 @@ export interface TaskFormValues {
   /** array of sourceIds */
   dependencies: string[];
   attachments: string[];
+  /** Project ObjectId this task belongs to — empty string = none */
+  projectId: string;
 }
 
 export interface TaskFormHandle {
@@ -46,6 +49,8 @@ export interface TaskFormProps {
   defaultValues?: Partial<TaskFormValues>;
   /** sourceId of the task being edited — excluded from dependency options */
   editingId?: string;
+  /** Hide the project picker — used when the modal is already scoped to a project */
+  hideProject?: boolean;
   onSubmit: (values: TaskFormValues) => void;
   /** Called whenever canSave changes so the parent can control the submit button */
   onCanSaveChange?: (canSave: boolean) => void;
@@ -84,7 +89,7 @@ function getSlotForTime(time: string) {
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export const TaskForm = forwardRef<TaskFormHandle, TaskFormProps>(function TaskForm(
-  { mode, defaultValues, editingId, onSubmit, onCanSaveChange, saving },
+  { mode, defaultValues, editingId, hideProject, onSubmit, onCanSaveChange, saving },
   ref,
 ) {
   // ── Form state ───────────────────────────────────────────────────────────────
@@ -100,6 +105,7 @@ export const TaskForm = forwardRef<TaskFormHandle, TaskFormProps>(function TaskF
   const [duration, setDuration] = useState(defaultValues?.duration ?? '');
   const [deps, setDeps] = useState<string[]>(defaultValues?.dependencies ?? []);
   const [attachments, setAttachments] = useState<string[]>(defaultValues?.attachments ?? []);
+  const [projectId, setProjectId] = useState(defaultValues?.projectId ?? '');
 
   // ── UI state ─────────────────────────────────────────────────────────────────
   const [showPicker, setShowPicker] = useState(false);
@@ -111,6 +117,7 @@ export const TaskForm = forwardRef<TaskFormHandle, TaskFormProps>(function TaskF
   const { data: categories = [] } = useCategories();
   const { mutate: createCategory, isPending: isAddingCat } = useCreateCategory();
   const { data: depResults = [] } = useTaskSearch(depQuery, 10, editingId);
+  const { data: projects = [] } = useProjects('active');
 
   // ── Derived ──────────────────────────────────────────────────────────────────
   const resolvedTagId = tagId || (categories.length > 0 ? (categories[0] as Category).id : '');
@@ -174,6 +181,7 @@ export const TaskForm = forwardRef<TaskFormHandle, TaskFormProps>(function TaskF
       duration,
       dependencies: deps,
       attachments,
+      projectId,
     });
   }
 
@@ -386,6 +394,42 @@ export const TaskForm = forwardRef<TaskFormHandle, TaskFormProps>(function TaskF
           ))}
         </div>
       </div>
+
+      {/* ── Project ───────────────────────────────────────────────────── */}
+      {!hideProject && (
+        <div className="flex flex-col gap-1.5">
+          <label className={fieldLabel}>
+            Project <span className={optionalMark}>optional</span>
+          </label>
+          {projects.length === 0 ? (
+            <p className="text-[10px] text-[var(--text-lo)]">
+              No projects yet — create one in the Projects page to group tasks.
+            </p>
+          ) : (
+            <div className="flex flex-wrap gap-1.5 max-h-[88px] overflow-y-auto">
+              <button
+                type="button"
+                onClick={() => setProjectId('')}
+                className={cn(catChip, projectId === '' && catChipActive)}
+              >
+                None
+              </button>
+              {projects.map((p) => (
+                <button
+                  key={p.id}
+                  type="button"
+                  onClick={() => setProjectId(p.id)}
+                  className={cn(catChip, projectId === p.id && catChipActive)}
+                  title={p.name}
+                >
+                  <span className="mr-1">{p.icon}</span>
+                  {p.name}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* ── Color ─────────────────────────────────────────────────────── */}
       <div className="flex flex-col gap-1.5">

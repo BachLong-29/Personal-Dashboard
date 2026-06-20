@@ -3,7 +3,18 @@ import { startTransition, useCallback, useEffect, useMemo, useRef, useState } fr
 import type { Task } from '@/types';
 
 import { HABIT_COINS, HABIT_XP, SKIP_CONFIRM_STORAGE_KEY, TASK_COINS, TASK_XP } from '../constants';
-import type { BurstPos, Difficulty, Habit, HabitColor, HabitDay, PendingQuest, Quest, QuestType } from '../types';
+import type {
+  BurstPos,
+  Difficulty,
+  Habit,
+  HabitColor,
+  HabitDay,
+  PendingQuest,
+  Quest,
+  QuestType,
+} from '../types';
+import { useProjects } from '@/features/projects/hooks/useProjects';
+
 import { useHabitLogs } from './useHabitLogs';
 import { useHabits } from './useHabits';
 import { useQuests } from './useQuests';
@@ -44,6 +55,7 @@ export function useQuestOrchestration({
 }: Params) {
   const { data: serverQuests, isLoading: questsLoading } = useQuests();
   const { data: allTasks = [] } = useTasks();
+  const { data: projects = [] } = useProjects('active');
   const { data: habits = [] } = useHabits();
   const { data: habitLogs = [] } = useHabitLogs(todayDateStr);
   const { data: apiTaskLogs = [] } = useTaskLogs(todayDateStr);
@@ -77,6 +89,11 @@ export function useQuestOrchestration({
     startTransition(() => setHabitDoneMap(map));
   }, [habitLogs]);
 
+  const projectMeta = useMemo(
+    () => new Map(projects.map((p) => [p.id, { name: p.name, icon: p.icon, color: p.color }])),
+    [projects],
+  );
+
   const todayTaskQuests = useMemo<Quest[]>(() => {
     return (allTasks as Task[])
       .filter(
@@ -88,6 +105,7 @@ export function useQuestOrchestration({
         const done = isMultiDay
           ? (taskDoneMap[t.id] ?? taskLoggedMap[t.id] ?? false)
           : (taskDoneMap[t.id] ?? t.status === 'done');
+        const proj = t.projectId ? projectMeta.get(t.projectId) : undefined;
         return {
           id: `task-${t.id}`,
           title: t.name,
@@ -101,13 +119,19 @@ export function useQuestOrchestration({
           taskId: t.id,
           habitIcon: t.icon,
           habitColor: t.color as HabitColor,
+          projectId: t.projectId,
+          projectName: proj?.name,
+          projectIcon: proj?.icon,
+          projectColor: proj?.color,
         };
       });
-  }, [allTasks, todayDateStr, taskDoneMap, taskLoggedMap]);
+  }, [allTasks, todayDateStr, taskDoneMap, taskLoggedMap, projectMeta]);
 
   const todayHabitQuests = useMemo<Quest[]>(() => {
     return (habits as Habit[])
-      .filter((h) => h.active && !!todayDayStr && h.schedule.some((e) => e.days.includes(todayDayStr)))
+      .filter(
+        (h) => h.active && !!todayDayStr && h.schedule.some((e) => e.days.includes(todayDayStr)),
+      )
       .map((h) => ({
         id: `habit-${h.id}`,
         title: h.name,
@@ -150,7 +174,15 @@ export function useQuestOrchestration({
         onToast({ xp: HABIT_XP, coins: HABIT_COINS });
       }
     },
-    [habitDoneMap, toggleHabitLog, todayDateStr, animationsEnabled, onAwardProgress, onBurst, onToast],
+    [
+      habitDoneMap,
+      toggleHabitLog,
+      todayDateStr,
+      animationsEnabled,
+      onAwardProgress,
+      onBurst,
+      onToast,
+    ],
   );
 
   const handleToggleTask = useCallback(
@@ -162,7 +194,8 @@ export function useQuestOrchestration({
         const nextLogged = !(taskDoneMap[taskId] ?? taskLoggedMap[taskId] ?? false);
         setTaskDoneMap((prev) => ({ ...prev, [taskId]: nextLogged }));
         toggleTaskLog({ taskId, date: todayDateStr });
-        if (nextLogged && task?.status === 'todo') updateTask({ id: taskId, status: 'in_progress' });
+        if (nextLogged && task?.status === 'todo')
+          updateTask({ id: taskId, status: 'in_progress' });
         if (nextLogged) {
           onAwardProgress({ xp: TASK_XP, coins: TASK_COINS });
           if (burstPos && animationsEnabled) onBurst(burstPos);

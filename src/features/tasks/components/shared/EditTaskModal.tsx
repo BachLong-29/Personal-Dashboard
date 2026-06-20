@@ -85,6 +85,7 @@ export function EditTaskModal({ task, open, onClose, onSave, saving }: EditTaskM
       startDate: values.startDate ? toLocalDate(values.startDate) : undefined,
       startTime: values.startTime ? values.startTime : task.startTime ? null : undefined,
       endDate: values.endDate ? toLocalDate(values.endDate) : task.endDate ? null : undefined,
+      projectId: values.projectId ? values.projectId : task.projectId ? null : undefined,
       dependencies: values.dependencies,
       attachments: values.attachments,
     };
@@ -115,6 +116,7 @@ export function EditTaskModal({ task, open, onClose, onSave, saving }: EditTaskM
     duration: task.est != null ? String(task.est) : '',
     dependencies: task.dependencies ?? [],
     attachments: task.attachments ?? [],
+    projectId: task.projectId ?? '',
   };
 
   const isSingleDay = !task.endDate || task.endDate === task.startDate;

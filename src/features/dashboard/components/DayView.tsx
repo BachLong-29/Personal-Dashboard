@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react';
 
 import { cn } from '@/libs/utils';
 
+import { useProjects } from '@/features/projects/hooks/useProjects';
 import { useCategories } from '../hooks/useCategories';
 import { useDeleteTask } from '../hooks/useDeleteTask';
 import { useHabitLogs } from '../hooks/useHabitLogs';
@@ -13,6 +14,8 @@ import { useToggleHabitLog } from '../hooks/useToggleHabitLog';
 import { useUpdateTask } from '../hooks/useUpdateTask';
 import type { HabitDay, Quest, Task, TaskStatus } from '../types';
 import type { ScheduleDisplayOptions } from '../hooks/useScheduleState';
+import { Modal, ModalBody, ModalFoot, ModalHead } from '@/components/ui/Modal';
+import { ProjectBadge } from '@/components/common/ProjectBadge';
 import { AddTaskModal } from '@/features/tasks/components/shared/AddTaskModal';
 import { EditTaskModal } from '@/features/tasks/components/shared/EditTaskModal';
 import { taskToUITask } from '@/features/tasks/data/adapters';
@@ -50,6 +53,7 @@ function formatDateLabel(dateStr: string): string {
 export function DayView({ date, display, quests = [], onDateChange }: DayViewProps) {
   const { data: allTasks = [], isLoading } = useTasks();
   const { data: categories = [] } = useCategories();
+  const { data: projects = [] } = useProjects('active');
   const { data: habits = [] } = useHabits();
   const { data: habitLogs = [] } = useHabitLogs(date);
   const { mutate: updateTask, isPending: isSavingTask } = useUpdateTask();
@@ -64,6 +68,11 @@ export function DayView({ date, display, quests = [], onDateChange }: DayViewPro
   const catMap = useMemo(
     () => Object.fromEntries(categories.map((c) => [c.id, c.name])),
     [categories],
+  );
+
+  const projectMap = useMemo(
+    () => new Map(projects.map((p) => [p.id, { name: p.name, icon: p.icon, color: p.color }])),
+    [projects],
   );
 
   const doneMap = useMemo<Record<string, boolean>>(
@@ -185,6 +194,7 @@ export function DayView({ date, display, quests = [], onDateChange }: DayViewPro
                 key={task.id}
                 task={task}
                 tagLabel={catMap[task.tagId]}
+                project={task.projectId ? projectMap.get(task.projectId) : undefined}
                 isBlocked={isBlocked(task)}
                 blockedByNames={blockedByNames(task)}
                 onEdit={handleEdit}
@@ -207,6 +217,14 @@ export function DayView({ date, display, quests = [], onDateChange }: DayViewPro
                 <div key={q.id} className={questRow}>
                   <span className={questIcon}>{q.habitIcon ?? '📌'}</span>
                   <span className={cn(questName, q.done && questNameDone)}>{q.title}</span>
+                  {q.projectName && (
+                    <ProjectBadge
+                      name={q.projectName}
+                      icon={q.projectIcon}
+                      color={q.projectColor}
+                      iconOnly
+                    />
+                  )}
                   {q.done && <span className={questDone}>✓</span>}
                 </div>
               ))}
@@ -276,44 +294,43 @@ export function DayView({ date, display, quests = [], onDateChange }: DayViewPro
         saving={isSavingTask}
       />
 
-      {deletingTask && (
-        <div
-          className="modal-backdrop"
-          onClick={(e) => e.target === e.currentTarget && setDeletingTask(undefined)}
-        >
-          <div className="modal-box" style={{ width: 380 }}>
-            <div className="modal-title">
+      <Modal open={!!deletingTask} onClose={() => setDeletingTask(undefined)} maxWidth="380px">
+        <ModalHead
+          title={
+            <>
               <span style={{ color: 'var(--rose)' }}>⚠</span> Delete Task
-            </div>
-            <p style={{ fontSize: 12, color: 'var(--text-mid)', marginBottom: 16 }}>
-              Delete <strong style={{ color: 'var(--text-hi)' }}>{deletingTask.name}</strong>? This
-              cannot be undone.
-            </p>
-            <div className="modal-actions">
-              <button
-                type="button"
-                className="modal-btn cancel"
-                onClick={() => setDeletingTask(undefined)}
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                className="modal-btn"
-                onClick={handleDeleteConfirm}
-                style={{
-                  flex: 1,
-                  background: 'linear-gradient(135deg, oklch(0.45 0.18 5), var(--rose))',
-                  borderColor: 'var(--rose)',
-                  color: '#fff',
-                }}
-              >
-                Delete
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+            </>
+          }
+        />
+        <ModalBody>
+          <p style={{ fontSize: 12, color: 'var(--text-mid)', margin: 0 }}>
+            Delete <strong style={{ color: 'var(--text-hi)' }}>{deletingTask?.name}</strong>? This
+            cannot be undone.
+          </p>
+        </ModalBody>
+        <ModalFoot>
+          <button
+            type="button"
+            className="modal-btn cancel"
+            onClick={() => setDeletingTask(undefined)}
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            className="modal-btn"
+            onClick={handleDeleteConfirm}
+            style={{
+              flex: 1,
+              background: 'linear-gradient(135deg, oklch(0.45 0.18 5), var(--rose))',
+              borderColor: 'var(--rose)',
+              color: '#fff',
+            }}
+          >
+            Delete
+          </button>
+        </ModalFoot>
+      </Modal>
     </div>
   );
 }

@@ -16,6 +16,7 @@ import { useTaskLogs } from '@/features/dashboard/hooks/useTaskLogs';
 import { useToggleHabitLog } from '@/features/dashboard/hooks/useToggleHabitLog';
 import { useToggleTaskLog } from '@/features/dashboard/hooks/useToggleTaskLog';
 import { useCategories } from '@/features/dashboard/hooks/useCategories';
+import { useProjects } from '@/features/projects/hooks/useProjects';
 import { useUpdateQuestStatus } from '@/features/dashboard/hooks/useUpdateQuestStatus';
 import { useMoveQuest } from '@/features/dashboard/hooks/useMoveQuest';
 import { useUpdateTask } from '@/features/dashboard/hooks/useUpdateTask';
@@ -110,6 +111,7 @@ export function TaskManagement() {
   // ── API data ─────────────────────────────────────────────────────────────────
   const { data: apiTasks = [] } = useTasks();
   const { data: apiQuests = [] } = useQuests();
+  const { data: apiProjects = [] } = useProjects();
   const { data: apiHabits = [] } = useHabits();
   const { data: apiTaskLogs = [] } = useTaskLogs(todayStr);
   // Habit logs covering current week + viewed week (contiguous range)
@@ -157,10 +159,27 @@ export function TaskManagement() {
     [apiTasks, selectedDateStr],
   );
 
+  /** projectId → display meta, used to label tasks that belong to a project. */
+  const projectMeta = useMemo(
+    () => new Map(apiProjects.map((p) => [p.id, { name: p.name, icon: p.icon, color: p.color }])),
+    [apiProjects],
+  );
+
+  /** Attach resolved project label fields to a task-sourced UITask. */
+  const withProject = useMemo(
+    () =>
+      (ui: UITask): UITask => {
+        const meta = ui.projectId ? projectMeta.get(ui.projectId) : undefined;
+        if (!meta) return ui;
+        return { ...ui, projectName: meta.name, projectIcon: meta.icon, projectColor: meta.color };
+      },
+    [projectMeta],
+  );
+
   const apiMerged = useMemo<UITask[]>(() => {
     const tasks = apiTasks.map((t) => {
       const log = apiTaskLogs.find((l) => l.taskId === t.id);
-      return taskToUITask(t, log);
+      return withProject(taskToUITask(t, log));
     });
     const quests = apiQuests.map((q) => questToUITask(q));
 
@@ -205,6 +224,7 @@ export function TaskManagement() {
     viewedWeekStartDate,
     weekViewOffset,
     todayStr,
+    withProject,
   ]);
 
   // ── Local task state ──────────────────────────────────────────────────────
@@ -236,7 +256,7 @@ export function TaskManagement() {
                     : 'evening';
           // For multi-day tasks: done = log exists for this date OR task is fully done
           const done = ui.isMultiDay ? !!log || t.status === 'done' : t.status === 'done';
-          return { ...ui, slot, day: selectedOffset, done };
+          return withProject({ ...ui, slot, day: selectedOffset, done });
         });
 
     // ── Habit UITasks for non-today selected dates ───────────────────────────────
@@ -285,6 +305,7 @@ export function TaskManagement() {
     cancelledHabitIdsForDay,
     selectedDate,
     selectedOffset,
+    withProject,
   ]);
 
   // ── Forge modal ──────────────────────────────────────────────────────────────
@@ -356,6 +377,7 @@ export function TaskManagement() {
           if (
             !t.title.toLowerCase().includes(s) &&
             !t.desc.toLowerCase().includes(s) &&
+            !(t.projectName?.toLowerCase().includes(s) ?? false) &&
             !t.tags.some((x) => x.toLowerCase().includes(s))
           )
             return false;

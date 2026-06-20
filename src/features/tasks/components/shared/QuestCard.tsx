@@ -2,6 +2,8 @@
 
 import { cn } from '@/libs/utils';
 
+import { ProjectBadge } from '@/components/common/ProjectBadge';
+
 import { catOf, fmtEst, priOf, COLOR_VAR, type UITask } from '../../data/mock';
 import { diffColors, urgencyColors, qcxBtnGhost, qcxBtnPrimary } from './styles';
 
@@ -141,6 +143,13 @@ export function QuestCard({
               <span className="mr-0.5">{c.icon}</span>
               {c.label}
             </span>
+            {task.projectName && (
+              <ProjectBadge
+                name={task.projectName}
+                icon={task.projectIcon}
+                color={task.projectColor}
+              />
+            )}
             <span className="text-[9px] text-[var(--text-lo)]">⏲ {fmtEst(task.est)}</span>
             <span className={cn('text-[9px] font-semibold', urgencyColors[task.deadlineUrgency])}>
               ◷ {task.deadline}

@@ -1,6 +1,6 @@
 'use client';
 
-import type { ReactNode } from 'react';
+import type { CSSProperties, ReactNode } from 'react';
 import { useEffect } from 'react';
 import { cn } from '@/libs/utils';
 
@@ -10,6 +10,12 @@ export interface ModalProps {
   children: ReactNode;
   maxWidth?: string;
   className?: string;
+  /** Show an ✕ close button in the top-right corner */
+  closeButton?: boolean;
+  /** Constrain height to 90dvh and allow inner content to scroll */
+  scrollable?: boolean;
+  /** Extra inline styles merged onto the container (use for dynamic colors/overrides) */
+  containerStyle?: CSSProperties;
 }
 
 export interface ModalHeadProps {
@@ -21,6 +27,8 @@ export interface ModalHeadProps {
 export interface ModalBodyProps {
   children: ReactNode;
   className?: string;
+  /** Makes the body flex-1 + overflow-y-auto (use when Modal has scrollable prop) */
+  scrollable?: boolean;
 }
 
 export interface ModalFootProps {
@@ -43,11 +51,12 @@ export function ModalHead({ tag, title, className }: ModalHeadProps) {
   );
 }
 
-export function ModalBody({ children, className }: ModalBodyProps) {
+export function ModalBody({ children, className, scrollable }: ModalBodyProps) {
   return (
     <div
       className={cn(
         'px-6 py-5 text-[13px] text-[var(--text-md)] leading-relaxed relative',
+        scrollable && 'flex-1 overflow-y-auto',
         className,
       )}
     >
@@ -64,14 +73,21 @@ export function ModalFoot({ children, className }: ModalFootProps) {
   );
 }
 
-export function Modal({ open, onClose, children, maxWidth = '420px', className }: ModalProps) {
+export function Modal({
+  open,
+  onClose,
+  children,
+  maxWidth = '420px',
+  className,
+  closeButton,
+  scrollable,
+  containerStyle,
+}: ModalProps) {
   useEffect(() => {
     if (!open) return;
-
     const handleKeyDown = (e: globalThis.KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
     };
-
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [open, onClose]);
@@ -80,21 +96,36 @@ export function Modal({ open, onClose, children, maxWidth = '420px', className }
 
   return (
     <div
-      className="fixed inset-0 z-[1000] flex items-center justify-center p-4"
+      className="fixed inset-0 z-[1000] flex items-end sm:items-center justify-center sm:p-4"
       style={{ background: 'oklch(0.03 0.02 270 / 0.7)', backdropFilter: 'blur(6px)' }}
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
       <div
         className={cn(
-          'relative w-full overflow-hidden rounded-[var(--r-lg)]',
+          'relative w-full overflow-hidden',
+          // Mobile: slides up from bottom with rounded top only; desktop: fully rounded
+          'rounded-t-[20px] sm:rounded-[var(--r-lg)]',
           'border border-[var(--gold)] shadow-[var(--sh-4),var(--sh-glow-gold)]',
+          'animate-[modal-in_0.3s_cubic-bezier(0.34,1.56,0.64,1)]',
+          scrollable && 'flex flex-col max-h-[90dvh] sm:max-h-[85vh]',
           className,
         )}
         style={{
           maxWidth,
           background: 'linear-gradient(180deg, var(--bg-2), var(--bg-1))',
+          ...containerStyle,
         }}
       >
+        {closeButton && (
+          <button
+            type="button"
+            onClick={onClose}
+            className="absolute top-3 right-3 z-10 w-7 h-7 flex items-center justify-center rounded-[var(--r-sm)] text-[var(--text-lo)] hover:text-[var(--text-hi)] hover:bg-[var(--panel2)] transition-all text-[13px]"
+            aria-label="Close"
+          >
+            ✕
+          </button>
+        )}
         <div
           className="absolute inset-0 rounded-[inherit] pointer-events-none opacity-40"
           style={{

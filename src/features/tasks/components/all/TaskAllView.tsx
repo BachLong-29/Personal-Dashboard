@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 
 import { cn } from '@/libs/utils';
+import { Modal, ModalBody, ModalFoot, ModalHead } from '@/components/ui/Modal';
 import { useCategories } from '@/features/dashboard/hooks/useCategories';
 import { useDeleteTask } from '@/features/dashboard/hooks/useDeleteTask';
 
@@ -212,16 +213,17 @@ export function TaskAllView({ tasks, filterCat, onEdit }: TaskAllViewProps) {
       />
 
       {/* ── Delete confirm modal ─────────────────────────────────────────── */}
-      {deletingTask && (
-        <div
-          className="modal-backdrop"
-          onClick={(e) => e.target === e.currentTarget && setDeletingTask(null)}
-        >
-          <div className="modal-box" style={{ width: 380 }}>
-            <div className="modal-title">
+      <Modal open={!!deletingTask} onClose={() => setDeletingTask(null)} maxWidth="380px">
+        <ModalHead
+          title={
+            <>
               <span style={{ color: 'var(--rose)' }}>⚠</span> Delete Task
-            </div>
-            <div style={{ marginBottom: 16 }}>
+            </>
+          }
+        />
+        <ModalBody>
+          {deletingTask && (
+            <>
               <div
                 style={{
                   display: 'flex',
@@ -242,35 +244,31 @@ export function TaskAllView({ tasks, filterCat, onEdit }: TaskAllViewProps) {
               <p style={{ fontSize: 12, color: 'var(--text-mid)', margin: 0, lineHeight: 1.6 }}>
                 This task will be permanently deleted. This action cannot be undone.
               </p>
-            </div>
-            <div className="modal-actions">
-              <button
-                type="button"
-                className="modal-btn cancel"
-                onClick={() => setDeletingTask(null)}
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                className="modal-btn"
-                onClick={() => {
-                  if (deletingTask.sourceId) deleteTask(deletingTask.sourceId);
-                  setDeletingTask(null);
-                }}
-                style={{
-                  flex: 1,
-                  background: 'linear-gradient(135deg, oklch(0.45 0.18 5), var(--rose))',
-                  borderColor: 'var(--rose)',
-                  color: '#fff',
-                }}
-              >
-                Delete
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+            </>
+          )}
+        </ModalBody>
+        <ModalFoot>
+          <button type="button" className="modal-btn cancel" onClick={() => setDeletingTask(null)}>
+            Cancel
+          </button>
+          <button
+            type="button"
+            className="modal-btn"
+            onClick={() => {
+              if (deletingTask?.sourceId) deleteTask(deletingTask.sourceId);
+              setDeletingTask(null);
+            }}
+            style={{
+              flex: 1,
+              background: 'linear-gradient(135deg, oklch(0.45 0.18 5), var(--rose))',
+              borderColor: 'var(--rose)',
+              color: '#fff',
+            }}
+          >
+            Delete
+          </button>
+        </ModalFoot>
+      </Modal>
     </div>
   );
 }

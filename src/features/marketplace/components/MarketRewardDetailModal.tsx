@@ -3,14 +3,11 @@
 import { useTranslations } from 'next-intl';
 
 import { Button } from '@/components/ui/Button';
+import { Modal } from '@/components/ui/Modal';
 import { cn } from '@/libs/utils';
 
 import { RARITY_COLOR, RARITY_LABEL, CURRENCY_ICON, MARKET_CATEGORIES } from '../constants';
-import type {
-  MarketPlayerState,
-  MarketReward,
-  MarketRewardDetailCondition,
-} from '../types';
+import type { MarketPlayerState, MarketReward, MarketRewardDetailCondition } from '../types';
 
 interface MarketRewardDetailModalProps {
   reward: MarketReward;
@@ -65,8 +62,20 @@ export function MarketRewardDetailModal({
     : `Forged in the ${reward.rarity === 'mythic' ? 'Eclipse Forge' : reward.rarity === 'legendary' ? 'Sun Temple' : 'Aetheric Vault'}. Carries the resonance of countless completed quests.`;
 
   return (
-    <div className={detailBackdrop} onClick={(e) => e.target === e.currentTarget && onClose()}>
-      <div className={detailModal} style={{ color: RARITY_COLOR[reward.rarity] }}>
+    <Modal
+      open
+      onClose={onClose}
+      maxWidth="540px"
+      scrollable
+      closeButton
+      className="!border-[1.5px] !border-[currentColor] !rounded-[16px] animate-[marketplace-detail-in_0.4s_cubic-bezier(0.34,1.56,0.64,1)]"
+      containerStyle={{
+        color: RARITY_COLOR[reward.rarity],
+        background: 'linear-gradient(180deg,var(--panel),oklch(0.04 0.02 270))',
+        boxShadow: `0 0 60px ${RARITY_COLOR[reward.rarity]}, 0 24px 80px oklch(0 0 0 / 0.6)`,
+      }}
+    >
+      <div style={{ color: RARITY_COLOR[reward.rarity] }}>
         <Button
           type="button"
           variant="ghost"
@@ -139,14 +148,10 @@ export function MarketRewardDetailModal({
           </div>
         </div>
       </div>
-    </div>
+    </Modal>
   );
 }
 
-const detailBackdrop =
-  'fixed inset-0 bg-[oklch(0.03_0.02_260_/_0.85)] backdrop-blur-[8px] z-[200] flex items-center justify-center p-6 animate-[fade-in_0.25s_ease]';
-const detailModal =
-  'bg-[linear-gradient(180deg,var(--panel),oklch(0.04_0.02_270))] border-[1.5px] border-[currentColor] rounded-[16px] w-[540px] max-w-full max-h-[92vh] overflow-y-auto relative animate-[marketplace-detail-in_0.4s_cubic-bezier(0.34,1.56,0.64,1)] shadow-[0_0_60px_currentColor,0_24px_80px_oklch(0_0_0_/_0.6)]';
 const detailClose =
   'absolute top-[14px] right-[14px] w-8 h-8 bg-black/50 border border-[var(--border)] rounded-full text-[var(--text-mid)] cursor-pointer text-[16px] z-[5] flex items-center justify-center transition-all duration-200 hover:text-[var(--text-hi)] hover:border-[var(--text-hi)]';
 

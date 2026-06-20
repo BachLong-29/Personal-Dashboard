@@ -5,6 +5,7 @@ import { useState } from 'react';
 
 import { Input, Select, type SelectOption } from '@/components/ui';
 import { Button } from '@/components/ui/Button';
+import { Modal, ModalBody, ModalFoot, ModalHead } from '@/components/ui/Modal';
 import { QUEST_ICONS, XP_MAP } from '../constants';
 import { useCreateQuest } from '../hooks/useCreateQuest';
 import type { Difficulty, Quest, QuestType } from '../types';
@@ -58,11 +59,9 @@ export function AddQuestModal({ onAdd, onClose }: AddQuestModalProps) {
   }
 
   return (
-    <div className="modal-backdrop" onClick={(e) => e.target === e.currentTarget && onClose()}>
-      <div className="modal-box">
-        <div className="modal-title">
-          <span>✦</span> New Quest
-        </div>
+    <Modal open onClose={onClose}>
+      <ModalHead tag="✦" title="New Quest" />
+      <ModalBody>
         <div className="modal-field">
           <div className="modal-label">Quest Name</div>
           <Input
@@ -116,27 +115,27 @@ export function AddQuestModal({ onAdd, onClose }: AddQuestModalProps) {
             ✕ Failed to create quest. Please try again.
           </div>
         )}
-        <div className="modal-actions">
-          <Button
-            type="button"
-            variant="ghost"
-            className="modal-btn cancel"
-            onClick={onClose}
-            disabled={isPending}
-          >
-            {t('addQuest.buttons.cancel')}
-          </Button>
-          <Button
-            type="button"
-            variant="ghost"
-            className="modal-btn confirm"
-            onClick={handleAdd}
-            disabled={isPending}
-          >
-            {isPending ? t('addQuest.buttons.pending') : `${t('addQuest.buttons.confirm')} ✦`}
-          </Button>
-        </div>
-      </div>
-    </div>
+      </ModalBody>
+      <ModalFoot>
+        <Button
+          type="button"
+          variant="ghost"
+          className="modal-btn cancel"
+          onClick={onClose}
+          disabled={isPending}
+        >
+          {t('addQuest.buttons.cancel')}
+        </Button>
+        <Button
+          type="button"
+          variant="ghost"
+          className="modal-btn confirm"
+          onClick={handleAdd}
+          disabled={isPending}
+        >
+          {isPending ? t('addQuest.buttons.pending') : `${t('addQuest.buttons.confirm')} ✦`}
+        </Button>
+      </ModalFoot>
+    </Modal>
   );
 }

@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 
 import { Button } from '@/components/ui/Button';
+import { Modal } from '@/components/ui/Modal';
 import { useUpdateQuestStatus } from '../hooks/useUpdateQuestStatus';
 import type { Quest } from '../types';
 
@@ -23,8 +24,8 @@ export function ConfirmQuestModal({ quest, onConfirm, onCancel }: ConfirmQuestMo
   }
 
   return (
-    <div className="confirm-backdrop" onClick={(e) => e.target === e.currentTarget && onCancel()}>
-      <div className="confirm-modal">
+    <Modal open onClose={onCancel} maxWidth="400px">
+      <div className="px-6 py-7 flex flex-col items-center text-center relative">
         <div className="confirm-icon">✦</div>
         <div className="confirm-tag">◆ Quest Completion ◆</div>
         <div className="confirm-title">Confirm Victory?</div>
@@ -76,6 +77,6 @@ export function ConfirmQuestModal({ quest, onConfirm, onCancel }: ConfirmQuestMo
           </Button>
         </div>
       </div>
-    </div>
+    </Modal>
   );
 }

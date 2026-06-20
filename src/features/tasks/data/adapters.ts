@@ -155,6 +155,7 @@ export function taskToUITask(t: Task, taskLog?: TaskLog): UITask {
     active: t.active,
     deferReason: t.deferReason,
     attachments: t.attachments,
+    projectId: t.projectId,
     // multi-day extras
     isMultiDay,
     totalDays: isMultiDay ? totalDays : undefined,

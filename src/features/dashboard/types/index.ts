@@ -25,6 +25,11 @@ export interface Quest {
   habitColor?: HabitColor;
   habitIcon?: string;
   taskId?: string;
+  /** Project the underlying task belongs to (task quests only) */
+  projectId?: string;
+  projectName?: string;
+  projectIcon?: string;
+  projectColor?: string;
 }
 
 export interface Habit {
@@ -64,6 +69,8 @@ export interface Task {
   endDate?: string;
   /** Reason the task was deferred to a later date */
   deferReason?: string;
+  /** Project ObjectId this task belongs to — omitted for standalone tasks */
+  projectId?: string;
   attachments: string[];
   dependencies: string[];
   active: boolean;

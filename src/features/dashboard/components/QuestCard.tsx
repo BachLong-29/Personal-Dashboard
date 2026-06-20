@@ -2,6 +2,8 @@
 
 import { useRef } from 'react';
 
+import { ProjectBadge } from '@/components/common/ProjectBadge';
+
 import { HABIT_COLORS, QUEST_ICONS } from '../constants';
 import type { BurstPos, HabitColor, Quest } from '../types';
 
@@ -37,9 +39,7 @@ export function QuestCard({ quest, onToggle, animationsEnabled }: QuestCardProps
       <div
         className={`quest-icon-wrap type-${quest.type}`}
         style={
-          habitColorVal
-            ? { background: `${habitColorVal}20`, color: habitColorVal }
-            : undefined
+          habitColorVal ? { background: `${habitColorVal}20`, color: habitColorVal } : undefined
         }
       >
         {icon}
@@ -47,6 +47,15 @@ export function QuestCard({ quest, onToggle, animationsEnabled }: QuestCardProps
       <div className="quest-info">
         <div className="quest-name">{quest.title}</div>
         <div className="quest-desc">{quest.desc}</div>
+        {quest.projectName && (
+          <div className="mt-1">
+            <ProjectBadge
+              name={quest.projectName}
+              icon={quest.projectIcon}
+              color={quest.projectColor}
+            />
+          </div>
+        )}
       </div>
       <div className="quest-rewards">
         {quest.taskId && (

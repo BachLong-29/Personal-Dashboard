@@ -6,6 +6,7 @@ import Picker from '@emoji-mart/react';
 
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui';
+import { Modal, ModalBody, ModalFoot, ModalHead } from '@/components/ui/Modal';
 import { cn } from '@/libs/utils';
 import type { Category } from '@/types';
 
@@ -72,12 +73,10 @@ export function AddHabitModal({ editing, onClose, onSaved }: AddHabitModalProps)
   const isPending = isCreating || isUpdating;
   const error = createError ?? updateError;
 
-  const resolvedTagId =
-    tagId || (categories.length > 0 ? (categories[0] as Category).id : '');
+  const resolvedTagId = tagId || (categories.length > 0 ? (categories[0] as Category).id : '');
 
   // ── Schedule helpers ────────────────────────────────────────────────────────
 
-  /** All days that appear in at least one entry */
   const assignedDays = new Set(schedule.flatMap((e) => e.days));
   const unassignedDays = ALL_HABIT_DAYS.filter((d) => !assignedDays.has(d));
 
@@ -89,14 +88,12 @@ export function AddHabitModal({ editing, onClose, onSaved }: AddHabitModalProps)
       const isInThisEntry = entry.days.includes(day);
 
       if (isInThisEntry) {
-        // Prevent removing the last day in an entry
         if (entry.days.length === 1) return prev;
         return prev.map((e) =>
           e.id === entryId ? { ...e, days: e.days.filter((d) => d !== day) } : e,
         );
       }
 
-      // Move day from any other entry to this one
       return prev.map((e) => {
         if (e.id === entryId) return { ...e, days: [...e.days, day] };
         if (e.days.includes(day)) return { ...e, days: e.days.filter((d) => d !== day) };
@@ -145,11 +142,11 @@ export function AddHabitModal({ editing, onClose, onSaved }: AddHabitModalProps)
     const durationNum = duration ? parseInt(duration, 10) : undefined;
 
     const payload = {
-      name:     name.trim(),
+      name: name.trim(),
       schedule: validSchedule.map(({ days, time }) => ({ days, time })),
       duration: durationNum && !Number.isNaN(durationNum) ? durationNum : undefined,
-      note:     note.trim() || undefined,
-      tagId:    resolvedTagId,
+      note: note.trim() || undefined,
+      tagId: resolvedTagId,
       color,
       icon,
     };
@@ -183,12 +180,9 @@ export function AddHabitModal({ editing, onClose, onSaved }: AddHabitModalProps)
   // ── Render ──────────────────────────────────────────────────────────────────
 
   return (
-    <div className="modal-backdrop" onClick={(e) => e.target === e.currentTarget && onClose()}>
-      <div className="modal-box" style={{ width: 540 }}>
-        <div className="modal-title">
-          <span>✦</span> {editing ? 'Edit Habit' : 'New Habit'}
-        </div>
-
+    <Modal open onClose={onClose} maxWidth="540px" scrollable>
+      <ModalHead tag="✦" title={editing ? 'Edit Habit' : 'New Habit'} />
+      <ModalBody scrollable>
         {/* Name */}
         <div className="modal-field">
           <div className="modal-label">Habit Name *</div>
@@ -213,27 +207,23 @@ export function AddHabitModal({ editing, onClose, onSaved }: AddHabitModalProps)
                 <div style={{ display: 'flex', gap: 5, alignItems: 'center', flexWrap: 'wrap' }}>
                   {ALL_HABIT_DAYS.map((day) => {
                     const active = entry.days.includes(day);
-                    // Dim days owned by another entry
                     const inOther = !active && assignedDays.has(day);
                     return (
                       <button
                         key={day}
                         type="button"
                         disabled={isPending}
-                        title={inOther ? 'Already in another time slot — click to move here' : undefined}
+                        title={
+                          inOther ? 'Already in another time slot — click to move here' : undefined
+                        }
                         onClick={() => toggleDayInEntry(entry.id, day)}
-                        className={cn(
-                          dayChip,
-                          active && dayChipActive,
-                          inOther && dayChipOther,
-                        )}
+                        className={cn(dayChip, active && dayChipActive, inOther && dayChipOther)}
                       >
                         {HABIT_DAY_SHORT[day]}
                       </button>
                     );
                   })}
 
-                  {/* Remove row button */}
                   {schedule.length > 1 && (
                     <button
                       type="button"
@@ -267,14 +257,8 @@ export function AddHabitModal({ editing, onClose, onSaved }: AddHabitModalProps)
               </div>
             ))}
 
-            {/* Add time slot */}
             {unassignedDays.length > 0 && (
-              <button
-                type="button"
-                onClick={addEntry}
-                disabled={isPending}
-                className={addSlotBtn}
-              >
+              <button type="button" onClick={addEntry} disabled={isPending} className={addSlotBtn}>
                 + Add time slot
                 <span style={{ fontSize: 9, opacity: 0.6, marginLeft: 4 }}>
                   ({unassignedDays.map((d) => HABIT_DAY_SHORT[d]).join('·')} unassigned)
@@ -301,9 +285,11 @@ export function AddHabitModal({ editing, onClose, onSaved }: AddHabitModalProps)
             />
             {duration && (
               <span style={{ fontSize: 10, color: 'var(--text-mid)' }}>
-                ≈ {Math.floor(parseInt(duration, 10) / 60) > 0
+                ≈{' '}
+                {Math.floor(parseInt(duration, 10) / 60) > 0
                   ? `${Math.floor(parseInt(duration, 10) / 60)}h `
-                  : ''}{parseInt(duration, 10) % 60}m
+                  : ''}
+                {parseInt(duration, 10) % 60}m
               </span>
             )}
           </div>
@@ -356,20 +342,29 @@ export function AddHabitModal({ editing, onClose, onSaved }: AddHabitModalProps)
                     disabled={isAddingCat}
                     onKeyDown={(e) => {
                       if (e.key === 'Enter') handleAddCategory();
-                      if (e.key === 'Escape') { setShowAddCat(false); setNewCatName(''); }
+                      if (e.key === 'Escape') {
+                        setShowAddCat(false);
+                        setNewCatName('');
+                      }
                     }}
                   />
                   <button
                     type="button"
                     onClick={handleAddCategory}
                     disabled={!newCatName.trim() || isAddingCat}
-                    className={cn(inlineSaveBtn, (!newCatName.trim() || isAddingCat) && 'opacity-40 cursor-not-allowed')}
+                    className={cn(
+                      inlineSaveBtn,
+                      (!newCatName.trim() || isAddingCat) && 'opacity-40 cursor-not-allowed',
+                    )}
                   >
                     {isAddingCat ? '...' : '✓'}
                   </button>
                   <button
                     type="button"
-                    onClick={() => { setShowAddCat(false); setNewCatName(''); }}
+                    onClick={() => {
+                      setShowAddCat(false);
+                      setNewCatName('');
+                    }}
                     className={inlineCancelBtn}
                   >
                     ✕
@@ -393,10 +388,16 @@ export function AddHabitModal({ editing, onClose, onSaved }: AddHabitModalProps)
                   disabled={isPending}
                   onClick={() => setColor(key)}
                   style={{
-                    width: 26, height: 26, borderRadius: '50%', background: value,
+                    width: 26,
+                    height: 26,
+                    borderRadius: '50%',
+                    background: value,
                     border: color === key ? '2px solid white' : '2px solid transparent',
                     outline: color === key ? `2px solid ${value}` : 'none',
-                    outlineOffset: 2, cursor: 'pointer', transition: 'all 0.15s', flexShrink: 0,
+                    outlineOffset: 2,
+                    cursor: 'pointer',
+                    transition: 'all 0.15s',
+                    flexShrink: 0,
                   }}
                 />
               ),
@@ -456,29 +457,28 @@ export function AddHabitModal({ editing, onClose, onSaved }: AddHabitModalProps)
             ✕ Failed to save habit. Please try again.
           </div>
         )}
-
-        <div className="modal-actions">
-          <Button
-            type="button"
-            variant="ghost"
-            className="modal-btn cancel"
-            onClick={onClose}
-            disabled={isPending}
-          >
-            Cancel
-          </Button>
-          <Button
-            type="button"
-            variant="ghost"
-            className="modal-btn confirm"
-            onClick={handleSave}
-            disabled={!canSave || isPending}
-          >
-            {isPending ? 'Saving...' : `${editing ? 'Save Changes' : 'Create Habit'} ✦`}
-          </Button>
-        </div>
-      </div>
-    </div>
+      </ModalBody>
+      <ModalFoot>
+        <Button
+          type="button"
+          variant="ghost"
+          className="modal-btn cancel"
+          onClick={onClose}
+          disabled={isPending}
+        >
+          Cancel
+        </Button>
+        <Button
+          type="button"
+          variant="ghost"
+          className="modal-btn confirm"
+          onClick={handleSave}
+          disabled={!canSave || isPending}
+        >
+          {isPending ? 'Saving...' : `${editing ? 'Save Changes' : 'Create Habit'} ✦`}
+        </Button>
+      </ModalFoot>
+    </Modal>
   );
 }
 
@@ -491,8 +491,7 @@ const dayChip =
   'w-[30px] h-[26px] rounded-[var(--r-sm)] text-[10px] font-bold tracking-[0.06em] uppercase font-[var(--font-title)] border border-[var(--border)] bg-[var(--panel3)] text-[var(--text-mid)] cursor-pointer transition-all duration-150 hover:border-[var(--border-hi)] hover:text-[var(--text-hi)]';
 const dayChipActive =
   'bg-[oklch(0.74_0.17_85_/_0.15)] border-[oklch(0.74_0.17_85_/_0.6)] text-[var(--gold)] shadow-[0_0_8px_var(--gold-glow)]';
-const dayChipOther =
-  'opacity-40';
+const dayChipOther = 'opacity-40';
 
 const removeRowBtn =
   'ml-auto w-[22px] h-[22px] rounded-[var(--r-sm)] flex items-center justify-center text-[10px] border border-[var(--border)] bg-[var(--panel3)] text-[var(--text-lo)] cursor-pointer hover:border-[var(--rose)] hover:text-[var(--rose)] transition-all shrink-0';

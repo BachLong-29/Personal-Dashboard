@@ -3,21 +3,22 @@
 import { useState } from 'react';
 
 import { cn } from '@/libs/utils';
+import { Modal, ModalBody, ModalFoot, ModalHead } from '@/components/ui/Modal';
 import type { CreateRewardPayload, RewardColor, RewardRarity, RewardStatus } from '@/types/reward';
 import { RARITIES, STATUSES, REWARD_COLORS, COLOR_VALUES } from '../constants';
 import { useCreateReward } from '../hooks/useCreateReward';
 
 interface RewardForgeModalProps {
-  onClose:   () => void;
+  onClose: () => void;
   onCreated: (id: string) => void;
 }
 
 const DEFAULT: CreateRewardPayload = {
-  name:    '',
-  icon:    '◆',
-  color:   'gold',
-  rarity:  'common',
-  status:  'active',
+  name: '',
+  icon: '◆',
+  color: 'gold',
+  rarity: 'common',
+  status: 'active',
 };
 
 export function RewardForgeModal({ onClose, onCreated }: RewardForgeModalProps) {
@@ -31,7 +32,10 @@ export function RewardForgeModal({ onClose, onCreated }: RewardForgeModalProps) 
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!form.name.trim()) { setError('Name is required.'); return; }
+    if (!form.name.trim()) {
+      setError('Name is required.');
+      return;
+    }
     setError('');
     create(form, {
       onSuccess: (r) => {
@@ -43,34 +47,10 @@ export function RewardForgeModal({ onClose, onCreated }: RewardForgeModalProps) 
   }
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-[oklch(0_0_0_/_0.6)] backdrop-blur-sm"
-      onClick={(e) => e.target === e.currentTarget && onClose()}
-    >
-      <div className="w-[480px] max-h-[90vh] flex flex-col bg-[var(--panel)] border border-[oklch(0.74_0.17_85_/_0.4)] rounded-[var(--r-md)] shadow-[0_16px_64px_oklch(0_0_0_/_0.5),0_0_32px_oklch(0.74_0.17_85_/_0.1)] overflow-hidden">
-
-        {/* Header */}
-        <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--border)] shrink-0">
-          <div>
-            <div className="font-[var(--font-title)] text-[13px] font-bold tracking-[0.08em] text-[var(--text-hi)]">
-              ✦ Forge New Reward
-            </div>
-            <div className="text-[9px] text-[var(--text-lo)] tracking-[0.1em] mt-0.5">
-              Fill in details then forge to add to catalog
-            </div>
-          </div>
-          <button
-            type="button"
-            className="w-7 h-7 flex items-center justify-center rounded-[var(--r-sm)] text-[var(--text-lo)] hover:text-[var(--text-hi)] hover:bg-[var(--panel2)] transition-all text-[14px]"
-            onClick={onClose}
-          >
-            ✕
-          </button>
-        </div>
-
-        {/* Form */}
-        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto px-4 py-4 flex flex-col gap-4">
-
+    <Modal open onClose={onClose} maxWidth="480px" scrollable closeButton>
+      <ModalHead tag="Forge" title="✦ Forge New Reward" />
+      <ModalBody scrollable>
+        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           {/* Icon + Name row */}
           <div className="flex gap-3">
             <div className="shrink-0">
@@ -128,7 +108,10 @@ export function RewardForgeModal({ onClose, onCreated }: RewardForgeModalProps) 
                     }
                     onClick={() => setF('rarity', r.id as RewardRarity)}
                   >
-                    <span className="w-2 h-2 rounded-full shrink-0" style={{ background: r.color }} />
+                    <span
+                      className="w-2 h-2 rounded-full shrink-0"
+                      style={{ background: r.color }}
+                    />
                     {r.label}
                   </button>
                 ))}
@@ -151,7 +134,9 @@ export function RewardForgeModal({ onClose, onCreated }: RewardForgeModalProps) 
                     onClick={() => setF('status', s.id as RewardStatus)}
                   >
                     <span style={{ color: s.color }}>{s.icon}</span>
-                    <span style={{ color: form.status === s.id ? s.color : undefined }}>{s.label}</span>
+                    <span style={{ color: form.status === s.id ? s.color : undefined }}>
+                      {s.label}
+                    </span>
                   </button>
                 ))}
               </div>
@@ -189,11 +174,14 @@ export function RewardForgeModal({ onClose, onCreated }: RewardForgeModalProps) 
               <div className="flex items-center gap-1.5 bg-[var(--panel2)] border border-[var(--border)] rounded-[var(--r-sm)] px-2.5 py-1.5">
                 <span className="text-[var(--gold)] text-[12px]">●</span>
                 <input
-                  type="number" min={0}
+                  type="number"
+                  min={0}
                   className="flex-1 bg-transparent outline-none text-[12px] text-[var(--text-hi)] placeholder:text-[var(--text-dim)] min-w-0"
                   placeholder="0"
                   value={form.coinCost ?? ''}
-                  onChange={(e) => setF('coinCost', e.target.value === '' ? undefined : Number(e.target.value))}
+                  onChange={(e) =>
+                    setF('coinCost', e.target.value === '' ? undefined : Number(e.target.value))
+                  }
                 />
               </div>
             </div>
@@ -202,11 +190,14 @@ export function RewardForgeModal({ onClose, onCreated }: RewardForgeModalProps) 
               <div className="flex items-center gap-1.5 bg-[var(--panel2)] border border-[var(--border)] rounded-[var(--r-sm)] px-2.5 py-1.5">
                 <span className="text-[var(--violet)] text-[12px]">◆</span>
                 <input
-                  type="number" min={0}
+                  type="number"
+                  min={0}
                   className="flex-1 bg-transparent outline-none text-[12px] text-[var(--text-hi)] placeholder:text-[var(--text-dim)] min-w-0"
                   placeholder="0"
                   value={form.gemCost ?? ''}
-                  onChange={(e) => setF('gemCost', e.target.value === '' ? undefined : Number(e.target.value))}
+                  onChange={(e) =>
+                    setF('gemCost', e.target.value === '' ? undefined : Number(e.target.value))
+                  }
                 />
               </div>
             </div>
@@ -217,14 +208,17 @@ export function RewardForgeModal({ onClose, onCreated }: RewardForgeModalProps) 
             <div>
               <FieldLabel>Min Level</FieldLabel>
               <input
-                type="number" min={1}
+                type="number"
+                min={1}
                 className={inp}
                 placeholder="None"
                 value={form.unlockCondition?.minLevel ?? ''}
-                onChange={(e) => setF('unlockCondition', {
-                  ...form.unlockCondition,
-                  minLevel: e.target.value === '' ? undefined : Number(e.target.value),
-                })}
+                onChange={(e) =>
+                  setF('unlockCondition', {
+                    ...form.unlockCondition,
+                    minLevel: e.target.value === '' ? undefined : Number(e.target.value),
+                  })
+                }
               />
             </div>
             <div>
@@ -233,20 +227,25 @@ export function RewardForgeModal({ onClose, onCreated }: RewardForgeModalProps) 
                 className={inp}
                 placeholder="None"
                 value={form.unlockCondition?.minRank ?? ''}
-                onChange={(e) => setF('unlockCondition', {
-                  ...form.unlockCondition,
-                  minRank: e.target.value || undefined,
-                })}
+                onChange={(e) =>
+                  setF('unlockCondition', {
+                    ...form.unlockCondition,
+                    minRank: e.target.value || undefined,
+                  })
+                }
               />
             </div>
             <div>
               <FieldLabel hint="blank = ∞">Stock</FieldLabel>
               <input
-                type="number" min={0}
+                type="number"
+                min={0}
                 className={inp}
                 placeholder="∞"
                 value={form.stock ?? ''}
-                onChange={(e) => setF('stock', e.target.value === '' ? undefined : Number(e.target.value))}
+                onChange={(e) =>
+                  setF('stock', e.target.value === '' ? undefined : Number(e.target.value))
+                }
               />
             </div>
           </div>
@@ -257,43 +256,52 @@ export function RewardForgeModal({ onClose, onCreated }: RewardForgeModalProps) 
             </div>
           )}
         </form>
-
-        {/* Footer */}
-        <div className="flex items-center gap-2 px-4 py-3 border-t border-[var(--border)] shrink-0">
-          <button
-            type="button"
-            className="flex-1 py-2 rounded-[var(--r-sm)] border border-[var(--border)] text-[11px] font-bold text-[var(--text-lo)] font-[var(--font-title)] tracking-[0.08em] cursor-pointer transition-all hover:border-[var(--border-hi)] hover:text-[var(--text-hi)]"
-            onClick={onClose}
-          >
-            Cancel
-          </button>
-          <button
-            type="submit"
-            form=""
-            className={cn(
-              'flex-[2] py-2 rounded-[var(--r-sm)] text-[11px] font-bold font-[var(--font-title)] tracking-[0.1em] cursor-pointer transition-all text-[#0a0400]',
-              'bg-[linear-gradient(135deg,oklch(0.68_0.14_82),oklch(0.78_0.16_82))] shadow-[0_0_12px_oklch(0.74_0.17_85_/_0.35)]',
-              'hover:shadow-[0_0_20px_oklch(0.74_0.17_85_/_0.5)]',
-              isPending && 'opacity-60 pointer-events-none',
-            )}
-            onClick={handleSubmit}
-          >
-            {isPending ? '⏳ Forging…' : '✦ Forge Reward'}
-          </button>
-        </div>
-      </div>
-    </div>
+      </ModalBody>
+      <ModalFoot>
+        <button
+          type="button"
+          className="flex-1 py-2 rounded-[var(--r-sm)] border border-[var(--border)] text-[11px] font-bold text-[var(--text-lo)] font-[var(--font-title)] tracking-[0.08em] cursor-pointer transition-all hover:border-[var(--border-hi)] hover:text-[var(--text-hi)]"
+          onClick={onClose}
+        >
+          Cancel
+        </button>
+        <button
+          type="button"
+          className={cn(
+            'flex-[2] py-2 rounded-[var(--r-sm)] text-[11px] font-bold font-[var(--font-title)] tracking-[0.1em] cursor-pointer transition-all text-[#0a0400]',
+            'bg-[linear-gradient(135deg,oklch(0.68_0.14_82),oklch(0.78_0.16_82))] shadow-[0_0_12px_oklch(0.74_0.17_85_/_0.35)]',
+            'hover:shadow-[0_0_20px_oklch(0.74_0.17_85_/_0.5)]',
+            isPending && 'opacity-60 pointer-events-none',
+          )}
+          onClick={handleSubmit}
+        >
+          {isPending ? '⏳ Forging…' : '✦ Forge Reward'}
+        </button>
+      </ModalFoot>
+    </Modal>
   );
 }
 
-function FieldLabel({ children, required, hint }: { children: React.ReactNode; required?: boolean; hint?: string }) {
+function FieldLabel({
+  children,
+  required,
+  hint,
+}: {
+  children: React.ReactNode;
+  required?: boolean;
+  hint?: string;
+}) {
   return (
     <div className="flex items-center gap-1 mb-1.5">
       <span className="text-[9px] font-bold tracking-[0.14em] uppercase text-[var(--text-lo)] font-[var(--font-title)]">
         {children}
       </span>
       {required && <span className="text-[var(--rose)] text-[10px]">*</span>}
-      {hint && <span className="ml-auto text-[9px] text-[var(--text-dim)] font-[var(--font-mono)]">{hint}</span>}
+      {hint && (
+        <span className="ml-auto text-[9px] text-[var(--text-dim)] font-[var(--font-mono)]">
+          {hint}
+        </span>
+      )}
     </div>
   );
 }
