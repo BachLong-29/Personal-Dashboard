@@ -276,7 +276,7 @@ export function ProfilePage() {
         </div>
 
         {/* Middle form */}
-        <div className="px-4 sm:px-6 md:px-8 lg:px-10 py-6 md:py-8 pb-40 flex flex-col gap-10 md:gap-14">
+        <div className="px-4 sm:px-6 md:px-8 lg:px-10 pt-6 md:pt-8 pb-10 md:pb-20 flex flex-col gap-10 md:gap-14">
           <FormSection id="identity" num="I" label="Identity" subtitle="Name · title · monogram">
             <IdentitySection form={form} onChange={set} />
           </FormSection>

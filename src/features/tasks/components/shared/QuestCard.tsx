@@ -127,6 +127,21 @@ export function QuestCard({
             )}
           </div>
 
+          {/* Overdue escalation badge */}
+          {task.overdueLevel && task.overdueLevel !== 'failed' && !task.done && !task.cancelled && (
+            <div className="mb-1">
+              {task.overdueLevel === 'critical' ? (
+                <span className="text-[8px] font-bold px-1.5 py-0.5 rounded border tracking-[0.06em] font-[var(--font-title)] bg-[oklch(0.72_0.18_5_/_0.12)] border-[oklch(0.72_0.18_5_/_0.3)] text-[var(--rose)] animate-pulse">
+                  🔴 Critical
+                </span>
+              ) : (
+                <span className="text-[8px] font-bold px-1.5 py-0.5 rounded border tracking-[0.06em] font-[var(--font-title)] bg-[oklch(0.74_0.17_85_/_0.1)] border-[oklch(0.74_0.17_85_/_0.3)] text-[var(--gold)]">
+                  ⚠ Late
+                </span>
+              )}
+            </div>
+          )}
+
           {/* Description */}
           {!compact && task.desc && (
             <div className="text-[9px] text-[var(--text-lo)] leading-[1.4] mb-1 truncate">

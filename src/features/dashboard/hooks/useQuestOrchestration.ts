@@ -98,10 +98,13 @@ export function useQuestOrchestration({
     return (allTasks as Task[])
       .filter(
         (t) =>
-          t.active && t.startDate <= todayDateStr && (t.endDate ?? t.startDate) >= todayDateStr,
+          t.active &&
+          !!t.startDate &&
+          t.startDate <= todayDateStr &&
+          (t.endDate ?? t.startDate) >= todayDateStr,
       )
       .map((t) => {
-        const isMultiDay = !!t.endDate && t.endDate > t.startDate;
+        const isMultiDay = !!t.endDate && !!t.startDate && t.endDate > t.startDate;
         const done = isMultiDay
           ? (taskDoneMap[t.id] ?? taskLoggedMap[t.id] ?? false)
           : (taskDoneMap[t.id] ?? t.status === 'done');
@@ -188,7 +191,7 @@ export function useQuestOrchestration({
   const handleToggleTask = useCallback(
     (taskId: string, burstPos: BurstPos | null) => {
       const task = (allTasks as Task[]).find((t) => t.id === taskId);
-      const isMultiDay = !!task?.endDate && task.endDate > task.startDate;
+      const isMultiDay = !!task?.endDate && !!task?.startDate && task.endDate > task.startDate;
 
       if (isMultiDay) {
         const nextLogged = !(taskDoneMap[taskId] ?? taskLoggedMap[taskId] ?? false);

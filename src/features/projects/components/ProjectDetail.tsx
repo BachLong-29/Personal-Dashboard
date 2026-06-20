@@ -58,13 +58,14 @@ export function ProjectDetail({ id }: { id: string }) {
   function handleChangeStatus(taskId: string, status: TaskStatus) {
     updateTask.mutate({ id: taskId, status }, { onSuccess: refetchProject });
   }
-  function handleSaveEdit(taskId: string, payload: UpdateTaskPayload) {
+  function handleSaveEdit(taskId: string, payload: UpdateTaskPayload, onSuccess: () => void) {
     updateTask.mutate(
       { id: taskId, ...payload },
       {
         onSuccess: () => {
           setEditingTask(null);
           refetchProject();
+          onSuccess();
         },
       },
     );

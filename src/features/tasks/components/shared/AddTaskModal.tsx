@@ -50,9 +50,7 @@ export function AddTaskModal({
   const [plannerTask, setPlannerTask] = useState<PlannerTask | null>(null);
 
   function handleSubmit(values: TaskFormValues) {
-    const startDate = values.startDate
-      ? toLocalDate(values.startDate)
-      : (defaultDate ?? toLocalDate(new Date()));
+    const startDate = values.startDate ? toLocalDate(values.startDate) : undefined;
 
     const payload: CreateTaskPayload = {
       name: values.name,
@@ -75,8 +73,8 @@ export function AddTaskModal({
       onSuccess: (created) => {
         onSaved?.();
         onClose();
-        // Offer session planning when the task carries a time estimate
-        if (created?.duration) {
+        // Offer session planning when the task has both an estimate and a scheduled date
+        if (created?.duration && created?.startDate) {
           setPlannerTask({
             id: created.id,
             name: created.name,
@@ -91,8 +89,7 @@ export function AddTaskModal({
     });
   }
 
-  const defaultStart =
-    defaultValues?.startDate ?? (defaultDate ? new Date(defaultDate) : new Date());
+  const defaultStart = defaultValues?.startDate ?? (defaultDate ? new Date(defaultDate) : null);
 
   return (
     <>

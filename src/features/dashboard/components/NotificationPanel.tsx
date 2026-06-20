@@ -5,6 +5,7 @@ import { useRef } from 'react';
 import { useRouter } from '@/i18n/navigation';
 import { useOnClickOutside } from '@/hooks/useOnClickOutside';
 import { cn } from '@/libs/utils';
+import { useUIStore } from '@/stores/ui.store';
 import { useNotifications, type Notification } from '../hooks/useNotifications';
 import {
   useDeleteNotification,
@@ -51,6 +52,7 @@ export function NotificationPanel({ onClose, onEndDay }: NotificationPanelProps)
   useOnClickOutside(panelRef, onClose);
 
   const router = useRouter();
+  const setPendingRestoreTaskId = useUIStore((s) => s.setPendingRestoreTaskId);
   const { data: notifications = [], isLoading } = useNotifications();
   const { mutate: markRead } = useMarkNotificationRead();
   const { mutate: markAllRead } = useMarkAllNotificationsRead();
@@ -60,6 +62,15 @@ export function NotificationPanel({ onClose, onEndDay }: NotificationPanelProps)
 
   const handleItemClick = (n: Notification) => {
     if (!n.isRead) markRead(n._id);
+
+    // "Quest Failed" notification — open edit modal for the failed task
+    if (n.type === 'system') {
+      if (n.entityId) {
+        setPendingRestoreTaskId(n.entityId);
+      }
+      onClose();
+      return;
+    }
 
     if (n.type === 'planning') {
       const weekStart = getNextMondayStr();
@@ -139,7 +150,8 @@ export function NotificationPanel({ onClose, onEndDay }: NotificationPanelProps)
             className={cn(
               item,
               !n.isRead && itemUnread,
-              (n.type === 'planning' || n.type === 'monthly-plan') && itemClickable,
+              (n.type === 'planning' || n.type === 'monthly-plan' || n.type === 'system') &&
+                itemClickable,
             )}
             onClick={() => handleItemClick(n)}
           >

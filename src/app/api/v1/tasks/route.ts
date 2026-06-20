@@ -25,7 +25,7 @@ const createSchema = z.object({
   color: z.enum(TASK_COLORS),
   icon: z.string().min(1),
   duration: z.number().int().min(1).max(1440).optional(),
-  startDate: dateField,
+  startDate: dateField.optional(),
   endDate: dateField.optional(),
   /** Habit ObjectId — marks this task as a one-day replacement for that habit */
   habitRef: z.string().optional(),
@@ -57,7 +57,7 @@ function serialize(t: ITask): Task {
     icon: t.icon,
     status: t.status,
     duration: t.duration,
-    startDate: t.startDate.toISOString().substring(0, 10),
+    startDate: t.startDate?.toISOString().substring(0, 10),
     endDate: t.endDate?.toISOString().substring(0, 10),
     habitRef: t.habitRef?.toString(),
     projectId: t.projectId?.toString(),
@@ -157,10 +157,10 @@ export const POST = asyncHandler(async (req: NextRequest) => {
 
   await connectDB();
 
-  const startDate = new Date(data.startDate);
+  const startDate = data.startDate ? new Date(data.startDate) : undefined;
   const endDate = data.endDate ? new Date(data.endDate) : undefined;
 
-  if (endDate && endDate < startDate) {
+  if (startDate && endDate && endDate < startDate) {
     return successResponse(null, 'endDate must be >= startDate');
   }
 

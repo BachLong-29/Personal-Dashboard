@@ -82,6 +82,8 @@ export interface UITask {
   totalDays?: number;
   /** Whether today's session has been logged (multi-day tasks only) */
   loggedToday?: boolean;
+  /** Overdue escalation level — null when not overdue or done */
+  overdueLevel?: 'late' | 'critical' | 'failed' | null;
 }
 
 // ─── Category meta ────────────────────────────────────────────────────────────

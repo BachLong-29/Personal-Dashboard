@@ -373,11 +373,14 @@ export function TaskManagement() {
     setEditingTask(task);
   }
 
-  function handleSaveEdit(id: string, payload: UpdateTaskPayload) {
+  function handleSaveEdit(id: string, payload: UpdateTaskPayload, onSuccess: () => void) {
     updateTask.mutate(
       { id, ...payload },
       {
-        onSuccess: () => setEditingTask(null),
+        onSuccess: () => {
+          setEditingTask(null);
+          onSuccess();
+        },
       },
     );
   }

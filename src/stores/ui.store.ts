@@ -14,6 +14,8 @@ interface UIState {
   isSidebarOpen: boolean;
   projectViewMode: ProjectViewMode;
   searchOpen: boolean;
+  /** Task ID to restore + edit after a "Quest Failed" notification click */
+  pendingRestoreTaskId: string | null;
   addToast: (toast: Omit<Toast, 'id'>) => void;
   removeToast: (id: string) => void;
   toggleSidebar: () => void;
@@ -22,6 +24,7 @@ interface UIState {
   openSearch: () => void;
   closeSearch: () => void;
   toggleSearch: () => void;
+  setPendingRestoreTaskId: (id: string | null) => void;
 }
 
 export const useUIStore = create<UIState>()(
@@ -31,10 +34,12 @@ export const useUIStore = create<UIState>()(
       isSidebarOpen: false,
       projectViewMode: 'kanban',
       searchOpen: false,
+      pendingRestoreTaskId: null,
       setProjectViewMode: (mode) => set({ projectViewMode: mode }),
       openSearch: () => set({ searchOpen: true }),
       closeSearch: () => set({ searchOpen: false }),
       toggleSearch: () => set((state) => ({ searchOpen: !state.searchOpen })),
+      setPendingRestoreTaskId: (id) => set({ pendingRestoreTaskId: id }),
       addToast: (toast) =>
         set((state) => ({
           toasts: [...state.toasts, { ...toast, id: crypto.randomUUID() }],

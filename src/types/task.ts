@@ -14,7 +14,8 @@ export interface Task {
   status: TaskStatus;
   /** Estimated duration in minutes */
   duration?: number;
-  startDate: string;
+  /** Optional — omit for floating/backlog tasks with no scheduled date */
+  startDate?: string;
   /** Optional — omit for open-ended / point-in-time tasks */
   endDate?: string;
   /** Habit ID this task replaces for the startDate day */
@@ -40,7 +41,8 @@ export interface CreateTaskPayload {
   icon: string;
   /** Estimated duration in minutes */
   duration?: number;
-  startDate: string;
+  /** Optional — omit to create a floating/backlog task with no scheduled date */
+  startDate?: string;
   /** Defaults to startDate when omitted */
   endDate?: string;
   /** Habit ObjectId this task is replacing */
@@ -59,7 +61,8 @@ export interface UpdateTaskPayload {
   icon?: string;
   status?: TaskStatus;
   duration?: number;
-  startDate?: string;
+  /** null to remove the scheduled date and make the task a floating/backlog item */
+  startDate?: string | null;
   endDate?: string | null;
   /** null to clear the defer reason */
   deferReason?: string | null;

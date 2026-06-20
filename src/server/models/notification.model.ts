@@ -20,6 +20,8 @@ export interface INotification extends Document {
   isRead: boolean;
   /** Idempotency key for engine-generated notifications (e.g. `overload:2026-06-19`) */
   dedupeKey?: string;
+  /** Optional reference to an entity (e.g. task ObjectId as string) */
+  entityId?: string;
   expiresAt?: Date;
   createdAt: Date;
   updatedAt: Date;
@@ -64,6 +66,9 @@ const notificationSchema = new Schema<INotification>(
       default: false,
     },
     dedupeKey: {
+      type: String,
+    },
+    entityId: {
       type: String,
     },
     expiresAt: {

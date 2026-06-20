@@ -50,14 +50,19 @@ export const GET = asyncHandler(async (req: NextRequest) => {
   const tasksTodo = allTasks.filter((t) => t.status === 'todo').length;
   const tasksOverdue = allTasks.filter((t) => {
     const due = t.endDate ?? t.startDate;
-    return t.status !== 'done' && due < today;
+    return t.status !== 'done' && !!due && due < today;
   }).length;
   const completionRate = allTasks.length > 0 ? Math.round((tasksDone / allTasks.length) * 100) : 0;
 
-  // Pending tasks list — not done, sorted by startDate asc, limit 10
+  // Pending tasks list — not done, sorted by startDate asc (undated tasks last), limit 10
   const pendingTaskList = allTasks
     .filter((t) => t.status !== 'done')
-    .sort((a, b) => a.startDate.getTime() - b.startDate.getTime())
+    .sort((a, b) => {
+      if (!a.startDate && !b.startDate) return 0;
+      if (!a.startDate) return 1;
+      if (!b.startDate) return -1;
+      return a.startDate.getTime() - b.startDate.getTime();
+    })
     .slice(0, 10)
     .map((t) => {
       const due = t.endDate ?? t.startDate;
@@ -67,10 +72,12 @@ export const GET = asyncHandler(async (req: NextRequest) => {
         icon: t.icon,
         color: t.color,
         status: t.status,
-        startDate: toDateStr(t.startDate),
-        overdue: due < today,
+        startDate: t.startDate ? toDateStr(t.startDate) : undefined,
+        overdue: !!due && due < today,
         daysOverdue:
-          due < today ? Math.floor((today.getTime() - due.getTime()) / 86_400_000) : undefined,
+          due && due < today
+            ? Math.floor((today.getTime() - due.getTime()) / 86_400_000)
+            : undefined,
       };
     });
 
@@ -109,7 +116,9 @@ export const GET = asyncHandler(async (req: NextRequest) => {
 
     // Tasks scheduled on this day that are done
     weekTasksDone.push(
-      allTasks.filter((t) => toDateStr(t.startDate) === dayStr && t.status === 'done').length,
+      allTasks.filter(
+        (t) => t.startDate && toDateStr(t.startDate) === dayStr && t.status === 'done',
+      ).length,
     );
 
     // Habit logs done on this day

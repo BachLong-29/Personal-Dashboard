@@ -49,6 +49,24 @@ export function formatDeadline(dateStr?: string): string {
   return new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
 
+/** Overdue escalation level based on how many days past the due date */
+export function computeOverdueLevel(task: {
+  status?: string;
+  active?: boolean;
+  startDate?: string;
+  endDate?: string;
+}): 'late' | 'critical' | 'failed' | null {
+  if (task.status === 'done' || task.active === false) return null;
+  const dueDate = task.endDate ?? task.startDate;
+  if (!dueDate) return null;
+  const offset = dayOffset(dueDate); // negative = past
+  if (offset >= 0) return null;
+  const daysOverdue = -offset;
+  if (daysOverdue >= 7) return 'failed';
+  if (daysOverdue >= 3) return 'critical';
+  return 'late';
+}
+
 /** Deadline urgency token used by urgencyColors */
 export function computeUrgency(dateStr?: string, done?: boolean): string {
   if (done) return 'done';
@@ -165,6 +183,7 @@ export function taskToUITask(t: Task, taskLog?: TaskLog, blockTime?: string): UI
     isMultiDay,
     totalDays: isMultiDay ? totalDays : undefined,
     loggedToday,
+    overdueLevel: computeOverdueLevel(t),
   };
 }
 

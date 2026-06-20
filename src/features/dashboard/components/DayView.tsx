@@ -133,8 +133,16 @@ export function DayView({ date, display, quests = [], onDateChange }: DayViewPro
     setShowModal(true);
   }
 
-  function handleSaveEdit(id: string, payload: UpdateTaskPayload) {
-    updateTask({ id, ...payload }, { onSuccess: closeModal });
+  function handleSaveEdit(id: string, payload: UpdateTaskPayload, onSuccess: () => void) {
+    updateTask(
+      { id, ...payload },
+      {
+        onSuccess: () => {
+          closeModal();
+          onSuccess();
+        },
+      },
+    );
   }
 
   function handleDeleteConfirm() {

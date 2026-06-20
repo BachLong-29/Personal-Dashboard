@@ -3,6 +3,7 @@ import type { NextRequest } from 'next/server';
 import { connectDB } from '@/libs/mongodb';
 import { getAuthUser } from '@/server/helpers/get-auth-user';
 import { NotificationModel, type NotificationType } from '@/server/models/notification.model';
+import { TaskModel } from '@/server/models/task.model';
 import { generateScheduleNotifications } from '@/server/services/schedule-notifications';
 import { asyncHandler, createdResponse, successResponse, unauthorizedResponse } from '@/server';
 import mongoose from 'mongoose';
@@ -30,6 +31,31 @@ export const GET = asyncHandler(async (req: NextRequest) => {
     .limit(20)
     .lean();
 
+  // Backfill entityId for legacy "Quest Failed" notifications that were created
+  // before entityId support was added. Parse task name from message, look up the
+  // archived task, and persist the entityId so future clicks work correctly.
+  const legacyFailed = notifications.filter(
+    (n) => n.type === 'system' && !n.entityId && n.title === '☠ Quest Failed',
+  );
+  if (legacyFailed.length > 0) {
+    await Promise.all(
+      legacyFailed.map(async (n) => {
+        const match = n.message?.match(/^"(.+)" was abandoned/);
+        if (!match) return;
+        const taskName = match[1];
+        const task = await TaskModel.findOne({
+          name: taskName,
+          userId: n.userId,
+          active: false,
+        }).lean();
+        if (!task) return;
+        const entityId = task._id.toString();
+        await NotificationModel.updateOne({ _id: n._id }, { $set: { entityId } });
+        n.entityId = entityId;
+      }),
+    );
+  }
+
   return successResponse(notifications);
 });
 
@@ -45,6 +71,7 @@ export const POST = asyncHandler(async (req: NextRequest) => {
     title: string;
     message: string;
     expiresAt?: string;
+    entityId?: string;
   };
 
   // Server-side deduplicate: same type on same calendar day
@@ -70,6 +97,7 @@ export const POST = asyncHandler(async (req: NextRequest) => {
     title: body.title,
     message: body.message,
     expiresAt: body.expiresAt ? new Date(body.expiresAt) : undefined,
+    entityId: body.entityId,
   });
 
   // Keep only the 20 most recent — delete anything beyond that

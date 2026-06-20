@@ -12,6 +12,8 @@ export interface Notification {
   title: string;
   message: string;
   isRead: boolean;
+  /** Optional entity reference — e.g. task ID for "Quest Failed" notifications */
+  entityId?: string;
   expiresAt?: string;
   createdAt: string;
 }

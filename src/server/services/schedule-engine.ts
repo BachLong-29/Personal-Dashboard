@@ -109,7 +109,9 @@ export async function buildCalendar(
   const habitLogDone = new Map(habitLogs.map((l) => [`${l.habitId}:${toKey(l.date)}`, l.done]));
   // habit occurrences replaced by a reschedule task that day
   const habitReplaced = new Set(
-    tasks.filter((t) => t.habitRef).map((t) => `${t.habitRef!.toString()}:${toKey(t.startDate)}`),
+    tasks
+      .filter((t) => t.habitRef && t.startDate)
+      .map((t) => `${t.habitRef!.toString()}:${toKey(t.startDate!)}`),
   );
   const taskIdsWithBlock = new Set(taskBlockIds.map((id) => id.toString()));
   const questIdsWithBlock = new Set(questBlockIds.map((id) => id.toString()));
@@ -168,8 +170,9 @@ export async function buildCalendar(
       meta: { blockId: block._id.toString() },
     });
   }
-  // B2. Fallback for tasks without blocks, placed on startDate
+  // B2. Fallback for tasks without blocks, placed on startDate (skip undated/backlog tasks)
   for (const task of tasks) {
+    if (!task.startDate) continue;
     if (taskIdsWithBlock.has(task._id.toString())) continue;
     const key = toKey(task.startDate);
     if (key < fromStr || key > toStr) continue;

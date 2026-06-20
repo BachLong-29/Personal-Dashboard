@@ -1,3 +1,5 @@
+'use client';
+
 import { cn } from '@/libs/utils';
 
 import { ProjectBadge } from '@/components/common/ProjectBadge';
@@ -20,7 +22,7 @@ export type ColKey =
 
 // ─── Status display ───────────────────────────────────────────────────────────
 
-const STATUS_META: Record<string, { label: string; color: string; bg: string }> = {
+export const STATUS_META: Record<string, { label: string; color: string; bg: string }> = {
   todo: { label: 'To Do', color: 'var(--text-lo)', bg: 'oklch(1 0 0 / 0.04)' },
   in_progress: { label: 'In Progress', color: 'var(--cyan)', bg: 'oklch(0.76 0.16 205 / 0.12)' },
   pending: { label: 'Pending', color: 'var(--gold)', bg: 'oklch(0.74 0.17 85 / 0.12)' },
@@ -50,7 +52,6 @@ interface TaskAllRowProps {
   onEdit?: (task: UITask) => void;
   onDelete?: (task: UITask) => void;
   visibleCols: Set<ColKey>;
-  /** Real category name from API (tagId lookup). Falls back to mock label. */
   catLabel?: string;
 }
 
@@ -68,6 +69,7 @@ export function TaskAllRow({
   const c = catOf(task.cat);
   const p = priOf(task.priority);
   const catColor = COLOR_VAR[task.color ?? c.color] ?? 'var(--text-lo)';
+  const statusMeta = STATUS_META[task.status ?? ''];
 
   return (
     <>
@@ -79,18 +81,51 @@ export function TaskAllRow({
         {/* Diff */}
         <span className={cn(diffBadge, diffColors[task.diff])}>{task.diff}</span>
 
-        {/* Title — always visible */}
-        <span className={titleCol}>{task.title}</span>
+        {/* Title — flex-1 on mobile, fixed 140px on sm, flex-1 on md+ */}
+        <div className={titleWrapper}>
+          <span className={titleText}>{task.title}</span>
+          {/* Mobile subtitle: status · deadline */}
+          <div className="flex items-center gap-1.5 mt-0.5 sm:hidden">
+            {statusMeta && (
+              <span
+                className="text-[7px] font-bold font-[var(--font-title)]"
+                style={{ color: statusMeta.color }}
+              >
+                {statusMeta.label}
+              </span>
+            )}
+            {task.deadline && task.deadline !== '–' && (
+              <>
+                <span className="text-[var(--text-lo)] text-[7px]">·</span>
+                <span className={cn('text-[7px] font-medium', urgencyColors[task.deadlineUrgency])}>
+                  {task.deadline}
+                </span>
+              </>
+            )}
+          </div>
+        </div>
 
+        {/* Project badge — desktop only */}
         {task.projectName && (
-          <ProjectBadge name={task.projectName} icon={task.projectIcon} color={task.projectColor} />
+          <span className="hidden sm:block">
+            <ProjectBadge
+              name={task.projectName}
+              icon={task.projectIcon}
+              color={task.projectColor}
+            />
+          </span>
         )}
 
-        {visibleCols.has('status') && <StatusBadge status={task.status} />}
+        {/* Desktop-only columns */}
+        {visibleCols.has('status') && (
+          <span className="hidden sm:block">
+            <StatusBadge status={task.status} />
+          </span>
+        )}
 
         {visibleCols.has('category') && (
           <span
-            className={catPill}
+            className={cn(catPill, 'hidden sm:block')}
             style={{ color: catColor, borderColor: `${catColor}44`, background: `${catColor}0E` }}
           >
             {c.icon} {catLabel ?? c.label}
@@ -99,7 +134,7 @@ export function TaskAllRow({
 
         {visibleCols.has('priority') && (
           <span
-            className="text-[9px] font-bold w-10 text-center shrink-0"
+            className="hidden sm:block text-[9px] font-bold w-10 text-center shrink-0"
             style={{ color: COLOR_VAR[p.color] ?? 'var(--text-lo)' }}
             title={p.label}
           >
@@ -108,13 +143,13 @@ export function TaskAllRow({
         )}
 
         {visibleCols.has('deadline') && (
-          <span className={cn(deadlineCol, urgencyColors[task.deadlineUrgency])}>
+          <span className={cn(deadlineCol, urgencyColors[task.deadlineUrgency], 'hidden sm:block')}>
             {task.deadline}
           </span>
         )}
 
         {visibleCols.has('progress') && (
-          <div className="w-[60px] shrink-0 flex items-center gap-1.5">
+          <div className="hidden sm:flex w-[60px] shrink-0 items-center gap-1.5">
             <div className="flex-1 h-[3px] bg-[var(--panel2)] rounded-full overflow-hidden">
               <div
                 className="h-full rounded-full"
@@ -128,39 +163,39 @@ export function TaskAllRow({
         )}
 
         {visibleCols.has('xp') && (
-          <span className="text-[9px] font-bold text-[var(--violet)] w-12 text-right shrink-0">
+          <span className="hidden sm:block text-[9px] font-bold text-[var(--violet)] w-12 text-right shrink-0">
             +{task.xp}
             <span className="text-[7px] opacity-60 ml-0.5">XP</span>
           </span>
         )}
 
         {visibleCols.has('est') && (
-          <span className="text-[9px] text-[var(--text-lo)] w-10 text-right shrink-0">
+          <span className="hidden sm:block text-[9px] text-[var(--text-lo)] w-10 text-right shrink-0">
             {fmtEst(task.est)}
           </span>
         )}
 
         {visibleCols.has('streak') &&
           (task.streak > 0 ? (
-            <span className="text-[8px] font-bold text-[var(--gold)] w-10 text-right shrink-0">
+            <span className="hidden sm:block text-[8px] font-bold text-[var(--gold)] w-10 text-right shrink-0">
               ✦{task.streak}d
             </span>
           ) : (
-            <span className="w-10 shrink-0" />
+            <span className="hidden sm:block w-10 shrink-0" />
           ))}
 
         {visibleCols.has('subtasks') &&
           (task.subtasks > 0 ? (
-            <span className="text-[8px] text-[var(--text-lo)] w-8 text-right shrink-0">
+            <span className="hidden sm:block text-[8px] text-[var(--text-lo)] w-8 text-right shrink-0">
               {task.subtasksDone}/{task.subtasks}
             </span>
           ) : (
-            <span className="w-8 shrink-0" />
+            <span className="hidden sm:block w-8 shrink-0" />
           ))}
 
         {/* Expand caret */}
         <span
-          className="text-[8px] text-[var(--text-lo)] ml-1 shrink-0 transition-transform duration-150"
+          className="text-[8px] text-[var(--text-lo)] ml-auto sm:ml-1 shrink-0 transition-transform duration-150"
           style={{ transform: isExpanded ? 'rotate(90deg)' : 'none' }}
         >
           ▶
@@ -168,7 +203,14 @@ export function TaskAllRow({
       </div>
 
       {isExpanded && (
-        <RowDetail task={task} catColor={catColor} onEdit={onEdit} onDelete={onDelete} />
+        <RowDetail
+          task={task}
+          catColor={catColor}
+          catLabel={catLabel}
+          statusMeta={statusMeta}
+          onEdit={onEdit}
+          onDelete={onDelete}
+        />
       )}
     </>
   );
@@ -179,58 +221,102 @@ export function TaskAllRow({
 function RowDetail({
   task,
   catColor,
+  catLabel,
+  statusMeta,
   onEdit,
   onDelete,
 }: {
   task: UITask;
   catColor: string;
+  catLabel?: string;
+  statusMeta?: { label: string; color: string; bg: string };
   onEdit?: (task: UITask) => void;
   onDelete?: (task: UITask) => void;
 }) {
+  const c = catOf(task.cat);
+
   return (
     <div
-      className="flex gap-4 px-4 py-3 bg-[oklch(0.66_0.22_295_/_0.04)] border-b border-[var(--border)] border-l-2"
+      className="flex flex-col gap-2 px-3 sm:px-4 py-3 bg-[oklch(0.66_0.22_295_/_0.04)] border-b border-[var(--border)] border-l-2"
       style={{ borderLeftColor: catColor }}
     >
-      <div className="flex-1 min-w-0">
-        <p className="text-[10px] text-[var(--text-mid)] leading-[1.5] mb-2">{task.desc}</p>
-        {task.expandedNote && (
-          <div className="p-2 bg-[oklch(0.66_0.22_295_/_0.06)] border border-[oklch(0.66_0.22_295_/_0.2)] rounded-[var(--r-sm)]">
-            <div className="text-[7px] tracking-[0.12em] text-[var(--violet)] font-bold mb-1">
-              SAGE&apos;S NOTE
-            </div>
-            <div className="text-[9px] text-[var(--text-mid)] leading-[1.5]">
-              {task.expandedNote}
-            </div>
-          </div>
+      {/* Mobile-only column data (hidden on sm+) */}
+      <div className="sm:hidden flex flex-wrap gap-x-3 gap-y-1.5">
+        {statusMeta && (
+          <span
+            className="text-[8px] font-bold px-1.5 py-0.5 rounded border tracking-[0.06em] font-[var(--font-title)]"
+            style={{
+              color: statusMeta.color,
+              borderColor: `${statusMeta.color}55`,
+              background: statusMeta.bg,
+            }}
+          >
+            {statusMeta.label}
+          </span>
+        )}
+        {(catLabel ?? c.label) && (
+          <span
+            className="text-[8px] font-bold px-1.5 py-0.5 rounded border tracking-[0.06em] font-[var(--font-title)]"
+            style={{
+              color: catColor,
+              borderColor: `${catColor}44`,
+              background: `${catColor}0E`,
+            }}
+          >
+            {c.icon} {catLabel ?? c.label}
+          </span>
+        )}
+        <span className="text-[8px] font-bold text-[var(--violet)]">+{task.xp} XP</span>
+        <span className="text-[8px] text-[var(--text-lo)]">⏱ {fmtEst(task.est)}</span>
+        {(task.progress || 0) > 0 && (
+          <span className="text-[8px] text-[var(--text-lo)]">
+            {Math.round((task.progress || 0) * 100)}% done
+          </span>
         )}
       </div>
 
-      <div className="flex gap-1.5 items-start shrink-0">
-        {onEdit && (
-          <button
-            type="button"
-            className={actionBtnPrimary}
-            onClick={(e) => {
-              e.stopPropagation();
-              onEdit(task);
-            }}
-          >
-            ✎ Edit
-          </button>
-        )}
-        {onDelete && (
-          <button
-            type="button"
-            className={actionBtnDanger}
-            onClick={(e) => {
-              e.stopPropagation();
-              onDelete(task);
-            }}
-          >
-            ✕ Delete
-          </button>
-        )}
+      {/* Description + action buttons */}
+      <div className="flex gap-4">
+        <div className="flex-1 min-w-0">
+          <p className="text-[10px] text-[var(--text-mid)] leading-[1.5] mb-2">{task.desc}</p>
+          {task.expandedNote && (
+            <div className="p-2 bg-[oklch(0.66_0.22_295_/_0.06)] border border-[oklch(0.66_0.22_295_/_0.2)] rounded-[var(--r-sm)]">
+              <div className="text-[7px] tracking-[0.12em] text-[var(--violet)] font-bold mb-1">
+                SAGE&apos;S NOTE
+              </div>
+              <div className="text-[9px] text-[var(--text-mid)] leading-[1.5]">
+                {task.expandedNote}
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div className="flex gap-1.5 items-start shrink-0">
+          {onEdit && (
+            <button
+              type="button"
+              className={actionBtnPrimary}
+              onClick={(e) => {
+                e.stopPropagation();
+                onEdit(task);
+              }}
+            >
+              ✎ Edit
+            </button>
+          )}
+          {onDelete && (
+            <button
+              type="button"
+              className={actionBtnDanger}
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete(task);
+              }}
+            >
+              ✕ Delete
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -238,15 +324,18 @@ function RowDetail({
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
+// Mobile: no min-w-max (fits viewport). sm+: min-w-max (enables horizontal scroll).
 const rowBase =
-  'flex items-center gap-3 px-4 py-2 border-b border-[var(--border)] cursor-pointer transition-colors hover:bg-[oklch(0.74_0.17_85_/_0.03)] select-none min-w-max';
+  'flex items-center gap-2 sm:gap-3 px-3 sm:px-4 py-2 border-b border-[var(--border)] cursor-pointer transition-colors hover:bg-[oklch(0.74_0.17_85_/_0.03)] select-none sm:min-w-max';
 const rowExpanded = 'bg-[oklch(0.66_0.22_295_/_0.04)]';
 
 const diffBadge =
   'w-[16px] h-[16px] rounded-sm flex items-center justify-center text-[8px] font-black font-[var(--font-title)] shrink-0';
 
-const titleCol =
-  'w-[140px] shrink-0 md:flex-1 md:w-auto md:min-w-0 text-[11px] font-semibold text-[var(--text-hi)] truncate';
+// Mobile: flex-1 fills remaining space. sm: fixed 140px. md+: flex-1 again.
+const titleWrapper =
+  'flex-1 min-w-0 sm:w-[140px] sm:shrink-0 sm:flex-none md:flex-1 md:w-auto md:min-w-0';
+const titleText = 'block text-[11px] font-semibold text-[var(--text-hi)] truncate';
 
 const catPill =
   'text-[8px] font-bold px-1.5 py-0.5 rounded border tracking-[0.06em] font-[var(--font-title)] shrink-0 w-20 overflow-hidden whitespace-nowrap text-ellipsis';

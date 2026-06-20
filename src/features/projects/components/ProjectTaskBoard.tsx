@@ -115,7 +115,7 @@ export function ProjectTaskBoard({ tasks, onChangeStatus, onEdit }: Props) {
                   />
                   <div className="min-w-0 flex-1">
                     <p className="text-[9px] text-[var(--text-lo)] [font-family:var(--f-title)] tracking-[0.04em] mb-1 leading-tight whitespace-nowrap">
-                      {formatSchedule(t.startDate)}
+                      {t.startDate ? formatSchedule(t.startDate) : '—'}
                     </p>
                     <div className="flex items-center gap-1.5 min-w-0">
                       <span className="text-[12px] leading-none shrink-0">{t.icon}</span>

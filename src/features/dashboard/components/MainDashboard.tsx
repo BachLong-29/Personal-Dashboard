@@ -12,6 +12,14 @@ import { usePenaltyFlow } from '../hooks/usePenaltyFlow';
 import { useQuestOrchestration } from '../hooks/useQuestOrchestration';
 import type { BurstPos, CenterTab, Character, DashboardSettings } from '../types';
 import { buildEmptyChar, profileToCharacter } from '../utils/character.utils';
+import { useOverdueReview } from '@/features/tasks/hooks/useOverdueReview';
+import { OverdueReviewModal } from '@/features/tasks/components/shared/OverdueReviewModal';
+import { useUIStore } from '@/stores/ui.store';
+import { useTaskById } from '../hooks/useTaskById';
+import { useUpdateTask } from '../hooks/useUpdateTask';
+import { EditTaskModal } from '@/features/tasks/components/shared/EditTaskModal';
+import { taskToUITask } from '@/features/tasks/data/adapters';
+import type { UpdateTaskPayload } from '@/types';
 import { CenterColumn } from './CenterColumn';
 import DashboardTopbar from './DashboardTopbar';
 import { DashboardOverlays } from './DashboardOverlays';
@@ -113,6 +121,32 @@ export default function MainDashboard() {
     handleFailureContinue,
   } = usePenaltyFlow({ quests, applyGamePatch, onToast });
 
+  // Overdue task review
+  const {
+    overdueItems,
+    showModal: showOverdueModal,
+    dismissModal: dismissOverdueModal,
+    removeItem: removeOverdueItem,
+  } = useOverdueReview();
+
+  // Restore failed task flow (triggered by notification click)
+  const pendingRestoreTaskId = useUIStore((s) => s.pendingRestoreTaskId);
+  const setPendingRestoreTaskId = useUIStore((s) => s.setPendingRestoreTaskId);
+  const { data: restoreTask } = useTaskById(pendingRestoreTaskId);
+  const { mutate: updateTaskForRestore } = useUpdateTask();
+
+  function handleRestoreSave(id: string, payload: UpdateTaskPayload, onSuccess: () => void) {
+    updateTaskForRestore(
+      { id, ...payload, active: true },
+      {
+        onSuccess: () => {
+          setPendingRestoreTaskId(null);
+          onSuccess();
+        },
+      },
+    );
+  }
+
   // Navigation state
   const searchParams = useSearchParams();
   const [centerTab, setCenterTab] = useState<CenterTab>(() => {
@@ -148,6 +182,24 @@ export default function MainDashboard() {
         onConfirmQuest={handleConfirmQuest}
         onCancelQuest={handleCancelQuest}
       />
+
+      <OverdueReviewModal
+        open={showOverdueModal}
+        items={overdueItems}
+        onRemoveItem={removeOverdueItem}
+        onDismiss={dismissOverdueModal}
+      />
+
+      {/* Restore failed task — triggered by clicking a "Quest Failed" notification */}
+      {restoreTask && pendingRestoreTaskId && (
+        <EditTaskModal
+          task={taskToUITask(restoreTask)}
+          open={true}
+          onClose={() => setPendingRestoreTaskId(null)}
+          onSave={handleRestoreSave}
+          saving={false}
+        />
+      )}
 
       {/* h-screen flex-col: establishes the flex context so flex-1/min-h-0 work on children */}
       <div className="flex flex-col h-screen">

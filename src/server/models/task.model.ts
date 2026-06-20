@@ -14,7 +14,8 @@ export interface ITask extends Document {
   status: TaskStatus;
   /** Estimated duration in minutes */
   duration?: number;
-  startDate: Date;
+  /** Optional — omit to create a floating/backlog task with no scheduled date */
+  startDate?: Date;
   /** Optional — undefined means open-ended / point-in-time */
   endDate?: Date;
   /** Reference to a Habit that this task replaces for startDate's day */
@@ -79,7 +80,7 @@ const taskSchema = new Schema<ITask>(
     },
     startDate: {
       type: Date,
-      required: true,
+      // optional — omit to create a floating/backlog task with no scheduled date
     },
     endDate: {
       type: Date,

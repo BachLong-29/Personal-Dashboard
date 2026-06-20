@@ -455,13 +455,14 @@ export function WeekView({
           setShowEditModal(false);
           setEditing(undefined);
         }}
-        onSave={(id, payload) => {
+        onSave={(id, payload, onSuccess) => {
           updateTask(
             { id, ...payload },
             {
               onSuccess: () => {
                 setShowEditModal(false);
                 setEditing(undefined);
+                onSuccess();
               },
             },
           );

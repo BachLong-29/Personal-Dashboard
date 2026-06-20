@@ -147,5 +147,6 @@ export function TaskAllTable({ sorted, visibleCols, catMap, onEdit, onDelete }: 
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
+// hidden on mobile — rows show their own inline subtitle instead
 const tableHeader =
-  'flex items-center gap-3 px-4 py-1.5 bg-[var(--panel2)] border-b border-[var(--border)] text-[8px] font-bold text-[var(--text-lo)] tracking-[0.1em] uppercase font-[var(--font-title)] sticky top-0 z-10 shrink-0 min-w-max';
+  'hidden sm:flex items-center gap-3 px-4 py-1.5 bg-[var(--panel2)] border-b border-[var(--border)] text-[8px] font-bold text-[var(--text-lo)] tracking-[0.1em] uppercase font-[var(--font-title)] sticky top-0 z-10 shrink-0 min-w-max';

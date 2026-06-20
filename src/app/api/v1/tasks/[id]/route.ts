@@ -26,7 +26,7 @@ const updateSchema = z.object({
   icon: z.string().min(1).optional(),
   status: z.enum(TASK_STATUSES).optional(),
   duration: z.number().int().min(1).max(1440).optional().nullable(),
-  startDate: dateField.optional(),
+  startDate: dateField.optional().nullable(),
   endDate: dateField.optional().nullable(),
   dependencies: z.array(z.string()).optional(),
   active: z.boolean().optional(),
@@ -47,7 +47,7 @@ function serialize(t: ITask): Task {
     icon: t.icon,
     status: t.status,
     duration: t.duration,
-    startDate: t.startDate.toISOString().substring(0, 10),
+    startDate: t.startDate?.toISOString().substring(0, 10),
     endDate: t.endDate?.toISOString().substring(0, 10),
     deferReason: t.deferReason,
     projectId: t.projectId?.toString(),
@@ -58,6 +58,21 @@ function serialize(t: ITask): Task {
     updatedAt: t.updatedAt.toISOString(),
   };
 }
+
+// GET /api/v1/tasks/:id — returns the task regardless of active status
+export const GET = asyncHandler(async (req: NextRequest, ctx) => {
+  const user = getAuthUser(req);
+  if (!user) return unauthorizedResponse();
+
+  const { id } = await ctx.params;
+
+  await connectDB();
+
+  const task = await TaskModel.findOne({ _id: id, userId: user.sub });
+  if (!task) return notFoundResponse('Task not found');
+
+  return successResponse(serialize(task));
+});
 
 // PATCH /api/v1/tasks/:id
 export const PATCH = asyncHandler(async (req: NextRequest, ctx) => {
@@ -82,7 +97,8 @@ export const PATCH = asyncHandler(async (req: NextRequest, ctx) => {
     else if (val !== undefined) setData[key] = val;
   }
 
-  if (startDate) setData.startDate = new Date(startDate);
+  if (startDate === null) unsetData.startDate = 1;
+  else if (startDate) setData.startDate = new Date(startDate);
 
   if (endDate === null) unsetData.endDate = 1;
   else if (endDate) setData.endDate = new Date(endDate);

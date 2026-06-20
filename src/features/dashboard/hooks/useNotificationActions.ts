@@ -52,6 +52,7 @@ export function useCreateNotification() {
       title: string;
       message: string;
       expiresAt?: string;
+      entityId?: string;
     }) => {
       const { data } = await apiClient.post<ApiResponse<Notification>>('/notifications', payload);
       return data.data;

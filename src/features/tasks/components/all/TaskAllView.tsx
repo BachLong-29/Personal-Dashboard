@@ -121,7 +121,7 @@ export function TaskAllView({ tasks, filterCat, onEdit }: TaskAllViewProps) {
       {/* ── Toolbar ──────────────────────────────────────────────────────── */}
       <div className={toolbar}>
         {/* Summary pills */}
-        <div className="flex items-center gap-3 shrink-0">
+        <div className="flex items-center gap-2 sm:gap-3 shrink-0">
           <SummaryPill value={`${done}/${total}`} label="done" color="mint" />
           <SummaryPill value={`+${xpEarned}`} label={`/ ${xpTotal} XP`} color="violet" />
           <SummaryPill value={taskOnly.filter((t) => t.saga).length} label="sagas" color="gold" />
@@ -129,8 +129,8 @@ export function TaskAllView({ tasks, filterCat, onEdit }: TaskAllViewProps) {
 
         <div className="flex-1" />
 
-        {/* Sort */}
-        <div className={controlGroup}>
+        {/* Sort — desktop only (mobile sort lives inside col picker) */}
+        <div className={cn(controlGroup, 'hidden sm:flex')}>
           <span className={controlLabel}>Sort</span>
           {SORT_BY_OPTIONS.map((opt) => (
             <button
@@ -144,7 +144,7 @@ export function TaskAllView({ tasks, filterCat, onEdit }: TaskAllViewProps) {
           ))}
         </div>
 
-        {/* Column picker */}
+        {/* Column picker — always visible */}
         <div className="relative shrink-0" ref={pickerRef}>
           <button
             type="button"
@@ -157,6 +157,28 @@ export function TaskAllView({ tasks, filterCat, onEdit }: TaskAllViewProps) {
 
           {colPickerOpen && (
             <div className={colPicker}>
+              {/* Mobile-only sort section */}
+              <div className="sm:hidden mb-2 pb-2 border-b border-[var(--border)]">
+                <span className={colPickerTitle}>Sort by</span>
+                {SORT_BY_OPTIONS.map((opt) => (
+                  <button
+                    key={opt.id}
+                    type="button"
+                    className={cn(
+                      colPickerRow,
+                      sortBy === opt.id ? 'text-[var(--gold)] font-bold' : 'text-[var(--text-mid)]',
+                    )}
+                    onClick={() => setSortBy(opt.id)}
+                  >
+                    <span className="w-3 shrink-0 text-[var(--gold)]">
+                      {sortBy === opt.id ? '✓' : ''}
+                    </span>
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+
+              {/* Column visibility */}
               <span className={colPickerTitle}>Columns</span>
               {COL_DEFS.map((c: ColDef) => (
                 <label key={c.key} className={colPickerRow}>
@@ -174,7 +196,7 @@ export function TaskAllView({ tasks, filterCat, onEdit }: TaskAllViewProps) {
         </div>
       </div>
 
-      {/* ── Status filter bar ────────────────────────────────────────────── */}
+      {/* ── Status filter bar — horizontal scroll on mobile ──────────────── */}
       <div className={statusBar}>
         {STATUS_FILTER_OPTIONS.map((opt) => {
           const active = statusFilter === opt.id;
@@ -300,10 +322,11 @@ function SummaryPill({
 // ─── Style constants ──────────────────────────────────────────────────────────
 
 const toolbar =
-  'flex items-center gap-2 px-4 py-2.5 border-b border-[var(--border)] shrink-0 bg-[var(--panel)] flex-wrap';
+  'flex items-center gap-2 px-3 sm:px-4 py-2.5 border-b border-[var(--border)] shrink-0 bg-[var(--panel)]';
 
+// overflow-x-auto so chips scroll horizontally on mobile instead of wrapping
 const statusBar =
-  'flex items-center gap-1.5 px-4 py-2 border-b border-[var(--border)] shrink-0 bg-[var(--panel)] flex-wrap';
+  'flex items-center gap-1.5 px-3 sm:px-4 py-2 border-b border-[var(--border)] shrink-0 bg-[var(--panel)] overflow-x-auto overscroll-x-contain';
 
 const statusChip =
   'flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-[var(--border)] text-[9px] font-bold font-[var(--font-title)] tracking-[0.06em] text-[var(--text-lo)] transition-all cursor-pointer hover:border-[var(--border-hi)] hover:text-[var(--text-mid)]';
