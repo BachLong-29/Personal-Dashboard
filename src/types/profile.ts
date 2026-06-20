@@ -49,6 +49,7 @@ export interface UserSettingData {
   timezone: string;
   theme: 'dark' | 'light' | 'system';
   compactMode: boolean;
+  dailyCapacityMinutes: number;
   updatedAt: string;
 }
 
@@ -78,6 +79,7 @@ export interface ProfileFormData {
   questDifficulty: QuestDifficulty;
   seasonalRites: boolean;
   autoReclaim: boolean;
+  dailyCapacityMinutes: number;
 }
 
 export const DEFAULT_PROFILE_FORM: ProfileFormData = {
@@ -107,6 +109,7 @@ export const DEFAULT_PROFILE_FORM: ProfileFormData = {
   questDifficulty: 'rising',
   seasonalRites: true,
   autoReclaim: false,
+  dailyCapacityMinutes: 600,
 };
 
 export function mergeProfileToForm(
@@ -134,5 +137,6 @@ export function mergeProfileToForm(
     questDifficulty: settings.questDifficulty,
     seasonalRites: settings.seasonalRites,
     autoReclaim: settings.autoReclaim,
+    dailyCapacityMinutes: settings.dailyCapacityMinutes,
   };
 }

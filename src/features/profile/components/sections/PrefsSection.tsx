@@ -9,20 +9,14 @@ interface Props {
   onChange: <K extends keyof ProfileFormData>(key: K, value: ProfileFormData[K]) => void;
 }
 
-function PrefRow({
-  label,
-  hint,
-  children,
-}: {
-  label: string;
-  hint: string;
-  children: ReactNode;
-}) {
+function PrefRow({ label, hint, children }: { label: string; hint: string; children: ReactNode }) {
   return (
     <div className="flex justify-between items-center gap-8 py-4 border-b border-border-lo last:border-b-0">
       <div>
         <div className="[font-family:var(--f-title)] italic text-[15px] text-text-hi">{label}</div>
-        <div className="[font-family:var(--f-mono)] text-[9px] tracking-[0.14em] uppercase text-text-lo mt-[3px]">{hint}</div>
+        <div className="[font-family:var(--f-mono)] text-[9px] tracking-[0.14em] uppercase text-text-lo mt-[3px]">
+          {hint}
+        </div>
       </div>
       <div className="flex-shrink-0">{children}</div>
     </div>
@@ -66,7 +60,7 @@ function Stepper({
 const DIFFICULTIES: { id: QuestDifficulty; label: string }[] = [
   { id: 'gentle', label: 'Gentle' },
   { id: 'rising', label: 'Rising' },
-  { id: 'harsh',  label: 'Harsh' },
+  { id: 'harsh', label: 'Harsh' },
 ];
 
 function SegRadio({
@@ -100,16 +94,10 @@ export function PrefsSection({ form, onChange }: Props) {
   return (
     <div>
       <PrefRow label="Morning ritual prompt" hint="A small quest waits when you arrive at dawn.">
-        <Switch
-          checked={form.morningRitual}
-          onChange={(v) => onChange('morningRitual', v)}
-        />
+        <Switch checked={form.morningRitual} onChange={(v) => onChange('morningRitual', v)} />
       </PrefRow>
       <PrefRow label="Nightly review" hint="A pinned reflection at the end of every day.">
-        <Switch
-          checked={form.nightlyReview}
-          onChange={(v) => onChange('nightlyReview', v)}
-        />
+        <Switch checked={form.nightlyReview} onChange={(v) => onChange('nightlyReview', v)} />
       </PrefRow>
       <PrefRow label="Streak protection" hint="Free skips per week before the streak breaks.">
         <Stepper
@@ -120,22 +108,32 @@ export function PrefsSection({ form, onChange }: Props) {
         />
       </PrefRow>
       <PrefRow label="Quest difficulty" hint="How fast new quests scale with your level.">
-        <SegRadio
-          value={form.questDifficulty}
-          onChange={(v) => onChange('questDifficulty', v)}
-        />
+        <SegRadio value={form.questDifficulty} onChange={(v) => onChange('questDifficulty', v)} />
       </PrefRow>
       <PrefRow label="Seasonal rites" hint="Ceremonial side-quests at the start of each season.">
-        <Switch
-          checked={form.seasonalRites}
-          onChange={(v) => onChange('seasonalRites', v)}
-        />
+        <Switch checked={form.seasonalRites} onChange={(v) => onChange('seasonalRites', v)} />
       </PrefRow>
-      <PrefRow label="Auto-reclaim stalled quests" hint="Move 90+ day quests into Ruins without prompting.">
-        <Switch
-          checked={form.autoReclaim}
-          onChange={(v) => onChange('autoReclaim', v)}
-        />
+      <PrefRow
+        label="Auto-reclaim stalled quests"
+        hint="Move 90+ day quests into Ruins without prompting."
+      >
+        <Switch checked={form.autoReclaim} onChange={(v) => onChange('autoReclaim', v)} />
+      </PrefRow>
+      <PrefRow
+        label="Daily working hours"
+        hint="How many hours you plan to work each day (used for capacity planning)."
+      >
+        <div className="flex items-center gap-2">
+          <Stepper
+            value={Math.round(form.dailyCapacityMinutes / 60)}
+            onChange={(h) => onChange('dailyCapacityMinutes', Math.min(1440, Math.max(60, h * 60)))}
+            min={1}
+            max={24}
+          />
+          <span className="[font-family:var(--f-mono)] text-[10px] tracking-[0.12em] uppercase text-text-lo">
+            h / day
+          </span>
+        </div>
       </PrefRow>
     </div>
   );
