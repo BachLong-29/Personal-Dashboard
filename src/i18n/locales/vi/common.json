@@ -397,7 +397,8 @@
       "cancel": "Hủy",
       "save": "✦ Lưu thay đổi",
       "saving": "⏳ Đang lưu…",
-      "reschedule": "↺ Dời lịch"
+      "reschedule": "↺ Dời lịch",
+      "manageSchedule": "🗓 Quản lý lịch"
     },
     "defer": {
       "checkboxLabel": "Không thể hoàn thành hôm nay",

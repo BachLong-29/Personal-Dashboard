@@ -4,7 +4,7 @@ import { useRef, useState } from 'react';
 
 import { useTranslations } from 'next-intl';
 
-import { Modal, ModalHead, ModalBody, ModalFoot } from '@/components/ui/Modal';
+import { Modal, ModalBody, ModalFoot } from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
 import { Checkbox } from '@/components/ui/Checkbox';
 import { DatePicker } from '@/components/ui/DatePicker';
@@ -142,21 +142,48 @@ export function EditTaskModal({ task, open, onClose, onSave, saving }: EditTaskM
 
   const isSingleDay = !task.endDate || task.endDate === task.startDate;
 
+  // A scheduled task (has a start date) can have its work sessions managed any time.
+  const scheduledPlannerTask: PlannerTask | null =
+    task.sourceId && task.startDate
+      ? {
+          id: task.sourceId,
+          name: task.title,
+          icon: task.icon,
+          color: task.color,
+          duration: task.est ?? undefined,
+          startDate: toLocalDate(new Date(task.startDate)),
+          endDate: task.endDate ? toLocalDate(new Date(task.endDate)) : undefined,
+        }
+      : null;
+
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
   return (
     <>
       <Modal open={open} onClose={handleClose} maxWidth="560px">
-        <ModalHead
-          tag={t('editModal.tag')}
-          title={
+        <div className="px-6 pt-5 pb-3 relative border-b border-[var(--border-lo)]">
+          <div className="flex items-center justify-between gap-2 mb-1">
+            <span className="[font-family:var(--f-title)] text-[9px] tracking-[0.3em] text-[var(--gold)]">
+              {t('editModal.tag')}
+            </span>
+            {scheduledPlannerTask && (
+              <button
+                type="button"
+                onClick={() => setPlannerTask(scheduledPlannerTask)}
+                className="flex items-center gap-1 px-2 py-[3px] rounded-[5px] border border-[oklch(0.74_0.17_85_/_0.3)] text-[9px] font-bold tracking-[0.08em] text-[var(--gold)] bg-[oklch(0.74_0.17_85_/_0.06)] hover:bg-[oklch(0.74_0.17_85_/_0.12)] transition-colors"
+              >
+                🗓 {t('editModal.manageSchedule')}
+              </button>
+            )}
+          </div>
+          <div className="[font-family:var(--f-title)] text-[22px] font-bold tracking-[0.04em] text-[var(--text-hi)]">
             <span className="flex items-center gap-2 truncate max-w-[420px]">
               {task.icon && <span className="text-[18px] leading-none shrink-0">{task.icon}</span>}
               <span className="text-[18px] truncate">{task.title}</span>
             </span>
-          }
-        />
+          </div>
+        </div>
         <ModalBody className="max-h-[calc(78vh-130px)] overflow-y-auto">
           <TaskForm
             ref={formRef}

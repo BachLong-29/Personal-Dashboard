@@ -15,6 +15,8 @@ interface TaskCardProps {
   project?: { name: string; icon?: string; color?: string };
   isBlocked?: boolean;
   blockedByNames?: string[];
+  /** HH:MM from the associated schedule block for this day, if any */
+  scheduledTime?: string;
   onEdit?: (task: Task) => void;
   onDelete?: (id: string) => void;
   onClone?: (task: Task) => void;
@@ -55,12 +57,33 @@ export const STATUS_META: Record<
 
 const ALL_STATUSES = Object.keys(STATUS_META) as TaskStatus[];
 
+function formatTaskDate(startDate: string, endDate?: string): string {
+  return !endDate || endDate === startDate ? startDate : `${startDate} → ${endDate}`;
+}
+
+function fmtTime12(hhmm: string): string {
+  const [h, m] = hhmm.split(':').map(Number);
+  const period = h! < 12 ? 'am' : 'pm';
+  const h12 = h! % 12 || 12;
+  return `${h12}:${String(m).padStart(2, '0')}${period}`;
+}
+
+function timeRange(startTime: string, durationMin?: number): string {
+  if (!durationMin) return fmtTime12(startTime);
+  const [h, m] = startTime.split(':').map(Number);
+  const totalEnd = Math.min(23 * 60 + 59, h! * 60 + m! + durationMin);
+  const endHH = String(Math.floor(totalEnd / 60)).padStart(2, '0');
+  const endMM = String(totalEnd % 60).padStart(2, '0');
+  return `${fmtTime12(startTime)} – ${fmtTime12(`${endHH}:${endMM}`)}`;
+}
+
 export function TaskCard({
   task,
   tagLabel,
   project,
   isBlocked = false,
   blockedByNames = [],
+  scheduledTime,
   onEdit,
   onDelete,
   onClone,
@@ -164,6 +187,16 @@ export function TaskCard({
             <span className={cn(taskName, isDone && taskNameDone)}>{task.name}</span>
           </div>
 
+          {/* Scheduled time range — shown just below title when a block exists for this day */}
+          {scheduledTime && !compact && (
+            <div className={timeRangeRow}>
+              <span className={timeRangeDot}>⊙</span>
+              <span className={timeRangeText}>
+                {timeRange(scheduledTime, task.duration ?? undefined)}
+              </span>
+            </div>
+          )}
+
           {!compact && (
             <div className={taskCardMeta}>
               <span
@@ -185,11 +218,7 @@ export function TaskCard({
                   ↺ Rescheduled
                 </span>
               )}
-              <span className={dateBadge}>
-                {task.startDate === task.endDate
-                  ? task.startDate
-                  : `${task.startDate} → ${task.endDate}`}
-              </span>
+              <span className={dateBadge}>{formatTaskDate(task.startDate, task.endDate)}</span>
             </div>
           )}
 
@@ -297,6 +326,11 @@ const tagBadge =
 const rescheduledBadge =
   'text-[9px] font-bold tracking-[0.06em] border px-1.5 py-0.5 rounded font-[var(--font-title)] text-[var(--gold)] border-[oklch(0.74_0.17_85_/_0.4)] bg-[oklch(0.74_0.17_85_/_0.08)]';
 const dateBadge = 'text-[9px] text-[var(--text-lo)] ml-auto shrink-0';
+
+const timeRangeRow = 'flex items-center gap-1 mb-1';
+const timeRangeDot = 'text-[9px] text-[var(--text-lo)] shrink-0 leading-none';
+const timeRangeText =
+  'text-[10px] font-semibold text-[var(--text-mid)] tabular-nums tracking-[0.02em]';
 
 const blockedMsg = 'text-[9px] text-[var(--text-lo)] mt-0.5 leading-[1.4] italic';
 const taskNote = 'text-[10px] text-[var(--text-lo)] mt-0.5 leading-[1.4] truncate';

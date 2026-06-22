@@ -11,9 +11,10 @@ interface QuestCardProps {
   quest: Quest;
   onToggle: (id: string, burstPos: BurstPos | null) => void;
   animationsEnabled: boolean;
+  onViewDetail?: (quest: Quest) => void;
 }
 
-export function QuestCard({ quest, onToggle, animationsEnabled }: QuestCardProps) {
+export function QuestCard({ quest, onToggle, animationsEnabled, onViewDetail }: QuestCardProps) {
   const cardRef = useRef<HTMLDivElement>(null);
 
   function handleCheck(e: React.MouseEvent) {
@@ -88,6 +89,20 @@ export function QuestCard({ quest, onToggle, animationsEnabled }: QuestCardProps
         <div className="reward-pill xp">⚡ {quest.xp}</div>
         <div className="reward-pill coin">🪙 {quest.coins}</div>
       </div>
+      {onViewDetail && (
+        <button
+          type="button"
+          className="quest-detail-btn"
+          onClick={(e) => {
+            e.stopPropagation();
+            onViewDetail(quest);
+          }}
+          title="View details"
+          aria-label="View quest details"
+        >
+          ⊞
+        </button>
+      )}
     </div>
   );
 }

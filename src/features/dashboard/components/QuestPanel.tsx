@@ -9,6 +9,7 @@ import { cn } from '@/libs/utils';
 import type { BurstPos, Quest } from '../types';
 import { AddQuestModal } from './AddQuestModal';
 import { QuestCard } from './QuestCard';
+import { QuestDetailModal } from './QuestDetailModal';
 
 interface QuestPanelProps {
   quests: Quest[];
@@ -34,17 +35,17 @@ export function QuestPanel({
   const t = useTranslations('dashboard');
 
   const [showModal, setShowModal] = useState(false);
+  const [selectedQuest, setSelectedQuest] = useState<Quest | null>(null);
   const [open, setOpen] = useState<SectionState>({ tasks: true, habits: true, quests: true });
 
-  const toggle = (key: keyof SectionState) =>
-    setOpen((s) => ({ ...s, [key]: !s[key] }));
+  const toggle = (key: keyof SectionState) => setOpen((s) => ({ ...s, [key]: !s[key] }));
 
-  const tasks   = quests.filter((q) => q.taskId);
-  const habits  = quests.filter((q) => q.habitId);
-  const pure    = quests.filter((q) => !q.taskId && !q.habitId);
+  const tasks = quests.filter((q) => q.taskId);
+  const habits = quests.filter((q) => q.habitId);
+  const pure = quests.filter((q) => !q.taskId && !q.habitId);
 
   const done = quests.filter((q) => q.done).length;
-  const pct  = quests.length ? Math.round((done / quests.length) * 100) : 0;
+  const pct = quests.length ? Math.round((done / quests.length) * 100) : 0;
 
   return (
     <div className={cn(panelBase, panelGold, questPanel)}>
@@ -110,7 +111,13 @@ export function QuestPanel({
                 {open.tasks && (
                   <div className={sectionItems}>
                     {tasks.map((q) => (
-                      <QuestCard key={q.id} quest={q} onToggle={onToggle} animationsEnabled={animationsEnabled} />
+                      <QuestCard
+                        key={q.id}
+                        quest={q}
+                        onToggle={onToggle}
+                        animationsEnabled={animationsEnabled}
+                        onViewDetail={setSelectedQuest}
+                      />
                     ))}
                   </div>
                 )}
@@ -138,7 +145,13 @@ export function QuestPanel({
                 {open.habits && (
                   <div className={sectionItems}>
                     {habits.map((q) => (
-                      <QuestCard key={q.id} quest={q} onToggle={onToggle} animationsEnabled={animationsEnabled} />
+                      <QuestCard
+                        key={q.id}
+                        quest={q}
+                        onToggle={onToggle}
+                        animationsEnabled={animationsEnabled}
+                        onViewDetail={setSelectedQuest}
+                      />
                     ))}
                   </div>
                 )}
@@ -166,21 +179,28 @@ export function QuestPanel({
                 {open.quests && (
                   <div className={sectionItems}>
                     {pure.map((q) => (
-                      <QuestCard key={q.id} quest={q} onToggle={onToggle} animationsEnabled={animationsEnabled} />
+                      <QuestCard
+                        key={q.id}
+                        quest={q}
+                        onToggle={onToggle}
+                        animationsEnabled={animationsEnabled}
+                        onViewDetail={setSelectedQuest}
+                      />
                     ))}
                   </div>
                 )}
               </div>
             )}
 
-            {quests.length === 0 && (
-              <div className={emptyState}>◆ {t('quests.empty')} ◆</div>
-            )}
+            {quests.length === 0 && <div className={emptyState}>◆ {t('quests.empty')} ◆</div>}
           </>
         )}
       </div>
 
       {showModal && <AddQuestModal onAdd={onAddQuest} onClose={() => setShowModal(false)} />}
+      {selectedQuest && (
+        <QuestDetailModal quest={selectedQuest} onClose={() => setSelectedQuest(null)} />
+      )}
     </div>
   );
 }
@@ -234,16 +254,18 @@ const emptyState = 'text-[var(--text-lo)] text-center py-[30px] text-[12px]';
 const sectionWrap = 'flex flex-col';
 const sectionHeader =
   'flex items-center gap-[6px] px-1 py-[6px] rounded-[var(--r-sm)] cursor-pointer select-none transition-colors duration-150 w-full text-left';
-const sectionHeaderTask  = 'hover:bg-[oklch(0.76_0.16_205_/_0.07)]';
+const sectionHeaderTask = 'hover:bg-[oklch(0.76_0.16_205_/_0.07)]';
 const sectionHeaderHabit = 'hover:bg-[oklch(0.66_0.22_295_/_0.07)]';
 const sectionHeaderQuest = 'hover:bg-[oklch(0.74_0.17_85_/_0.07)]';
 const sectionIcon = 'text-[13px] leading-none shrink-0';
-const sectionLabel =
-  'font-[var(--font-title)] text-[10px] font-bold tracking-[0.14em] uppercase';
+const sectionLabel = 'font-[var(--font-title)] text-[10px] font-bold tracking-[0.14em] uppercase';
 const sectionCount =
   'font-[var(--font-title)] text-[9px] font-bold px-[6px] py-[2px] rounded-[8px] border';
-const sectionCountTask  = 'text-[var(--cyan)]   bg-[oklch(0.76_0.16_205_/_0.12)] border-[oklch(0.76_0.16_205_/_0.3)]';
-const sectionCountHabit = 'text-[var(--violet)] bg-[oklch(0.66_0.22_295_/_0.12)] border-[oklch(0.66_0.22_295_/_0.3)]';
-const sectionCountQuest = 'text-[var(--gold)]   bg-[oklch(0.74_0.17_85_/_0.12)]  border-[oklch(0.74_0.17_85_/_0.3)]';
+const sectionCountTask =
+  'text-[var(--cyan)]   bg-[oklch(0.76_0.16_205_/_0.12)] border-[oklch(0.76_0.16_205_/_0.3)]';
+const sectionCountHabit =
+  'text-[var(--violet)] bg-[oklch(0.66_0.22_295_/_0.12)] border-[oklch(0.66_0.22_295_/_0.3)]';
+const sectionCountQuest =
+  'text-[var(--gold)]   bg-[oklch(0.74_0.17_85_/_0.12)]  border-[oklch(0.74_0.17_85_/_0.3)]';
 const sectionCaret = 'text-[10px] text-[var(--text-lo)]';
 const sectionItems = 'flex flex-col gap-2 pt-1 pb-2';

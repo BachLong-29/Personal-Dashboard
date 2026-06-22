@@ -10,6 +10,7 @@ import { useDeleteTask } from '../hooks/useDeleteTask';
 import { useHabitLogs } from '../hooks/useHabitLogs';
 import { useHabits } from '../hooks/useHabits';
 import { useTasks } from '../hooks/useTasks';
+import { useTaskTimeMap } from '../hooks/useCalendarDay';
 import { useToggleHabitLog } from '../hooks/useToggleHabitLog';
 import { useUpdateTask } from '../hooks/useUpdateTask';
 import type { HabitDay, Quest, Task, TaskStatus } from '../types';
@@ -59,6 +60,7 @@ export function DayView({ date, display, quests = [], onDateChange }: DayViewPro
   const { mutate: updateTask, isPending: isSavingTask } = useUpdateTask();
   const { mutate: deleteTask } = useDeleteTask();
   const { mutate: toggleHabitLog } = useToggleHabitLog();
+  const taskTimeMap = useTaskTimeMap(date);
 
   const [editing, setEditing] = useState<Task | null>(null);
   const [cloning, setCloning] = useState<Task | null>(null);
@@ -205,6 +207,7 @@ export function DayView({ date, display, quests = [], onDateChange }: DayViewPro
                 project={task.projectId ? projectMap.get(task.projectId) : undefined}
                 isBlocked={isBlocked(task)}
                 blockedByNames={blockedByNames(task)}
+                scheduledTime={taskTimeMap[task.id]}
                 onEdit={handleEdit}
                 onClone={handleClone}
                 onDelete={(id) => setDeletingTask(dayTasks.find((t) => t.id === id))}

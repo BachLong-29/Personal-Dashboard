@@ -30,6 +30,8 @@ export interface Quest {
   projectName?: string;
   projectIcon?: string;
   projectColor?: string;
+  /** File/image URLs attached to the underlying task (task quests only) */
+  attachments?: string[];
 }
 
 export interface Habit {

@@ -6,10 +6,13 @@ import { Modal, ModalHead, ModalBody, ModalFoot } from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
 import { cn } from '@/libs/utils';
 
+import type { ScheduleBlock } from '@/types';
+
 import { useCalendarInsights } from '../hooks/useCalendarInsights';
 import {
   useCreateScheduleBlock,
   useDeleteScheduleBlock,
+  useUpdateScheduleBlock,
   useTaskBlocks,
 } from '../hooks/useScheduleBlocks';
 
@@ -81,12 +84,19 @@ function fmtDate(d: string): string {
 export function SessionPlanner({ open, task, onClose }: SessionPlannerProps) {
   const { data: blocks = [] } = useTaskBlocks(task?.id);
   const createBlock = useCreateScheduleBlock();
+  const updateBlock = useUpdateScheduleBlock();
   const deleteBlock = useDeleteScheduleBlock();
 
   // Add-session form
   const [date, setDate] = useState('');
   const [time, setTime] = useState('09:00');
   const [durStr, setDurStr] = useState('');
+
+  // Inline-edit state — the block currently being edited + its draft values
+  const [editId, setEditId] = useState<string | null>(null);
+  const [eDate, setEDate] = useState('');
+  const [eTime, setETime] = useState('');
+  const [eDur, setEDur] = useState('');
 
   const estimate = task?.duration ?? 0;
   const allocated = useMemo(() => blocks.reduce((s, b) => s + b.duration, 0), [blocks]);
@@ -169,7 +179,28 @@ export function SessionPlanner({ open, task, onClose }: SessionPlannerProps) {
     }
   }
 
-  const busy = createBlock.isPending || deleteBlock.isPending;
+  function startEdit(b: ScheduleBlock) {
+    setEditId(b.id);
+    setEDate(b.date);
+    setETime(b.startTime);
+    setEDur(String(b.duration));
+  }
+
+  function cancelEdit() {
+    setEditId(null);
+  }
+
+  function saveEdit() {
+    if (!editId) return;
+    const dur = parseInt(eDur, 10);
+    if (!eDate || !eTime || Number.isNaN(dur) || dur < 1) return;
+    updateBlock.mutate(
+      { id: editId, date: eDate, startTime: eTime, duration: dur },
+      { onSuccess: () => setEditId(null) },
+    );
+  }
+
+  const busy = createBlock.isPending || updateBlock.isPending || deleteBlock.isPending;
 
   return (
     <Modal open={open} onClose={onClose} maxWidth="520px">
@@ -221,6 +252,65 @@ export function SessionPlanner({ open, task, onClose }: SessionPlannerProps) {
             const calId = `block:${b.id}`;
             const hard = hardIds.has(calId);
             const soft = softIds.has(calId);
+
+            // ── Inline edit row ──────────────────────────────────────────────
+            if (editId === b.id) {
+              return (
+                <div
+                  key={b.id}
+                  className="flex flex-wrap items-end gap-2 px-2.5 py-2 rounded-[var(--r-sm)] border border-[var(--gold)] bg-[var(--panel2)]"
+                >
+                  <Field label="Ngày">
+                    <input
+                      type="date"
+                      value={eDate}
+                      onChange={(e) => setEDate(e.target.value)}
+                      className={inputCls}
+                    />
+                  </Field>
+                  <Field label="Giờ">
+                    <input
+                      type="time"
+                      value={eTime}
+                      onChange={(e) => setETime(e.target.value)}
+                      className={inputCls}
+                    />
+                  </Field>
+                  <Field label="Phút">
+                    <input
+                      type="number"
+                      min={1}
+                      max={1440}
+                      value={eDur}
+                      onChange={(e) => setEDur(e.target.value)}
+                      className={cn(inputCls, 'w-[64px]')}
+                    />
+                  </Field>
+                  <div className="flex items-center gap-1 ml-auto">
+                    <button
+                      type="button"
+                      onClick={saveEdit}
+                      disabled={busy || !eDur}
+                      className="px-2.5 py-1.5 text-[10px] font-bold rounded-[var(--r-sm)] border border-[oklch(0.76_0.14_162_/_0.4)] text-[var(--mint)] hover:bg-[oklch(0.76_0.14_162_/_0.1)] transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                      title="Lưu"
+                    >
+                      ✓
+                    </button>
+                    <button
+                      type="button"
+                      onClick={cancelEdit}
+                      disabled={busy}
+                      className="px-2.5 py-1.5 text-[10px] font-bold rounded-[var(--r-sm)] border border-[var(--border)] text-[var(--text-lo)] hover:text-[var(--text-hi)] transition-all disabled:opacity-40"
+                      title="Hủy"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                </div>
+              );
+            }
+
+            // ── Display row ──────────────────────────────────────────────────
             return (
               <div
                 key={b.id}
@@ -252,6 +342,15 @@ export function SessionPlanner({ open, task, onClose }: SessionPlannerProps) {
                     ⚠ sát
                   </span>
                 )}
+                <button
+                  type="button"
+                  onClick={() => startEdit(b)}
+                  disabled={busy}
+                  className="w-5 h-5 flex items-center justify-center text-[var(--text-lo)] hover:text-[var(--gold)] rounded transition-colors disabled:opacity-40"
+                  title="Sửa buổi"
+                >
+                  ✎
+                </button>
                 <button
                   type="button"
                   onClick={() => deleteBlock.mutate(b.id)}

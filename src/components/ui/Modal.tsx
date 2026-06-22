@@ -16,6 +16,12 @@ export interface ModalProps {
   scrollable?: boolean;
   /** Extra inline styles merged onto the container (use for dynamic colors/overrides) */
   containerStyle?: CSSProperties;
+  /**
+   * On screens narrower than sm (640 px) render as a bottom sheet:
+   * slides up from the bottom, full-width, top-rounded corners only.
+   * On sm+ it falls back to the normal centered modal.
+   */
+  bottomSheet?: boolean;
 }
 
 export interface ModalHeadProps {
@@ -82,6 +88,7 @@ export function Modal({
   closeButton,
   scrollable,
   containerStyle,
+  bottomSheet,
 }: ModalProps) {
   useEffect(() => {
     if (!open) return;
@@ -96,17 +103,20 @@ export function Modal({
 
   return (
     <div
-      className="fixed inset-0 z-[1000] flex items-end sm:items-center justify-center sm:p-4"
+      className={cn(
+        'fixed inset-0 z-[1000] flex justify-center',
+        bottomSheet ? 'items-end sm:items-center sm:p-4' : 'items-end sm:items-center sm:p-4',
+      )}
       style={{ background: 'oklch(0.03 0.02 270 / 0.7)', backdropFilter: 'blur(6px)' }}
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
       <div
         className={cn(
           'relative w-full overflow-hidden',
-          // Mobile: slides up from bottom with rounded top only; desktop: fully rounded
-          'rounded-t-[20px] sm:rounded-[var(--r-lg)]',
           'border border-[var(--gold)] shadow-[var(--sh-4),var(--sh-glow-gold)]',
-          'animate-[modal-in_0.3s_cubic-bezier(0.34,1.56,0.64,1)]',
+          bottomSheet
+            ? 'rounded-t-[20px] sm:rounded-[var(--r-lg)] animate-sheet-in sm:animate-[modal-in_0.3s_cubic-bezier(0.34,1.56,0.64,1)]'
+            : 'rounded-t-[20px] sm:rounded-[var(--r-lg)] animate-[modal-in_0.3s_cubic-bezier(0.34,1.56,0.64,1)]',
           scrollable && 'flex flex-col max-h-[90dvh] sm:max-h-[85vh]',
           className,
         )}

@@ -112,7 +112,7 @@ export function useQuestOrchestration({
         return {
           id: `task-${t.id}`,
           title: t.name,
-          desc: t.note ?? t.tagId,
+          desc: t.note ?? '',
           type: 'task' as QuestType,
           difficulty: 'C' as Difficulty,
           xp: TASK_XP,
@@ -126,6 +126,7 @@ export function useQuestOrchestration({
           projectName: proj?.name,
           projectIcon: proj?.icon,
           projectColor: proj?.color,
+          attachments: t.attachments,
         };
       });
   }, [allTasks, todayDateStr, taskDoneMap, taskLoggedMap, projectMeta]);

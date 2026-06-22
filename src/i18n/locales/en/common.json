@@ -397,7 +397,8 @@
       "cancel": "Cancel",
       "save": "✦ Save Changes",
       "saving": "⏳ Saving…",
-      "reschedule": "↺ Reschedule"
+      "reschedule": "↺ Reschedule",
+      "manageSchedule": "🗓 Manage Schedule"
     },
     "defer": {
       "checkboxLabel": "Cannot complete today",
