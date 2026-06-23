@@ -5,6 +5,7 @@ import { getAuthUser } from '@/server/helpers/get-auth-user';
 import { HabitLogModel } from '@/server/models/habit-log.model';
 import { HabitModel } from '@/server/models/habit.model';
 import { TaskModel } from '@/server/models/task.model';
+import { UserProfileModel } from '@/server/models/user-profile.model';
 import { buildCalendar } from '@/server/services/schedule-engine';
 import { asyncHandler, successResponse, unauthorizedResponse } from '@/server';
 import type { CalendarSource } from '@/types/calendar';
@@ -36,7 +37,8 @@ export const GET = asyncHandler(async (req: NextRequest) => {
 
   const today = localMidnight();
   const todayStr = toDateStr(today);
-  const weekStart = localMidnight(-6);
+  const weekStart = localMidnight(-6); // 7 days ending today
+  const lastWeekStart = localMidnight(-13); // 7 days before that
   const todayDow = DOW_TO_HABIT_DAY[today.getDay()] as HabitDay;
 
   // ── Tasks ──────────────────────────────────────────────────────────────────
@@ -83,11 +85,8 @@ export const GET = asyncHandler(async (req: NextRequest) => {
 
   // ── Habits ─────────────────────────────────────────────────────────────────
   const habits = await HabitModel.find({ userId: user.sub, active: true }).lean();
-
-  // Habits scheduled for today
   const habitsToday = habits.filter((h) => h.schedule.some((e) => e.days.includes(todayDow)));
 
-  // Today's logs
   const todayLogs = await HabitLogModel.find({
     userId: user.sub,
     date: { $gte: today, $lt: localMidnight(1) },
@@ -97,46 +96,75 @@ export const GET = asyncHandler(async (req: NextRequest) => {
   const totalToday = habitsToday.length;
   const completionRateToday = totalToday > 0 ? Math.round((doneToday / totalToday) * 100) : 0;
 
-  // Last 7 days habit logs
-  const weekLogs = await HabitLogModel.find({
-    userId: user.sub,
-    date: { $gte: weekStart },
-    done: true,
-  }).lean();
+  // ── Weekly trend (last 7 days) + last-week comparison ─────────────────────
+  const [weekLogs, lastWeekLogs] = await Promise.all([
+    HabitLogModel.find({ userId: user.sub, date: { $gte: weekStart }, done: true }).lean(),
+    HabitLogModel.find({
+      userId: user.sub,
+      date: { $gte: lastWeekStart, $lt: weekStart },
+      done: true,
+    }).lean(),
+  ]);
 
-  // ── Weekly trend (last 7 days) ─────────────────────────────────────────────
   const dates: string[] = [];
   const weekTasksDone: number[] = [];
   const weekHabitsDone: number[] = [];
+  const lastWeekTasksDone: number[] = [];
+  const lastWeekHabitsDone: number[] = [];
 
   for (let i = 6; i >= 0; i--) {
     const day = localMidnight(-i);
     const dayStr = toDateStr(day);
     dates.push(dayStr.slice(5)); // MM-DD
 
-    // Tasks scheduled on this day that are done
     weekTasksDone.push(
       allTasks.filter(
         (t) => t.startDate && toDateStr(t.startDate) === dayStr && t.status === 'done',
       ).length,
     );
-
-    // Habit logs done on this day
     weekHabitsDone.push(weekLogs.filter((l) => toDateStr(new Date(l.date)) === dayStr).length);
   }
 
-  // Week habit completion rate — average across days that had habits scheduled
+  for (let i = 13; i >= 7; i--) {
+    const day = localMidnight(-i);
+    const dayStr = toDateStr(day);
+    lastWeekTasksDone.push(
+      allTasks.filter(
+        (t) => t.startDate && toDateStr(t.startDate) === dayStr && t.status === 'done',
+      ).length,
+    );
+    lastWeekHabitsDone.push(
+      lastWeekLogs.filter((l) => toDateStr(new Date(l.date)) === dayStr).length,
+    );
+  }
+
+  const thisWeekTaskTotal = weekTasksDone.reduce((a, b) => a + b, 0);
+  const lastWeekTaskTotal = lastWeekTasksDone.reduce((a, b) => a + b, 0);
+  const trendVsLastWeek =
+    lastWeekTaskTotal > 0
+      ? Math.round(((thisWeekTaskTotal - lastWeekTaskTotal) / lastWeekTaskTotal) * 100)
+      : null;
+  const dailyAverage = Math.round((thisWeekTaskTotal / 7) * 10) / 10;
+
+  // Week habit completion rate
   const weekCompletionRate = (() => {
-    let totalScheduled = 0;
-    let totalDone = 0;
-    for (let i = 0; i < 7; i++) {
-      totalDone += weekHabitsDone[i] ?? 0;
-      totalScheduled += weekHabitsDone[i] ?? 0; // approximate: use done as proxy
-    }
-    return totalDone > 0 ? Math.round((totalDone / Math.max(totalScheduled, 1)) * 100) : 0;
+    const totalDone = weekHabitsDone.reduce((a, b) => a + b, 0);
+    return totalDone > 0 ? Math.round((totalDone / Math.max(totalDone, 1)) * 100) : 0;
   })();
 
-  // ── Schedule engine — hour-based workload (last 7 days) ──────────────────────
+  // ── Character (from UserProfile) ───────────────────────────────────────────
+  const profile = await UserProfileModel.findOne({ userId: user.sub }).lean();
+  const character = {
+    level: profile?.level ?? 1,
+    xp: profile?.xp ?? 0,
+    xpNext: profile?.xpNext ?? 1000,
+    coins: profile?.coins ?? 0,
+    gems: profile?.gems ?? 0,
+    rank: profile?.rank ?? 'E',
+    streak: profile?.streak ?? 0,
+  };
+
+  // ── Schedule engine — hour-based workload (last 7 days) ───────────────────
   const scheduleFrom = toDateStr(weekStart);
   const calItems = await buildCalendar(user.sub, scheduleFrom, todayStr);
 
@@ -196,8 +224,13 @@ export const GET = asyncHandler(async (req: NextRequest) => {
       dates,
       tasksDone: weekTasksDone,
       habitsDone: weekHabitsDone,
+      lastWeekTasksDone,
+      lastWeekHabitsDone,
     },
     pendingTasks: pendingTaskList,
+    dailyAverage,
+    trendVsLastWeek,
+    character,
     generatedAt: todayStr,
   });
 });

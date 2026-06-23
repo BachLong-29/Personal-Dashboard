@@ -38,13 +38,45 @@ export interface WeeklyStat {
   dates: string[];
   tasksDone: number[];
   habitsDone: number[];
+  lastWeekTasksDone: number[];
+  lastWeekHabitsDone: number[];
+}
+
+export interface ScheduleTrendPoint {
+  date: string;
+  planned: number;
+  completed: number;
+}
+
+export interface ScheduleStat {
+  range: { from: string; to: string };
+  plannedMinutes: number;
+  completedMinutes: number;
+  missedMinutes: number;
+  completionRate: number;
+  trend: ScheduleTrendPoint[];
+  bySource: { habit: number; quest: number; task: number };
+}
+
+export interface CharacterStat {
+  level: number;
+  xp: number;
+  xpNext: number;
+  coins: number;
+  gems: number;
+  rank: string;
+  streak: number;
 }
 
 export interface DashboardStats {
+  schedule: ScheduleStat;
   tasks: TaskStat;
   habits: HabitStat;
   weekly: WeeklyStat;
   pendingTasks: PendingTask[];
+  dailyAverage: number;
+  trendVsLastWeek: number | null;
+  character: CharacterStat;
   generatedAt: string;
 }
 
@@ -55,7 +87,7 @@ export function useStats() {
       const { data } = await apiClient.get<ApiResponse<DashboardStats>>('/stats');
       return data.data ?? null;
     },
-    staleTime: 60_000, // 1 min — stats don't need real-time freshness
+    staleTime: 60_000,
     refetchOnWindowFocus: false,
   });
 }
