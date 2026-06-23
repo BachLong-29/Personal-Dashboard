@@ -22,12 +22,14 @@ export interface QuestLike {
 
 // ─── Date helpers ─────────────────────────────────────────────────────────────
 
-/** Days from today to the given ISO date string (negative = past) */
+/** Days from today to the given ISO date string (negative = past).
+ *  Uses Date(y, m, d) constructor so the date is treated as LOCAL midnight,
+ *  avoiding the ISO-string UTC-parse shift that causes off-by-one in UTC+ zones. */
 export function dayOffset(dateStr?: string): number {
   if (!dateStr) return 0;
-  const d = new Date(dateStr);
+  const parts = dateStr.split('-');
+  const d = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
   const today = new Date();
-  d.setHours(0, 0, 0, 0);
   today.setHours(0, 0, 0, 0);
   return Math.round((d.getTime() - today.getTime()) / 86_400_000);
 }
