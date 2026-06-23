@@ -1,6 +1,6 @@
 export type QuestType = 'focus' | 'habit' | 'reflect' | 'admin' | 'create' | 'health' | 'break';
 export type Difficulty = 'S' | 'A' | 'B' | 'C' | 'D';
-export type CenterTab = 'quests' | 'schedule' | 'stats' | 'habits';
+export type CenterTab = 'schedule' | 'stats' | 'habits';
 export type HabitColor = 'gold' | 'mint' | 'violet' | 'cyan' | 'rose' | 'amber' | 'blue';
 export type HabitDay = 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun';
 export interface HabitScheduleEntry {

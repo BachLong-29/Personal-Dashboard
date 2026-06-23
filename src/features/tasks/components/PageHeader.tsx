@@ -6,7 +6,7 @@ import { cn } from '@/libs/utils';
 
 import { type TaskDiff } from '../data/mock';
 
-export type ViewMode = 'day' | 'week' | 'month' | 'all';
+export type ViewMode = 'day' | 'all';
 
 // Max number of category chips shown before collapsing into "+N more"
 const VISIBLE_LIMIT = 5;
@@ -216,8 +216,6 @@ export function PageHeader({
 
 const VIEW_META: Array<{ id: ViewMode; glyph: string; label: string }> = [
   { id: 'day', glyph: '◐', label: 'DAY' },
-  { id: 'week', glyph: '◧', label: 'WEEK' },
-  { id: 'month', glyph: '▦', label: 'MONTH' },
   { id: 'all', glyph: '≡', label: 'ALL' },
 ];
 

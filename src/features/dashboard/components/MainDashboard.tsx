@@ -42,7 +42,7 @@ export default function MainDashboard() {
       String(d.getDate()).padStart(2, '0'),
     ].join('-');
   }, []);
-  const todayDayStr = useMemo(() => DOW_TO_HABIT_DAY[new Date().getDay()]!, []);
+  const todayDayStr = useMemo(() => DOW_TO_HABIT_DAY[new Date().getDay()] ?? 'mon', []);
   const dateStr = useMemo(
     () =>
       new Date().toLocaleDateString('en-US', {
@@ -93,23 +93,15 @@ export default function MainDashboard() {
   useDailyInit();
 
   // Quest / habit / task orchestration
-  const {
-    quests,
-    allQuests,
-    questsLoading,
-    pendingQuest,
-    handleToggleQuest,
-    handleConfirmQuest,
-    handleAddQuest,
-    handleCancelQuest,
-  } = useQuestOrchestration({
-    todayDateStr,
-    todayDayStr,
-    animationsEnabled: settings.animationsEnabled,
-    onAwardProgress: awardProgress,
-    onBurst,
-    onToast,
-  });
+  const { quests, pendingQuest, handleConfirmQuest, handleAddQuest, handleCancelQuest } =
+    useQuestOrchestration({
+      todayDateStr,
+      todayDayStr,
+      animationsEnabled: settings.animationsEnabled,
+      onAwardProgress: awardProgress,
+      onBurst,
+      onToast,
+    });
 
   // Penalty state machine
   const {
@@ -152,7 +144,7 @@ export default function MainDashboard() {
   const [centerTab, setCenterTab] = useState<CenterTab>(() => {
     const tab = searchParams.get('tab');
     if (tab === 'habits' || tab === 'schedule' || tab === 'stats') return tab;
-    return 'quests';
+    return 'schedule';
   });
   const [mobilePanel, setMobilePanel] = useState<MobilePanel>('center');
 
@@ -214,12 +206,7 @@ export default function MainDashboard() {
           <CenterColumn
             tab={centerTab}
             onTabChange={handleTabChange}
-            allQuests={allQuests}
-            quests={quests}
-            onToggle={handleToggleQuest}
             onAddQuest={handleAddQuest}
-            animationsEnabled={settings.animationsEnabled}
-            questsLoading={questsLoading}
             todayDateStr={todayDateStr}
           />
           {/* Right column — wide desktop only (xl+) */}
@@ -245,12 +232,7 @@ export default function MainDashboard() {
               <CenterColumn
                 tab={centerTab}
                 onTabChange={handleTabChange}
-                allQuests={allQuests}
-                quests={quests}
-                onToggle={handleToggleQuest}
                 onAddQuest={handleAddQuest}
-                animationsEnabled={settings.animationsEnabled}
-                questsLoading={questsLoading}
                 todayDateStr={todayDateStr}
               />
             </div>

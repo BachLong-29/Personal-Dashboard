@@ -13,7 +13,7 @@ import { useTasks } from '../hooks/useTasks';
 import { useTaskTimeMap } from '../hooks/useCalendarDay';
 import { useToggleHabitLog } from '../hooks/useToggleHabitLog';
 import { useUpdateTask } from '../hooks/useUpdateTask';
-import type { HabitDay, Quest, Task, TaskStatus } from '../types';
+import type { BurstPos, HabitDay, Quest, Task, TaskStatus } from '../types';
 import type { ScheduleDisplayOptions } from '../hooks/useScheduleState';
 import { Modal, ModalBody, ModalFoot, ModalHead } from '@/components/ui/Modal';
 import { ProjectBadge } from '@/components/common/ProjectBadge';
@@ -27,6 +27,7 @@ interface DayViewProps {
   date: string;
   display: ScheduleDisplayOptions;
   quests?: Quest[];
+  onToggle?: (id: string, burstPos: BurstPos | null) => void;
   onDateChange: (date: string) => void;
 }
 
@@ -51,7 +52,7 @@ function formatDateLabel(dateStr: string): string {
   return d.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
 }
 
-export function DayView({ date, display, quests = [], onDateChange }: DayViewProps) {
+export function DayView({ date, display, quests = [], onToggle, onDateChange }: DayViewProps) {
   const { data: allTasks = [], isLoading } = useTasks();
   const { data: categories = [] } = useCategories();
   const { data: projects = [] } = useProjects('active');
@@ -225,7 +226,26 @@ export function DayView({ date, display, quests = [], onDateChange }: DayViewPro
             </div>
             <div className={listWrap}>
               {quests.map((q) => (
-                <div key={q.id} className={questRow}>
+                <button
+                  key={q.id}
+                  type="button"
+                  className={cn(questRow, onToggle && questRowClickable, q.done && questRowDone)}
+                  onClick={
+                    onToggle
+                      ? (e) => {
+                          const rect = e.currentTarget.getBoundingClientRect();
+                          const pos: BurstPos = {
+                            x: rect.left + rect.width / 2,
+                            y: rect.top + rect.height / 2,
+                          };
+                          onToggle(q.id, pos);
+                        }
+                      : undefined
+                  }
+                >
+                  <span className={cn(questCheck, q.done && questCheckDone)}>
+                    {q.done ? '✓' : '○'}
+                  </span>
                   <span className={questIcon}>{q.habitIcon ?? '📌'}</span>
                   <span className={cn(questName, q.done && questNameDone)}>{q.title}</span>
                   {q.projectName && (
@@ -236,8 +256,7 @@ export function DayView({ date, display, quests = [], onDateChange }: DayViewPro
                       iconOnly
                     />
                   )}
-                  {q.done && <span className={questDone}>✓</span>}
-                </div>
+                </button>
               ))}
             </div>
           </>
@@ -365,11 +384,15 @@ const listWrap = 'flex flex-col gap-1.5 mb-2';
 const emptyMsg = 'text-[11px] text-[var(--text-lo)] text-center py-4';
 
 const questRow =
-  'flex items-center gap-2 px-2.5 py-1.5 bg-[oklch(0.74_0.17_85_/_0.05)] border border-[oklch(0.74_0.17_85_/_0.2)] rounded-[var(--r-sm)]';
+  'w-full flex items-center gap-2 px-2.5 py-1.5 bg-[oklch(0.74_0.17_85_/_0.05)] border border-[oklch(0.74_0.17_85_/_0.2)] rounded-[var(--r-sm)] text-left';
+const questRowClickable =
+  'cursor-pointer transition-all hover:border-[oklch(0.74_0.17_85_/_0.45)] hover:bg-[oklch(0.74_0.17_85_/_0.09)]';
+const questRowDone = 'opacity-60';
+const questCheck = 'text-[11px] shrink-0 text-[var(--text-lo)] w-4 text-center';
+const questCheckDone = 'text-[var(--mint)]';
 const questIcon = 'text-[13px] shrink-0';
 const questName = 'flex-1 text-[11px] font-medium text-[var(--text-hi)]';
 const questNameDone = 'line-through text-[var(--text-lo)]';
-const questDone = 'text-[11px] text-[oklch(0.76_0.14_162)]';
 
 const habitCount = 'text-[9px] font-bold text-[var(--text-lo)] font-[var(--font-title)]';
 const habitRow =

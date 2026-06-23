@@ -1,26 +1,36 @@
 'use client';
 
-import { Link } from '@/i18n/navigation';
 import { cn } from '@/libs/utils';
 
+import { Link } from '@/i18n/navigation';
 import { useScheduleState } from '../hooks/useScheduleState';
 import type { CenterTab, Quest } from '../types';
-import { DayView } from './DayView';
 import { MonthView } from './MonthView';
+import { ScheduleDayViewPanel } from './ScheduleDayViewPanel';
 import { WeekView } from './WeekView';
 
 interface ScheduleViewProps {
-  quests?: Quest[];
+  onAddQuest?: (quest: Quest) => void;
   onNavigateTab?: (tab: CenterTab) => void;
 }
 
 const CURRENT_YEAR = new Date().getFullYear();
 const YEARS = Array.from({ length: 5 }, (_, i) => CURRENT_YEAR - 2 + i);
 
-export function ScheduleView({ quests = [], onNavigateTab }: ScheduleViewProps) {
+export function ScheduleView({ onAddQuest, onNavigateTab }: ScheduleViewProps) {
   const {
-    tab, year, dayDate, weekStart, month, display,
-    setTab, setYear, setDayDate, setWeekStart, setMonth, setDisplay,
+    tab,
+    year,
+    dayDate,
+    weekStart,
+    month,
+    display,
+    setTab,
+    setYear,
+    setDayDate,
+    setWeekStart,
+    setMonth,
+    setDisplay,
     getMonday,
   } = useScheduleState();
 
@@ -36,7 +46,7 @@ export function ScheduleView({ quests = [], onNavigateTab }: ScheduleViewProps) 
 
   return (
     <div className={outerWrap}>
-      {/* Sub-tab bar + Year selector + Display toggles */}
+      {/* Sub-tab bar + display toggles + year selector */}
       <div className={controlBar}>
         <div className={subTabGroup}>
           {(['day', 'week', 'month'] as const).map((t) => (
@@ -52,7 +62,6 @@ export function ScheduleView({ quests = [], onNavigateTab }: ScheduleViewProps) 
         </div>
 
         <div className={rightControls}>
-          {/* Display toggles */}
           <button
             type="button"
             className={cn(toggleBtn, display.showQuests && toggleBtnActive)}
@@ -70,7 +79,6 @@ export function ScheduleView({ quests = [], onNavigateTab }: ScheduleViewProps) 
             ✦ Habits
           </button>
 
-          {/* Year selector */}
           <select
             className={yearSelect}
             value={year}
@@ -92,15 +100,16 @@ export function ScheduleView({ quests = [], onNavigateTab }: ScheduleViewProps) 
       {/* Content */}
       <div className={contentArea}>
         {tab === 'day' && (
-          <DayView
+          <ScheduleDayViewPanel
             date={dayDate}
-            display={display}
-            quests={display.showQuests ? quests : []}
             onDateChange={(d) => {
               setDayDate(d);
               setWeekStart(getMonday(d));
               setMonth(new Date(d).getMonth());
             }}
+            showQuests={display.showQuests}
+            showHabits={display.showHabits}
+            onAddQuest={onAddQuest}
           />
         )}
         {tab === 'week' && (
@@ -120,7 +129,7 @@ export function ScheduleView({ quests = [], onNavigateTab }: ScheduleViewProps) 
             year={year}
             month={month}
             display={display}
-            quests={display.showQuests ? quests : []}
+            quests={[]}
             onMonthChange={(m, y) => {
               setMonth(m);
               setYear(y);

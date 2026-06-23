@@ -5,7 +5,7 @@ import { useRouter, useParams } from 'next/navigation';
 
 import { useProfile } from '@/features/profile/hooks/useProfile';
 import { buildEmptyChar, profileToCharacter } from '@/features/dashboard/utils/character.utils';
-import { isInRange, offsetToISO, toLocalDate, todayISO } from '../utils/date.utils';
+import { offsetToISO, toLocalDate, todayISO } from '../utils/date.utils';
 import { useHabits } from '@/features/dashboard/hooks/useHabits';
 import { useHabitLogs } from '@/features/dashboard/hooks/useHabitLogs';
 import { useHabitLogsRange } from '@/features/dashboard/hooks/useHabitLogsRange';
@@ -24,7 +24,6 @@ import {
 } from '@/features/schedule/hooks/useScheduleBlocks';
 import type { ScheduleBlock } from '@/types';
 import { useUpdateQuestStatus } from '@/features/dashboard/hooks/useUpdateQuestStatus';
-import { useMoveQuest } from '@/features/dashboard/hooks/useMoveQuest';
 import { useUpdateTask } from '@/features/dashboard/hooks/useUpdateTask';
 import type { Character } from '@/features/dashboard/types';
 import type { UpdateTaskPayload, TaskColor } from '@/types';
@@ -46,9 +45,6 @@ import {
 } from '../data/adapters';
 import { PageHeader, type ViewMode } from './PageHeader';
 import { TaskDayView } from './day/TaskDayView';
-import { TaskWeekView } from './week/TaskWeekView';
-import { WeekDropDialog } from './week/WeekDropDialog';
-import { TaskMonthView } from './month/TaskMonthView';
 import { TaskAllView } from './all/TaskAllView';
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -57,10 +53,7 @@ export function TaskManagement() {
   const todayStr = todayISO();
   const router = useRouter();
 
-  // ── Week view offset — shared with TaskWeekView ──────────────────────────────
-  const [weekViewOffset, setWeekViewOffset] = useState(0);
-
-  // Monday of the current calendar week (stable — never changes mid-session)
+  // Monday of the current calendar week (stable)
   const currentWeekStartDate = useMemo(() => {
     const today = new Date();
     const monBased = (today.getDay() + 6) % 7;
@@ -70,25 +63,13 @@ export function TaskManagement() {
     return d;
   }, []);
 
-  // Monday of the week being viewed (changes with weekViewOffset)
-  const viewedWeekStartDate = useMemo(() => {
-    const d = new Date(currentWeekStartDate);
-    d.setDate(currentWeekStartDate.getDate() + weekViewOffset * 7);
-    return d;
-  }, [currentWeekStartDate, weekViewOffset]);
-
-  // Log range covering both the current week and the viewed week (contiguous)
-  const logRangeFrom = useMemo(() => {
-    const earlier = weekViewOffset < 0 ? viewedWeekStartDate : currentWeekStartDate;
-    return toLocalDate(earlier);
-  }, [weekViewOffset, viewedWeekStartDate, currentWeekStartDate]);
+  const logRangeFrom = useMemo(() => toLocalDate(currentWeekStartDate), [currentWeekStartDate]);
 
   const logRangeTo = useMemo(() => {
-    const laterStart = weekViewOffset > 0 ? viewedWeekStartDate : currentWeekStartDate;
-    const d = new Date(laterStart);
-    d.setDate(laterStart.getDate() + 6);
+    const d = new Date(currentWeekStartDate);
+    d.setDate(currentWeekStartDate.getDate() + 6);
     return toLocalDate(d);
-  }, [weekViewOffset, viewedWeekStartDate, currentWeekStartDate]);
+  }, [currentWeekStartDate]);
   const params = useParams<{ locale: string }>();
 
   // ── Selected date for day view ────────────────────────────────────────────────
@@ -157,7 +138,6 @@ export function TaskManagement() {
   // ── Mutations ────────────────────────────────────────────────────────────────
   const updateTask = useUpdateTask();
   const updateQuestStatus = useUpdateQuestStatus();
-  const moveQuest = useMoveQuest();
   const toggleHabitLog = useToggleHabitLog();
   const toggleTaskLog = useToggleTaskLog();
   const createTask = useCreateTask();
@@ -215,33 +195,24 @@ export function TaskManagement() {
     });
     const quests = apiQuests.map((q) => questToUITask(q));
 
-    // Generate habit UITasks for every scheduled day across:
-    //   1. The current calendar week (always — keeps day-view today-habits intact)
-    //   2. The viewed week when different from the current week
-    // IDs include the date so React keys never collide across days.
-    const habitWeekStarts =
-      weekViewOffset === 0 ? [currentWeekStartDate] : [currentWeekStartDate, viewedWeekStartDate];
-
     const habits = apiHabits
       .filter((h) => h.active)
       .flatMap((h) =>
-        habitWeekStarts.flatMap((weekStart) =>
-          Array.from({ length: 7 }, (_, i) => {
-            const date = new Date(weekStart);
-            date.setDate(weekStart.getDate() + i);
-            if (!isHabitScheduledForDate(h, date)) return null;
+        Array.from({ length: 7 }, (_, i) => {
+          const date = new Date(currentWeekStartDate);
+          date.setDate(currentWeekStartDate.getDate() + i);
+          if (!isHabitScheduledForDate(h, date)) return null;
 
-            const dateStr = toLocalDate(date);
-            // Compare as local dates: the server stores dates at local midnight, so the
-            // ISO string may be a previous UTC day (e.g. 2026-06-17T17:00Z = June 18 UTC+7).
-            const log = weekHabitLogs.find(
-              (l) => l.habitId === h.id && toLocalDate(new Date(l.date)) === dateStr,
-            );
-            const cancelled = dateStr === todayStr && cancelledHabitIds.has(h.id);
-            const ui = habitToUITask(h, log, cancelled, date);
-            return { ...ui, id: `habit-${h.id}-${dateStr}` };
-          }).filter((x): x is UITask => x !== null),
-        ),
+          const dateStr = toLocalDate(date);
+          // Compare as local dates: the server stores dates at local midnight, so the
+          // ISO string may be a previous UTC day (e.g. 2026-06-17T17:00Z = June 18 UTC+7).
+          const log = weekHabitLogs.find(
+            (l) => l.habitId === h.id && toLocalDate(new Date(l.date)) === dateStr,
+          );
+          const cancelled = dateStr === todayStr && cancelledHabitIds.has(h.id);
+          const ui = habitToUITask(h, log, cancelled, date);
+          return { ...ui, id: `habit-${h.id}-${dateStr}` };
+        }).filter((x): x is UITask => x !== null),
       );
 
     return [...tasks, ...quests, ...habits];
@@ -253,8 +224,6 @@ export function TaskManagement() {
     weekHabitLogs,
     cancelledHabitIds,
     currentWeekStartDate,
-    viewedWeekStartDate,
-    weekViewOffset,
     todayStr,
     withProject,
     blockMap,
@@ -502,67 +471,6 @@ export function TaskManagement() {
     }
   }
 
-  // Out-of-range drop awaiting a Strict/Flexible decision
-  const [pendingMove, setPendingMove] = useState<{
-    sourceId: string;
-    title: string;
-    targetISO: string;
-    startDate?: string;
-    endDate?: string;
-  } | null>(null);
-
-  function handleMoveToDay(id: string, day: number) {
-    // Always reflect the move locally first (keeps the card under the cursor)
-    setTasks((ts) => ts.map((t) => (t.id === id ? { ...t, day } : t)));
-
-    const task = tasks.find((t) => t.id === id);
-    if (!task?.sourceId) return;
-    const targetISO = offsetToISO(day);
-
-    // ── Quest — moving its deadline ────────────────────────────────────────
-    if (task.source === 'quest') {
-      moveQuest.mutate({ id: task.sourceId, dueDate: targetISO });
-      return;
-    }
-
-    // ── Task — persist the new day, guarding the [start, due] span ──────────
-    if (task.source === 'task') {
-      const inRange = isInRange(targetISO, task.startDate, task.endDate);
-      if (task.endDate && !inRange) {
-        // Multi-day task dropped outside its span → ask how to resolve (Flexible)
-        setPendingMove({
-          sourceId: task.sourceId,
-          title: task.title,
-          targetISO,
-          startDate: task.startDate,
-          endDate: task.endDate,
-        });
-        return;
-      }
-      // Single-day (or in-range) move → just shift the start date
-      updateTask.mutate({ id: task.sourceId, startDate: targetISO });
-    }
-  }
-
-  /** Flexible: grow the task's span to include the dropped day. */
-  function handleExtendPending() {
-    if (!pendingMove) return;
-    const { sourceId, targetISO, endDate } = pendingMove;
-    const patch: UpdateTaskPayload =
-      endDate && targetISO > endDate ? { endDate: targetISO } : { startDate: targetISO };
-    updateTask.mutate({ id: sourceId, ...patch }, { onSettled: () => setPendingMove(null) });
-  }
-
-  /** Flexible: move the task to the dropped day as a single-day task. */
-  function handleMovePending() {
-    if (!pendingMove) return;
-    const { sourceId, targetISO } = pendingMove;
-    updateTask.mutate(
-      { id: sourceId, startDate: targetISO, endDate: null },
-      { onSettled: () => setPendingMove(null) },
-    );
-  }
-
   function handleRescheduleHabit(habitTask: UITask, newTime: string) {
     if (!habitTask.sourceId) return;
 
@@ -681,25 +589,6 @@ export function TaskManagement() {
               splitMode={splitMode}
             />
           )}
-          {view === 'week' && (
-            <TaskWeekView
-              tasks={visible}
-              weekOffset={weekViewOffset}
-              onWeekChange={setWeekViewOffset}
-              expandedId={expandedId}
-              setExpandedId={setExpandedId}
-              onToggleDone={handleToggleDone}
-              onMoveToDay={handleMoveToDay}
-            />
-          )}
-          {view === 'month' && (
-            <TaskMonthView
-              tasks={visible}
-              expandedId={expandedId}
-              setExpandedId={setExpandedId}
-              onToggleDone={handleToggleDone}
-            />
-          )}
           {view === 'all' && (
             <TaskAllView tasks={tasks} filterCat={filterCat} onEdit={handleEditTask} />
           )}
@@ -734,21 +623,6 @@ export function TaskManagement() {
         onSave={handleSaveEdit}
         saving={updateTask.isPending}
       />
-
-      {/* ── Out-of-range drop dialog (Flexible mode) ──────────────────────── */}
-      {pendingMove && (
-        <WeekDropDialog
-          taskTitle={pendingMove.title}
-          targetDateLabel={new Date(pendingMove.targetISO).toLocaleDateString('en-US', {
-            month: 'short',
-            day: 'numeric',
-          })}
-          onExtend={handleExtendPending}
-          onMove={handleMovePending}
-          onCancel={() => setPendingMove(null)}
-          loading={updateTask.isPending}
-        />
-      )}
     </div>
   );
 }

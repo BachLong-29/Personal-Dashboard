@@ -43,6 +43,7 @@ interface TaskDayViewProps {
   onClone?: (task: UITask) => void;
   rescheduleLoading?: boolean;
   splitMode: 'week' | 'month';
+  hideSidePanel?: boolean;
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -73,6 +74,7 @@ export function TaskDayView({
   onClone,
   rescheduleLoading,
   splitMode,
+  hideSidePanel = false,
 }: TaskDayViewProps) {
   // ── Date offset derived from controlled prop ─────────────────────────────────
   const selectedOffset = useMemo(() => computeOffset(selectedDate), [selectedDate]);
@@ -201,11 +203,13 @@ export function TaskDayView({
           </div>
         </section>
 
-        {/* ── Right: side panels — hidden on mobile ─────────────────────── */}
-        <section className="hidden md:flex w-[400px] shrink-0 flex-col gap-2.5 overflow-y-auto">
-          {splitMode === 'week' ? <WeekPeek tasks={allTasks} /> : <MonthPeek tasks={allTasks} />}
-          <ScheduleStrip tasks={selectedTasks} />
-        </section>
+        {/* ── Right: side panels — hidden on mobile or when hideSidePanel ── */}
+        {!hideSidePanel && (
+          <section className="hidden md:flex w-[400px] shrink-0 flex-col gap-2.5 overflow-y-auto">
+            {splitMode === 'week' ? <WeekPeek tasks={allTasks} /> : <MonthPeek tasks={allTasks} />}
+            <ScheduleStrip tasks={selectedTasks} />
+          </section>
+        )}
       </div>
 
       {/* Drag overlay — ghost card */}

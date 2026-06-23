@@ -5,42 +5,30 @@ import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/Button';
 import { cn } from '@/libs/utils';
 
-import type { BurstPos, CenterTab, Quest } from '../types';
+import type { CenterTab, Quest } from '../types';
 import { AnalyticsPanel } from './AnalyticsPanel';
 import { HabitPanel } from './HabitPanel';
-import { QuestPanel } from './QuestPanel';
 import { ScheduleView } from './ScheduleView';
 
 interface Props {
   tab: CenterTab;
   onTabChange: (tab: CenterTab) => void;
-  allQuests: Quest[];
-  quests: Quest[];
-  onToggle: (id: string, burstPos: BurstPos | null) => void;
   onAddQuest: (quest: Quest) => void;
-  animationsEnabled: boolean;
-  questsLoading: boolean;
   todayDateStr: string;
 }
 
 export const CenterColumn = memo(function CenterColumn({
   tab,
   onTabChange,
-  allQuests,
-  quests,
-  onToggle,
   onAddQuest,
-  animationsEnabled,
-  questsLoading,
   todayDateStr,
 }: Props) {
   const t = useTranslations('dashboard');
 
   const tabDefs = useMemo(
     () => [
-      { key: 'quests' as CenterTab, label: t('tabs.quests') },
-      { key: 'habits' as CenterTab, label: t('tabs.habits') },
       { key: 'schedule' as CenterTab, label: t('tabs.schedule') },
+      { key: 'habits' as CenterTab, label: t('tabs.habits') },
       { key: 'stats' as CenterTab, label: t('tabs.stats') },
     ],
     [t],
@@ -62,15 +50,6 @@ export const CenterColumn = memo(function CenterColumn({
         ))}
       </div>
 
-      {tab === 'quests' && (
-        <QuestPanel
-          quests={allQuests}
-          onToggle={onToggle}
-          onAddQuest={onAddQuest}
-          animationsEnabled={animationsEnabled}
-          isLoading={questsLoading}
-        />
-      )}
       {tab === 'habits' && <HabitPanel todayStr={todayDateStr} />}
       {tab === 'schedule' && (
         <div className={cn(panelBase, panelGold, 'flex-1 overflow-hidden min-h-0 flex flex-col')}>
@@ -82,7 +61,7 @@ export const CenterColumn = memo(function CenterColumn({
             <span className={panelHeaderTitle}>{t('schedule.title')}</span>
             <span className={panelHeaderOrnament}>◆ ◆ ◆</span>
           </div>
-          <ScheduleView quests={quests} onNavigateTab={onTabChange} />
+          <ScheduleView onAddQuest={onAddQuest} onNavigateTab={onTabChange} />
         </div>
       )}
       {tab === 'stats' && (

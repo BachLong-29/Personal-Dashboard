@@ -25,13 +25,6 @@ export const MobileNav = memo(function MobileNav({
 
   const items = [
     {
-      id: 'quests',
-      icon: '⚔',
-      label: t('tabs.quests'),
-      isActive: mobilePanel === 'center' && centerTab === 'quests',
-      onClick: () => onTabChange('quests'),
-    },
-    {
       id: 'habits',
       icon: '🔥',
       label: t('tabs.habits'),
@@ -87,7 +80,7 @@ export const MobileNav = memo(function MobileNav({
 });
 
 const nav =
-  'min-[1025px]:hidden fixed bottom-0 left-0 right-0 grid grid-cols-6 border-t border-[var(--border)] bg-[var(--panel)]/70 backdrop-blur-xl z-20';
+  'min-[1025px]:hidden fixed bottom-0 left-0 right-0 grid grid-cols-5 border-t border-[var(--border)] bg-[var(--panel)]/70 backdrop-blur-xl z-20';
 const navBtn =
   'flex flex-col items-center justify-center gap-[3px] py-2 px-1 text-[var(--text-lo)] cursor-pointer transition-colors duration-200 select-none text-[8px] font-[var(--font-title)] tracking-[0.05em] uppercase';
 const navBtnActive =

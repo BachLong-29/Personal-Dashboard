@@ -22,8 +22,18 @@ interface MonthViewProps {
 }
 
 const MONTH_NAMES = [
-  'January', 'February', 'March', 'April', 'May', 'June',
-  'July', 'August', 'September', 'October', 'November', 'December',
+  'January',
+  'February',
+  'March',
+  'April',
+  'May',
+  'June',
+  'July',
+  'August',
+  'September',
+  'October',
+  'November',
+  'December',
 ];
 const DAY_NAMES = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
@@ -85,11 +95,13 @@ export function MonthView({
       if (!task.active) continue;
       let cur = task.startDate;
       while (cur <= (task.endDate ?? task.startDate)) {
-        if (!map[cur]) map[cur] = [];
-        map[cur]!.push(task);
+        (map[cur] ??= []).push(task);
         // Advance by 1 day using Date.UTC so timezone never affects the result
-        const [y, m, d] = cur.split('-').map(Number);
-        cur = new Date(Date.UTC(y!, m! - 1, d! + 1)).toISOString().substring(0, 10);
+        const parts = cur.split('-');
+        const y = Number(parts[0]);
+        const m = Number(parts[1]);
+        const d = Number(parts[2]);
+        cur = new Date(Date.UTC(y, m - 1, d + 1)).toISOString().substring(0, 10);
       }
     }
     return map;
@@ -109,15 +121,23 @@ export function MonthView({
     <div className={outerWrap}>
       {/* Navigation */}
       <div className={navRow}>
-        <button type="button" className={navBtn} onClick={prevMonth}>‹</button>
-        <span className={navLabel}>{MONTH_NAMES[month]} {year}</span>
-        <button type="button" className={navBtn} onClick={nextMonth}>›</button>
+        <button type="button" className={navBtn} onClick={prevMonth}>
+          ‹
+        </button>
+        <span className={navLabel}>
+          {MONTH_NAMES[month]} {year}
+        </span>
+        <button type="button" className={navBtn} onClick={nextMonth}>
+          ›
+        </button>
       </div>
 
       {/* Day headers */}
       <div className={headerGrid}>
         {DAY_NAMES.map((d) => (
-          <div key={d} className={headerCell}>{d}</div>
+          <div key={d} className={headerCell}>
+            {d}
+          </div>
         ))}
       </div>
 
@@ -142,7 +162,10 @@ export function MonthView({
           // Items to render: tasks first, then quests, then habits, max MAX_SHOWN
           const taskItems = dayTasks.slice(0, MAX_SHOWN);
           const questItems = todayQuests.slice(0, Math.max(0, MAX_SHOWN - taskItems.length));
-          const habitItems = dayHabits.slice(0, Math.max(0, MAX_SHOWN - taskItems.length - questItems.length));
+          const habitItems = dayHabits.slice(
+            0,
+            Math.max(0, MAX_SHOWN - taskItems.length - questItems.length),
+          );
 
           return (
             <div
@@ -153,9 +176,7 @@ export function MonthView({
               {/* Day number */}
               <div className={dayNumRow}>
                 <span className={cn(dayNumber, isToday && dayNumberToday)}>{dayNum}</span>
-                {totalItems > 0 && (
-                  <span className={itemCount}>{totalItems}</span>
-                )}
+                {totalItems > 0 && <span className={itemCount}>{totalItems}</span>}
               </div>
 
               {/* Task pills */}
@@ -183,7 +204,10 @@ export function MonthView({
                     key={q.id}
                     className={cn(questPill, q.done && taskPillDone)}
                     title={q.title}
-                    onClick={(e) => { e.stopPropagation(); onNavigateTab?.('quests'); }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onNavigateTab?.('schedule');
+                    }}
                   >
                     <span className={pillIcon}>{q.habitIcon ?? '⚡'}</span>
                     <span className={cn(pillName, q.done && pillNameDone)}>{q.title}</span>
@@ -201,7 +225,10 @@ export function MonthView({
                       className={cn(habitPill, done && taskPillDone)}
                       style={{ borderLeftColor: color }}
                       title={h.name}
-                      onClick={(e) => { e.stopPropagation(); onNavigateTab?.('habits'); }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onNavigateTab?.('habits');
+                      }}
                     >
                       <span className={pillIcon}>{h.icon}</span>
                       <span className={cn(pillName, done && pillNameDone)}>{h.name}</span>
@@ -210,9 +237,7 @@ export function MonthView({
                   );
                 })}
 
-                {overflow > 0 && (
-                  <div className={overflowBadge}>+{overflow} more</div>
-                )}
+                {overflow > 0 && <div className={overflowBadge}>+{overflow} more</div>}
               </div>
             </div>
           );
@@ -234,24 +259,19 @@ const headerGrid = 'grid grid-cols-7 border-b border-[var(--border)] shrink-0';
 const headerCell =
   'text-center text-[9px] font-bold tracking-[0.1em] uppercase text-[var(--text-lo)] py-1.5 font-[var(--font-title)]';
 
-const calendarGrid =
-  'flex-1 overflow-y-auto grid grid-cols-7 auto-rows-[minmax(80px,1fr)]';
+const calendarGrid = 'flex-1 overflow-y-auto grid grid-cols-7 auto-rows-[minmax(80px,1fr)]';
 
-const emptyCell =
-  'bg-[var(--panel)] border-b border-r border-[var(--border)] opacity-20';
+const emptyCell = 'bg-[var(--panel)] border-b border-r border-[var(--border)] opacity-20';
 
 const dayCell =
   'bg-[var(--panel)] border-b border-r border-[var(--border)] px-1.5 pt-1 pb-1.5 cursor-pointer hover:bg-[oklch(0.74_0.17_85_/_0.04)] transition-colors flex flex-col gap-0.5 min-h-[80px] overflow-hidden';
-const dayCellToday =
-  'bg-[oklch(0.74_0.17_85_/_0.05)] border-[oklch(0.74_0.17_85_/_0.3)]';
+const dayCellToday = 'bg-[oklch(0.74_0.17_85_/_0.05)] border-[oklch(0.74_0.17_85_/_0.3)]';
 
 const dayNumRow = 'flex items-center justify-between mb-0.5 shrink-0';
-const dayNumber =
-  'text-[11px] font-semibold text-[var(--text-mid)] leading-none';
+const dayNumber = 'text-[11px] font-semibold text-[var(--text-mid)] leading-none';
 const dayNumberToday =
   'w-[18px] h-[18px] rounded-full bg-[var(--gold)] text-[oklch(0.15_0_0)] text-[10px] font-bold flex items-center justify-center leading-none';
-const itemCount =
-  'text-[8px] font-bold text-[var(--text-lo)] tabular-nums leading-none';
+const itemCount = 'text-[8px] font-bold text-[var(--text-lo)] tabular-nums leading-none';
 
 const pillList = 'flex flex-col gap-0.5 flex-1 overflow-hidden';
 
@@ -265,8 +285,7 @@ const habitPill =
   'flex items-center gap-1 pl-1.5 pr-1 py-[2px] rounded-sm border-l-[2px] bg-[oklch(0.66_0.22_295_/_0.07)] overflow-hidden shrink-0 cursor-pointer';
 
 const pillIcon = 'text-[9px] leading-none shrink-0';
-const pillName =
-  'flex-1 text-[9px] text-[var(--text-hi)] leading-tight truncate min-w-0';
+const pillName = 'flex-1 text-[9px] text-[var(--text-hi)] leading-tight truncate min-w-0';
 const pillNameDone = 'line-through text-[var(--text-lo)]';
 const pillCheck = 'text-[8px] text-[oklch(0.76_0.14_162)] shrink-0 leading-none';
 

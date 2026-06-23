@@ -356,7 +356,7 @@ export function WeekView({
                               <div
                                 className={cn(miniTask, miniTaskQuest, q.done && miniTaskDone)}
                                 title={q.title}
-                                onClick={() => onNavigateTab?.('quests')}
+                                onClick={() => onNavigateTab?.('schedule')}
                               >
                                 <span className={miniTaskIcon}>{q.habitIcon ?? '📌'}</span>
                                 <span className={miniTaskName}>{q.title}</span>
