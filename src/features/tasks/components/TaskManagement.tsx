@@ -105,11 +105,19 @@ export function TaskManagement() {
   // Habit logs covering current week + viewed week (contiguous range)
   const { data: weekHabitLogs = [] } = useHabitLogsRange(logRangeFrom, logRangeTo);
 
-  // Day-specific queries — fire whenever selectedDate changes
-  const { data: apiTasksForDay = [], isFetching: isFetchingDayTasks } = useTasks(
-    selectedDateStr,
-    selectedDateStr,
+  // Day-specific task list derived client-side from already-loaded apiTasks —
+  // no extra API call when navigating dates.
+  const apiTasksForDay = useMemo(
+    () =>
+      apiTasks.filter((t) => {
+        if (!t.startDate) return true; // unscheduled — always visible
+        const end = t.endDate ?? t.startDate;
+        return selectedDateStr >= t.startDate && selectedDateStr <= end;
+      }),
+    [apiTasks, selectedDateStr],
   );
+
+  // Logs for the selected day (lightweight; React Query caches keyed by date).
   const { data: apiTaskLogsForDay = [] } = useTaskLogs(selectedDateStr);
   const { data: apiHabitLogsForDay = [] } = useHabitLogs(selectedDateStr);
 
@@ -240,17 +248,13 @@ export function TaskManagement() {
     if (apiMerged.length === 0) return;
 
     // ── Day-specific task UITasks (correct slot + done for selected date) ───────
-    const dayTaskItems: UITask[] = isFetchingDayTasks
-      ? []
-      : apiTasksForDay.map((t) => {
-          const log = apiTaskLogsForDay.find((l) => l.taskId === t.id);
-          // Slot comes from the task's block on the selected date (if any).
-          const blockTime = blockMap.get(`${t.id}|${selectedDateStr}`)?.startTime;
-          const ui = taskToUITask(t, log, blockTime);
-          // For multi-day tasks: done = log exists for this date OR task is fully done
-          const done = ui.isMultiDay ? !!log || t.status === 'done' : t.status === 'done';
-          return withProject({ ...ui, day: selectedOffset, done });
-        });
+    const dayTaskItems: UITask[] = apiTasksForDay.map((t) => {
+      const log = apiTaskLogsForDay.find((l) => l.taskId === t.id);
+      const blockTime = blockMap.get(`${t.id}|${selectedDateStr}`)?.startTime;
+      const ui = taskToUITask(t, log, blockTime);
+      const done = ui.isMultiDay ? !!log || t.status === 'done' : t.status === 'done';
+      return withProject({ ...ui, day: selectedOffset, done });
+    });
 
     // ── Habit UITasks for non-today selected dates ───────────────────────────────
     // For today, apiMerged already contains the correct habits (day=0).
@@ -292,7 +296,6 @@ export function TaskManagement() {
     apiMerged,
     apiTasksForDay,
     apiTaskLogsForDay,
-    isFetchingDayTasks,
     apiHabits,
     apiHabitLogsForDay,
     cancelledHabitIdsForDay,
@@ -577,7 +580,7 @@ export function TaskManagement() {
               allTasks={tasks}
               selectedDate={selectedDate}
               setSelectedDate={setSelectedDate}
-              isLoadingDay={isFetchingDayTasks}
+              isLoadingDay={false}
               expandedId={expandedId}
               setExpandedId={setExpandedId}
               onToggleDone={handleToggleDone}
@@ -590,9 +593,7 @@ export function TaskManagement() {
               splitMode={splitMode}
             />
           )}
-          {view === 'all' && (
-            <TaskAllView tasks={tasks} filterCat={filterCat} onEdit={handleEditTask} />
-          )}
+          {view === 'all' && <TaskAllView tasks={visible} onEdit={handleEditTask} />}
         </div>
       </div>
 

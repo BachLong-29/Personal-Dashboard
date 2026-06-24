@@ -43,13 +43,12 @@ const PRIORITY_ORDER: Record<string, number> = {
 
 interface TaskAllViewProps {
   tasks: UITask[];
-  filterCat: string;
   onEdit?: (task: UITask) => void;
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-export function TaskAllView({ tasks, filterCat, onEdit }: TaskAllViewProps) {
+export function TaskAllView({ tasks, onEdit }: TaskAllViewProps) {
   const [sortBy, setSortBy] = useState<SortByLocal>('deadline');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [deletingTask, setDeletingTask] = useState<UITask | null>(null);
@@ -87,11 +86,7 @@ export function TaskAllView({ tasks, filterCat, onEdit }: TaskAllViewProps) {
     });
   }
 
-  const taskOnly = useMemo(
-    () =>
-      tasks.filter((t) => t.source === 'task' && (filterCat === 'all' || t.tagId === filterCat)),
-    [tasks, filterCat],
-  );
+  const taskOnly = useMemo(() => tasks.filter((t) => t.source === 'task'), [tasks]);
 
   const sorted = useMemo(() => {
     let list = [...taskOnly];

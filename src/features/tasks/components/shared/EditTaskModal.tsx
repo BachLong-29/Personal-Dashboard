@@ -138,12 +138,14 @@ export function EditTaskModal({ task, open, onClose, onSave, saving }: EditTaskM
           }
         : null;
 
-    // Detect date/duration change on a task that already has scheduled blocks
-    const startDateChanged = resolvedStartDate !== task.startDate;
+    // Detect date/duration change on a task that already has scheduled blocks.
+    // Only fire the prompt when moving to a new date — not when clearing it,
+    // because cleared startDate orphans the blocks regardless.
+    const startDateMoved = !!resolvedStartDate && resolvedStartDate !== task.startDate;
     const durationChanged = resolvedDuration !== task.est;
     const hasBlocks = blocks.length > 0;
 
-    if (hasBlocks && (startDateChanged || durationChanged) && blockPrompt === null) {
+    if (hasBlocks && (startDateMoved || durationChanged) && blockPrompt === null) {
       // Pause and ask the user whether to update sessions
       setBlockPrompt({ payload, plannerData: pendingPlanner, updateSessions: false });
       return;
