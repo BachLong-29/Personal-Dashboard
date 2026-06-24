@@ -457,7 +457,7 @@ export function ScheduleDayViewPanel({
       )}
 
       {/* TaskDayView */}
-      <div className="flex-1 min-h-0 overflow-hidden">
+      <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
         <TaskDayView
           tasks={visibleTasks}
           allTasks={tasks}
@@ -489,7 +489,6 @@ export function ScheduleDayViewPanel({
       )}
       <AddTaskModal
         open={showAddTaskModal}
-        defaultDate={selectedDateStr}
         onClose={() => setShowAddTaskModal(false)}
         onSaved={() => setShowAddTaskModal(false)}
       />

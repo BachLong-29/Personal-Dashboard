@@ -105,7 +105,7 @@ export function Modal({
     <div
       className={cn(
         'fixed inset-0 z-[1000] flex justify-center',
-        bottomSheet ? 'items-end sm:items-center sm:p-4' : 'items-end sm:items-center sm:p-4',
+        bottomSheet ? 'items-end sm:items-center sm:p-4' : 'items-center p-4',
       )}
       style={{ background: 'oklch(0.03 0.02 270 / 0.7)', backdropFilter: 'blur(6px)' }}
       onClick={(e) => e.target === e.currentTarget && onClose()}

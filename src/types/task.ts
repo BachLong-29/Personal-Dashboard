@@ -60,7 +60,8 @@ export interface UpdateTaskPayload {
   color?: TaskColor;
   icon?: string;
   status?: TaskStatus;
-  duration?: number;
+  /** null to remove the duration */
+  duration?: number | null;
   /** null to remove the scheduled date and make the task a floating/backlog item */
   startDate?: string | null;
   endDate?: string | null;

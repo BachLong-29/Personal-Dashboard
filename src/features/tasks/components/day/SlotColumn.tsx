@@ -9,7 +9,7 @@ import { cn } from '@/libs/utils';
 import { type SlotMeta, type UITask } from '../../data/mock';
 import { QuestCard } from '../shared/QuestCard';
 
-const PAGE_SIZE = 4;
+const PAGE_SIZE = 10;
 
 // ─── Droppable slot column ────────────────────────────────────────────────────
 
@@ -43,8 +43,15 @@ export function SlotColumn({
   const { setNodeRef, isOver } = useDroppable({ id: slot.id });
   const [showAll, setShowAll] = useState(false);
 
-  const visibleTasks = showAll ? tasks : tasks.slice(0, PAGE_SIZE);
-  const hiddenCount = tasks.length - visibleTasks.length;
+  const sortedTasks = [...tasks].sort((a, b) => {
+    if (!a.startTime && !b.startTime) return 0;
+    if (!a.startTime) return 1;
+    if (!b.startTime) return -1;
+    return a.startTime.localeCompare(b.startTime);
+  });
+
+  const visibleTasks = showAll ? sortedTasks : sortedTasks.slice(0, PAGE_SIZE);
+  const hiddenCount = sortedTasks.length - visibleTasks.length;
 
   return (
     <div
@@ -195,21 +202,30 @@ function DraggableCard({
     <div
       ref={setNodeRef}
       style={style}
-      className={cn('touch-none', isDragging && 'opacity-40')}
+      className={cn('touch-none flex items-start gap-2', isDragging && 'opacity-40')}
       {...attributes}
       {...listeners}
     >
-      <QuestCard
-        task={task}
-        expanded={expanded}
-        onExpand={onExpand}
-        onToggleDone={onToggleDone}
-        onReschedule={onReschedule}
-        onCompleteTask={onCompleteTask}
-        onEdit={onEdit}
-        onClone={onClone}
-        onMoveToNextDay={onMoveToNextDay}
-      />
+      {/* Time — outside the card */}
+      <div className="w-[34px] shrink-0 text-right pt-[10px]">
+        <span className="text-[9px] font-mono leading-none text-[var(--text-lo)] tabular-nums">
+          {task.startTime ?? '--:--'}
+        </span>
+      </div>
+
+      <div className="flex-1 min-w-0">
+        <QuestCard
+          task={task}
+          expanded={expanded}
+          onExpand={onExpand}
+          onToggleDone={onToggleDone}
+          onReschedule={onReschedule}
+          onCompleteTask={onCompleteTask}
+          onEdit={onEdit}
+          onClone={onClone}
+          onMoveToNextDay={onMoveToNextDay}
+        />
+      </div>
     </div>
   );
 }

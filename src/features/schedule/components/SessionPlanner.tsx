@@ -41,10 +41,10 @@ interface SessionPlannerProps {
 
 function eachDay(from: string, to: string): string[] {
   const out: string[] = [];
-  const [fy, fm, fd] = from.split('-').map(Number);
-  const [ty, tm, td] = to.split('-').map(Number);
-  const cur = new Date(fy!, fm! - 1, fd!);
-  const end = new Date(ty!, tm! - 1, td!);
+  const fp = from.split('-');
+  const tp = to.split('-');
+  const cur = new Date(Number(fp[0]), Number(fp[1]) - 1, Number(fp[2]));
+  const end = new Date(Number(tp[0]), Number(tp[1]) - 1, Number(tp[2]));
   while (cur <= end) {
     out.push(
       [
@@ -59,8 +59,8 @@ function eachDay(from: string, to: string): string[] {
 }
 
 function addMinutes(time: string, minutes: number): string {
-  const [h, m] = time.split(':').map(Number);
-  const total = Math.min(23 * 60 + 59, h! * 60 + m! + minutes);
+  const parts = time.split(':');
+  const total = Math.min(23 * 60 + 59, Number(parts[0]) * 60 + Number(parts[1]) + minutes);
   return `${String(Math.floor(total / 60)).padStart(2, '0')}:${String(total % 60).padStart(2, '0')}`;
 }
 
@@ -71,8 +71,8 @@ function fmtDur(min: number): string {
 }
 
 function fmtDate(d: string): string {
-  const [y, m, day] = d.split('-').map(Number);
-  return new Date(y!, m! - 1, day!).toLocaleDateString('en-US', {
+  const p = d.split('-');
+  return new Date(Number(p[0]), Number(p[1]) - 1, Number(p[2])).toLocaleDateString('en-US', {
     weekday: 'short',
     month: 'short',
     day: 'numeric',
@@ -80,6 +80,8 @@ function fmtDate(d: string): string {
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
+
+const MAX_BLOCK_MINUTES = 1440; // absolute hard cap (24h)
 
 export function SessionPlanner({ open, task, onClose }: SessionPlannerProps) {
   const { data: blocks = [] } = useTaskBlocks(task?.id);
@@ -92,6 +94,9 @@ export function SessionPlanner({ open, task, onClose }: SessionPlannerProps) {
   const [time, setTime] = useState('09:00');
   const [durStr, setDurStr] = useState('');
 
+  // Max duration per session (used for auto-fill and shown as a hint on inputs)
+  const [maxPerSessionStr, setMaxPerSessionStr] = useState('240');
+
   // Inline-edit state — the block currently being edited + its draft values
   const [editId, setEditId] = useState<string | null>(null);
   const [eDate, setEDate] = useState('');
@@ -102,6 +107,32 @@ export function SessionPlanner({ open, task, onClose }: SessionPlannerProps) {
   const allocated = useMemo(() => blocks.reduce((s, b) => s + b.duration, 0), [blocks]);
   const remaining = Math.max(0, estimate - allocated);
   const pct = estimate > 0 ? Math.min(100, Math.round((allocated / estimate) * 100)) : 0;
+
+  const maxPerSession = Math.min(
+    MAX_BLOCK_MINUTES,
+    Math.max(1, parseInt(maxPerSessionStr, 10) || 240),
+  );
+
+  // Validation helpers
+  const addDurNum = parseInt(durStr, 10);
+  const addDurError =
+    durStr && !Number.isNaN(addDurNum)
+      ? addDurNum > MAX_BLOCK_MINUTES
+        ? `Tối đa ${MAX_BLOCK_MINUTES} phút (24h)`
+        : addDurNum > maxPerSession
+          ? `Vượt giới hạn ${maxPerSession} phút/buổi`
+          : ''
+      : '';
+
+  const editDurNum = parseInt(eDur, 10);
+  const editDurError =
+    eDur && !Number.isNaN(editDurNum)
+      ? editDurNum > MAX_BLOCK_MINUTES
+        ? `Tối đa ${MAX_BLOCK_MINUTES} phút`
+        : editDurNum > maxPerSession
+          ? `Vượt ${maxPerSession} phút`
+          : ''
+      : '';
 
   // Insights range: task span + any block dates (blocks may sit outside the span)
   const range = useMemo(() => {
@@ -143,7 +174,7 @@ export function SessionPlanner({ open, task, onClose }: SessionPlannerProps) {
     if (!task) return;
     const dur = parseInt(durStr, 10);
     const useDate = date || task.startDate;
-    if (!useDate || Number.isNaN(dur) || dur < 1) return;
+    if (!useDate || Number.isNaN(dur) || dur < 1 || dur > MAX_BLOCK_MINUTES) return;
     createBlock.mutate(
       { sourceType: 'task', sourceId: task.id, date: useDate, startTime: time, duration: dur },
       { onSuccess: () => setDurStr('') },
@@ -154,7 +185,8 @@ export function SessionPlanner({ open, task, onClose }: SessionPlannerProps) {
     if (!task || remaining <= 0) return;
     const days = eachDay(task.startDate, task.endDate ?? task.startDate);
     const n = days.length || 1;
-    const base = Math.max(15, Math.round(remaining / n / 15) * 15);
+    // Cap per-session duration at maxPerSession, rounded to 15-min intervals, min 15
+    const base = Math.max(15, Math.min(maxPerSession, Math.round(remaining / n / 15) * 15));
     let rem = remaining;
     for (const d of days) {
       if (rem <= 0) break;
@@ -169,12 +201,13 @@ export function SessionPlanner({ open, task, onClose }: SessionPlannerProps) {
       rem -= dur;
     }
     if (rem > 0) {
+      // Overflow goes into an extra block capped at maxPerSession
       await createBlock.mutateAsync({
         sourceType: 'task',
         sourceId: task.id,
-        date: days[n - 1]!,
+        date: days.at(-1) ?? task.startDate,
         startTime: '13:00',
-        duration: rem,
+        duration: Math.min(rem, maxPerSession),
       });
     }
   }
@@ -193,7 +226,7 @@ export function SessionPlanner({ open, task, onClose }: SessionPlannerProps) {
   function saveEdit() {
     if (!editId) return;
     const dur = parseInt(eDur, 10);
-    if (!eDate || !eTime || Number.isNaN(dur) || dur < 1) return;
+    if (!eDate || !eTime || Number.isNaN(dur) || dur < 1 || dur > MAX_BLOCK_MINUTES) return;
     updateBlock.mutate(
       { id: editId, date: eDate, startTime: eTime, duration: dur },
       { onSuccess: () => setEditId(null) },
@@ -203,9 +236,9 @@ export function SessionPlanner({ open, task, onClose }: SessionPlannerProps) {
   const busy = createBlock.isPending || updateBlock.isPending || deleteBlock.isPending;
 
   return (
-    <Modal open={open} onClose={onClose} maxWidth="520px">
+    <Modal open={open} onClose={onClose} maxWidth="520px" bottomSheet scrollable>
       <ModalHead tag="SESSION PLANNER" title={`${task.icon ?? '❖'} ${task.name}`} />
-      <ModalBody className="max-h-[calc(80vh-130px)] overflow-y-auto flex flex-col gap-4">
+      <ModalBody scrollable className="flex flex-col gap-4 px-4 sm:px-6">
         {/* Allocation bar */}
         <div>
           <div className="flex items-center justify-between mb-1.5 text-[10px]">
@@ -276,21 +309,24 @@ export function SessionPlanner({ open, task, onClose }: SessionPlannerProps) {
                       className={inputCls}
                     />
                   </Field>
-                  <Field label="Phút">
+                  <Field label={`Phút (≤${maxPerSession})`}>
                     <input
                       type="number"
                       min={1}
-                      max={1440}
+                      max={MAX_BLOCK_MINUTES}
                       value={eDur}
                       onChange={(e) => setEDur(e.target.value)}
-                      className={cn(inputCls, 'w-[64px]')}
+                      className={cn(inputCls, 'w-[72px]', editDurError && 'border-[var(--rose)]')}
                     />
                   </Field>
                   <div className="flex items-center gap-1 ml-auto">
+                    {editDurError && (
+                      <span className="text-[9px] text-[var(--rose)] mr-1">{editDurError}</span>
+                    )}
                     <button
                       type="button"
                       onClick={saveEdit}
-                      disabled={busy || !eDur}
+                      disabled={busy || !eDur || !!editDurError}
                       className="px-2.5 py-1.5 text-[10px] font-bold rounded-[var(--r-sm)] border border-[oklch(0.76_0.14_162_/_0.4)] text-[var(--mint)] hover:bg-[oklch(0.76_0.14_162_/_0.1)] transition-all disabled:opacity-40 disabled:cursor-not-allowed"
                       title="Lưu"
                     >
@@ -331,6 +367,11 @@ export function SessionPlanner({ open, task, onClose }: SessionPlannerProps) {
                 </span>
                 <span className="text-[9px] text-[var(--text-lo)] ml-auto tabular-nums">
                   {fmtDur(b.duration)}
+                  {b.duration > maxPerSession && (
+                    <span className="ml-1 text-[var(--gold)]" title="Vượt max/buổi">
+                      ⚠
+                    </span>
+                  )}
                 </span>
                 {hard && (
                   <span className="text-[9px] text-[var(--rose)]" title="Trùng giờ">
@@ -366,58 +407,89 @@ export function SessionPlanner({ open, task, onClose }: SessionPlannerProps) {
         </div>
 
         {/* Add-session form */}
-        <div className="flex items-end gap-2 pt-1 border-t border-[var(--border)]">
-          <Field label="Ngày">
-            <input
-              type="date"
-              value={date || task.startDate}
-              min={task.startDate}
-              onChange={(e) => setDate(e.target.value)}
-              className={inputCls}
-            />
-          </Field>
-          <Field label="Giờ">
-            <input
-              type="time"
-              value={time}
-              onChange={(e) => setTime(e.target.value)}
-              className={inputCls}
-            />
-          </Field>
-          <Field label="Phút">
-            <input
-              type="number"
-              min={1}
-              max={1440}
-              placeholder={remaining > 0 ? String(Math.min(remaining, 120)) : '60'}
-              value={durStr}
-              onChange={(e) => setDurStr(e.target.value)}
-              className={cn(inputCls, 'w-[64px]')}
-            />
-          </Field>
-          <button
-            type="button"
-            onClick={handleAdd}
-            disabled={busy || !durStr}
-            className="px-3 py-1.5 text-[10px] font-bold rounded-[var(--r-sm)] border border-[var(--border)] text-[var(--text-mid)] hover:text-[var(--text-hi)] hover:border-[oklch(0.74_0.17_85_/_0.4)] transition-all disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
-          >
-            + Thêm
-          </button>
+        <div className="flex flex-col gap-1.5 pt-2 border-t border-[var(--border)]">
+          <div className="flex flex-wrap items-end gap-2">
+            <Field label="Ngày">
+              <input
+                type="date"
+                value={date || task.startDate}
+                min={task.startDate}
+                onChange={(e) => setDate(e.target.value)}
+                className={inputCls}
+              />
+            </Field>
+            <Field label="Giờ">
+              <input
+                type="time"
+                value={time}
+                onChange={(e) => setTime(e.target.value)}
+                className={inputCls}
+              />
+            </Field>
+            <Field label="Phút">
+              <input
+                type="number"
+                min={1}
+                max={MAX_BLOCK_MINUTES}
+                placeholder={
+                  remaining > 0
+                    ? String(Math.min(remaining, maxPerSession))
+                    : String(Math.min(60, maxPerSession))
+                }
+                value={durStr}
+                onChange={(e) => setDurStr(e.target.value)}
+                className={cn(inputCls, 'w-[72px]', addDurError && 'border-[var(--rose)]')}
+              />
+            </Field>
+            <button
+              type="button"
+              onClick={handleAdd}
+              disabled={busy || !durStr || !!addDurError}
+              className="px-3 py-1.5 text-[10px] font-bold rounded-[var(--r-sm)] border border-[var(--border)] text-[var(--text-mid)] hover:text-[var(--text-hi)] hover:border-[oklch(0.74_0.17_85_/_0.4)] transition-all disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
+            >
+              + Thêm
+            </button>
+          </div>
+          {/* Hint / error below the whole input row — keeps all fields the same height */}
+          {addDurError ? (
+            <span className="text-[9px] text-[var(--rose)]">{addDurError}</span>
+          ) : (
+            <span className="text-[9px] text-[var(--text-lo)]">max {maxPerSession} phút/buổi</span>
+          )}
         </div>
       </ModalBody>
 
-      <ModalFoot>
-        <div className="flex items-center justify-between gap-3 w-full">
-          {remaining > 0 && estimate > 0 ? (
-            <Button variant="ghost" onClick={handleAutoFill} disabled={busy}>
-              ⚡ Auto-fill ({fmtDur(remaining)})
+      <ModalFoot className="shrink-0">
+        <div className="flex items-center justify-between gap-3 w-full flex-wrap">
+          {/* Max per session — compact inline config */}
+          <div className="flex items-center gap-1.5">
+            <span className="text-[8px] uppercase tracking-[0.1em] text-[var(--text-lo)] font-bold font-[var(--font-title)] whitespace-nowrap">
+              Max/buổi
+            </span>
+            <input
+              type="number"
+              min={15}
+              max={MAX_BLOCK_MINUTES}
+              value={maxPerSessionStr}
+              onChange={(e) => setMaxPerSessionStr(e.target.value)}
+              className={cn(inputCls, 'w-[64px] py-1 text-[10px]')}
+              title="Thời lượng tối đa mỗi buổi (phút) — dùng cho Auto-fill và cảnh báo nhập liệu"
+            />
+            <span className="text-[9px] text-[var(--text-lo)]">phút</span>
+          </div>
+
+          <div className="flex items-center gap-2 ml-auto">
+            {remaining > 0 && estimate > 0 ? (
+              <Button variant="ghost" onClick={handleAutoFill} disabled={busy}>
+                ⚡ Auto-fill ({fmtDur(remaining)})
+              </Button>
+            ) : (
+              <span />
+            )}
+            <Button variant="primary" onClick={onClose} disabled={busy}>
+              {allocated > 0 ? '✓ Xong' : 'Để sau'}
             </Button>
-          ) : (
-            <span />
-          )}
-          <Button variant="primary" onClick={onClose} disabled={busy}>
-            {allocated > 0 ? '✓ Xong' : 'Để sau'}
-          </Button>
+          </div>
         </div>
       </ModalFoot>
     </Modal>

@@ -297,7 +297,6 @@ export function DayView({ date, display, quests = [], onToggle, onDateChange }: 
 
       <AddTaskModal
         open={showModal && !editing}
-        defaultDate={date}
         defaultValues={
           cloning
             ? {

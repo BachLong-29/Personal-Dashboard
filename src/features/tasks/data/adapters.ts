@@ -34,6 +34,12 @@ export function dayOffset(dateStr?: string): number {
   return Math.round((d.getTime() - today.getTime()) / 86_400_000);
 }
 
+/** Parse a YYYY-MM-DD string as LOCAL midnight (not UTC) to avoid off-by-one in UTC+ zones. */
+export function parseDateLocal(dateStr: string): Date {
+  const parts = dateStr.split('-');
+  return new Date(Number(parts[0]), Number(parts[1] ?? '1') - 1, Number(parts[2] ?? '1'));
+}
+
 /** Human-readable deadline label */
 export function formatDeadline(dateStr?: string): string {
   if (!dateStr) return '–';
@@ -43,12 +49,12 @@ export function formatDeadline(dateStr?: string): string {
   if (offset === -1) return 'Yesterday';
   if (offset < 0) return `${Math.abs(offset)}d ago`;
   if (offset <= 7)
-    return new Date(dateStr).toLocaleDateString('en-US', {
+    return parseDateLocal(dateStr).toLocaleDateString('en-US', {
       weekday: 'short',
       month: 'short',
       day: 'numeric',
     });
-  return new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  return parseDateLocal(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
 
 /** Overdue escalation level based on how many days past the due date */

@@ -11,7 +11,9 @@ import { DatePicker } from '@/components/ui/DatePicker';
 import { Input } from '@/components/ui/Input';
 import type { TaskColor, TaskStatus, UpdateTaskPayload } from '@/types';
 import { SessionPlanner, type PlannerTask } from '@/features/schedule/components/SessionPlanner';
+import { useTaskBlocks } from '@/features/schedule/hooks/useScheduleBlocks';
 
+import { parseDateLocal } from '../../data/adapters';
 import type { UITask } from '../../data/mock';
 import { TaskForm, type TaskFormValues, type TaskFormHandle } from './TaskForm';
 
@@ -51,11 +53,21 @@ export function EditTaskModal({ task, open, onClose, onSave, saving }: EditTaskM
   const [canSave, setCanSave] = useState(false);
   const [plannerTask, setPlannerTask] = useState<PlannerTask | null>(null);
 
+  // Block update prompt — shown when startDate or duration changes on a task with existing blocks
+  const [blockPrompt, setBlockPrompt] = useState<{
+    payload: UpdateTaskPayload;
+    plannerData: PlannerTask | null;
+    updateSessions: boolean;
+  } | null>(null);
+
   // Defer state — reset whenever task changes (key prop on outer element handles this)
   const [isDeferred, setIsDeferred] = useState(false);
   const [deferChipKey, setDeferChipKey] = useState<DeferReasonKey | null>(null);
   const [deferCustom, setDeferCustom] = useState('');
   const [deferDate, setDeferDate] = useState<Date>(tomorrow);
+
+  // Fetch existing blocks so we can warn when date/duration changes
+  const { data: blocks = [] } = useTaskBlocks(task?.sourceId ?? '');
 
   if (!task) return null;
 
@@ -68,6 +80,7 @@ export function EditTaskModal({ task, open, onClose, onSave, saving }: EditTaskM
 
   function handleClose() {
     resetDefer();
+    setBlockPrompt(null);
     onClose();
   }
 
@@ -75,8 +88,13 @@ export function EditTaskModal({ task, open, onClose, onSave, saving }: EditTaskM
     if (!task?.sourceId) return;
 
     const durationNum = values.duration ? parseInt(values.duration, 10) : NaN;
-    const resolvedDuration = durationNum && !Number.isNaN(durationNum) ? durationNum : undefined;
-    const resolvedStartDate = values.startDate ? toLocalDate(values.startDate) : undefined;
+    const resolvedDuration =
+      durationNum && !Number.isNaN(durationNum) ? durationNum : task.est != null ? null : undefined;
+    const resolvedStartDate = values.startDate
+      ? toLocalDate(values.startDate)
+      : task.startDate
+        ? null
+        : undefined;
 
     const payload: UpdateTaskPayload = {
       name: values.name,
@@ -103,7 +121,7 @@ export function EditTaskModal({ task, open, onClose, onSave, saving }: EditTaskM
       payload.deferReason = null;
     }
 
-    // Open SessionPlanner after save when task goes from no-date → has startDate + duration
+    // After save: open SessionPlanner when task goes from no-date → has startDate + duration
     const effectiveStartDate = payload.startDate ?? undefined;
     const hadNoDate = !task.startDate;
     const nowHasDateAndDuration = !!effectiveStartDate && !!resolvedDuration;
@@ -120,8 +138,62 @@ export function EditTaskModal({ task, open, onClose, onSave, saving }: EditTaskM
           }
         : null;
 
+    // Detect date/duration change on a task that already has scheduled blocks
+    const startDateChanged = resolvedStartDate !== task.startDate;
+    const durationChanged = resolvedDuration !== task.est;
+    const hasBlocks = blocks.length > 0;
+
+    if (hasBlocks && (startDateChanged || durationChanged) && blockPrompt === null) {
+      // Pause and ask the user whether to update sessions
+      setBlockPrompt({ payload, plannerData: pendingPlanner, updateSessions: false });
+      return;
+    }
+
+    // Proceed with save (either no block conflict, or user already made a choice)
+    const openSessions = blockPrompt?.updateSessions ?? false;
+    setBlockPrompt(null);
+
     onSave(task.sourceId, payload, () => {
-      if (pendingPlanner) setPlannerTask(pendingPlanner);
+      if (pendingPlanner || openSessions) {
+        const planData = pendingPlanner ?? {
+          id: task.sourceId,
+          name: values.name,
+          icon: values.icon,
+          color: values.color,
+          duration: resolvedDuration,
+          startDate: effectiveStartDate ?? task.startDate ?? '',
+          endDate: values.endDate ? toLocalDate(values.endDate) : task.endDate,
+        };
+        setPlannerTask(planData as PlannerTask);
+      }
+    });
+  }
+
+  function handleBlockChoice(updateSessions: boolean) {
+    if (!blockPrompt) return;
+    setBlockPrompt({ ...blockPrompt, updateSessions });
+    // Trigger save immediately with the choice embedded
+    const updated = { ...blockPrompt, updateSessions };
+    if (!task?.sourceId) return;
+
+    const openSessions = updated.updateSessions;
+    const payload = updated.payload;
+    const plannerData = updated.plannerData;
+
+    setBlockPrompt(null);
+    onSave(task.sourceId, payload, () => {
+      if (plannerData || openSessions) {
+        const planData = plannerData ?? {
+          id: task.sourceId ?? '',
+          name: task.title,
+          icon: task.icon,
+          color: task.color,
+          duration: payload.duration,
+          startDate: payload.startDate ?? task.startDate ?? '',
+          endDate: payload.endDate ?? task.endDate,
+        };
+        setPlannerTask(planData as PlannerTask);
+      }
     });
   }
 
@@ -132,8 +204,8 @@ export function EditTaskModal({ task, open, onClose, onSave, saving }: EditTaskM
     tagId: task.tagId ?? '',
     color: (task.color as TaskColor | undefined) ?? 'gold',
     status: (task.status as TaskStatus | undefined) ?? 'todo',
-    startDate: task.startDate ? new Date(task.startDate) : null,
-    endDate: task.endDate ? new Date(task.endDate) : null,
+    startDate: task.startDate ? parseDateLocal(task.startDate) : null,
+    endDate: task.endDate ? parseDateLocal(task.endDate) : null,
     duration: task.est != null ? String(task.est) : '',
     dependencies: task.dependencies ?? [],
     attachments: task.attachments ?? [],
@@ -151,8 +223,8 @@ export function EditTaskModal({ task, open, onClose, onSave, saving }: EditTaskM
           icon: task.icon,
           color: task.color,
           duration: task.est ?? undefined,
-          startDate: toLocalDate(new Date(task.startDate)),
-          endDate: task.endDate ? toLocalDate(new Date(task.endDate)) : undefined,
+          startDate: task.startDate,
+          endDate: task.endDate,
         }
       : null;
 
@@ -161,8 +233,8 @@ export function EditTaskModal({ task, open, onClose, onSave, saving }: EditTaskM
 
   return (
     <>
-      <Modal open={open} onClose={handleClose} maxWidth="560px">
-        <div className="px-6 pt-5 pb-3 relative border-b border-[var(--border-lo)]">
+      <Modal open={open} onClose={handleClose} maxWidth="560px" bottomSheet scrollable>
+        <div className="px-4 sm:px-6 pt-4 sm:pt-5 pb-3 relative border-b border-[var(--border-lo)] shrink-0">
           <div className="flex items-center justify-between gap-2 mb-1">
             <span className="[font-family:var(--f-title)] text-[9px] tracking-[0.3em] text-[var(--gold)]">
               {t('editModal.tag')}
@@ -177,14 +249,15 @@ export function EditTaskModal({ task, open, onClose, onSave, saving }: EditTaskM
               </button>
             )}
           </div>
-          <div className="[font-family:var(--f-title)] text-[22px] font-bold tracking-[0.04em] text-[var(--text-hi)]">
-            <span className="flex items-center gap-2 truncate max-w-[420px]">
+          <div className="[font-family:var(--f-title)] text-[20px] sm:text-[22px] font-bold tracking-[0.04em] text-[var(--text-hi)]">
+            <span className="flex items-center gap-2 truncate max-w-full">
               {task.icon && <span className="text-[18px] leading-none shrink-0">{task.icon}</span>}
-              <span className="text-[18px] truncate">{task.title}</span>
+              <span className="text-[16px] sm:text-[18px] truncate">{task.title}</span>
             </span>
           </div>
         </div>
-        <ModalBody className="max-h-[calc(78vh-130px)] overflow-y-auto">
+
+        <ModalBody scrollable className="px-4 sm:px-6">
           <TaskForm
             ref={formRef}
             key={task.id}
@@ -196,8 +269,39 @@ export function EditTaskModal({ task, open, onClose, onSave, saving }: EditTaskM
             saving={saving}
           />
 
+          {/* ── Block update prompt ─────────────────────────────────────────── */}
+          {blockPrompt && (
+            <div className="mt-4 border border-[oklch(0.74_0.17_85_/_0.4)] rounded-[var(--r-sm)] bg-[oklch(0.74_0.17_85_/_0.06)] p-3 flex flex-col gap-2.5">
+              <div className="flex items-start gap-2">
+                <span className="text-[var(--gold)] text-[13px] shrink-0">⚡</span>
+                <p className="text-[11px] text-[var(--text-hi)] leading-snug">
+                  Bạn đã thay đổi ngày/thời lượng của task có <strong>{blocks.length} buổi</strong>{' '}
+                  lịch. Mở Session Planner để cập nhật sau khi lưu?
+                </p>
+              </div>
+              <div className="flex gap-2 justify-end">
+                <button
+                  type="button"
+                  onClick={() => handleBlockChoice(false)}
+                  disabled={saving}
+                  className="px-3 py-1.5 text-[10px] font-bold rounded-[var(--r-sm)] border border-[var(--border)] text-[var(--text-mid)] hover:text-[var(--text-hi)] transition-all disabled:opacity-40"
+                >
+                  Bỏ qua
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleBlockChoice(true)}
+                  disabled={saving}
+                  className="px-3 py-1.5 text-[10px] font-bold rounded-[var(--r-sm)] border border-[oklch(0.74_0.17_85_/_0.4)] text-[var(--gold)] bg-[oklch(0.74_0.17_85_/_0.08)] hover:bg-[oklch(0.74_0.17_85_/_0.15)] transition-all disabled:opacity-40"
+                >
+                  ✦ Cập nhật buổi
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* ── Defer section — single-day tasks only ──────────────────────── */}
-          {isSingleDay && (
+          {isSingleDay && !blockPrompt && (
             <div className="mt-4 border-t border-[var(--border)] pt-4">
               <Checkbox
                 checked={isDeferred}
@@ -253,22 +357,25 @@ export function EditTaskModal({ task, open, onClose, onSave, saving }: EditTaskM
             </div>
           )}
         </ModalBody>
-        <ModalFoot>
+
+        <ModalFoot className="shrink-0">
           <div className="flex items-center justify-end gap-3 w-full">
             <Button variant="ghost" onClick={handleClose} disabled={saving}>
               {t('editModal.cancel')}
             </Button>
-            <Button
-              variant="primary"
-              onClick={() => formRef.current?.submit()}
-              disabled={saving || !canSave}
-            >
-              {saving
-                ? t('editModal.saving')
-                : isDeferred
-                  ? t('editModal.reschedule')
-                  : t('editModal.save')}
-            </Button>
+            {!blockPrompt && (
+              <Button
+                variant="primary"
+                onClick={() => formRef.current?.submit()}
+                disabled={saving || !canSave}
+              >
+                {saving
+                  ? t('editModal.saving')
+                  : isDeferred
+                    ? t('editModal.reschedule')
+                    : t('editModal.save')}
+              </Button>
+            )}
           </div>
         </ModalFoot>
       </Modal>

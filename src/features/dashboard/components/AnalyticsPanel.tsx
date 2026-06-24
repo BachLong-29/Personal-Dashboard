@@ -1,12 +1,17 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import { cn } from '@/libs/utils';
 
+import type { Task, UpdateTaskPayload } from '@/types';
+import { taskToUITask } from '@/features/tasks/data/adapters';
+import { EditTaskModal } from '@/features/tasks/components/shared/EditTaskModal';
 import { useStats } from '../hooks/useStats';
 import { useStatsHeatmap } from '../hooks/useStatsHeatmap';
+import { useTasks } from '../hooks/useTasks';
+import { useUpdateTask } from '../hooks/useUpdateTask';
 import type { PendingTask } from '../hooks/useStats';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -181,6 +186,47 @@ function OverdueRow({ task, delay = 0 }: { task: PendingTask; delay?: number }) 
   );
 }
 
+// ── Unscheduled Task Row ──────────────────────────────────────────────────────
+
+const STATUS_LABEL: Record<string, string> = {
+  todo: '○ To Do',
+  in_progress: '◈ In Progress',
+  pending: '⏳ Pending',
+  waiting: '◷ Waiting',
+};
+
+function UnscheduledRow({
+  task,
+  delay = 0,
+  onEdit,
+}: {
+  task: Task;
+  delay?: number;
+  onEdit: (t: Task) => void;
+}) {
+  return (
+    <motion.button
+      type="button"
+      initial={{ opacity: 0, x: -6 }}
+      animate={{ opacity: 1, x: 0 }}
+      transition={{ duration: 0.3, delay, ease: EASE_OUT }}
+      onClick={() => onEdit(task)}
+      className="w-full flex items-center gap-2.5 px-3 py-2 bg-[var(--panel2)] border border-[var(--border)] rounded-[var(--r-sm)] hover:border-[oklch(0.74_0.17_85_/_0.35)] hover:bg-[oklch(0.74_0.17_85_/_0.04)] transition-colors text-left group"
+    >
+      <span className="text-[13px] shrink-0 leading-none">{task.icon}</span>
+      <div className="flex-1 min-w-0">
+        <div className="text-[11px] font-semibold text-[var(--text-hi)] truncate">{task.name}</div>
+        <div className="text-[9px] text-[var(--text-lo)] mt-[1px]">
+          {STATUS_LABEL[task.status] ?? task.status}
+        </div>
+      </div>
+      <span className="text-[8px] font-bold font-[var(--font-title)] tracking-[0.08em] text-[var(--text-lo)] group-hover:text-[var(--gold)] transition-colors shrink-0">
+        SCHEDULE →
+      </span>
+    </motion.button>
+  );
+}
+
 // ── Calendar Heatmap ──────────────────────────────────────────────────────────
 
 function CalendarHeatmap({ activityMap }: { activityMap: Record<string, number> }) {
@@ -324,6 +370,23 @@ function CalendarHeatmap({ activityMap }: { activityMap: Record<string, number> 
 export function AnalyticsPanel() {
   const { data, isLoading } = useStats();
   const { data: heatmapData } = useStatsHeatmap();
+  const { data: allTasks = [] } = useTasks();
+  const { mutate: updateTask, isPending: updatingTask } = useUpdateTask();
+  const [editingTask, setEditingTask] = useState<Task | null>(null);
+
+  const STATUS_ORDER: Record<string, number> = { in_progress: 0, todo: 1, pending: 2, waiting: 3 };
+  const unscheduledTasks = useMemo(
+    () =>
+      allTasks
+        .filter((t) => !t.startDate && t.status !== 'done' && t.active !== false)
+        .sort(
+          (a, b) =>
+            (STATUS_ORDER[a.status] ?? 4) - (STATUS_ORDER[b.status] ?? 4) ||
+            a.name.localeCompare(b.name),
+        ),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [allTasks],
+  );
 
   if (isLoading || !data) {
     return (
@@ -373,308 +436,355 @@ export function AnalyticsPanel() {
   const focusHours = schedule ? fmtHours(schedule.completedMinutes) : '—';
   const plannedHours = schedule ? fmtHours(schedule.plannedMinutes) : '—';
 
+  function handleSaveTask(id: string, payload: UpdateTaskPayload, onSuccess: () => void) {
+    updateTask(
+      { id, ...payload },
+      {
+        onSuccess: () => {
+          setEditingTask(null);
+          onSuccess();
+        },
+      },
+    );
+  }
+
   return (
-    <div className={outer}>
-      <div className={wrap}>
-        {/* ── KPI Row ──────────────────────────────────────────────────────── */}
-        <section>
-          <SectionTitle>Overview</SectionTitle>
-          <div className="grid grid-cols-2 gap-2">
-            <KpiCard
-              label="Completion"
-              value={`${tasks.completionRate}%`}
-              sub={`${tasks.done} / ${tasks.total} tasks done`}
-              accent="var(--mint)"
-              delay={0}
-            />
-            <KpiCard
-              label="Daily Average"
-              value={`${dailyAverage ?? 0}`}
-              sub="tasks per day · 7d"
-              accent="var(--cyan)"
-              delay={0.05}
-            />
-            <KpiCard
-              label="Focus Time · 7d"
-              value={focusHours}
-              sub={`of ${plannedHours} planned`}
-              accent="var(--violet)"
-              delay={0.1}
-            />
-            <KpiCard
-              label="Weekly Trend"
-              value={<TrendBadge pct={trendVsLastWeek} />}
-              sub="vs last week"
-              delay={0.15}
-            />
-          </div>
-        </section>
-
-        {/* ── Task Completion Trend ─────────────────────────────────────────── */}
-        <section>
-          <SectionTitle
-            right={
-              <div className="flex items-center gap-3 text-[7px] text-[var(--text-lo)]">
-                <span className="flex items-center gap-1">
-                  <span
-                    className="inline-block w-2 h-2 rounded-[2px]"
-                    style={{ background: 'oklch(0.68 0.22 295 / 0.55)' }}
-                  />
-                  Last wk
-                </span>
-                <span className="flex items-center gap-1">
-                  <span
-                    className="inline-block w-2 h-2 rounded-[2px]"
-                    style={{ background: 'oklch(0.76 0.14 162)' }}
-                  />
-                  This wk
-                </span>
-              </div>
-            }
-          >
-            Task Completion · 7d
-          </SectionTitle>
-          <motion.div
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, delay: 0.1 }}
-            className={chartCard}
-          >
-            <ResponsiveContainer width="100%" height={90}>
-              <BarChart
-                data={chartData}
-                barGap={2}
-                barCategoryGap="25%"
-                margin={{ top: 4, right: 2, bottom: 0, left: -28 }}
-              >
-                <CartesianGrid
-                  vertical={false}
-                  stroke="var(--border)"
-                  strokeDasharray="3 3"
-                  strokeOpacity={0.5}
-                />
-                <XAxis
-                  dataKey="day"
-                  tick={{ fontSize: 7, fill: 'var(--text-lo)', fontFamily: 'var(--f-body)' }}
-                  tickLine={false}
-                  axisLine={false}
-                />
-                <YAxis
-                  tick={{ fontSize: 7, fill: 'var(--text-lo)', fontFamily: 'var(--f-body)' }}
-                  tickLine={false}
-                  axisLine={false}
-                  allowDecimals={false}
-                />
-                <Tooltip content={<ChartTooltip />} cursor={{ fill: 'oklch(1 0 0 / 0.03)' }} />
-                <Bar
-                  dataKey="lastWeek"
-                  fill="oklch(0.68 0.22 295)"
-                  fillOpacity={0.45}
-                  radius={[2, 2, 0, 0]}
-                  isAnimationActive
-                  animationDuration={700}
-                  animationEasing="ease-out"
-                />
-                <Bar
-                  dataKey="thisWeek"
-                  fill="oklch(0.76 0.14 162)"
-                  radius={[2, 2, 0, 0]}
-                  isAnimationActive
-                  animationDuration={700}
-                  animationEasing="ease-out"
-                  animationBegin={100}
-                />
-              </BarChart>
-            </ResponsiveContainer>
-          </motion.div>
-        </section>
-
-        {/* ── Self Improvement ──────────────────────────────────────────────── */}
-        <section>
-          <SectionTitle>Self Improvement</SectionTitle>
-          <motion.div
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, delay: 0.15 }}
-            className={selfCard}
-          >
-            {/* Level + Rank row */}
-            <div className="flex items-center gap-3 mb-2.5">
-              <div className={rankBadge}>
-                <span className="text-[var(--gold)] text-[11px] font-bold font-[var(--font-title)] leading-none">
-                  {character.rank}
-                </span>
-              </div>
-              <div className="flex-1">
-                <div className="flex items-baseline gap-1.5">
-                  <span className="text-[20px] font-bold text-[var(--text-hi)] font-[var(--font-title)] leading-none">
-                    Lv.{character.level}
-                  </span>
-                  <span className="text-[9px] text-[var(--text-lo)]">
-                    {character.xp.toLocaleString()} / {character.xpNext.toLocaleString()} XP
-                  </span>
-                </div>
-                <div className="mt-1.5">
-                  <XpBar xp={character.xp} xpNext={character.xpNext} />
-                </div>
-              </div>
-              <div className="text-right shrink-0">
-                <div className="text-[9px] text-[var(--text-lo)]">Progress</div>
-                <div className="text-[14px] font-bold text-[var(--gold)] font-[var(--font-title)] leading-none mt-0.5">
-                  {xpPct}%
-                </div>
-              </div>
+    <>
+      <div className={outer}>
+        <div className={wrap}>
+          {/* ── KPI Row ──────────────────────────────────────────────────────── */}
+          <section>
+            <SectionTitle>Overview</SectionTitle>
+            <div className="grid grid-cols-2 gap-2">
+              <KpiCard
+                label="Completion"
+                value={`${tasks.completionRate}%`}
+                sub={`${tasks.done} / ${tasks.total} tasks done`}
+                accent="var(--mint)"
+                delay={0}
+              />
+              <KpiCard
+                label="Daily Average"
+                value={`${dailyAverage ?? 0}`}
+                sub="tasks per day · 7d"
+                accent="var(--cyan)"
+                delay={0.05}
+              />
+              <KpiCard
+                label="Focus Time · 7d"
+                value={focusHours}
+                sub={`of ${plannedHours} planned`}
+                accent="var(--violet)"
+                delay={0.1}
+              />
+              <KpiCard
+                label="Weekly Trend"
+                value={<TrendBadge pct={trendVsLastWeek} />}
+                sub="vs last week"
+                delay={0.15}
+              />
             </div>
+          </section>
 
-            {/* Stats row */}
-            <div className="flex items-center gap-0 pt-2 border-t border-[var(--border)]">
-              <div className={selfStat}>
-                <span className="text-[14px] leading-none">🔥</span>
-                <div>
-                  <div className="text-[12px] font-bold text-[var(--gold)] leading-none">
-                    {character.streak}
-                  </div>
-                  <div className="text-[7px] text-[var(--text-lo)] mt-[1px]">day streak</div>
-                </div>
-              </div>
-              <div className="w-px h-8 bg-[var(--border)] mx-1" />
-              <div className={selfStat}>
-                <span className="text-[14px] leading-none">💰</span>
-                <div>
-                  <div className="text-[12px] font-bold text-[var(--text-hi)] leading-none">
-                    {character.coins.toLocaleString()}
-                  </div>
-                  <div className="text-[7px] text-[var(--text-lo)] mt-[1px]">coins</div>
-                </div>
-              </div>
-              <div className="w-px h-8 bg-[var(--border)] mx-1" />
-              <div className={selfStat}>
-                <span className="text-[14px] leading-none">💎</span>
-                <div>
-                  <div className="text-[12px] font-bold text-[var(--text-hi)] leading-none">
-                    {character.gems}
-                  </div>
-                  <div className="text-[7px] text-[var(--text-lo)] mt-[1px]">gems</div>
-                </div>
-              </div>
-            </div>
-          </motion.div>
-        </section>
-
-        {/* ── Habit Streak Chart ────────────────────────────────────────────── */}
-        <section>
-          <SectionTitle
-            right={
-              <span className="text-[9px] text-[var(--text-lo)]">
-                {habits.doneToday}/{habits.totalToday} today
-              </span>
-            }
-          >
-            Habit Streak · 7d
-          </SectionTitle>
-          <motion.div
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, delay: 0.2 }}
-            className={chartCard}
-          >
-            <ResponsiveContainer width="100%" height={80}>
-              <BarChart
-                data={habitChartData}
-                barCategoryGap="35%"
-                margin={{ top: 4, right: 2, bottom: 0, left: -28 }}
-              >
-                <CartesianGrid
-                  vertical={false}
-                  stroke="var(--border)"
-                  strokeDasharray="3 3"
-                  strokeOpacity={0.5}
-                />
-                <XAxis
-                  dataKey="day"
-                  tick={{ fontSize: 7, fill: 'var(--text-lo)', fontFamily: 'var(--f-body)' }}
-                  tickLine={false}
-                  axisLine={false}
-                />
-                <YAxis
-                  tick={{ fontSize: 7, fill: 'var(--text-lo)', fontFamily: 'var(--f-body)' }}
-                  tickLine={false}
-                  axisLine={false}
-                  allowDecimals={false}
-                />
-                <Tooltip
-                  content={({ active, payload, label }) => {
-                    if (!active || !payload?.length) return null;
-                    return (
-                      <div className="bg-[var(--panel3)] border border-[var(--border-hi)] rounded-[var(--r-sm)] px-2.5 py-1.5 text-[9px] shadow-lg">
-                        <div className="text-[var(--text-lo)] mb-0.5">{label}</div>
-                        <span className="font-bold text-[var(--violet)]">
-                          {payload[0]?.value} habits
-                        </span>
-                      </div>
-                    );
-                  }}
-                  cursor={{ fill: 'oklch(1 0 0 / 0.03)' }}
-                />
-                <Bar
-                  dataKey="done"
-                  fill="oklch(0.68 0.22 295)"
-                  radius={[3, 3, 0, 0]}
-                  isAnimationActive
-                  animationDuration={700}
-                  animationEasing="ease-out"
-                />
-              </BarChart>
-            </ResponsiveContainer>
-          </motion.div>
-        </section>
-
-        {/* ── Overdue Tasks ─────────────────────────────────────────────────── */}
-        {overdueTasks.length > 0 && (
+          {/* ── Task Completion Trend ─────────────────────────────────────────── */}
           <section>
             <SectionTitle
               right={
-                <span className="text-[9px] font-bold text-[var(--rose)]">
-                  {overdueTasks.length} overdue
+                <div className="flex items-center gap-3 text-[7px] text-[var(--text-lo)]">
+                  <span className="flex items-center gap-1">
+                    <span
+                      className="inline-block w-2 h-2 rounded-[2px]"
+                      style={{ background: 'oklch(0.68 0.22 295 / 0.55)' }}
+                    />
+                    Last wk
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <span
+                      className="inline-block w-2 h-2 rounded-[2px]"
+                      style={{ background: 'oklch(0.76 0.14 162)' }}
+                    />
+                    This wk
+                  </span>
+                </div>
+              }
+            >
+              Task Completion · 7d
+            </SectionTitle>
+            <motion.div
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4, delay: 0.1 }}
+              className={chartCard}
+            >
+              <ResponsiveContainer width="100%" height={90}>
+                <BarChart
+                  data={chartData}
+                  barGap={2}
+                  barCategoryGap="25%"
+                  margin={{ top: 4, right: 2, bottom: 0, left: -28 }}
+                >
+                  <CartesianGrid
+                    vertical={false}
+                    stroke="var(--border)"
+                    strokeDasharray="3 3"
+                    strokeOpacity={0.5}
+                  />
+                  <XAxis
+                    dataKey="day"
+                    tick={{ fontSize: 7, fill: 'var(--text-lo)', fontFamily: 'var(--f-body)' }}
+                    tickLine={false}
+                    axisLine={false}
+                  />
+                  <YAxis
+                    tick={{ fontSize: 7, fill: 'var(--text-lo)', fontFamily: 'var(--f-body)' }}
+                    tickLine={false}
+                    axisLine={false}
+                    allowDecimals={false}
+                  />
+                  <Tooltip content={<ChartTooltip />} cursor={{ fill: 'oklch(1 0 0 / 0.03)' }} />
+                  <Bar
+                    dataKey="lastWeek"
+                    fill="oklch(0.68 0.22 295)"
+                    fillOpacity={0.45}
+                    radius={[2, 2, 0, 0]}
+                    isAnimationActive
+                    animationDuration={700}
+                    animationEasing="ease-out"
+                  />
+                  <Bar
+                    dataKey="thisWeek"
+                    fill="oklch(0.76 0.14 162)"
+                    radius={[2, 2, 0, 0]}
+                    isAnimationActive
+                    animationDuration={700}
+                    animationEasing="ease-out"
+                    animationBegin={100}
+                  />
+                </BarChart>
+              </ResponsiveContainer>
+            </motion.div>
+          </section>
+
+          {/* ── Self Improvement ──────────────────────────────────────────────── */}
+          <section>
+            <SectionTitle>Self Improvement</SectionTitle>
+            <motion.div
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4, delay: 0.15 }}
+              className={selfCard}
+            >
+              {/* Level + Rank row */}
+              <div className="flex items-center gap-3 mb-2.5">
+                <div className={rankBadge}>
+                  <span className="text-[var(--gold)] text-[11px] font-bold font-[var(--font-title)] leading-none">
+                    {character.rank}
+                  </span>
+                </div>
+                <div className="flex-1">
+                  <div className="flex items-baseline gap-1.5">
+                    <span className="text-[20px] font-bold text-[var(--text-hi)] font-[var(--font-title)] leading-none">
+                      Lv.{character.level}
+                    </span>
+                    <span className="text-[9px] text-[var(--text-lo)]">
+                      {character.xp.toLocaleString()} / {character.xpNext.toLocaleString()} XP
+                    </span>
+                  </div>
+                  <div className="mt-1.5">
+                    <XpBar xp={character.xp} xpNext={character.xpNext} />
+                  </div>
+                </div>
+                <div className="text-right shrink-0">
+                  <div className="text-[9px] text-[var(--text-lo)]">Progress</div>
+                  <div className="text-[14px] font-bold text-[var(--gold)] font-[var(--font-title)] leading-none mt-0.5">
+                    {xpPct}%
+                  </div>
+                </div>
+              </div>
+
+              {/* Stats row */}
+              <div className="flex items-center gap-0 pt-2 border-t border-[var(--border)]">
+                <div className={selfStat}>
+                  <span className="text-[14px] leading-none">🔥</span>
+                  <div>
+                    <div className="text-[12px] font-bold text-[var(--gold)] leading-none">
+                      {character.streak}
+                    </div>
+                    <div className="text-[7px] text-[var(--text-lo)] mt-[1px]">day streak</div>
+                  </div>
+                </div>
+                <div className="w-px h-8 bg-[var(--border)] mx-1" />
+                <div className={selfStat}>
+                  <span className="text-[14px] leading-none">💰</span>
+                  <div>
+                    <div className="text-[12px] font-bold text-[var(--text-hi)] leading-none">
+                      {character.coins.toLocaleString()}
+                    </div>
+                    <div className="text-[7px] text-[var(--text-lo)] mt-[1px]">coins</div>
+                  </div>
+                </div>
+                <div className="w-px h-8 bg-[var(--border)] mx-1" />
+                <div className={selfStat}>
+                  <span className="text-[14px] leading-none">💎</span>
+                  <div>
+                    <div className="text-[12px] font-bold text-[var(--text-hi)] leading-none">
+                      {character.gems}
+                    </div>
+                    <div className="text-[7px] text-[var(--text-lo)] mt-[1px]">gems</div>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          </section>
+
+          {/* ── Habit Streak Chart ────────────────────────────────────────────── */}
+          <section>
+            <SectionTitle
+              right={
+                <span className="text-[9px] text-[var(--text-lo)]">
+                  {habits.doneToday}/{habits.totalToday} today
                 </span>
               }
             >
-              Needs Attention
+              Habit Streak · 7d
             </SectionTitle>
-            <div className="flex flex-col gap-1.5">
-              {overdueTasks.map((t, i) => (
-                <OverdueRow key={t.id} task={t} delay={i * 0.05} />
-              ))}
-            </div>
+            <motion.div
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4, delay: 0.2 }}
+              className={chartCard}
+            >
+              <ResponsiveContainer width="100%" height={80}>
+                <BarChart
+                  data={habitChartData}
+                  barCategoryGap="35%"
+                  margin={{ top: 4, right: 2, bottom: 0, left: -28 }}
+                >
+                  <CartesianGrid
+                    vertical={false}
+                    stroke="var(--border)"
+                    strokeDasharray="3 3"
+                    strokeOpacity={0.5}
+                  />
+                  <XAxis
+                    dataKey="day"
+                    tick={{ fontSize: 7, fill: 'var(--text-lo)', fontFamily: 'var(--f-body)' }}
+                    tickLine={false}
+                    axisLine={false}
+                  />
+                  <YAxis
+                    tick={{ fontSize: 7, fill: 'var(--text-lo)', fontFamily: 'var(--f-body)' }}
+                    tickLine={false}
+                    axisLine={false}
+                    allowDecimals={false}
+                  />
+                  <Tooltip
+                    content={({ active, payload, label }) => {
+                      if (!active || !payload?.length) return null;
+                      return (
+                        <div className="bg-[var(--panel3)] border border-[var(--border-hi)] rounded-[var(--r-sm)] px-2.5 py-1.5 text-[9px] shadow-lg">
+                          <div className="text-[var(--text-lo)] mb-0.5">{label}</div>
+                          <span className="font-bold text-[var(--violet)]">
+                            {payload[0]?.value} habits
+                          </span>
+                        </div>
+                      );
+                    }}
+                    cursor={{ fill: 'oklch(1 0 0 / 0.03)' }}
+                  />
+                  <Bar
+                    dataKey="done"
+                    fill="oklch(0.68 0.22 295)"
+                    radius={[3, 3, 0, 0]}
+                    isAnimationActive
+                    animationDuration={700}
+                    animationEasing="ease-out"
+                  />
+                </BarChart>
+              </ResponsiveContainer>
+            </motion.div>
           </section>
-        )}
 
-        {overdueTasks.length === 0 && tasks.total > 0 && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.3 }}
-            className={allClearBanner}
-          >
-            <span className="text-[18px]">✦</span>
-            <span className="text-[11px] font-semibold text-[var(--mint)]">No overdue tasks</span>
-          </motion.div>
-        )}
+          {/* ── Overdue Tasks ─────────────────────────────────────────────────── */}
+          {overdueTasks.length > 0 && (
+            <section>
+              <SectionTitle
+                right={
+                  <span className="text-[9px] font-bold text-[var(--rose)]">
+                    {overdueTasks.length} overdue
+                  </span>
+                }
+              >
+                Needs Attention
+              </SectionTitle>
+              <div className="flex flex-col gap-1.5">
+                {overdueTasks.map((t, i) => (
+                  <OverdueRow key={t.id} task={t} delay={i * 0.05} />
+                ))}
+              </div>
+            </section>
+          )}
 
-        {/* ── Calendar Heatmap ──────────────────────────────────────────────── */}
-        <section>
-          <SectionTitle>Activity · Last Year</SectionTitle>
-          <motion.div
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.25 }}
-            className={chartCard}
-          >
-            <CalendarHeatmap activityMap={heatmapData?.activityMap ?? {}} />
-          </motion.div>
-        </section>
+          {overdueTasks.length === 0 && tasks.total > 0 && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.3 }}
+              className={allClearBanner}
+            >
+              <span className="text-[18px]">✦</span>
+              <span className="text-[11px] font-semibold text-[var(--mint)]">No overdue tasks</span>
+            </motion.div>
+          )}
+
+          {/* ── Unscheduled Tasks ─────────────────────────────────────────────── */}
+          {unscheduledTasks.length > 0 && (
+            <section>
+              <SectionTitle
+                right={
+                  <span className="text-[9px] font-bold text-[var(--gold)]">
+                    {unscheduledTasks.length} unscheduled
+                  </span>
+                }
+              >
+                Unscheduled
+              </SectionTitle>
+              <div className="flex flex-col gap-1.5">
+                {unscheduledTasks.slice(0, 15).map((t, i) => (
+                  <UnscheduledRow key={t.id} task={t} delay={i * 0.03} onEdit={setEditingTask} />
+                ))}
+                {unscheduledTasks.length > 15 && (
+                  <div className="text-[9px] text-[var(--text-lo)] text-center py-1">
+                    +{unscheduledTasks.length - 15} more tasks without a date
+                  </div>
+                )}
+              </div>
+            </section>
+          )}
+
+          {/* ── Calendar Heatmap ──────────────────────────────────────────────── */}
+          <section>
+            <SectionTitle>Activity · Last Year</SectionTitle>
+            <motion.div
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.25 }}
+              className={chartCard}
+            >
+              <CalendarHeatmap activityMap={heatmapData?.activityMap ?? {}} />
+            </motion.div>
+          </section>
+        </div>
       </div>
-    </div>
+
+      <EditTaskModal
+        task={editingTask ? taskToUITask(editingTask) : null}
+        open={editingTask !== null}
+        onClose={() => setEditingTask(null)}
+        onSave={handleSaveTask}
+        saving={updatingTask}
+      />
+    </>
   );
 }
 

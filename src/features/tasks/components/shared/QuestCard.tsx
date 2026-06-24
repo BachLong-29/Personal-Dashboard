@@ -5,7 +5,7 @@ import { cn } from '@/libs/utils';
 import { ProjectBadge } from '@/components/common/ProjectBadge';
 
 import { catOf, fmtEst, priOf, COLOR_VAR, type UITask } from '../../data/mock';
-import { diffColors, urgencyColors, qcxBtnGhost, qcxBtnPrimary } from './styles';
+import { diffColors, qcxBtnGhost, qcxBtnPrimary } from './styles';
 
 // ─── Props ────────────────────────────────────────────────────────────────────
 
@@ -39,8 +39,14 @@ export function QuestCard({
   compact,
 }: QuestCardProps) {
   const c = catOf(task.cat);
-  const p = priOf(task.priority);
   const catColor = COLOR_VAR[c.color] ?? 'var(--text-lo)';
+
+  // For habits the title is "${icon} ${name}" — show icon in its own column
+  // and strip it from the label to avoid duplication.
+  const titleDisplay =
+    task.icon && task.title.startsWith(task.icon)
+      ? task.title.slice(task.icon.length).trim()
+      : task.title;
 
   return (
     <article
@@ -54,223 +60,141 @@ export function QuestCard({
       )}
       style={{ borderLeftColor: catColor, borderLeftWidth: 3 }}
     >
-      {/* ── Main row ─────────────────────────────────────────────────────────── */}
-      <div className="flex gap-2 w-full cursor-pointer" onClick={!isOverlay ? onExpand : undefined}>
-        {/* Left: check + diff */}
-        <div className="flex flex-col items-center gap-1 shrink-0 pt-0.5">
-          <button
-            type="button"
-            className={cn(
-              checkBtn,
-              !task.isMultiDay && task.done && checkBtnDone,
-              task.isMultiDay && task.loggedToday && checkBtnLogged,
-            )}
-            onClick={(e) => {
-              e.stopPropagation();
-              onToggleDone?.(task.id);
-            }}
-            aria-label={task.isMultiDay ? 'Log today' : 'Toggle complete'}
-            title={
-              task.isMultiDay
-                ? task.loggedToday
-                  ? 'Un-log today'
-                  : "Log today's session"
-                : undefined
-            }
-          >
-            {task.isMultiDay ? (task.loggedToday ? '✓' : '') : task.done ? '✓' : ''}
-          </button>
-          <div className={cn(diffBadge, diffColors[task.diff])}>{task.diff}</div>
-        </div>
-
-        {/* Body */}
+      {/* ── Collapsed main row ────────────────────────────────────────────────── */}
+      <div
+        className="flex items-start gap-1.5 w-full cursor-pointer"
+        onClick={!isOverlay ? onExpand : undefined}
+      >
+        {/* Content: 2 rows */}
         <div className="flex-1 min-w-0">
-          {/* Title + status badge */}
-          <div className="flex items-start gap-1.5 mb-1">
-            <div
+          {/* Row 1: checkbox + icon + title + status badges */}
+          <div className="flex items-center gap-1.5 min-w-0">
+            <button
+              type="button"
+              className={cn(
+                checkBtn,
+                !task.isMultiDay && task.done && checkBtnDone,
+                task.isMultiDay && task.loggedToday && checkBtnLogged,
+              )}
+              onClick={(e) => {
+                e.stopPropagation();
+                onToggleDone?.(task.id);
+              }}
+              aria-label={task.isMultiDay ? 'Log today' : 'Toggle complete'}
+            >
+              {task.isMultiDay ? (task.loggedToday ? '✓' : '') : task.done ? '✓' : ''}
+            </button>
+
+            {task.icon && (
+              <span className="text-[13px] leading-none shrink-0 select-none">{task.icon}</span>
+            )}
+
+            <span
               className={cn(
                 titleText,
                 task.done && !task.isMultiDay && 'line-through text-[var(--text-lo)]',
                 task.cancelled && 'line-through text-[var(--text-lo)]',
               )}
             >
-              {task.title}
-            </div>
+              {titleDisplay}
+            </span>
 
+            {/* Inline status badge */}
             {task.cancelled ? (
               <span
-                className={
-                  badge +
-                  ' bg-[oklch(0.72_0.18_5_/_0.12)] border-[oklch(0.72_0.18_5_/_0.3)] text-[var(--rose)]'
-                }
+                className={cn(inlineBadge, 'border-[oklch(0.72_0.18_5_/_0.3)] text-[var(--rose)]')}
               >
-                RESCHEDULED
+                MOVED
               </span>
             ) : task.isMultiDay ? (
               <span
                 className={cn(
-                  badge + ' transition-colors',
+                  inlineBadge,
+                  'transition-colors',
                   task.loggedToday
-                    ? 'bg-[oklch(0.76_0.16_205_/_0.15)] border-[oklch(0.76_0.16_205_/_0.4)] text-[var(--cyan)]'
-                    : 'bg-[var(--panel)] border-[var(--border)] text-[var(--text-lo)]',
+                    ? 'border-[oklch(0.76_0.16_205_/_0.4)] text-[var(--cyan)]'
+                    : 'border-[var(--border)] text-[var(--text-lo)]',
                 )}
               >
-                {task.loggedToday ? '✓ TODAY' : `${task.totalDays}D`}
+                {task.loggedToday ? '✓' : `${task.totalDays}D`}
               </span>
-            ) : (
-              <div
-                className="text-[9px] font-bold shrink-0"
-                style={{ color: COLOR_VAR[p.color] ?? 'var(--text-lo)' }}
-              >
-                {p.token}
-              </div>
-            )}
+            ) : null}
           </div>
 
-          {/* Overdue escalation badge */}
-          {task.overdueLevel && task.overdueLevel !== 'failed' && !task.done && !task.cancelled && (
-            <div className="mb-1">
-              {task.overdueLevel === 'critical' ? (
-                <span className="text-[8px] font-bold px-1.5 py-0.5 rounded border tracking-[0.06em] font-[var(--font-title)] bg-[oklch(0.72_0.18_5_/_0.12)] border-[oklch(0.72_0.18_5_/_0.3)] text-[var(--rose)] animate-pulse">
-                  🔴 Critical
+          {/* Row 2: rank + overdue + note */}
+          <div className="flex items-center gap-1.5 mt-[3px] pl-[26px] min-w-0">
+            <div className={cn(diffBadge, diffColors[task.diff])}>{task.diff}</div>
+
+            {task.overdueLevel &&
+              task.overdueLevel !== 'failed' &&
+              !task.done &&
+              !task.cancelled &&
+              (task.overdueLevel === 'critical' ? (
+                <span className="text-[7px] font-bold px-1 py-px rounded border tracking-[0.06em] font-[var(--font-title)] bg-[oklch(0.72_0.18_5_/_0.12)] border-[oklch(0.72_0.18_5_/_0.3)] text-[var(--rose)] animate-pulse">
+                  !
                 </span>
               ) : (
-                <span className="text-[8px] font-bold px-1.5 py-0.5 rounded border tracking-[0.06em] font-[var(--font-title)] bg-[oklch(0.74_0.17_85_/_0.1)] border-[oklch(0.74_0.17_85_/_0.3)] text-[var(--gold)]">
-                  ⚠ Late
-                </span>
-              )}
-            </div>
-          )}
-
-          {/* Description */}
-          {!compact && task.desc && (
-            <div className="text-[9px] text-[var(--text-lo)] leading-[1.4] mb-1 truncate">
-              {task.desc}
-            </div>
-          )}
-
-          {/* Meta row */}
-          <div className="flex items-center gap-1.5 flex-wrap">
-            <span
-              className="text-[8px] font-bold px-1.5 py-0.5 rounded border tracking-[0.06em] font-[var(--font-title)]"
-              style={{ color: catColor, borderColor: `${catColor}55`, background: `${catColor}0F` }}
-            >
-              <span className="mr-0.5">{c.icon}</span>
-              {c.label}
-            </span>
-            {task.projectName && (
-              <ProjectBadge
-                name={task.projectName}
-                icon={task.projectIcon}
-                color={task.projectColor}
-              />
-            )}
-            <span className="text-[9px] text-[var(--text-lo)]">⏲ {fmtEst(task.est)}</span>
-            <span className={cn('text-[9px] font-semibold', urgencyColors[task.deadlineUrgency])}>
-              ◷ {task.deadline}
-            </span>
-            {task.streak > 0 && (
-              <span className="text-[9px] text-[var(--gold)] font-bold">✦ {task.streak}d</span>
-            )}
-            {task.combo > 0 && (
-              <span className="text-[9px] text-[var(--violet)] font-bold">×{task.combo}</span>
-            )}
-          </div>
-
-          {/* Sub-task progress */}
-          {task.subtasks > 0 && (
-            <div className="flex items-center gap-1.5 mt-1">
-              <div className="flex-1 h-[3px] bg-[var(--panel2)] rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-[var(--violet)] rounded-full"
-                  style={{ width: `${(task.subtasksDone / task.subtasks) * 100}%` }}
-                />
-              </div>
-              <span className="text-[9px] text-[var(--text-lo)] shrink-0">
-                {task.subtasksDone}/{task.subtasks}
-              </span>
-            </div>
-          )}
-
-          {/* Tags */}
-          {!compact && task.tags.length > 0 && (
-            <div className="flex flex-wrap gap-1 mt-1">
-              {task.tags.map((tag) => (
-                <span
-                  key={tag}
-                  className="text-[8px] text-[var(--text-lo)] bg-[var(--panel2)] border border-[var(--border)] px-1 py-0.5 rounded"
-                >
-                  #{tag}
+                <span className="text-[7px] font-bold px-1 py-px rounded border tracking-[0.06em] font-[var(--font-title)] bg-[oklch(0.74_0.17_85_/_0.1)] border-[oklch(0.74_0.17_85_/_0.3)] text-[var(--gold)]">
+                  ⚠
                 </span>
               ))}
-            </div>
-          )}
+
+            {task.desc && !task.done && !task.cancelled && (
+              <span className="text-[9px] text-[var(--text-lo)] truncate">{task.desc}</span>
+            )}
+          </div>
         </div>
 
-        {/* Right: rewards + action strip */}
-        <div className="flex flex-col items-end gap-1 shrink-0 ml-1">
-          {/* Rewards */}
-          <div className="text-[9px] font-bold text-[var(--violet)]">
-            +{task.xp}
-            <span className="text-[7px] ml-0.5 opacity-70">XP</span>
-          </div>
-          <div className="text-[9px] font-bold text-[var(--gold)]">
-            +{task.coins}
-            <span className="text-[7px] ml-0.5 opacity-70">◎</span>
-          </div>
-
-          {/* Action strip: edit + clone + move hover-only, chevron always visible */}
-          {!isOverlay && (
-            <div className="flex items-center gap-0.5 mt-auto">
-              <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity duration-150">
-                {onMoveToNextDay && !task.done && !task.cancelled && (
-                  <button
-                    type="button"
-                    title="Move to next day"
-                    className={actionBtn}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onMoveToNextDay(task);
-                    }}
-                  >
-                    →
-                  </button>
-                )}
-                {onClone && task.source === 'task' && (
-                  <button
-                    type="button"
-                    title="Clone task"
-                    className={actionBtn}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onClone(task);
-                    }}
-                  >
-                    ⧉
-                  </button>
-                )}
-                {onEdit && (task.source === 'task' || task.source === 'habit') && (
-                  <button
-                    type="button"
-                    title={task.source === 'habit' ? 'Go to Habits' : 'Edit'}
-                    className={actionBtn}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onEdit(task);
-                    }}
-                  >
-                    {task.source === 'habit' ? '↗' : '✎'}
-                  </button>
-                )}
-              </div>
-              {/* Expand chevron */}
-              <span className={cn(chevron, expanded && chevronOpen)}>›</span>
+        {/* Right: hover actions + chevron */}
+        {!isOverlay && (
+          <div className="flex items-center gap-0.5 shrink-0 self-center ml-auto">
+            <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity duration-150">
+              {onMoveToNextDay && !task.done && !task.cancelled && (
+                <button
+                  type="button"
+                  title="Move to next day"
+                  className={actionBtn}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onMoveToNextDay(task);
+                  }}
+                >
+                  →
+                </button>
+              )}
+              {onClone && task.source === 'task' && (
+                <button
+                  type="button"
+                  title="Clone task"
+                  className={actionBtn}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onClone(task);
+                  }}
+                >
+                  ⧉
+                </button>
+              )}
+              {onEdit && (task.source === 'task' || task.source === 'habit') && (
+                <button
+                  type="button"
+                  title={task.source === 'habit' ? 'Go to Habits' : 'Edit'}
+                  className={actionBtn}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onEdit(task);
+                  }}
+                >
+                  {task.source === 'habit' ? '↗' : '✎'}
+                </button>
+              )}
             </div>
-          )}
-        </div>
+            <span className={cn(chevron, expanded && chevronOpen)}>›</span>
+          </div>
+        )}
       </div>
 
-      {/* ── Expanded panel ────────────────────────────────────────────────────── */}
+      {/* ── Expanded detail panel ─────────────────────────────────────────────── */}
       {expanded && !compact && (
         <ExpandedPanel
           task={task}
@@ -339,6 +263,13 @@ function ExpandedPanel({
         ))}
       </div>
 
+      {/* Project badge */}
+      {task.projectName && (
+        <div className="mb-2">
+          <ProjectBadge name={task.projectName} icon={task.projectIcon} color={task.projectColor} />
+        </div>
+      )}
+
       {/* Sage's note */}
       {task.expandedNote && (
         <div className="mb-3 p-2 bg-[oklch(0.66_0.22_295_/_0.06)] border border-[oklch(0.66_0.22_295_/_0.2)] rounded-[var(--r-sm)]">
@@ -369,6 +300,35 @@ function ExpandedPanel({
           />
         </div>
       </div>
+
+      {/* Sub-task progress */}
+      {task.subtasks > 0 && (
+        <div className="flex items-center gap-1.5 mb-3">
+          <div className="flex-1 h-[3px] bg-[var(--panel2)] rounded-full overflow-hidden">
+            <div
+              className="h-full bg-[var(--violet)] rounded-full"
+              style={{ width: `${(task.subtasksDone / task.subtasks) * 100}%` }}
+            />
+          </div>
+          <span className="text-[9px] text-[var(--text-lo)] shrink-0">
+            {task.subtasksDone}/{task.subtasks} subtasks
+          </span>
+        </div>
+      )}
+
+      {/* Tags */}
+      {task.tags.length > 0 && (
+        <div className="flex flex-wrap gap-1 mb-3">
+          {task.tags.map((tag) => (
+            <span
+              key={tag}
+              className="text-[8px] text-[var(--text-lo)] bg-[var(--panel2)] border border-[var(--border)] px-1 py-0.5 rounded"
+            >
+              #{tag}
+            </span>
+          ))}
+        </div>
+      )}
 
       {/* Actions */}
       {!task.cancelled && (
@@ -488,6 +448,7 @@ function ExpandedPanel({
           )}
         </div>
       )}
+
       {task.cancelled && (
         <p className="text-[8px] text-[var(--rose)] opacity-70 italic">
           Rescheduled — original slot cancelled
@@ -500,7 +461,7 @@ function ExpandedPanel({
 // ─── Style constants ──────────────────────────────────────────────────────────
 
 const cardBase =
-  'flex flex-col gap-0 p-2.5 bg-[var(--panel2)] border border-[var(--border)] rounded-[var(--r-sm)] mb-1.5 cursor-grab hover:border-[oklch(0.74_0.17_85_/_0.3)] hover:bg-[oklch(0.74_0.17_85_/_0.03)] transition-all duration-150 active:cursor-grabbing';
+  'flex flex-col gap-0 px-2.5 py-2 bg-[var(--panel2)] border border-[var(--border)] rounded-[var(--r-sm)] mb-1.5 cursor-grab hover:border-[oklch(0.74_0.17_85_/_0.3)] hover:bg-[oklch(0.74_0.17_85_/_0.03)] transition-all duration-150 active:cursor-grabbing';
 const cardDone = 'opacity-50';
 const cardSaga = 'border-[oklch(0.74_0.17_85_/_0.35)] bg-[oklch(0.74_0.17_85_/_0.04)]';
 const cardCancelled =
@@ -512,12 +473,12 @@ const checkBtnDone = 'bg-[var(--mint)] border-[var(--mint)] text-[oklch(0.1_0_0)
 const checkBtnLogged = 'bg-[var(--cyan)] border-[var(--cyan)] text-[oklch(0.1_0_0)]';
 
 const diffBadge =
-  'w-[16px] h-[16px] rounded-sm flex items-center justify-center text-[8px] font-black font-[var(--font-title)]';
+  'w-[16px] h-[16px] rounded-sm flex items-center justify-center text-[8px] font-black font-[var(--font-title)] shrink-0';
 
-const titleText = 'text-[11px] font-semibold text-[var(--text-hi)] leading-[1.3] flex-1';
+const titleText = 'text-[11px] font-semibold text-[var(--text-hi)] leading-[1.3] truncate flex-1';
 
-const badge =
-  'text-[7px] font-bold shrink-0 px-1 py-0.5 rounded border tracking-[0.08em] font-[var(--font-title)] ';
+const inlineBadge =
+  'text-[7px] font-bold shrink-0 px-1 py-px rounded border tracking-[0.08em] font-[var(--font-title)]';
 
 const actionBtn =
   'w-[18px] h-[18px] flex items-center justify-center text-[11px] text-[var(--text-lo)] rounded hover:text-[var(--text-hi)] hover:bg-[var(--panel3)] transition-colors cursor-pointer';

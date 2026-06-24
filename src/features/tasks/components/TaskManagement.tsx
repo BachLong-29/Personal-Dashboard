@@ -40,6 +40,7 @@ import {
   habitToUITask,
   isHabitScheduledForDate,
   dayOffset,
+  parseDateLocal,
   slotToDefaultTime,
   type QuestLike,
 } from '../data/adapters';
@@ -316,8 +317,8 @@ export function TaskManagement() {
       note: task.desc ?? '',
       tagId: task.tagId ?? '',
       color: (task.color as TaskColor) ?? 'gold',
-      startDate: new Date(),
-      endDate: task.endDate ? new Date(task.endDate) : null,
+      startDate: null,
+      endDate: task.endDate ? parseDateLocal(task.endDate) : null,
       duration: task.est != null ? String(task.est) : '',
       dependencies: task.dependencies ?? [],
     });
@@ -603,7 +604,6 @@ export function TaskManagement() {
       {/* ── Add Task modal ─────────────────────────────────────────────────── */}
       <AddTaskModal
         open={showAddTaskModal}
-        defaultDate={selectedDateStr}
         defaultValues={cloneDefaults}
         onClose={() => {
           setShowAddTaskModal(false);

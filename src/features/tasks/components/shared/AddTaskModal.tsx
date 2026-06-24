@@ -25,8 +25,6 @@ export interface AddTaskModalProps {
   open: boolean;
   onClose: () => void;
   onSaved?: () => void;
-  /** Pre-fill start date (YYYY-MM-DD) */
-  defaultDate?: string;
   /** Pre-fill all fields — used when cloning an existing task */
   defaultValues?: Partial<TaskFormValues>;
   /** Attach the created task to this project */
@@ -39,7 +37,6 @@ export function AddTaskModal({
   open,
   onClose,
   onSaved,
-  defaultDate,
   defaultValues,
   projectId,
 }: AddTaskModalProps) {
@@ -89,13 +86,13 @@ export function AddTaskModal({
     });
   }
 
-  const defaultStart = defaultValues?.startDate ?? (defaultDate ? new Date(defaultDate) : null);
+  const defaultStart = defaultValues?.startDate ?? null;
 
   return (
     <>
-      <Modal open={open} onClose={onClose} maxWidth="560px">
+      <Modal open={open} onClose={onClose} maxWidth="560px" bottomSheet scrollable>
         <ModalHead tag="NEW QUEST" title="＋ Create Task" />
-        <ModalBody className="max-h-[calc(78vh-130px)] overflow-y-auto">
+        <ModalBody scrollable className="px-4 sm:px-6">
           <TaskForm
             ref={formRef}
             mode="create"

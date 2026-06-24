@@ -98,7 +98,7 @@ export function WeekView({
   const [editing, setEditing] = useState<Task | undefined>(undefined);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
-  const [addDefaultDate, setAddDefaultDate] = useState<string | undefined>(undefined);
+
   const [deletingTask, setDeletingTask] = useState<Task | undefined>(undefined);
   const [activeDrag, setActiveDrag] = useState<ActiveDrag | null>(null);
 
@@ -157,9 +157,8 @@ export function WeekView({
     setShowEditModal(true);
   }
 
-  function handleAddForDay(dateStr: string) {
+  function handleAddForDay() {
     setEditing(undefined);
-    setAddDefaultDate(dateStr);
     setShowAddModal(true);
   }
 
@@ -270,7 +269,7 @@ export function WeekView({
                     <button
                       type="button"
                       className={dayAddBtn}
-                      onClick={() => handleAddForDay(dayStr)}
+                      onClick={handleAddForDay}
                       title="Add task"
                     >
                       +
@@ -436,15 +435,8 @@ export function WeekView({
       {/* Create — unified AddTaskModal */}
       <AddTaskModal
         open={showAddModal}
-        defaultDate={addDefaultDate ?? weekStart}
-        onClose={() => {
-          setShowAddModal(false);
-          setAddDefaultDate(undefined);
-        }}
-        onSaved={() => {
-          setShowAddModal(false);
-          setAddDefaultDate(undefined);
-        }}
+        onClose={() => setShowAddModal(false)}
+        onSaved={() => setShowAddModal(false)}
       />
 
       {/* Edit — unified EditTaskModal */}
