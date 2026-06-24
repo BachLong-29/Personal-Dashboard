@@ -4,7 +4,7 @@ import { cn } from '@/libs/utils';
 
 import { ProjectBadge } from '@/components/common/ProjectBadge';
 
-import { catOf, fmtEst, priOf, COLOR_VAR, type UITask } from '../../data/mock';
+import { catOf, fmtEst, COLOR_VAR, type UITask } from '../../data/mock';
 import { diffColors, qcxBtnGhost, qcxBtnPrimary } from './styles';
 
 // ─── Props ────────────────────────────────────────────────────────────────────
@@ -123,7 +123,12 @@ export function QuestCard({
 
           {/* Row 2: rank + overdue + note */}
           <div className="flex items-center gap-1.5 mt-[3px] pl-[26px] min-w-0">
-            <div className={cn(diffBadge, diffColors[task.diff])}>{task.diff}</div>
+            <span className="text-[7px] font-bold tracking-[0.12em] uppercase text-[var(--text-lo)] font-[var(--font-title)] shrink-0">
+              Rank
+            </span>
+            <div className={cn(diffBadge, diffColors[task.diff] ?? diffBadgeFallback)}>
+              {task.diff || '–'}
+            </div>
 
             {task.overdueLevel &&
               task.overdueLevel !== 'failed' &&
@@ -149,7 +154,7 @@ export function QuestCard({
         {!isOverlay && (
           <div className="flex items-center gap-0.5 shrink-0 self-center ml-auto">
             <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity duration-150">
-              {onMoveToNextDay && !task.done && !task.cancelled && (
+              {onMoveToNextDay && !task.done && !task.cancelled && task.source !== 'habit' && (
                 <button
                   type="button"
                   title="Move to next day"
@@ -232,26 +237,16 @@ function ExpandedPanel({
   onClone?: (task: UITask) => void;
   onMoveToNextDay?: (task: UITask) => void;
 }) {
-  const c = catOf(task.cat);
-  const p = priOf(task.priority);
-
   return (
     <div className="w-full mt-2 pt-2.5 border-t border-[var(--border)] pl-[26px]">
       {/* Detail grid */}
       <div className="grid grid-cols-4 gap-2 mb-3">
         {[
-          { label: 'Realm', value: `${c.icon} ${c.label}` },
           { label: 'Rank', value: task.diff },
-          { label: 'Priority', value: p.label },
           { label: 'Est.', value: fmtEst(task.est) },
           task.isMultiDay
             ? { label: 'Duration', value: `${task.totalDays} days` }
             : { label: 'Deadline', value: task.deadline },
-          {
-            label: 'Today',
-            value: task.isMultiDay ? (task.loggedToday ? '✓ Logged' : '○ Not yet') : '—',
-          },
-          { label: 'Streak', value: task.streak > 0 ? `${task.streak}d` : '—' },
           { label: 'Reward', value: `${task.xp} XP · ${task.coins} ◎` },
         ].map(({ label, value }) => (
           <div key={label} className="flex flex-col gap-[2px]">
@@ -432,7 +427,7 @@ function ExpandedPanel({
                   ⏱ Reschedule
                 </button>
               )}
-              {onMoveToNextDay && !task.done && (
+              {onMoveToNextDay && !task.done && task.source !== 'habit' && (
                 <button
                   type="button"
                   className={qcxBtnGhost}
@@ -473,7 +468,8 @@ const checkBtnDone = 'bg-[var(--mint)] border-[var(--mint)] text-[oklch(0.1_0_0)
 const checkBtnLogged = 'bg-[var(--cyan)] border-[var(--cyan)] text-[oklch(0.1_0_0)]';
 
 const diffBadge =
-  'w-[16px] h-[16px] rounded-sm flex items-center justify-center text-[8px] font-black font-[var(--font-title)] shrink-0';
+  'min-w-[17px] h-[17px] px-1 rounded-sm flex items-center justify-center text-[9px] font-black font-[var(--font-title)] border border-[var(--border)] shrink-0';
+const diffBadgeFallback = 'bg-[var(--panel3)] text-[var(--text-mid)]';
 
 const titleText = 'text-[11px] font-semibold text-[var(--text-hi)] leading-[1.3] truncate flex-1';
 

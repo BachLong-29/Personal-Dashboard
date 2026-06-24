@@ -5,16 +5,19 @@ import { useMemo, useState } from 'react';
 import { Modal, ModalHead, ModalBody, ModalFoot } from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
 import { cn } from '@/libs/utils';
+import { useProfile } from '@/features/profile/hooks/useProfile';
 
 import type { ScheduleBlock } from '@/types';
 
 import { useCalendarInsights } from '../hooks/useCalendarInsights';
 import {
+  useScheduleBlocks,
   useCreateScheduleBlock,
   useDeleteScheduleBlock,
   useUpdateScheduleBlock,
   useTaskBlocks,
 } from '../hooks/useScheduleBlocks';
+import { DayTimeline, type TimelineSegment } from './DayTimeline';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -82,20 +85,22 @@ function fmtDate(d: string): string {
 // ─── Component ────────────────────────────────────────────────────────────────
 
 const MAX_BLOCK_MINUTES = 1440; // absolute hard cap (24h)
+const DEFAULT_CAPACITY = 600; // fallback daily work minutes
 
 export function SessionPlanner({ open, task, onClose }: SessionPlannerProps) {
   const { data: blocks = [] } = useTaskBlocks(task?.id);
+  const { data: profile } = useProfile();
   const createBlock = useCreateScheduleBlock();
   const updateBlock = useUpdateScheduleBlock();
   const deleteBlock = useDeleteScheduleBlock();
+
+  // Available work minutes per day, from the user's profile settings.
+  const dailyCapacity = profile?.settings?.dailyCapacityMinutes ?? DEFAULT_CAPACITY;
 
   // Add-session form
   const [date, setDate] = useState('');
   const [time, setTime] = useState('09:00');
   const [durStr, setDurStr] = useState('');
-
-  // Max duration per session (used for auto-fill and shown as a hint on inputs)
-  const [maxPerSessionStr, setMaxPerSessionStr] = useState('240');
 
   // Inline-edit state — the block currently being edited + its draft values
   const [editId, setEditId] = useState<string | null>(null);
@@ -108,30 +113,25 @@ export function SessionPlanner({ open, task, onClose }: SessionPlannerProps) {
   const remaining = Math.max(0, estimate - allocated);
   const pct = estimate > 0 ? Math.min(100, Math.round((allocated / estimate) * 100)) : 0;
 
-  const maxPerSession = Math.min(
-    MAX_BLOCK_MINUTES,
-    Math.max(1, parseInt(maxPerSessionStr, 10) || 240),
+  // The day the add-session form is targeting — drives the capacity + timeline.
+  const focusedDate = date || task?.startDate || '';
+
+  // All blocks (every task/quest) on the focused day — for capacity + timeline.
+  const { data: focusedDayBlocks = [] } = useScheduleBlocks(
+    focusedDate ? { from: focusedDate, to: focusedDate } : {},
   );
 
-  // Validation helpers
+  // Validation — only the absolute 24h cap remains (max/buổi removed).
   const addDurNum = parseInt(durStr, 10);
   const addDurError =
-    durStr && !Number.isNaN(addDurNum)
-      ? addDurNum > MAX_BLOCK_MINUTES
-        ? `Tối đa ${MAX_BLOCK_MINUTES} phút (24h)`
-        : addDurNum > maxPerSession
-          ? `Vượt giới hạn ${maxPerSession} phút/buổi`
-          : ''
+    durStr && !Number.isNaN(addDurNum) && addDurNum > MAX_BLOCK_MINUTES
+      ? `Tối đa ${MAX_BLOCK_MINUTES} phút (24h)`
       : '';
 
   const editDurNum = parseInt(eDur, 10);
   const editDurError =
-    eDur && !Number.isNaN(editDurNum)
-      ? editDurNum > MAX_BLOCK_MINUTES
-        ? `Tối đa ${MAX_BLOCK_MINUTES} phút`
-        : editDurNum > maxPerSession
-          ? `Vượt ${maxPerSession} phút`
-          : ''
+    eDur && !Number.isNaN(editDurNum) && editDurNum > MAX_BLOCK_MINUTES
+      ? `Tối đa ${MAX_BLOCK_MINUTES} phút`
       : '';
 
   // Insights range: task span + any block dates (blocks may sit outside the span)
@@ -164,6 +164,21 @@ export function SessionPlanner({ open, task, onClose }: SessionPlannerProps) {
     return { hardIds: hard, softIds: soft, overloadedDates: over };
   }, [insights]);
 
+  // Timeline segments for the focused day: existing blocks + a live preview of
+  // whatever is currently typed in the add-session form.
+  const timelineSegments = useMemo<TimelineSegment[]>(() => {
+    const segs: TimelineSegment[] = focusedDayBlocks.map((b) => ({
+      id: b.id,
+      startTime: b.startTime,
+      duration: b.duration,
+      isCurrent: task ? b.sourceId === task.id : false,
+    }));
+    if (!editId && time && !Number.isNaN(addDurNum) && addDurNum > 0 && !addDurError) {
+      segs.push({ id: 'preview', startTime: time, duration: addDurNum, isPreview: true });
+    }
+    return segs;
+  }, [focusedDayBlocks, task, time, addDurNum, addDurError, editId]);
+
   if (!task) return null;
 
   const sorted = [...blocks].sort((a, b) =>
@@ -181,12 +196,18 @@ export function SessionPlanner({ open, task, onClose }: SessionPlannerProps) {
     );
   }
 
+  /** Push the whole remaining estimate into the minutes field. */
+  function handleFillAll() {
+    if (remaining > 0) setDurStr(String(remaining));
+    else if (estimate > 0) setDurStr(String(estimate));
+  }
+
   async function handleAutoFill() {
     if (!task || remaining <= 0) return;
     const days = eachDay(task.startDate, task.endDate ?? task.startDate);
     const n = days.length || 1;
-    // Cap per-session duration at maxPerSession, rounded to 15-min intervals, min 15
-    const base = Math.max(15, Math.min(maxPerSession, Math.round(remaining / n / 15) * 15));
+    // Evenly distribute remaining across the task's day span, rounded to 15-min.
+    const base = Math.max(15, Math.round(remaining / n / 15) * 15);
     let rem = remaining;
     for (const d of days) {
       if (rem <= 0) break;
@@ -201,13 +222,12 @@ export function SessionPlanner({ open, task, onClose }: SessionPlannerProps) {
       rem -= dur;
     }
     if (rem > 0) {
-      // Overflow goes into an extra block capped at maxPerSession
       await createBlock.mutateAsync({
         sourceType: 'task',
         sourceId: task.id,
         date: days.at(-1) ?? task.startDate,
         startTime: '13:00',
-        duration: Math.min(rem, maxPerSession),
+        duration: rem,
       });
     }
   }
@@ -236,10 +256,10 @@ export function SessionPlanner({ open, task, onClose }: SessionPlannerProps) {
   const busy = createBlock.isPending || updateBlock.isPending || deleteBlock.isPending;
 
   return (
-    <Modal open={open} onClose={onClose} maxWidth="520px" bottomSheet scrollable>
+    <Modal open={open} onClose={onClose} maxWidth="760px" bottomSheet scrollable>
       <ModalHead tag="SESSION PLANNER" title={`${task.icon ?? '❖'} ${task.name}`} />
       <ModalBody scrollable className="flex flex-col gap-4 px-4 sm:px-6">
-        {/* Allocation bar */}
+        {/* Allocation bar — task estimate coverage */}
         <div>
           <div className="flex items-center justify-between mb-1.5 text-[10px]">
             <span className="text-[var(--text-lo)] uppercase tracking-[0.12em] font-bold font-[var(--font-title)]">
@@ -261,6 +281,16 @@ export function SessionPlanner({ open, task, onClose }: SessionPlannerProps) {
               Còn lại {fmtDur(remaining)} chưa xếp
             </div>
           )}
+        </div>
+
+        {/* Day capacity + timeline for the focused date */}
+        <div className="flex flex-col gap-1.5 rounded-[var(--r-sm)] border border-[var(--border)] bg-[var(--panel)] p-3">
+          <div className="flex items-center justify-between">
+            <span className="text-[9px] uppercase tracking-[0.12em] font-bold font-[var(--font-title)] text-[var(--text-lo)]">
+              {fmtDate(focusedDate)}
+            </span>
+          </div>
+          <DayTimeline segments={timelineSegments} capacityMinutes={dailyCapacity} />
         </div>
 
         {/* Overload banner */}
@@ -309,7 +339,7 @@ export function SessionPlanner({ open, task, onClose }: SessionPlannerProps) {
                       className={inputCls}
                     />
                   </Field>
-                  <Field label={`Phút (≤${maxPerSession})`}>
+                  <Field label="Phút">
                     <input
                       type="number"
                       min={1}
@@ -367,11 +397,6 @@ export function SessionPlanner({ open, task, onClose }: SessionPlannerProps) {
                 </span>
                 <span className="text-[9px] text-[var(--text-lo)] ml-auto tabular-nums">
                   {fmtDur(b.duration)}
-                  {b.duration > maxPerSession && (
-                    <span className="ml-1 text-[var(--gold)]" title="Vượt max/buổi">
-                      ⚠
-                    </span>
-                  )}
                 </span>
                 {hard && (
                   <span className="text-[9px] text-[var(--rose)]" title="Trùng giờ">
@@ -431,16 +456,22 @@ export function SessionPlanner({ open, task, onClose }: SessionPlannerProps) {
                 type="number"
                 min={1}
                 max={MAX_BLOCK_MINUTES}
-                placeholder={
-                  remaining > 0
-                    ? String(Math.min(remaining, maxPerSession))
-                    : String(Math.min(60, maxPerSession))
-                }
+                placeholder={remaining > 0 ? String(remaining) : '60'}
                 value={durStr}
                 onChange={(e) => setDurStr(e.target.value)}
                 className={cn(inputCls, 'w-[72px]', addDurError && 'border-[var(--rose)]')}
               />
             </Field>
+            {/* All — push the whole remaining estimate into the minutes field */}
+            <button
+              type="button"
+              onClick={handleFillAll}
+              disabled={busy || (remaining <= 0 && estimate <= 0)}
+              className="px-2.5 py-1.5 text-[10px] font-bold rounded-[var(--r-sm)] border border-[oklch(0.76_0.16_205_/_0.4)] text-[var(--cyan)] hover:bg-[oklch(0.76_0.16_205_/_0.1)] transition-all disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
+              title="Đẩy toàn bộ thời lượng còn lại vào ô phút"
+            >
+              All{remaining > 0 ? ` (${fmtDur(remaining)})` : ''}
+            </button>
             <button
               type="button"
               onClick={handleAdd}
@@ -450,46 +481,20 @@ export function SessionPlanner({ open, task, onClose }: SessionPlannerProps) {
               + Thêm
             </button>
           </div>
-          {/* Hint / error below the whole input row — keeps all fields the same height */}
-          {addDurError ? (
-            <span className="text-[9px] text-[var(--rose)]">{addDurError}</span>
-          ) : (
-            <span className="text-[9px] text-[var(--text-lo)]">max {maxPerSession} phút/buổi</span>
-          )}
+          {addDurError && <span className="text-[9px] text-[var(--rose)]">{addDurError}</span>}
         </div>
       </ModalBody>
 
       <ModalFoot className="shrink-0">
-        <div className="flex items-center justify-between gap-3 w-full flex-wrap">
-          {/* Max per session — compact inline config */}
-          <div className="flex items-center gap-1.5">
-            <span className="text-[8px] uppercase tracking-[0.1em] text-[var(--text-lo)] font-bold font-[var(--font-title)] whitespace-nowrap">
-              Max/buổi
-            </span>
-            <input
-              type="number"
-              min={15}
-              max={MAX_BLOCK_MINUTES}
-              value={maxPerSessionStr}
-              onChange={(e) => setMaxPerSessionStr(e.target.value)}
-              className={cn(inputCls, 'w-[64px] py-1 text-[10px]')}
-              title="Thời lượng tối đa mỗi buổi (phút) — dùng cho Auto-fill và cảnh báo nhập liệu"
-            />
-            <span className="text-[9px] text-[var(--text-lo)]">phút</span>
-          </div>
-
-          <div className="flex items-center gap-2 ml-auto">
-            {remaining > 0 && estimate > 0 ? (
-              <Button variant="ghost" onClick={handleAutoFill} disabled={busy}>
-                ⚡ Auto-fill ({fmtDur(remaining)})
-              </Button>
-            ) : (
-              <span />
-            )}
-            <Button variant="primary" onClick={onClose} disabled={busy}>
-              {allocated > 0 ? '✓ Xong' : 'Để sau'}
+        <div className="flex items-center justify-end gap-2 w-full">
+          {remaining > 0 && estimate > 0 && (
+            <Button variant="ghost" onClick={handleAutoFill} disabled={busy}>
+              ⚡ Auto-fill ({fmtDur(remaining)})
             </Button>
-          </div>
+          )}
+          <Button variant="primary" onClick={onClose} disabled={busy}>
+            {allocated > 0 ? '✓ Xong' : 'Để sau'}
+          </Button>
         </div>
       </ModalFoot>
     </Modal>

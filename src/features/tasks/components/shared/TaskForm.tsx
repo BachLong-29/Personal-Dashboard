@@ -290,7 +290,13 @@ export const TaskForm = forwardRef<TaskFormHandle, TaskFormProps>(function TaskF
         <DatePicker
           label="Start date"
           value={startDate}
-          onChange={setStartDate}
+          onChange={(d) => {
+            setStartDate(d);
+            // If endDate falls before the new startDate, advance it to match
+            if (endDate && d && endDate.getTime() < d.getTime()) {
+              setEndDate(d);
+            }
+          }}
           onClear={() => setStartDate(null)}
         />
         <DatePicker

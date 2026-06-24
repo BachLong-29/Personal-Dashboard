@@ -248,13 +248,48 @@ export function TaskManagement() {
     if (apiMerged.length === 0) return;
 
     // ── Day-specific task UITasks (correct slot + done for selected date) ───────
-    const dayTaskItems: UITask[] = apiTasksForDay.map((t) => {
+    // Earliest task block per task on the selected day — drives placement + time.
+    const dayBlockByTask = new Map<string, ScheduleBlock>();
+    for (const b of dayTaskBlocks) {
+      const cur = dayBlockByTask.get(b.sourceId);
+      if (!cur || b.startTime < cur.startTime) dayBlockByTask.set(b.sourceId, b);
+    }
+    // Task ids with a known block anywhere in the loaded range (week + day).
+    // A scheduled single-day task lives on its block's day, not its startDate.
+    const taskIdsWithBlock = new Set<string>([
+      ...weekTaskBlocks.map((b) => b.sourceId),
+      ...dayTaskBlocks.map((b) => b.sourceId),
+    ]);
+
+    // 1. Span-based items: multi-day tasks always span their range; single-day
+    //    tasks appear here only when they have NO block (else placed by block).
+    const spanItems: UITask[] = apiTasksForDay
+      .filter((t) => {
+        const isMulti = !!t.endDate && t.endDate !== t.startDate;
+        return isMulti || !taskIdsWithBlock.has(t.id);
+      })
+      .map((t) => {
+        const log = apiTaskLogsForDay.find((l) => l.taskId === t.id);
+        const blockTime = blockMap.get(`${t.id}|${selectedDateStr}`)?.startTime;
+        const ui = taskToUITask(t, log, blockTime);
+        const done = ui.isMultiDay ? !!log || t.status === 'done' : t.status === 'done';
+        return withProject({ ...ui, day: selectedOffset, done });
+      });
+
+    // 2. Block-scheduled items: any task with a block on the selected day, placed
+    //    at the block's time — even when its startDate is a different day.
+    const placedIds = new Set(spanItems.map((u) => u.sourceId));
+    const blockItems: UITask[] = [...dayBlockByTask.values()].flatMap((b) => {
+      if (placedIds.has(b.sourceId)) return [];
+      const t = apiTasks.find((x) => x.id === b.sourceId);
+      if (!t) return [];
       const log = apiTaskLogsForDay.find((l) => l.taskId === t.id);
-      const blockTime = blockMap.get(`${t.id}|${selectedDateStr}`)?.startTime;
-      const ui = taskToUITask(t, log, blockTime);
+      const ui = taskToUITask(t, log, b.startTime);
       const done = ui.isMultiDay ? !!log || t.status === 'done' : t.status === 'done';
-      return withProject({ ...ui, day: selectedOffset, done });
+      return [withProject({ ...ui, day: selectedOffset, startTime: b.startTime, done })];
     });
+
+    const dayTaskItems: UITask[] = [...spanItems, ...blockItems];
 
     // ── Habit UITasks for non-today selected dates ───────────────────────────────
     // For today, apiMerged already contains the correct habits (day=0).
@@ -294,6 +329,7 @@ export function TaskManagement() {
     apiLoadedRef.current = true;
   }, [
     apiMerged,
+    apiTasks,
     apiTasksForDay,
     apiTaskLogsForDay,
     apiHabits,
@@ -304,6 +340,8 @@ export function TaskManagement() {
     selectedOffset,
     withProject,
     blockMap,
+    dayTaskBlocks,
+    weekTaskBlocks,
   ]);
 
   // ── Forge modal ──────────────────────────────────────────────────────────────

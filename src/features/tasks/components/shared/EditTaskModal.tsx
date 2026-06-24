@@ -4,7 +4,7 @@ import { useRef, useState } from 'react';
 
 import { useTranslations } from 'next-intl';
 
-import { Modal, ModalBody, ModalFoot } from '@/components/ui/Modal';
+import { Modal, ModalBody, ModalFoot, ModalHead } from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
 import { Checkbox } from '@/components/ui/Checkbox';
 import { DatePicker } from '@/components/ui/DatePicker';
@@ -53,11 +53,10 @@ export function EditTaskModal({ task, open, onClose, onSave, saving }: EditTaskM
   const [canSave, setCanSave] = useState(false);
   const [plannerTask, setPlannerTask] = useState<PlannerTask | null>(null);
 
-  // Block update prompt — shown when startDate or duration changes on a task with existing blocks
-  const [blockPrompt, setBlockPrompt] = useState<{
-    payload: UpdateTaskPayload;
-    plannerData: PlannerTask | null;
-    updateSessions: boolean;
+  // Warning modal — shown after save when existing blocks need to be rescheduled
+  const [blockWarning, setBlockWarning] = useState<{
+    blockCount: number;
+    plannerData: PlannerTask;
   } | null>(null);
 
   // Defer state — reset whenever task changes (key prop on outer element handles this)
@@ -69,7 +68,41 @@ export function EditTaskModal({ task, open, onClose, onSave, saving }: EditTaskM
   // Fetch existing blocks so we can warn when date/duration changes
   const { data: blocks = [] } = useTaskBlocks(task?.sourceId ?? '');
 
-  if (!task) return null;
+  // Post-save modals must render even after task is cleared (React batches both state updates)
+  const postSaveModals = (
+    <>
+      <SessionPlanner
+        open={plannerTask !== null}
+        task={plannerTask}
+        onClose={() => setPlannerTask(null)}
+      />
+      <Modal open={blockWarning !== null} onClose={() => setBlockWarning(null)} maxWidth="380px">
+        <ModalHead title="⚡ Cập nhật lịch" />
+        <ModalBody>
+          <p className="text-[12px] text-[var(--text-hi)] leading-relaxed">
+            Task có <strong>{blockWarning?.blockCount} buổi</strong> lịch. Mở Session Planner để cập
+            nhật sau khi lưu?
+          </p>
+        </ModalBody>
+        <ModalFoot>
+          <div className="flex justify-end w-full">
+            <Button
+              variant="primary"
+              onClick={() => {
+                const data = blockWarning?.plannerData ?? null;
+                setBlockWarning(null);
+                if (data) setPlannerTask(data);
+              }}
+            >
+              OK
+            </Button>
+          </div>
+        </ModalFoot>
+      </Modal>
+    </>
+  );
+
+  if (!task) return postSaveModals;
 
   function resetDefer() {
     setIsDeferred(false);
@@ -80,7 +113,6 @@ export function EditTaskModal({ task, open, onClose, onSave, saving }: EditTaskM
 
   function handleClose() {
     resetDefer();
-    setBlockPrompt(null);
     onClose();
   }
 
@@ -121,12 +153,12 @@ export function EditTaskModal({ task, open, onClose, onSave, saving }: EditTaskM
       payload.deferReason = null;
     }
 
-    // After save: open SessionPlanner when task goes from no-date → has startDate + duration
     const effectiveStartDate = payload.startDate ?? undefined;
+
+    // After save: open SessionPlanner when task goes from no-date → has startDate + duration
     const hadNoDate = !task.startDate;
-    const nowHasDateAndDuration = !!effectiveStartDate && !!resolvedDuration;
     const pendingPlanner =
-      hadNoDate && nowHasDateAndDuration
+      hadNoDate && !!effectiveStartDate && !!resolvedDuration
         ? {
             id: task.sourceId,
             name: values.name,
@@ -138,63 +170,29 @@ export function EditTaskModal({ task, open, onClose, onSave, saving }: EditTaskM
           }
         : null;
 
-    // Detect date/duration change on a task that already has scheduled blocks.
-    // Only fire the prompt when moving to a new date — not when clearing it,
-    // because cleared startDate orphans the blocks regardless.
+    // After save: warn when existing blocks need rescheduling (date moved or duration changed)
     const startDateMoved = !!resolvedStartDate && resolvedStartDate !== task.startDate;
     const durationChanged = resolvedDuration !== task.est;
-    const hasBlocks = blocks.length > 0;
-
-    if (hasBlocks && (startDateMoved || durationChanged) && blockPrompt === null) {
-      // Pause and ask the user whether to update sessions
-      setBlockPrompt({ payload, plannerData: pendingPlanner, updateSessions: false });
-      return;
-    }
-
-    // Proceed with save (either no block conflict, or user already made a choice)
-    const openSessions = blockPrompt?.updateSessions ?? false;
-    setBlockPrompt(null);
+    const needsBlockWarning = blocks.length > 0 && (startDateMoved || durationChanged);
 
     onSave(task.sourceId, payload, () => {
-      if (pendingPlanner || openSessions) {
-        const planData = pendingPlanner ?? {
-          id: task.sourceId,
-          name: values.name,
-          icon: values.icon,
-          color: values.color,
-          duration: resolvedDuration,
-          startDate: effectiveStartDate ?? task.startDate ?? '',
-          endDate: values.endDate ? toLocalDate(values.endDate) : task.endDate,
-        };
-        setPlannerTask(planData as PlannerTask);
-      }
-    });
-  }
-
-  function handleBlockChoice(updateSessions: boolean) {
-    if (!blockPrompt) return;
-    setBlockPrompt({ ...blockPrompt, updateSessions });
-    // Trigger save immediately with the choice embedded
-    const updated = { ...blockPrompt, updateSessions };
-    if (!task?.sourceId) return;
-
-    const openSessions = updated.updateSessions;
-    const payload = updated.payload;
-    const plannerData = updated.plannerData;
-
-    setBlockPrompt(null);
-    onSave(task.sourceId, payload, () => {
-      if (plannerData || openSessions) {
-        const planData = plannerData ?? {
-          id: task.sourceId ?? '',
-          name: task.title,
-          icon: task.icon,
-          color: task.color,
-          duration: payload.duration,
-          startDate: payload.startDate ?? task.startDate ?? '',
-          endDate: payload.endDate ?? task.endDate,
-        };
-        setPlannerTask(planData as PlannerTask);
+      if (pendingPlanner) {
+        // New task got a date+duration for the first time — open planner directly
+        setPlannerTask(pendingPlanner as PlannerTask);
+      } else if (needsBlockWarning) {
+        // Existing blocks may be out of sync — show warning modal first
+        setBlockWarning({
+          blockCount: blocks.length,
+          plannerData: {
+            id: task.sourceId ?? '',
+            name: values.name,
+            icon: values.icon,
+            color: values.color,
+            duration: resolvedDuration ?? undefined,
+            startDate: effectiveStartDate ?? task.startDate ?? '',
+            endDate: values.endDate ? toLocalDate(values.endDate) : task.endDate,
+          },
+        });
       }
     });
   }
@@ -271,39 +269,8 @@ export function EditTaskModal({ task, open, onClose, onSave, saving }: EditTaskM
             saving={saving}
           />
 
-          {/* ── Block update prompt ─────────────────────────────────────────── */}
-          {blockPrompt && (
-            <div className="mt-4 border border-[oklch(0.74_0.17_85_/_0.4)] rounded-[var(--r-sm)] bg-[oklch(0.74_0.17_85_/_0.06)] p-3 flex flex-col gap-2.5">
-              <div className="flex items-start gap-2">
-                <span className="text-[var(--gold)] text-[13px] shrink-0">⚡</span>
-                <p className="text-[11px] text-[var(--text-hi)] leading-snug">
-                  Bạn đã thay đổi ngày/thời lượng của task có <strong>{blocks.length} buổi</strong>{' '}
-                  lịch. Mở Session Planner để cập nhật sau khi lưu?
-                </p>
-              </div>
-              <div className="flex gap-2 justify-end">
-                <button
-                  type="button"
-                  onClick={() => handleBlockChoice(false)}
-                  disabled={saving}
-                  className="px-3 py-1.5 text-[10px] font-bold rounded-[var(--r-sm)] border border-[var(--border)] text-[var(--text-mid)] hover:text-[var(--text-hi)] transition-all disabled:opacity-40"
-                >
-                  Bỏ qua
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleBlockChoice(true)}
-                  disabled={saving}
-                  className="px-3 py-1.5 text-[10px] font-bold rounded-[var(--r-sm)] border border-[oklch(0.74_0.17_85_/_0.4)] text-[var(--gold)] bg-[oklch(0.74_0.17_85_/_0.08)] hover:bg-[oklch(0.74_0.17_85_/_0.15)] transition-all disabled:opacity-40"
-                >
-                  ✦ Cập nhật buổi
-                </button>
-              </div>
-            </div>
-          )}
-
           {/* ── Defer section — single-day tasks only ──────────────────────── */}
-          {isSingleDay && !blockPrompt && (
+          {isSingleDay && (
             <div className="mt-4 border-t border-[var(--border)] pt-4">
               <Checkbox
                 checked={isDeferred}
@@ -365,29 +332,22 @@ export function EditTaskModal({ task, open, onClose, onSave, saving }: EditTaskM
             <Button variant="ghost" onClick={handleClose} disabled={saving}>
               {t('editModal.cancel')}
             </Button>
-            {!blockPrompt && (
-              <Button
-                variant="primary"
-                onClick={() => formRef.current?.submit()}
-                disabled={saving || !canSave}
-              >
-                {saving
-                  ? t('editModal.saving')
-                  : isDeferred
-                    ? t('editModal.reschedule')
-                    : t('editModal.save')}
-              </Button>
-            )}
+            <Button
+              variant="primary"
+              onClick={() => formRef.current?.submit()}
+              disabled={saving || !canSave}
+            >
+              {saving
+                ? t('editModal.saving')
+                : isDeferred
+                  ? t('editModal.reschedule')
+                  : t('editModal.save')}
+            </Button>
           </div>
         </ModalFoot>
       </Modal>
 
-      {/* Session planner — opens after editing a task that gains startDate + duration */}
-      <SessionPlanner
-        open={plannerTask !== null}
-        task={plannerTask}
-        onClose={() => setPlannerTask(null)}
-      />
+      {postSaveModals}
     </>
   );
 }
