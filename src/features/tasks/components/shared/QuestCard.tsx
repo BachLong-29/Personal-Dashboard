@@ -1,11 +1,38 @@
 'use client';
 
+import { useState } from 'react';
+import Image from 'next/image';
+
 import { cn } from '@/libs/utils';
 
 import { ProjectBadge } from '@/components/common/ProjectBadge';
+import { useTaskBlocks } from '@/features/schedule/hooks/useScheduleBlocks';
 
 import { catOf, fmtEst, COLOR_VAR, type UITask } from '../../data/mock';
 import { diffColors, qcxBtnGhost, qcxBtnPrimary } from './styles';
+
+// ─── Session helpers ────────────────────────────────────────────────────────────
+
+function fmtSessionDate(d: string): string {
+  const p = d.split('-');
+  return new Date(Number(p[0]), Number(p[1]) - 1, Number(p[2])).toLocaleDateString('en-US', {
+    weekday: 'short',
+    month: 'short',
+    day: 'numeric',
+  });
+}
+
+function sessionEndTime(start: string, dur: number): string {
+  const [h, m] = start.split(':').map(Number);
+  const total = Math.min(23 * 60 + 59, (h ?? 0) * 60 + (m ?? 0) + dur);
+  return `${String(Math.floor(total / 60)).padStart(2, '0')}:${String(total % 60).padStart(2, '0')}`;
+}
+
+function fmtSessionDur(min: number): string {
+  const h = Math.floor(min / 60);
+  const m = min % 60;
+  return [h ? `${h}h` : '', m ? `${m}m` : ''].filter(Boolean).join(' ') || '0m';
+}
 
 // ─── Props ────────────────────────────────────────────────────────────────────
 
@@ -237,6 +264,16 @@ function ExpandedPanel({
   onClone?: (task: UITask) => void;
   onMoveToNextDay?: (task: UITask) => void;
 }) {
+  const [lightbox, setLightbox] = useState<string | null>(null);
+
+  // Scheduled work sessions — only tasks carry schedule blocks.
+  const { data: sessions = [] } = useTaskBlocks(task.source === 'task' ? task.sourceId : undefined);
+  const sortedSessions = [...sessions].sort((a, b) =>
+    a.date === b.date ? a.startTime.localeCompare(b.startTime) : a.date.localeCompare(b.date),
+  );
+
+  const attachments = task.attachments ?? [];
+
   return (
     <div className="w-full mt-2 pt-2.5 border-t border-[var(--border)] pl-[26px]">
       {/* Detail grid */}
@@ -274,6 +311,101 @@ function ExpandedPanel({
           <div className="text-[10px] text-[var(--text-mid)] leading-[1.5]">
             {task.expandedNote}
           </div>
+        </div>
+      )}
+
+      {/* Scheduled sessions */}
+      {sortedSessions.length > 0 && (
+        <div className="mb-3">
+          <div className="text-[8px] tracking-[0.12em] text-[var(--text-lo)] font-bold uppercase mb-1.5 font-[var(--font-title)]">
+            🗓 Đã lên lịch ({sortedSessions.length})
+          </div>
+          <div className="flex flex-col gap-1">
+            {sortedSessions.map((s) => (
+              <div
+                key={s.id}
+                className={cn(
+                  'flex items-center gap-2 px-2 py-1 rounded-[var(--r-sm)] border bg-[var(--panel2)]',
+                  s.status === 'done'
+                    ? 'border-[oklch(0.76_0.14_162_/_0.35)]'
+                    : s.status === 'missed'
+                      ? 'border-[oklch(0.72_0.18_5_/_0.35)]'
+                      : 'border-[var(--border)]',
+                )}
+              >
+                <span className="text-[9px] text-[var(--text-hi)] font-semibold w-[88px] shrink-0">
+                  {fmtSessionDate(s.date)}
+                </span>
+                <span className="text-[9px] text-[var(--text-mid)] tabular-nums">
+                  {s.startTime}–{sessionEndTime(s.startTime, s.duration)}
+                </span>
+                <span className="text-[9px] text-[var(--text-lo)] ml-auto tabular-nums">
+                  {fmtSessionDur(s.duration)}
+                </span>
+                {s.status === 'done' && (
+                  <span className="text-[9px] text-[var(--mint)]" title="Đã xong">
+                    ✓
+                  </span>
+                )}
+                {s.status === 'missed' && (
+                  <span className="text-[9px] text-[var(--rose)]" title="Đã lỡ">
+                    ✕
+                  </span>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Attachments */}
+      {attachments.length > 0 && (
+        <div className="mb-3">
+          <div className="text-[8px] tracking-[0.12em] text-[var(--text-lo)] font-bold uppercase mb-1.5 font-[var(--font-title)]">
+            📎 Đính kèm ({attachments.length})
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {attachments.map((url) => (
+              <button
+                key={url}
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setLightbox(url);
+                }}
+                className="relative w-[56px] h-[56px] rounded-[var(--r-sm)] overflow-hidden border border-[var(--border)] hover:border-[oklch(0.74_0.17_85_/_0.5)] transition-colors cursor-zoom-in shrink-0"
+                title="Xem ảnh"
+              >
+                <Image src={url} alt="Attachment" fill sizes="56px" className="object-cover" />
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Lightbox — full-screen image viewer */}
+      {lightbox && (
+        <div
+          className="fixed inset-0 z-[2000] flex items-center justify-center bg-black/85 p-4 cursor-zoom-out"
+          onClick={(e) => {
+            e.stopPropagation();
+            setLightbox(null);
+          }}
+        >
+          <div className="relative w-full h-full max-w-[90vw] max-h-[90vh]">
+            <Image src={lightbox} alt="Attachment" fill sizes="90vw" className="object-contain" />
+          </div>
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              setLightbox(null);
+            }}
+            className="absolute top-4 right-4 w-9 h-9 rounded-full bg-black/60 text-white text-[18px] leading-none flex items-center justify-center hover:bg-[var(--rose)] transition-colors"
+            aria-label="Đóng"
+          >
+            ×
+          </button>
         </div>
       )}
 

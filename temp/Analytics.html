@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Aetheria — Progression Analytics</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=Sora:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="aetheria-ui.css" />
+<link rel="stylesheet" href="analytics.css" />
+</head>
+<body data-accent="gold" data-motion="full">
+
+<div class="page">
+
+  <!-- ─────────────────────────── MAIN ─────────────────────────── -->
+  <main class="main">
+
+    <!-- HEADER -->
+    <header class="an-header">
+      <div>
+        <div class="page-tag">◆ The Chronicle ◆</div>
+        <h1 class="page-title">Progression Analytics</h1>
+        <div class="an-season">
+          <span class="live-dot"></span>
+          <span id="seasonLine">Season III · Ashen Equinox · Day 78</span>
+        </div>
+      </div>
+      <div style="display:flex; flex-direction:column; align-items:flex-end; gap:var(--s-3);">
+        <div style="display:flex; gap:var(--s-2);">
+          <span class="currency-pill coins" style="display:inline-flex;align-items:center;gap:6px;background:var(--bg-2);border:1px solid oklch(0.78 0.16 82 / 0.4);border-radius:var(--r-pill);padding:5px 12px;font-size:var(--t-3);color:var(--text-hi);font-weight:600;">🪙 248</span>
+          <span class="currency-pill gems" style="display:inline-flex;align-items:center;gap:6px;background:var(--bg-2);border:1px solid oklch(0.68 0.22 295 / 0.4);border-radius:var(--r-pill);padding:5px 12px;font-size:var(--t-3);color:var(--text-hi);font-weight:600;">💠 132</span>
+        </div>
+        <div class="range-ctl" id="rangeCtl">
+          <button data-range="7">7D</button>
+          <button data-range="30">30D</button>
+          <button class="active" data-range="season">Season</button>
+          <button data-range="all">All</button>
+        </div>
+      </div>
+    </header>
+
+    <!-- ═══════ 01 · HEADLINE METRICS ═══════ -->
+    <section class="an-section" id="sec-headline">
+      <div class="an-sec-head">
+        <span class="an-sec-num">01</span>
+        <h2 class="an-sec-title">Headline Metrics</h2>
+        <p class="an-sec-desc">The hero's vital signs this season, counted in real time.</p>
+      </div>
+      <div class="bento" id="headlineBento">
+        <!-- featured -->
+        <div class="glass featured b-span-2 b-row-2 reveal">
+          <div class="kpi-label">Lifetime Aether Accrued</div>
+          <div class="featured-val" data-count="248930">0</div>
+          <div class="featured-sub">
+            <span class="delta up">▲ 22.6%</span>
+            <span style="color:var(--text-lo); margin-left:8px;">across 78 days of this season</span>
+          </div>
+          <div class="featured-chart"><canvas id="chartFeatured"></canvas></div>
+        </div>
+        <!-- KPI cards injected here -->
+      </div>
+    </section>
+
+    <!-- ═══════ 02 · PERFORMANCE ═══════ -->
+    <section class="an-section" id="sec-charts">
+      <div class="an-sec-head">
+        <span class="an-sec-num">02</span>
+        <h2 class="an-sec-title">Performance</h2>
+        <p class="an-sec-desc">XP flow, attribute growth, quest cadence and composition.</p>
+      </div>
+      <div class="bento">
+        <!-- XP over time -->
+        <div class="glass chart-card b-span-2 reveal">
+          <div class="chart-head">
+            <div class="chart-title-grp">
+              <div class="chart-title">Aether Flow</div>
+              <div class="chart-sub">XP EARNED VS SPENT · 12 WEEKS</div>
+            </div>
+            <div class="chart-legend">
+              <span class="legend-item"><span class="legend-dot" style="background:var(--accent);"></span>Earned</span>
+              <span class="legend-item"><span class="legend-dot" style="background:var(--violet);"></span>Spent</span>
+            </div>
+          </div>
+          <div class="chart-box tall"><canvas id="chartXP"></canvas></div>
+        </div>
+        <!-- radar -->
+        <div class="glass chart-card b-span-2 reveal" style="--d:0.08s;">
+          <div class="chart-head">
+            <div class="chart-title-grp">
+              <div class="chart-title">Attribute Matrix</div>
+              <div class="chart-sub">CURRENT VS SEASON START</div>
+            </div>
+            <div class="chart-legend">
+              <span class="legend-item"><span class="legend-dot" style="background:var(--accent);"></span>Now</span>
+              <span class="legend-item"><span class="legend-dot" style="background:var(--text-lo);"></span>Start</span>
+            </div>
+          </div>
+          <div class="chart-box tall"><canvas id="chartRadar"></canvas></div>
+        </div>
+        <!-- bar -->
+        <div class="glass chart-card b-span-2 reveal">
+          <div class="chart-head">
+            <div class="chart-title-grp">
+              <div class="chart-title">Quests by Rank</div>
+              <div class="chart-sub">DIFFICULTY DISTRIBUTION</div>
+            </div>
+          </div>
+          <div class="chart-box"><canvas id="chartBar"></canvas></div>
+        </div>
+        <!-- donut -->
+        <div class="glass chart-card b-span-2 reveal" style="--d:0.08s;">
+          <div class="chart-head">
+            <div class="chart-title-grp">
+              <div class="chart-title">Quest Composition</div>
+              <div class="chart-sub">BY TYPE</div>
+            </div>
+          </div>
+          <div class="chart-box donut-wrap">
+            <canvas id="chartDonut"></canvas>
+            <div class="donut-center">
+              <span class="big" data-count="1284">0</span>
+              <span class="small">Total Quests</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════ 03 · ACTIVITY HEATMAP ═══════ -->
+    <section class="an-section" id="sec-heatmap">
+      <div class="an-sec-head">
+        <span class="an-sec-num">03</span>
+        <h2 class="an-sec-title">Discipline Heatmap</h2>
+        <p class="an-sec-desc">Every cell is a day. Brighter means more quests vanquished.</p>
+      </div>
+      <div class="glass heatmap-card reveal">
+        <div class="heatmap-scroll">
+          <div class="heatmap" id="heatmap"></div>
+        </div>
+        <div class="heatmap-foot">
+          <div class="hm-legend">
+            <span>Less</span>
+            <span class="hm-cell" data-lvl="0"></span>
+            <span class="hm-cell" data-lvl="1"></span>
+            <span class="hm-cell" data-lvl="2"></span>
+            <span class="hm-cell" data-lvl="3"></span>
+            <span class="hm-cell" data-lvl="4"></span>
+            <span>More</span>
+          </div>
+          <div class="hm-stats">
+            <div class="hm-stat"><span class="v">78</span><span class="k">Day Streak</span></div>
+            <div class="hm-stat"><span class="v">94%</span><span class="k">Consistency</span></div>
+            <div class="hm-stat"><span class="v">126</span><span class="k">Active Days</span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════ 04 · REALM MAP ═══════ -->
+    <section class="an-section" id="sec-realms">
+      <div class="an-sec-head">
+        <span class="an-sec-num">04</span>
+        <h2 class="an-sec-title">Realms of Effort</h2>
+        <p class="an-sec-desc">Where your aether is spent across the territories of life.</p>
+      </div>
+      <div class="realm-grid">
+        <div class="glass realm-map reveal">
+          <image-slot id="realm-map-art" shape="rounded" radius="14" placeholder="Drop realm / world map artwork"></image-slot>
+          <div class="realm-overlay" id="realmOverlay"></div>
+        </div>
+        <div class="realm-list reveal" id="realmList" style="--d:0.08s;"></div>
+      </div>
+    </section>
+
+    <!-- ═══════ 05 · ORACLE INSIGHTS ═══════ -->
+    <section class="an-section" id="sec-insights">
+      <div class="an-sec-head">
+        <span class="an-sec-num">05</span>
+        <h2 class="an-sec-title">Oracle Insights</h2>
+        <p class="an-sec-desc"><span class="oracle-mark">✦ Generated by the System</span></p>
+      </div>
+      <div class="insight-grid" id="insightGrid"></div>
+    </section>
+
+    <!-- ═══════ 06 · MILESTONES ═══════ -->
+    <section class="an-section" id="sec-milestones">
+      <div class="an-sec-head">
+        <span class="an-sec-num">06</span>
+        <h2 class="an-sec-title">Season Milestones</h2>
+        <p class="an-sec-desc">The saga so far — and the next summit ahead.</p>
+      </div>
+      <div class="glass timeline-card reveal">
+        <div class="timeline" id="timeline"></div>
+      </div>
+    </section>
+
+    <!-- ═══════ 07 · GUILD + FEED ═══════ -->
+    <section class="an-section" id="sec-bottom">
+      <div class="an-sec-head">
+        <span class="an-sec-num">07</span>
+        <h2 class="an-sec-title">Guild & Activity</h2>
+        <p class="an-sec-desc">Where you rank, and what just happened.</p>
+      </div>
+      <div class="bottom-grid">
+        <div class="glass lb-card reveal">
+          <div class="chart-head">
+            <div class="chart-title-grp">
+              <div class="chart-title">Guild Leaderboard</div>
+              <div class="chart-sub">ASHEN COVENANT · 6 MEMBERS</div>
+            </div>
+            <span class="badge badge--gold">Rank 2</span>
+          </div>
+          <div id="leaderboard"></div>
+        </div>
+        <div class="glass feed-card reveal" style="--d:0.08s;">
+          <div class="chart-head">
+            <div class="chart-title-grp">
+              <div class="chart-title">Activity Feed</div>
+              <div class="chart-sub">LIVE</div>
+            </div>
+            <span class="feed-live"></span>
+          </div>
+          <div id="feed"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- FOOTER -->
+    <footer style="margin-top: var(--s-9); padding-top: var(--s-6); border-top: 1px solid var(--border-lo); display: flex; justify-content: space-between; align-items: center; color: var(--text-lo); font-size: var(--t-2);">
+      <div style="display: flex; align-items: center; gap: var(--s-2);">
+        <div class="brand-mark" style="width: 22px; height: 22px; font-size: 11px;">A</div>
+        <span style="font-family: var(--f-title); letter-spacing: 0.18em;">AETHERIA · PROGRESSION CHRONICLE</span>
+      </div>
+      <div style="display: flex; gap: var(--s-5); font-family: var(--f-mono); letter-spacing: 0.1em;">
+        <a href="Personal Dashboard.html" style="color: var(--accent);">→ Command Center</a>
+        <a href="Aetheria UI Kit.html" style="color: var(--accent);">→ UI Kit</a>
+      </div>
+    </footer>
+
+  </main>
+</div>
+
+<!-- Tweaks panel mount (React island) -->
+<div id="tweaks-root"></div>
+
+<!-- libraries -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="image-slot.js"></script>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script src="analytics-data.js"></script>
+<script type="text/babel" src="tweaks-panel.jsx"></script>
+<script type="text/babel" src="analytics-tweaks.jsx"></script>
+<script src="analytics-app.js"></script>
+
+</body>
+</html>

@@ -110,7 +110,9 @@ export function TaskManagement() {
   const apiTasksForDay = useMemo(
     () =>
       apiTasks.filter((t) => {
-        if (!t.startDate) return true; // unscheduled — always visible
+        // Backlog (no startDate) is not tied to any day — kept in the baseline
+        // (day 0) so it stays searchable, but excluded from per-day placement.
+        if (!t.startDate) return false;
         const end = t.endDate ?? t.startDate;
         return selectedDateStr >= t.startDate && selectedDateStr <= end;
       }),
@@ -316,7 +318,10 @@ export function TaskManagement() {
     const merged = hasDayData
       ? [
           ...apiMerged.filter((t) => {
-            if (t.source === 'task' && t.day === selectedOffset) return false;
+            // Only replace day-placed tasks (those with a startDate) for this day.
+            // Backlog tasks (no startDate, day 0) are preserved so they stay
+            // searchable + visible in the All view instead of vanishing.
+            if (t.source === 'task' && t.day === selectedOffset && t.startDate) return false;
             if (!isViewingToday && t.source === 'habit') return false; // replaced by habitItemsForDay
             return true;
           }),
