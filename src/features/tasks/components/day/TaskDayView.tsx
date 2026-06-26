@@ -11,6 +11,8 @@ import {
   type DragEndEvent,
 } from '@dnd-kit/core';
 
+import type { ScheduleBlock } from '@/types';
+
 import { DatePicker } from '@/components/ui/DatePicker';
 
 import { SLOTS, type UITask } from '../../data/mock';
@@ -28,6 +30,8 @@ import { WeekPeek } from './WeekPeek';
 interface TaskDayViewProps {
   tasks: UITask[];
   allTasks: UITask[];
+  /** Task schedule blocks for the visible week — passed to the side peek panels. */
+  taskBlocks?: ScheduleBlock[];
   /** Controlled selected date — owned by TaskManagement */
   selectedDate: Date;
   setSelectedDate: (date: Date) => void;
@@ -61,6 +65,7 @@ function computeOffset(date: Date): number {
 export function TaskDayView({
   tasks,
   allTasks,
+  taskBlocks,
   selectedDate,
   setSelectedDate,
   isLoadingDay,
@@ -206,7 +211,11 @@ export function TaskDayView({
         {/* ── Right: side panels — hidden on mobile or when hideSidePanel ── */}
         {!hideSidePanel && (
           <section className="hidden md:flex w-[400px] shrink-0 flex-col gap-2.5 overflow-y-auto">
-            {splitMode === 'week' ? <WeekPeek tasks={allTasks} /> : <MonthPeek tasks={allTasks} />}
+            {splitMode === 'week' ? (
+              <WeekPeek tasks={allTasks} taskBlocks={taskBlocks} />
+            ) : (
+              <MonthPeek tasks={allTasks} taskBlocks={taskBlocks} />
+            )}
             <ScheduleStrip tasks={selectedTasks} />
           </section>
         )}

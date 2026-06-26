@@ -6,6 +6,6 @@ import { useWeekTasks } from '../hooks/useWeekTasks';
 
 /** Feeds the current week's tasks / quests / habits into {@link WeekPeek}. */
 export function WeekPeekPanel() {
-  const weekTasks = useWeekTasks();
-  return <WeekPeek tasks={weekTasks} />;
+  const { tasks, taskBlocks } = useWeekTasks();
+  return <WeekPeek tasks={tasks} taskBlocks={taskBlocks} />;
 }

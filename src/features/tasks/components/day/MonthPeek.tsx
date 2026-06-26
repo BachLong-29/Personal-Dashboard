@@ -1,13 +1,20 @@
+import { useMemo } from 'react';
+
+import type { ScheduleBlock } from '@/types';
+
 import { cn } from '@/libs/utils';
 
 import { type UITask } from '../../data/mock';
+import { buildTaskSessions, taskOccursOnDayOffset } from '../../utils/date.utils';
 import { sidePanel, panelHead, panelEyebrow, panelTitle, btnIconMini } from '../shared/styles';
 
 interface MonthPeekProps {
   tasks: UITask[];
+  /** Task schedule blocks for the loaded range — drives session-aware placement. */
+  taskBlocks?: ScheduleBlock[];
 }
 
-export function MonthPeek({ tasks }: MonthPeekProps) {
+export function MonthPeek({ tasks, taskBlocks = [] }: MonthPeekProps) {
   const now = new Date();
   const year = now.getFullYear();
   const month = now.getMonth();
@@ -16,12 +23,16 @@ export function MonthPeek({ tasks }: MonthPeekProps) {
   const firstWeekday = new Date(year, month, 1).getDay();
   const monthName = now.toLocaleString('en-US', { month: 'long' });
 
+  // Session lookup so multi-day tasks count only on their scheduled days, and
+  // backlog tasks (no startDate) don't inflate today's count.
+  const sessions = useMemo(() => buildTaskSessions(taskBlocks), [taskBlocks]);
+
   // Build grid: null = empty cell, object = day cell
   const grid: Array<{ date: number; count: number; isToday: boolean; isPast: boolean } | null> = [];
   for (let i = 0; i < firstWeekday; i++) grid.push(null);
   for (let d = 1; d <= daysInMonth; d++) {
     const offset = d - todayDate;
-    const count = tasks.filter((t) => t.day === offset).length;
+    const count = tasks.filter((t) => taskOccursOnDayOffset(t, offset, sessions)).length;
     grid.push({ date: d, count, isToday: d === todayDate, isPast: d < todayDate });
   }
   while (grid.length % 7 !== 0) grid.push(null);
@@ -30,17 +41,23 @@ export function MonthPeek({ tasks }: MonthPeekProps) {
     <div className={sidePanel}>
       <div className={panelHead}>
         <span className={panelEyebrow}>CARTOGRAPHER</span>
-        <h3 className={panelTitle}>{monthName} {year}</h3>
+        <h3 className={panelTitle}>
+          {monthName} {year}
+        </h3>
         <div className="flex-1" />
         <div className="flex gap-1">
-          <button type="button" className={btnIconMini}>◂</button>
-          <button type="button" className={btnIconMini}>▸</button>
+          <button type="button" className={btnIconMini}>
+            ◂
+          </button>
+          <button type="button" className={btnIconMini}>
+            ▸
+          </button>
         </div>
       </div>
 
       <div className="grid grid-cols-7 gap-[2px] mt-2">
         {/* Day-of-week headers */}
-        {['S','M','T','W','T','F','S'].map((d, i) => (
+        {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((d, i) => (
           <div
             key={i}
             className="text-center text-[8px] text-[var(--text-lo)] py-[2px] font-[var(--font-title)]"
@@ -83,10 +100,15 @@ function MonthPeekCell({ cell }: { cell: CellData }) {
   }
 
   const pipColor =
-    cell.count >= 4 ? 'bg-[var(--gold)]' :
-    cell.count === 3 ? 'bg-[var(--violet)]' :
-    cell.count === 2 ? 'bg-[var(--cyan)]' :
-    cell.count === 1 ? 'bg-[var(--mint)]' : '';
+    cell.count >= 4
+      ? 'bg-[var(--gold)]'
+      : cell.count === 3
+        ? 'bg-[var(--violet)]'
+        : cell.count === 2
+          ? 'bg-[var(--cyan)]'
+          : cell.count === 1
+            ? 'bg-[var(--mint)]'
+            : '';
 
   return (
     <div
@@ -99,9 +121,7 @@ function MonthPeekCell({ cell }: { cell: CellData }) {
       )}
     >
       <span>{cell.date}</span>
-      {cell.count > 0 && (
-        <span className={cn('w-1 h-1 rounded-full mt-0.5', pipColor)} />
-      )}
+      {cell.count > 0 && <span className={cn('w-1 h-1 rounded-full mt-0.5', pipColor)} />}
     </div>
   );
 }

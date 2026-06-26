@@ -8,6 +8,8 @@ import {
 } from '@/features/tasks/data/adapters';
 import type { UITask } from '@/features/tasks/data/mock';
 import { toLocalDate } from '@/features/tasks/utils/date.utils';
+import { useScheduleBlocks } from '@/features/schedule/hooks/useScheduleBlocks';
+import type { ScheduleBlock } from '@/types';
 
 import { useHabitLogsRange } from './useHabitLogsRange';
 import { useHabits } from './useHabits';
@@ -15,14 +17,23 @@ import { useQuests } from './useQuests';
 import { useTaskLogs } from './useTaskLogs';
 import { useTasks } from './useTasks';
 
+export interface WeekTasks {
+  tasks: UITask[];
+  /** Task schedule blocks for the visible week — drives session-aware placement. */
+  taskBlocks: ScheduleBlock[];
+}
+
 /**
- * Merged current-week tasks + quests + habits as {@link UITask}[].
+ * Merged current-week tasks + quests + habits as {@link UITask}[], plus the
+ * week's task schedule blocks.
  *
  * Lightweight compared to the day-view merge in `ScheduleDayViewPanel`: it skips
- * block-scheduling and project metadata, so it suits week-overview surfaces
- * (e.g. WeekPeek) that only read day / done / cat / icon / title / diff.
+ * project metadata, so it suits week-overview surfaces (e.g. WeekPeek) that only
+ * read day / done / cat / icon / title / diff. The schedule blocks let WeekPeek
+ * apply the same session-driven placement as the task page, so multi-day tasks
+ * only appear on their scheduled days.
  */
-export function useWeekTasks(): UITask[] {
+export function useWeekTasks(): WeekTasks {
   const todayStr = toLocalDate(new Date());
 
   // Current week range (Mon–Sun) for the habit-log cache.
@@ -47,6 +58,11 @@ export function useWeekTasks(): UITask[] {
   const { data: apiHabits = [] } = useHabits();
   const { data: apiTaskLogs = [] } = useTaskLogs(todayStr);
   const { data: weekHabitLogs = [] } = useHabitLogsRange(logRangeFrom, logRangeTo);
+  const { data: taskBlocks = [] } = useScheduleBlocks({
+    from: logRangeFrom,
+    to: logRangeTo,
+    sourceType: 'task',
+  });
 
   const cancelledHabitIds = useMemo(
     () =>
@@ -56,7 +72,7 @@ export function useWeekTasks(): UITask[] {
     [apiTasks, todayStr],
   );
 
-  return useMemo<UITask[]>(() => {
+  const tasks = useMemo<UITask[]>(() => {
     const tasks = apiTasks.map((t) => {
       const log = apiTaskLogs.find((l) => l.taskId === t.id);
       return taskToUITask(t, log);
@@ -89,4 +105,6 @@ export function useWeekTasks(): UITask[] {
     currentWeekStart,
     todayStr,
   ]);
+
+  return { tasks, taskBlocks };
 }

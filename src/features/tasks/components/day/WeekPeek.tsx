@@ -4,13 +4,18 @@ import { useMemo, useState } from 'react';
 
 import { useTranslations } from 'next-intl';
 
+import type { ScheduleBlock } from '@/types';
+
 import { cn } from '@/libs/utils';
 
 import { WEEK_DAYS, catOf, COLOR_VAR, type UITask } from '../../data/mock';
+import { buildTaskSessions, taskOccursOnDayOffset } from '../../utils/date.utils';
 import { diffColors, sidePanel, panelHead, panelEyebrow, panelTitle } from '../shared/styles';
 
 interface WeekPeekProps {
   tasks: UITask[];
+  /** Task schedule blocks for the visible week — drives session-aware placement. */
+  taskBlocks?: ScheduleBlock[];
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -29,7 +34,7 @@ function dateLabel(offsetDays: number): string {
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-export function WeekPeek({ tasks }: WeekPeekProps) {
+export function WeekPeek({ tasks, taskBlocks = [] }: WeekPeekProps) {
   /**
    * todayMonBased: which WEEK_DAYS.idx corresponds to today.
    * e.g. if today is Wednesday → todayMonBased = 2
@@ -42,6 +47,11 @@ export function WeekPeek({ tasks }: WeekPeekProps) {
    */
   const todayMonBased = useMemo(() => getTodayMonBased(), []);
 
+  // Session lookup: a multi-day task with scheduled blocks appears only on its
+  // session days, so an in-range day with no session (e.g. a 22→29 task on the
+  // 26th with no block that day) no longer shows it.
+  const sessions = useMemo(() => buildTaskSessions(taskBlocks), [taskBlocks]);
+
   return (
     <div className={sidePanel}>
       <div className={panelHead}>
@@ -51,7 +61,7 @@ export function WeekPeek({ tasks }: WeekPeekProps) {
       <div className="flex flex-col gap-[3px] mt-2 overflow-y-auto">
         {WEEK_DAYS.map((d) => {
           const offsetFromToday = d.idx - todayMonBased;
-          const ts = tasks.filter((t) => t.day === offsetFromToday);
+          const ts = tasks.filter((t) => taskOccursOnDayOffset(t, offsetFromToday, sessions));
           const done = ts.filter((t) => t.done).length;
           const isToday = d.idx === todayMonBased;
 

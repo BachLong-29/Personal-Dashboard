@@ -622,6 +622,7 @@ export function TaskManagement() {
             <TaskDayView
               tasks={visible}
               allTasks={tasks}
+              taskBlocks={weekTaskBlocks}
               selectedDate={selectedDate}
               setSelectedDate={setSelectedDate}
               isLoadingDay={false}

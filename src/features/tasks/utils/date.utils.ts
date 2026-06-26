@@ -26,3 +26,59 @@ export function isInRange(dateISO: string, startDate?: string, dueDate?: string)
   if (dueDate && dateISO > dueDate) return false;
   return true;
 }
+
+/**
+ * Session lookup derived from schedule blocks, used to place tasks on the days
+ * they're actually scheduled rather than every day in their range.
+ *  - `dayKeys`: `${sourceId}|${YYYY-MM-DD}` for every block (a "session").
+ *  - `taskIds`: source ids that have at least one session somewhere in the range.
+ */
+export interface TaskSessions {
+  dayKeys: Set<string>;
+  taskIds: Set<string>;
+}
+
+/** Build a {@link TaskSessions} lookup from raw schedule blocks. */
+export function buildTaskSessions(blocks: { sourceId: string; date: string }[]): TaskSessions {
+  const dayKeys = new Set<string>();
+  const taskIds = new Set<string>();
+  for (const b of blocks) {
+    dayKeys.add(`${b.sourceId}|${b.date}`);
+    taskIds.add(b.sourceId);
+  }
+  return { dayKeys, taskIds };
+}
+
+/**
+ * Whether a task should appear on the given day-offset (0 = today), mirroring the
+ * session-driven rule used by the day view:
+ *  - Backlog tasks (real task, no startDate) aren't tied to any day → never shown.
+ *  - Multi-day tasks span by date range, but once they have sessions they appear
+ *    ONLY on their session days; a multi-day task with no sessions spans its full
+ *    range as a fallback.
+ *  - Everything else (single-day tasks, quests, habits) keeps its single `day`.
+ */
+export function taskOccursOnDayOffset(
+  t: {
+    source?: string;
+    startDate?: string;
+    endDate?: string;
+    isMultiDay?: boolean;
+    day: number;
+    id: string;
+    sourceId?: string;
+  },
+  offset: number,
+  sessions: TaskSessions,
+): boolean {
+  if (t.source === 'task' && !t.startDate) return false;
+
+  if (t.isMultiDay && t.startDate) {
+    const dateISO = offsetToISO(offset);
+    if (!isInRange(dateISO, t.startDate, t.endDate)) return false;
+    const id = t.sourceId ?? t.id;
+    return sessions.taskIds.has(id) ? sessions.dayKeys.has(`${id}|${dateISO}`) : true;
+  }
+
+  return t.day === offset;
+}
