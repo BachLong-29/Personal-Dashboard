@@ -391,7 +391,8 @@
       "done": "เสร็จ",
       "missed": "พลาด",
       "more": "+ อีก {count}…",
-      "collapse": "ย่อ"
+      "collapse": "ย่อ",
+      "openWeek": "เปิดมุมมองสัปดาห์"
     },
     "editModal": {
       "tag": "แก้ไขภารกิจ",

@@ -14,9 +14,11 @@ interface Quote {
 interface Props {
   settings: DashboardSettings;
   quote: Quote | undefined;
+  /** Opens the full week view (dashboard → Schedule → Week) from WeekPeek. */
+  onOpenWeek?: () => void;
 }
 
-export const RightColumn = memo(function RightColumn({ settings, quote }: Props) {
+export const RightColumn = memo(function RightColumn({ settings, quote, onOpenWeek }: Props) {
   const t = useTranslations('dashboard');
 
   return (
@@ -29,7 +31,7 @@ export const RightColumn = memo(function RightColumn({ settings, quote }: Props)
           <div className={motivationAuthor}>{quote.author}</div>
         </div>
       )}
-      {settings.showGuildPanel && <WeekPeekPanel />}
+      {settings.showGuildPanel && <WeekPeekPanel onOpenWeek={onOpenWeek} />}
     </>
   );
 });

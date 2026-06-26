@@ -391,7 +391,8 @@
       "done": "DONE",
       "missed": "MISSED",
       "more": "+ {count} more…",
-      "collapse": "Show less"
+      "collapse": "Show less",
+      "openWeek": "Open week view"
     },
     "editModal": {
       "tag": "EDIT QUEST",

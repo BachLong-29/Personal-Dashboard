@@ -8,13 +8,14 @@ import { cn } from '@/libs/utils';
 import type { CenterTab, Quest } from '../types';
 import { AnalyticsPanel } from './AnalyticsPanel';
 import { HabitPanel } from './HabitPanel';
-import { ScheduleView } from './ScheduleView';
+import { ScheduleView, type ScheduleSubTabRequest } from './ScheduleView';
 
 interface Props {
   tab: CenterTab;
   onTabChange: (tab: CenterTab) => void;
   onAddQuest: (quest: Quest) => void;
   todayDateStr: string;
+  scheduleSubTabRequest?: ScheduleSubTabRequest | null;
 }
 
 export const CenterColumn = memo(function CenterColumn({
@@ -22,6 +23,7 @@ export const CenterColumn = memo(function CenterColumn({
   onTabChange,
   onAddQuest,
   todayDateStr,
+  scheduleSubTabRequest,
 }: Props) {
   const t = useTranslations('dashboard');
 
@@ -61,7 +63,11 @@ export const CenterColumn = memo(function CenterColumn({
             <span className={panelHeaderTitle}>{t('schedule.title')}</span>
             <span className={panelHeaderOrnament}>◆ ◆ ◆</span>
           </div>
-          <ScheduleView onAddQuest={onAddQuest} onNavigateTab={onTabChange} />
+          <ScheduleView
+            onAddQuest={onAddQuest}
+            onNavigateTab={onTabChange}
+            subTabRequest={scheduleSubTabRequest}
+          />
         </div>
       )}
       {tab === 'stats' && (

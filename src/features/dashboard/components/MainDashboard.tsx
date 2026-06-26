@@ -21,6 +21,7 @@ import { EditTaskModal } from '@/features/tasks/components/shared/EditTaskModal'
 import { taskToUITask } from '@/features/tasks/data/adapters';
 import type { UpdateTaskPayload } from '@/types';
 import { CenterColumn } from './CenterColumn';
+import type { ScheduleSubTabRequest } from './ScheduleView';
 import DashboardTopbar from './DashboardTopbar';
 import { DashboardOverlays } from './DashboardOverlays';
 import { LeftColumn } from './LeftColumn';
@@ -153,6 +154,16 @@ export default function MainDashboard() {
     setMobilePanel('center');
   }, []);
 
+  // WeekPeek "open week view" shortcut → jump to Schedule tab and force its Week sub-tab.
+  const [scheduleSubTabRequest, setScheduleSubTabRequest] = useState<ScheduleSubTabRequest | null>(
+    null,
+  );
+  const handleOpenWeekView = useCallback(() => {
+    setCenterTab('schedule');
+    setMobilePanel('center');
+    setScheduleSubTabRequest({ tab: 'week', nonce: Date.now() });
+  }, []);
+
   const [quote] = useState(() => QUOTES[Math.floor(Math.random() * QUOTES.length)] ?? QUOTES[0]);
 
   return (
@@ -208,10 +219,11 @@ export default function MainDashboard() {
             onTabChange={handleTabChange}
             onAddQuest={handleAddQuest}
             todayDateStr={todayDateStr}
+            scheduleSubTabRequest={scheduleSubTabRequest}
           />
           {/* Right column — wide desktop only (xl+) */}
           <div className="hidden xl:flex flex-col gap-2.5 overflow-y-auto overflow-x-hidden">
-            <RightColumn settings={settings} quote={quote} />
+            <RightColumn settings={settings} quote={quote} onOpenWeek={handleOpenWeekView} />
           </div>
         </div>
 
@@ -224,7 +236,7 @@ export default function MainDashboard() {
           )}
           {mobilePanel === 'timer' && (
             <div className="flex flex-col gap-2.5 overflow-y-auto overflow-x-hidden p-3 flex-1">
-              <RightColumn settings={settings} quote={quote} />
+              <RightColumn settings={settings} quote={quote} onOpenWeek={handleOpenWeekView} />
             </div>
           )}
           {mobilePanel === 'center' && (
@@ -234,6 +246,7 @@ export default function MainDashboard() {
                 onTabChange={handleTabChange}
                 onAddQuest={handleAddQuest}
                 todayDateStr={todayDateStr}
+                scheduleSubTabRequest={scheduleSubTabRequest}
               />
             </div>
           )}

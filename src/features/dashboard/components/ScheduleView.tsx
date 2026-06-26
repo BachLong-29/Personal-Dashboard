@@ -1,23 +1,32 @@
 'use client';
 
+import { useEffect } from 'react';
+
 import { cn } from '@/libs/utils';
 
 import { Link } from '@/i18n/navigation';
-import { useScheduleState } from '../hooks/useScheduleState';
+import { useScheduleState, type ScheduleSubTab } from '../hooks/useScheduleState';
 import type { CenterTab, Quest } from '../types';
 import { MonthView } from './MonthView';
 import { ScheduleDayViewPanel } from './ScheduleDayViewPanel';
 import { WeekView } from './WeekView';
 
+/** A one-shot request to switch the schedule sub-tab; `nonce` re-triggers even for a repeat target. */
+export interface ScheduleSubTabRequest {
+  tab: ScheduleSubTab;
+  nonce: number;
+}
+
 interface ScheduleViewProps {
   onAddQuest?: (quest: Quest) => void;
   onNavigateTab?: (tab: CenterTab) => void;
+  subTabRequest?: ScheduleSubTabRequest | null;
 }
 
 const CURRENT_YEAR = new Date().getFullYear();
 const YEARS = Array.from({ length: 5 }, (_, i) => CURRENT_YEAR - 2 + i);
 
-export function ScheduleView({ onAddQuest, onNavigateTab }: ScheduleViewProps) {
+export function ScheduleView({ onAddQuest, onNavigateTab, subTabRequest }: ScheduleViewProps) {
   const {
     tab,
     year,
@@ -33,6 +42,13 @@ export function ScheduleView({ onAddQuest, onNavigateTab }: ScheduleViewProps) {
     setDisplay,
     getMonday,
   } = useScheduleState();
+
+  // Apply an external sub-tab request (e.g. WeekPeek's "open week view" shortcut).
+  useEffect(() => {
+    if (subTabRequest) setTab(subTabRequest.tab);
+    // Keyed on nonce so a repeat request to the same tab still fires after a manual switch.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [subTabRequest?.nonce]);
 
   function handleNavigateDay(date: string) {
     setDayDate(date);

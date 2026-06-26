@@ -391,7 +391,8 @@
       "done": "XONG",
       "missed": "BỎ LỠ",
       "more": "+ {count} nữa…",
-      "collapse": "Thu gọn"
+      "collapse": "Thu gọn",
+      "openWeek": "Mở lịch tuần"
     },
     "editModal": {
       "tag": "CHỈNH SỬA NHIỆM VỤ",
