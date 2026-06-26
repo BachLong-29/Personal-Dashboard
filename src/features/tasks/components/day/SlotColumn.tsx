@@ -119,17 +119,14 @@ export function SlotColumn({
 
 // ─── Slot header ──────────────────────────────────────────────────────────────
 
-function SlotHeader({
-  slot,
-  count,
-  collapsed,
-  onToggle,
-}: {
+interface SlotHeaderProps {
   slot: SlotMeta;
   count: number;
   collapsed: boolean;
   onToggle: () => void;
-}) {
+}
+
+function SlotHeader({ slot, count, collapsed, onToggle }: SlotHeaderProps) {
   return (
     <button
       type="button"
