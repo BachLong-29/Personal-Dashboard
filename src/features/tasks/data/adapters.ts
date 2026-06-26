@@ -127,7 +127,12 @@ export function taskToUITask(t: Task, taskLog?: TaskLog, blockTime?: string): UI
 
   // Multi-day task active today: clamp day to 0 so it appears in the day view
   const isActiveToday = isMultiDay && startOffset <= 0 && endOffset >= 0;
-  const day = isActiveToday ? 0 : startOffset;
+  // Backlog tasks (no startDate) belong to NO calendar day. Mark day as NaN so
+  // they never match a day-view / WeekPeek / week-grid offset filter
+  // (`NaN === n` is always false), while staying visible in the All view + search.
+  // A backlog task that gets a schedule block is re-placed with the block's day
+  // by the caller (see TaskManagement day-merge), so this only hides unscheduled ones.
+  const day = !t.startDate ? Number.NaN : isActiveToday ? 0 : startOffset;
 
   const loggedToday = isMultiDay ? !!taskLog : undefined;
 
