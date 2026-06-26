@@ -263,13 +263,14 @@ export function TaskManagement() {
       ...dayTaskBlocks.map((b) => b.sourceId),
     ]);
 
-    // 1. Span-based items: multi-day tasks always span their range; single-day
-    //    tasks appear here only when they have NO block (else placed by block).
+    // 1. Span-based items: tasks shown by their date range rather than a specific
+    //    session block. A task spans only when it has NO scheduled block at all —
+    //    single-day tasks fall back to their startDate, multi-day tasks fall back
+    //    to their full range. Once a task has sessions, it appears solely on the
+    //    days those sessions land on (handled by blockItems below), so an in-range
+    //    day with no session no longer shows the task.
     const spanItems: UITask[] = apiTasksForDay
-      .filter((t) => {
-        const isMulti = !!t.endDate && t.endDate !== t.startDate;
-        return isMulti || !taskIdsWithBlock.has(t.id);
-      })
+      .filter((t) => !taskIdsWithBlock.has(t.id))
       .map((t) => {
         const log = apiTaskLogsForDay.find((l) => l.taskId === t.id);
         const blockTime = blockMap.get(`${t.id}|${selectedDateStr}`)?.startTime;
