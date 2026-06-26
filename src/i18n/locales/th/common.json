@@ -85,6 +85,7 @@
     "quests": {
       "title": "ภารกิจวันนี้",
       "new": "ภารกิจใหม่",
+      "newShort": "ใหม่",
       "dailyProgress": "ความคืบหน้าประจำวัน",
       "completed": "{done}/{total} เสร็จแล้ว",
       "done": "เสร็จ",

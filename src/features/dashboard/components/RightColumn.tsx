@@ -4,7 +4,7 @@ import { useTranslations } from 'next-intl';
 
 import type { DashboardSettings } from '../types';
 import { ProjectsPanel } from './ProjectsPanel';
-import { GuildPanel } from './GuildPanel';
+import { WeekPeekPanel } from './WeekPeekPanel';
 
 interface Quote {
   text: string;
@@ -29,7 +29,7 @@ export const RightColumn = memo(function RightColumn({ settings, quote }: Props)
           <div className={motivationAuthor}>{quote.author}</div>
         </div>
       )}
-      {settings.showGuildPanel && <GuildPanel />}
+      {settings.showGuildPanel && <WeekPeekPanel />}
     </>
   );
 });

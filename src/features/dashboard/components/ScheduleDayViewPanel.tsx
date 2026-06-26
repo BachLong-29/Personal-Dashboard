@@ -5,6 +5,7 @@ import { startTransition, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslations } from 'next-intl';
 
 import { Button } from '@/components/ui/Button';
+import { cn } from '@/libs/utils';
 import {
   useScheduleBlocks,
   useCreateScheduleBlock,
@@ -37,6 +38,7 @@ import { useTasks } from '../hooks/useTasks';
 import { useUpdateQuestStatus } from '../hooks/useUpdateQuestStatus';
 import { useUpdateTask } from '../hooks/useUpdateTask';
 import type { Quest } from '../types';
+import { AddHabitModal } from './AddHabitModal';
 import { AddQuestModal } from './AddQuestModal';
 
 interface Props {
@@ -303,13 +305,28 @@ export function ScheduleDayViewPanel({
   // ── Modal state ────────────────────────────────────────────────────────────
   const [showAddQuestModal, setShowAddQuestModal] = useState(false);
   const [showAddTaskModal, setShowAddTaskModal] = useState(false);
+  const [showAddHabitModal, setShowAddHabitModal] = useState(false);
   const [editingTask, setEditingTask] = useState<UITask | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
+  // ── "New" dropdown menu ────────────────────────────────────────────────────
+  const [newMenuOpen, setNewMenuOpen] = useState(false);
+  const newMenuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!newMenuOpen) return;
+    function handleClickOutside(e: MouseEvent) {
+      if (newMenuRef.current && !newMenuRef.current.contains(e.target as Node)) {
+        setNewMenuOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [newMenuOpen]);
+
   // ── Quest header data ──────────────────────────────────────────────────────
-  const questsDone = apiQuestsRaw.filter((q) => q.done).length;
-  const questTotal = apiQuestsRaw.length;
-  const questPct = questTotal > 0 ? Math.round((questsDone / questTotal) * 100) : 0;
+  // Defined after `visibleTasks` below so the header progress matches the
+  // day-view ledger (tasks + quests + habits for the selected day).
 
   // ── Handlers ──────────────────────────────────────────────────────────────
   function handleToggleDone(id: string) {
@@ -460,6 +477,16 @@ export function ScheduleDayViewPanel({
     [tasks, showQuests, showHabits],
   );
 
+  // Header progress — counts the selected day's visible items (tasks + quests +
+  // habits), mirroring the day-view ledger so the two never disagree.
+  const dayItems = useMemo(
+    () => visibleTasks.filter((t) => t.day === selectedOffset),
+    [visibleTasks, selectedOffset],
+  );
+  const questsDone = dayItems.filter((t) => t.done).length;
+  const questTotal = dayItems.length;
+  const questPct = questTotal > 0 ? Math.round((questsDone / questTotal) * 100) : 0;
+
   return (
     <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
       {/* Quest header + progress */}
@@ -468,11 +495,60 @@ export function ScheduleDayViewPanel({
           <div className={questTitleRow}>
             <span className={questSparkle}>✦</span>
             <span className={questTitleText}>{t('quests.title')}</span>
-            {onAddQuest && (
-              <Button variant="primary" size="sm" onClick={() => setShowAddQuestModal(true)}>
-                <span>+</span> {t('quests.new')}
+            <div ref={newMenuRef} className="relative">
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={() => setNewMenuOpen((o) => !o)}
+                aria-haspopup="menu"
+                aria-expanded={newMenuOpen}
+              >
+                <span>+</span> {t('quests.newShort')}
+                <span className={cn(newCaret, newMenuOpen && 'rotate-180')}>▾</span>
               </Button>
-            )}
+              {newMenuOpen && (
+                <div className={newMenu} role="menu">
+                  <button
+                    type="button"
+                    role="menuitem"
+                    className={cn(newMenuItem, newMenuItemTask)}
+                    onClick={() => {
+                      setNewMenuOpen(false);
+                      setShowAddTaskModal(true);
+                    }}
+                  >
+                    <span className={newMenuIcon}>📋</span>
+                    {t('quests.sections.tasks')}
+                  </button>
+                  {onAddQuest && (
+                    <button
+                      type="button"
+                      role="menuitem"
+                      className={cn(newMenuItem, newMenuItemQuest)}
+                      onClick={() => {
+                        setNewMenuOpen(false);
+                        setShowAddQuestModal(true);
+                      }}
+                    >
+                      <span className={newMenuIcon}>✦</span>
+                      {t('quests.sections.quests')}
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    role="menuitem"
+                    className={cn(newMenuItem, newMenuItemHabit)}
+                    onClick={() => {
+                      setNewMenuOpen(false);
+                      setShowAddHabitModal(true);
+                    }}
+                  >
+                    <span className={newMenuIcon}>⚡</span>
+                    {t('quests.sections.habits')}
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
           <div className={questProgressRow}>
             <div className={progBarWrap}>
@@ -530,6 +606,12 @@ export function ScheduleDayViewPanel({
         onClose={() => setShowAddTaskModal(false)}
         onSaved={() => setShowAddTaskModal(false)}
       />
+      {showAddHabitModal && (
+        <AddHabitModal
+          onClose={() => setShowAddHabitModal(false)}
+          onSaved={() => setShowAddHabitModal(false)}
+        />
+      )}
       <EditTaskModal
         task={editingTask}
         open={editingTask !== null}
@@ -559,3 +641,18 @@ const progFill =
 const progPctWrap = 'text-center min-w-[34px]';
 const progPct = 'font-[var(--font-title)] text-[14px] font-bold text-[var(--mint)]';
 const progDone = 'text-[8px] text-[var(--text-mid)] tracking-[0.08em]';
+
+// ── "New" dropdown menu styles ──────────────────────────────────────────────────
+
+const newCaret = 'text-[8px] ml-0.5 transition-transform duration-150';
+const newMenu =
+  'absolute right-0 top-[calc(100%+4px)] z-30 min-w-[140px] flex flex-col gap-0.5 p-1 rounded-[var(--r-sm)] border border-[oklch(0.74_0.17_85_/_0.35)] bg-[var(--panel)] shadow-[0_8px_24px_oklch(0_0_0_/_0.45)]';
+const newMenuItem =
+  'flex items-center gap-2 px-2.5 py-2 rounded-[var(--r-sm)] text-left text-[12px] font-[var(--font-body)] text-[var(--text-mid)] border border-transparent cursor-pointer transition-all duration-150 hover:text-[var(--text-hi)]';
+const newMenuItemTask =
+  'hover:bg-[oklch(0.76_0.16_205_/_0.1)] hover:border-[oklch(0.76_0.16_205_/_0.3)]';
+const newMenuItemQuest =
+  'hover:bg-[oklch(0.74_0.17_85_/_0.1)] hover:border-[oklch(0.74_0.17_85_/_0.3)]';
+const newMenuItemHabit =
+  'hover:bg-[oklch(0.66_0.22_295_/_0.1)] hover:border-[oklch(0.66_0.22_295_/_0.3)]';
+const newMenuIcon = 'text-[14px] leading-none shrink-0';

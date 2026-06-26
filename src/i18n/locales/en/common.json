@@ -85,6 +85,7 @@
     "quests": {
       "title": "Today's Quests",
       "new": "New Quest",
+      "newShort": "New",
       "dailyProgress": "Daily Progress",
       "completed": "{done}/{total} Complete",
       "done": "DONE",

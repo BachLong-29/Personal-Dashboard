@@ -42,6 +42,7 @@ export function SlotColumn({
 }: SlotColumnProps) {
   const { setNodeRef, isOver } = useDroppable({ id: slot.id });
   const [showAll, setShowAll] = useState(false);
+  const [collapsed, setCollapsed] = useState(false);
 
   const sortedTasks = [...tasks].sort((a, b) => {
     if (!a.startTime && !b.startTime) return 0;
@@ -62,9 +63,14 @@ export function SlotColumn({
         backgroundColor: isOver ? slot.bg : undefined,
       }}
     >
-      <SlotHeader slot={slot} count={tasks.length} />
+      <SlotHeader
+        slot={slot}
+        count={tasks.length}
+        collapsed={collapsed}
+        onToggle={() => setCollapsed((c) => !c)}
+      />
 
-      {tasks.length === 0 ? (
+      {collapsed ? null : tasks.length === 0 ? (
         <EmptySlot color={slot.color} />
       ) : (
         <>
@@ -113,9 +119,36 @@ export function SlotColumn({
 
 // ─── Slot header ──────────────────────────────────────────────────────────────
 
-function SlotHeader({ slot, count }: { slot: SlotMeta; count: number }) {
+function SlotHeader({
+  slot,
+  count,
+  collapsed,
+  onToggle,
+}: {
+  slot: SlotMeta;
+  count: number;
+  collapsed: boolean;
+  onToggle: () => void;
+}) {
   return (
-    <div className={slotHead}>
+    <button
+      type="button"
+      className={slotHead}
+      onClick={onToggle}
+      aria-expanded={!collapsed}
+      title={collapsed ? 'Expand section' : 'Collapse section'}
+    >
+      {/* Caret */}
+      <span
+        className={cn(
+          'text-[9px] leading-none transition-transform duration-150 shrink-0',
+          collapsed && '-rotate-90',
+        )}
+        style={{ color: slot.color }}
+      >
+        ▾
+      </span>
+
       {/* Colored glyph */}
       <span className="text-[13px] leading-none" style={{ color: slot.color }}>
         {slot.glyph}
@@ -145,7 +178,7 @@ function SlotHeader({ slot, count }: { slot: SlotMeta; count: number }) {
       >
         {count}
       </span>
-    </div>
+    </button>
   );
 }
 
@@ -235,7 +268,8 @@ function DraggableCard({
 const slotBase = 'px-3 py-2.5 transition-colors duration-150 border-l-[3px] border-transparent';
 const slotOver = 'ring-1 ring-inset ring-[oklch(0.74_0.17_85_/_0.25)]';
 
-const slotHead = 'flex items-center gap-2 mb-2.5 pb-2 border-b border-[var(--border)]';
+const slotHead =
+  'w-full flex items-center gap-2 mb-2.5 pb-2 border-b border-[var(--border)] cursor-pointer select-none text-left transition-opacity hover:opacity-80';
 
 const slotCount =
   'ml-auto text-[8px] font-bold text-[var(--text-lo)] bg-[var(--panel2)] border border-[var(--border)] px-1.5 py-0.5 rounded-full transition-colors';

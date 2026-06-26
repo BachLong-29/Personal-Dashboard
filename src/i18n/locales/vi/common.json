@@ -85,6 +85,7 @@
     "quests": {
       "title": "Nhiệm vụ hôm nay",
       "new": "Nhiệm vụ mới",
+      "newShort": "Mới",
       "dailyProgress": "Tiến độ hôm nay",
       "completed": "{done}/{total} hoàn thành",
       "done": "XONG",
