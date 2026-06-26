@@ -26,6 +26,9 @@ interface Props {
   onCancelQuest: () => void;
 }
 
+/**
+ * Group essential modals
+ */
 export const DashboardOverlays = memo(function DashboardOverlays({
   burst,
   animationsEnabled,
@@ -49,9 +52,7 @@ export const DashboardOverlays = memo(function DashboardOverlays({
         <BurstParticles x={burst.x} y={burst.y} onDone={onBurstDone} />
       )}
       {toast && <XPToast xp={toast.xp} coins={toast.coins} onDone={onToastDone} />}
-      {levelUp && (
-        <LevelUpToast level={levelUp.level} rank={levelUp.rank} onDone={onLevelUpDone} />
-      )}
+      {levelUp && <LevelUpToast level={levelUp.level} rank={levelUp.rank} onDone={onLevelUpDone} />}
       {penaltyState && (
         <PenaltyModal
           unfinished={penaltyState.unfinished}

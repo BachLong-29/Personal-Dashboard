@@ -157,6 +157,7 @@ export default function MainDashboard() {
 
   return (
     <>
+      {/* Group essential modals */}
       <DashboardOverlays
         burst={burst}
         animationsEnabled={settings.animationsEnabled}

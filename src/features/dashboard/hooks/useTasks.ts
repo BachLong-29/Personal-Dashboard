@@ -5,7 +5,7 @@ import { useQuery } from '@tanstack/react-query';
 import { apiClient } from '@/libs/axios';
 import type { ApiResponse, Task } from '@/types';
 
-export function useTasks(start?: string, end?: string) {
+export function useTasks(start?: string, end?: string, options?: { enabled?: boolean }) {
   const params = new URLSearchParams();
   if (start) params.set('start', start);
   if (end) params.set('end', end);
@@ -13,6 +13,7 @@ export function useTasks(start?: string, end?: string) {
 
   return useQuery({
     queryKey: ['tasks', start, end],
+    enabled: options?.enabled ?? true,
     queryFn: async () => {
       const { data } = await apiClient.get<ApiResponse<Task[]>>(`/tasks${qs ? `?${qs}` : ''}`);
       return data.data ?? [];

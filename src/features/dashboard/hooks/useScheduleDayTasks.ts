@@ -32,8 +32,28 @@ import { useUpdateTask } from './useUpdateTask';
 interface UseScheduleDayTasksParams {
   /** Selected day, "YYYY-MM-DD". */
   date: string;
-  showQuests: boolean;
-  showHabits: boolean;
+  showQuests?: boolean;
+  showHabits?: boolean;
+  /**
+   * Which projects to resolve labels from. Dashboard only cares about active
+   * campaigns; the full task page shows every project. Default `'active'`.
+   */
+  projectScope?: 'active' | 'all';
+  /**
+   * How the selected-day task list is sourced:
+   *  - `'api'`   → a dedicated `useTasks(date, date)` query (default).
+   *  - `'client'`→ filtered client-side from the already-loaded baseline, so
+   *    navigating dates triggers no extra request.
+   */
+  dayTasksSource?: 'api' | 'client';
+  /**
+   * Keep backlog tasks (no `startDate`, parked on day 0) visible on the selected
+   * day instead of replacing them. The full task page needs this so backlog stays
+   * searchable; the dashboard schedule does not. Default `false`.
+   */
+  preserveBacklog?: boolean;
+  /** Invoked when {@link onEdit} is called for a habit-sourced item. */
+  onEditHabit?: (task: UITask) => void;
 }
 
 interface DayProgress {
@@ -47,6 +67,8 @@ interface UseScheduleDayTasksResult {
   tasks: UITask[];
   /** `tasks` filtered by the quests/habits display toggles. */
   visibleTasks: UITask[];
+  /** Task schedule blocks for the current week — drives side-panel placement. */
+  weekTaskBlocks: ScheduleBlock[];
   selectedDate: Date;
   isFetchingDayTasks: boolean;
   /** A habit→task reschedule create is in flight. */
@@ -62,6 +84,8 @@ interface UseScheduleDayTasksResult {
   onEdit: (task: UITask) => void;
   onSaveEdit: (id: string, payload: UpdateTaskPayload, onSuccess: () => void) => void;
   onCloseEdit: () => void;
+  /** Optimistically prepend a locally-created item (e.g. a forged quest). */
+  prependTask: (task: UITask) => void;
 }
 
 /**
@@ -72,8 +96,12 @@ interface UseScheduleDayTasksResult {
  */
 export function useScheduleDayTasks({
   date,
-  showQuests,
-  showHabits,
+  showQuests = true,
+  showHabits = true,
+  projectScope = 'active',
+  dayTasksSource = 'api',
+  preserveBacklog = false,
+  onEditHabit,
 }: UseScheduleDayTasksParams): UseScheduleDayTasksResult {
   const todayStr = toLocalDate(new Date());
 
@@ -108,15 +136,30 @@ export function useScheduleDayTasks({
   // ── API data ───────────────────────────────────────────────────────────────
   const { data: apiTasks = [] } = useTasks();
   const { data: apiQuestsRaw = [] } = useQuests();
-  const { data: apiProjects = [] } = useProjects('active');
+  const { data: apiProjects = [] } = useProjects(projectScope === 'all' ? undefined : projectScope);
   const { data: apiHabits = [] } = useHabits();
   const { data: apiTaskLogs = [] } = useTaskLogs(todayStr);
   const { data: weekHabitLogs = [] } = useHabitLogsRange(logRangeFrom, logRangeTo);
 
-  const { data: apiTasksForDay = [], isFetching: isFetchingDayTasks } = useTasks(
-    selectedDateStr,
-    selectedDateStr,
+  // Selected-day task list. In 'api' mode a dedicated query fetches it; in
+  // 'client' mode we derive it from the already-loaded baseline (no extra call).
+  const useApiDay = dayTasksSource === 'api';
+  const { data: apiDayTasks = [], isFetching } = useTasks(selectedDateStr, selectedDateStr, {
+    enabled: useApiDay,
+  });
+  const clientDayTasks = useMemo(
+    () =>
+      apiTasks.filter((t) => {
+        // Backlog (no startDate) isn't tied to any day → excluded from placement.
+        if (!t.startDate) return false;
+        const end = t.endDate ?? t.startDate;
+        return selectedDateStr >= t.startDate && selectedDateStr <= end;
+      }),
+    [apiTasks, selectedDateStr],
   );
+  const apiTasksForDay = useApiDay ? apiDayTasks : clientDayTasks;
+  const isFetchingDayTasks = useApiDay ? isFetching : false;
+
   const { data: apiTaskLogsForDay = [] } = useTaskLogs(selectedDateStr);
   const { data: apiHabitLogsForDay = [] } = useHabitLogs(selectedDateStr);
 
@@ -292,7 +335,14 @@ export function useScheduleDayTasks({
     const merged = hasDayData
       ? [
           ...apiMerged.filter((t) => {
-            if (t.source === 'task' && t.day === selectedOffset) return false;
+            // Replace day-placed tasks for this day. When preserveBacklog is set,
+            // backlog items (no startDate) are kept so they stay searchable.
+            if (
+              t.source === 'task' &&
+              t.day === selectedOffset &&
+              (!preserveBacklog || !!t.startDate)
+            )
+              return false;
             if (!isViewingToday && t.source === 'habit') return false;
             return true;
           }),
@@ -319,10 +369,16 @@ export function useScheduleDayTasks({
     blockMap,
     dayTaskBlocks,
     weekTaskBlocks,
+    preserveBacklog,
   ]);
 
   // ── Editing flow ───────────────────────────────────────────────────────────
   const [editingTask, setEditingTask] = useState<UITask | null>(null);
+
+  /** Optimistically prepend a locally-created item (e.g. a forged quest). */
+  function prependTask(task: UITask) {
+    setTasks((ts) => [task, ...ts]);
+  }
 
   // ── Handlers ──────────────────────────────────────────────────────────────
   function onToggleDone(id: string) {
@@ -446,6 +502,10 @@ export function useScheduleDayTasks({
   }
 
   function onEdit(task: UITask) {
+    if (task.source === 'habit') {
+      onEditHabit?.(task);
+      return;
+    }
     if (task.source !== 'task') return;
     setEditingTask(task);
   }
@@ -482,9 +542,11 @@ export function useScheduleDayTasks({
     return { done, total, pct: total > 0 ? Math.round((done / total) * 100) : 0 };
   }, [visibleTasks, selectedOffset]);
 
+  console.log('visibleTasks', visibleTasks);
   return {
     tasks,
     visibleTasks,
+    weekTaskBlocks,
     selectedDate,
     isFetchingDayTasks,
     isRescheduling: createTask.isPending,
@@ -498,5 +560,6 @@ export function useScheduleDayTasks({
     onEdit,
     onSaveEdit,
     onCloseEdit: () => setEditingTask(null),
+    prependTask,
   };
 }
