@@ -1,0 +1,7 @@
+- quản lý user với các kinh nghiệm, level, gold và gems.
+- kinh nghiệm có thể kiếm từ quest, habit, task, khi hoàn thành.
+- gold cũng có thể kiếm từ quest, habit, task khi hoàn thành.
+- gems chỉ kiếm được với task nhất định và thảo phạt boss.
+- level của user được tính với công thức EXP_next​ = Base \* Level mũ 1.5, với Base = 300.
+- kinh nghiệm, gold, gems sẽ được lưu không thời hạn.
+- Về rank sẽ được tính dựa trên số ngày đã sử dụng và duy trì streak và một số điều kiện nhất định khác.
