@@ -3,15 +3,16 @@
 import { useMemo } from 'react';
 import { useTranslations } from 'next-intl';
 
+import { Icon } from '@/components/common/Icon';
 import { cn } from '@/libs/utils';
 import { Link } from '@/i18n/navigation';
 import { useGoals } from '@/features/achievements/hooks/useGoals';
 
 const CAT_ICON: Record<string, string> = {
-  career:   '⚜',
-  health:   '❀',
+  career: '⚜',
+  health: '❀',
   learning: '◈',
-  finance:  '◆',
+  finance: '◆',
   personal: '✦',
 };
 
@@ -20,23 +21,25 @@ export function AchievementsPanel() {
   const { data: goals = [] } = useGoals();
 
   const achievements = useMemo(() => {
-    const completed   = goals.filter((g) => g.status === 'completed');
-    const inProgress  = goals.filter((g) => g.status === 'in-progress' || g.status === 'not-started');
+    const completed = goals.filter((g) => g.status === 'completed');
+    const inProgress = goals.filter(
+      (g) => g.status === 'in-progress' || g.status === 'not-started',
+    );
 
     const earnedSlots = completed.slice(0, 6).map((g) => ({
-      id:     g.id,
-      title:  g.title.length > 12 ? g.title.slice(0, 11) + '…' : g.title,
-      desc:   g.desc ?? '',
-      icon:   CAT_ICON[g.cat] ?? '✦',
+      id: g.id,
+      title: g.title.length > 12 ? g.title.slice(0, 11) + '…' : g.title,
+      desc: g.desc ?? '',
+      icon: CAT_ICON[g.cat] ?? '✦',
       earned: true,
     }));
 
     const remaining = 6 - earnedSlots.length;
     const lockedSlots = inProgress.slice(0, remaining).map((g) => ({
-      id:     g.id,
-      title:  g.title.length > 12 ? g.title.slice(0, 11) + '…' : g.title,
-      desc:   g.desc ?? '',
-      icon:   CAT_ICON[g.cat] ?? '✦',
+      id: g.id,
+      title: g.title.length > 12 ? g.title.slice(0, 11) + '…' : g.title,
+      desc: g.desc ?? '',
+      icon: CAT_ICON[g.cat] ?? '✦',
       earned: false,
     }));
 
@@ -49,9 +52,10 @@ export function AchievementsPanel() {
         <span className={panelHeaderTitle}>{t('achievements')}</span>
         <Link
           href="/achievements"
-          className="text-[8px] font-bold tracking-[0.1em] text-[var(--text-lo)] hover:text-[var(--gold)] font-[var(--font-title)] transition-colors no-underline"
+          className="inline-flex items-center gap-1 text-[8px] font-bold tracking-[0.1em] text-[var(--text-lo)] hover:text-[var(--gold)] font-[var(--font-title)] transition-colors no-underline"
         >
-          VIEW ALL →
+          <span>VIEW ALL</span>
+          <Icon icon="ArrowRight" className="text-[14px]" />
         </Link>
       </div>
       <div className={achGrid}>

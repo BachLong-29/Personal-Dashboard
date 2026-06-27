@@ -15,6 +15,8 @@ interface IconProps {
   style?: CSSProperties;
   /** Apply the registry's default color token when this icon has one. */
   useMappedColor?: boolean;
+  /** Force how bundled assets are rendered. */
+  renderMode?: 'auto' | 'image' | 'mask';
 }
 
 /**
@@ -29,8 +31,16 @@ interface IconProps {
  * <Icon icon="fire" useMappedColor /> // → same icon with mapped default color
  * <Icon icon="🎯" />              // → renders the emoji unchanged
  * <Icon icon={q.icon} fallback="📌" />
+ * <Icon icon="ArrowRight" renderMode="image" /> // → preserve SVG artwork
  */
-export function Icon({ icon, fallback, className, style, useMappedColor = true }: IconProps) {
+export function Icon({
+  icon,
+  fallback,
+  className,
+  style,
+  useMappedColor = true,
+  renderMode = 'auto',
+}: IconProps) {
   const src = resolveIconSrc(icon);
   const mappedColor = useMappedColor ? resolveIconColor(icon) : null;
   const resolvedColor = style?.color ?? mappedColor;
@@ -41,8 +51,9 @@ export function Icon({ icon, fallback, className, style, useMappedColor = true }
 
   if (src) {
     const isPngAsset = src.toLowerCase().endsWith('.png');
+    const shouldRenderAsImage = renderMode === 'image' || (renderMode === 'auto' && isPngAsset);
 
-    if (isPngAsset) {
+    if (shouldRenderAsImage) {
       return (
         <img
           aria-hidden

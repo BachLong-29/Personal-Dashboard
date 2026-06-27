@@ -262,7 +262,7 @@ function OverdueRow({ task, delay = 0 }: { task: PendingTask; delay?: number }) 
       transition={{ duration: 0.35, delay, ease: EASE_OUT }}
       className={overdueRow}
     >
-      <span className="text-[13px] shrink-0 leading-none">{task.icon}</span>
+      <Icon icon={task.icon} className="text-[13px] shrink-0 leading-none" />
       <div className="flex-1 min-w-0">
         <div className="text-[11px] font-semibold text-[var(--text-hi)] truncate">{task.name}</div>
         <div className="flex items-center gap-2 mt-[2px]">
@@ -306,7 +306,7 @@ function UnscheduledRow({
       onClick={() => onEdit(task)}
       className={unscheduledRow}
     >
-      <span className="text-[13px] shrink-0 leading-none">{task.icon}</span>
+      <Icon icon={task.icon} className="text-[13px] shrink-0 leading-none" />
       <div className="flex-1 min-w-0">
         <div className="text-[11px] font-semibold text-[var(--text-hi)] truncate">{task.name}</div>
         <div className="text-[9px] text-[var(--text-lo)] mt-[1px]">

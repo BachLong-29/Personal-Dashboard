@@ -1,6 +1,8 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+
+import { Icon } from '@/components/common/Icon';
 import { cn } from '@/libs/utils';
 
 export interface DatePickerProps {
@@ -172,7 +174,7 @@ export function DatePicker({
               onClick={prevMonth}
               className="w-6 h-6 flex items-center justify-center rounded-[var(--r-sm)] bg-[var(--surface-2)] border border-[var(--border)] text-[var(--text-md)] text-[10px] hover:text-[var(--gold)] hover:border-[var(--gold)]"
             >
-              ◀
+              <Icon icon="ArrowLeft" className="text-[14px]" />
             </button>
             <span className="[font-family:var(--f-title)] text-[15px] tracking-[0.08em] text-[var(--text-hi)]">
               {MONTHS[viewMonth]} {viewYear}
@@ -182,7 +184,7 @@ export function DatePicker({
               onClick={nextMonth}
               className="w-6 h-6 flex items-center justify-center rounded-[var(--r-sm)] bg-[var(--surface-2)] border border-[var(--border)] text-[var(--text-md)] text-[10px] hover:text-[var(--gold)] hover:border-[var(--gold)]"
             >
-              ▶
+              <Icon icon="ArrowRight" className="text-[14px]" />
             </button>
           </div>
 

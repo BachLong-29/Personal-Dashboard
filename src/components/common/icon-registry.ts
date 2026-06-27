@@ -9,6 +9,8 @@
  * To add an icon: drop the `.svg` into `public/icons/`, then add an entry below.
  */
 const ICON_FILES = [
+  'ArrowLeft',
+  'ArrowRight',
   'GiBookshelf',
   'GiCutDiamond',
   'GiEclipseFlare',
@@ -32,6 +34,8 @@ type IconExtension = 'png' | 'svg';
 
 /** Human-friendly aliases → file name. Lets callers use semantic keys. */
 const ICON_ALIASES: Record<string, IconFile> = {
+  arrowleft: 'ArrowLeft',
+  arrowright: 'ArrowRight',
   book: 'GiBookshelf',
   diamond: 'GiCutDiamond',
   flare: 'GiEclipseFlare',

@@ -12,6 +12,8 @@
 
 import { useEffect, useRef, useState } from 'react';
 
+import { Icon } from '@/components/common/Icon';
+
 // ─── Shared token shortcuts (literal strings — Tailwind-scannable) ──────────────
 const F_TITLE = "font-['Cinzel',serif]";
 const F_MONO = "font-['JetBrains_Mono',monospace]";
@@ -123,12 +125,12 @@ function MiniCalendar() {
           November 2023
         </span>
         <div className="flex gap-1">
-          {['◀', '▶'].map((a) => (
+          {['ArrowLeft', 'ArrowRight'].map((icon) => (
             <button
-              key={a}
+              key={icon}
               className="flex h-6 w-6 items-center justify-center rounded-[6px] border border-[#2a2a48] bg-[#0f0f1d] text-[9px] text-[#7676a0] transition-colors hover:text-[#f0eeff]"
             >
-              {a}
+              <Icon icon={icon} className="text-[14px]" />
             </button>
           ))}
         </div>

@@ -11,6 +11,7 @@ import {
   type DragEndEvent,
 } from '@dnd-kit/core';
 
+import { Icon } from '@/components/common/Icon';
 import type { ScheduleBlock } from '@/types';
 
 import { DatePicker } from '@/components/ui/DatePicker';
@@ -141,7 +142,7 @@ export function TaskDayView({
                 title="Previous day"
                 className={navArrowBtn}
               >
-                ◀
+                <Icon icon="ArrowLeft" className="text-[14px]" />
               </button>
 
               {/* DatePicker — shows selected date, opens calendar popup */}
@@ -156,7 +157,7 @@ export function TaskDayView({
                 title="Next day"
                 className={navArrowBtn}
               >
-                ▶
+                <Icon icon="ArrowRight" className="text-[14px]" />
               </button>
 
               {/* Today chip — visible only when not on today */}

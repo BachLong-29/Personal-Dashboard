@@ -1,5 +1,6 @@
 'use client';
 
+import { Icon } from '@/components/common/Icon';
 import { Link } from '@/i18n/navigation';
 import { cn } from '@/libs/utils';
 import { COLOR_CSS } from '@/features/projects/constants';
@@ -14,7 +15,8 @@ export function ProjectsPanel() {
       <div className={panelHeader}>
         <span className={panelHeaderTitle}>Projects</span>
         <Link href="/projects" className={viewAllLink}>
-          View all →
+          <span>VIEW ALL</span>
+          <Icon icon="ArrowRight" className="text-[14px]" />
         </Link>
       </div>
 
@@ -79,7 +81,7 @@ const panelHeader =
 const panelHeaderTitle =
   'font-[var(--font-title)] text-[10px] font-bold tracking-[0.15em] text-[var(--gold)] uppercase flex-1';
 const viewAllLink =
-  'text-[9px] font-bold tracking-[0.08em] uppercase font-[var(--font-title)] text-[var(--violet)] no-underline hover:text-[var(--text-hi)] transition-colors';
+  'inline-flex items-center gap-1 text-[8px] font-bold tracking-[0.1em] text-[var(--text-lo)] hover:text-[var(--gold)] font-[var(--font-title)] transition-colors no-underline';
 
 const listWrap = 'flex-1 overflow-y-auto p-2 flex flex-col gap-1.5';
 const emptyState = 'text-[var(--text-lo)] text-center py-6 text-[11px]';

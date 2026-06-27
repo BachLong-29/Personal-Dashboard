@@ -65,6 +65,16 @@ const DashboardTopbar = (props: DashboardTopbarProps) => {
     setTimeout(() => setSheetMounted(false), 380);
   };
 
+  const handleUserTriggerClick = () => {
+    if (typeof window !== 'undefined' && window.matchMedia('(max-width: 1024px)').matches) {
+      setShowUserModal(false);
+      router.push('/dashboard');
+      return;
+    }
+
+    setShowUserModal((visible) => !visible);
+  };
+
   const handleToggleLocale = () => {
     const currentIndex = locales.indexOf(locale);
     const nextLocale = locales[(currentIndex + 1) % locales.length] ?? locales[0];
@@ -76,7 +86,7 @@ const DashboardTopbar = (props: DashboardTopbarProps) => {
       <div className={topBar}>
         {/* ── User identity trigger → dropdown ────────────────────────────── */}
         <div ref={userModalRef} className="relative block">
-          <button type="button" className={userTrigger} onClick={() => setShowUserModal((v) => !v)}>
+          <button type="button" className={userTrigger} onClick={handleUserTriggerClick}>
             <span className={avatarBadge}>
               {avatar ? (
                 <Image
@@ -93,7 +103,7 @@ const DashboardTopbar = (props: DashboardTopbarProps) => {
             <span
               className={cn(
                 topBarLogo,
-                'text-[14px] sm:text-[16px] md:text-[18px] max-w-[110px] sm:max-w-[160px] md:max-w-none truncate',
+                'text-[14px] sm:text-[16px] md:text-[18px] max-w-[2200px] sm:max-w-[260px] md:max-w-none truncate',
               )}
             >
               {displayName}
