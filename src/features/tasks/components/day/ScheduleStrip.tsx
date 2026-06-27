@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo } from 'react';
+import { Icon } from '@/components/common/Icon';
 import { cn } from '@/libs/utils';
 
 import type { UITask, TaskSlot } from '../../data/mock';
@@ -12,34 +13,34 @@ const SLOT_ORDER: TaskSlot[] = ['morning', 'deep', 'afternoon', 'evening'];
 
 interface SlotConfig {
   startHour: number;
-  endHour:   number;
+  endHour: number;
   timeLabel: string; // displayed start time (HH:MM)
 }
 
 const SLOT_CONFIG: Record<TaskSlot, SlotConfig> = {
-  morning:   { startHour: 6,  endHour: 10, timeLabel: '06:00' },
-  deep:      { startHour: 10, endHour: 13, timeLabel: '10:00' },
+  morning: { startHour: 6, endHour: 10, timeLabel: '06:00' },
+  deep: { startHour: 10, endHour: 13, timeLabel: '10:00' },
   afternoon: { startHour: 13, endHour: 17, timeLabel: '13:00' },
-  evening:   { startHour: 17, endHour: 22, timeLabel: '17:00' },
+  evening: { startHour: 17, endHour: 22, timeLabel: '17:00' },
 };
 
 // ─── Internal types ───────────────────────────────────────────────────────────
 
 interface ScheduleEntry {
-  time:    string;
+  time: string;
   endTime: string;
-  label:   string;
-  icon?:   string;
-  taskId:  string;
-  source:  UITask['source'];
-  done:    boolean;
-  active:  boolean;
+  label: string;
+  icon?: string;
+  taskId: string;
+  source: UITask['source'];
+  done: boolean;
+  active: boolean;
 }
 
 interface ActivityItem {
   icon: string;
   text: string;
-  ts:   string;
+  ts: string;
   kind: string;
 }
 
@@ -70,34 +71,29 @@ function buildSchedule(tasks: UITask[]): ScheduleEntry[] {
   const entries: ScheduleEntry[] = [];
 
   for (const slot of SLOT_ORDER) {
-    const cfg  = SLOT_CONFIG[slot];
+    const cfg = SLOT_CONFIG[slot];
     const slotTasks = tasks
       .filter((t) => t.slot === slot)
       .sort((a, b) => (a.done ? 1 : 0) - (b.done ? 1 : 0)); // done tasks sink to bottom within slot
 
     slotTasks.forEach((t, i) => {
       // Stagger tasks in the same slot by est (or 30-min increments)
-      const prevMins = slotTasks
-        .slice(0, i)
-        .reduce((acc, prev) => acc + (prev.est ?? 30), 0);
+      const prevMins = slotTasks.slice(0, i).reduce((acc, prev) => acc + (prev.est ?? 30), 0);
       const startMins = cfg.startHour * 60 + prevMins;
       const startLabel = toHHMM(Math.min(startMins, (cfg.endHour - 1) * 60));
-      const endLabel   = addMins(startLabel, t.est ?? 30);
+      const endLabel = addMins(startLabel, t.est ?? 30);
 
-      const isActive =
-        !t.done &&
-        currentHour >= cfg.startHour &&
-        currentHour < cfg.endHour;
+      const isActive = !t.done && currentHour >= cfg.startHour && currentHour < cfg.endHour;
 
       entries.push({
-        time:    startLabel,
+        time: startLabel,
         endTime: endLabel,
-        label:   t.title,
-        icon:    t.icon,
-        taskId:  t.id,
-        source:  t.source,
-        done:    t.done ?? false,
-        active:  isActive,
+        label: t.title,
+        icon: t.icon,
+        taskId: t.id,
+        source: t.source,
+        done: t.done ?? false,
+        active: isActive,
       });
     });
   }
@@ -117,7 +113,7 @@ function buildActivity(tasks: UITask[]): ActivityItem[] {
       items.push({
         icon: '◈',
         text: `${t.title} — in progress`,
-        ts:   'now',
+        ts: 'now',
         kind: 'start',
       });
     });
@@ -130,14 +126,14 @@ function buildActivity(tasks: UITask[]): ActivityItem[] {
       items.push({
         icon: '✓',
         text: `${t.icon ? `${t.icon} ` : ''}${t.title} cleared`,
-        ts:   'today',
+        ts: 'today',
         kind: 'done',
       });
       if (t.xp > 0) {
         items.push({
           icon: '✦',
           text: `+${t.xp} XP · +${t.coins} 🪙`,
-          ts:   '',
+          ts: '',
           kind: 'xp',
         });
       }
@@ -174,8 +170,8 @@ interface ScheduleStripProps {
 }
 
 export function ScheduleStrip({ tasks }: ScheduleStripProps) {
-  const entries  = useMemo(() => buildSchedule(tasks), [tasks]);
-  const activity = useMemo(() => buildActivity(tasks),  [tasks]);
+  const entries = useMemo(() => buildSchedule(tasks), [tasks]);
+  const activity = useMemo(() => buildActivity(tasks), [tasks]);
   const nextLabel = useMemo(() => nextTaskLabel(entries), [entries]);
 
   return (
@@ -192,16 +188,14 @@ export function ScheduleStrip({ tasks }: ScheduleStripProps) {
       {entries.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-8 text-[var(--text-lo)]">
           <div className="text-[22px] opacity-30 mb-1.5">◇</div>
-          <div className="text-[9px] font-[var(--font-title)] tracking-[0.14em]">NO QUESTS TODAY</div>
+          <div className="text-[9px] font-[var(--font-title)] tracking-[0.14em]">
+            NO QUESTS TODAY
+          </div>
         </div>
       ) : (
         <div className="flex flex-col overflow-y-auto mt-1 flex-1 min-h-0">
           {entries.map((entry, i) => (
-            <ScheduleRow
-              key={entry.taskId}
-              entry={entry}
-              isLast={i === entries.length - 1}
-            />
+            <ScheduleRow key={entry.taskId} entry={entry} isLast={i === entries.length - 1} />
           ))}
         </div>
       )}
@@ -228,7 +222,7 @@ function ScheduleRow({ entry, isLast }: { entry: ScheduleEntry; isLast: boolean 
         <div
           className={cn(
             'w-2 h-2 rounded-full border border-[var(--border)] shrink-0',
-            entry.done   && 'bg-[var(--mint)] border-[var(--mint)]',
+            entry.done && 'bg-[var(--mint)] border-[var(--mint)]',
             entry.active && 'bg-[var(--cyan)] border-[var(--cyan)] shadow-[0_0_6px_var(--cyan)]',
           )}
         />
@@ -238,20 +232,14 @@ function ScheduleRow({ entry, isLast }: { entry: ScheduleEntry; isLast: boolean 
       {/* Label */}
       <div className="flex-1 min-w-0 pb-1">
         <div className="flex items-center gap-1 min-w-0">
-          {entry.icon && (
-            <span className="text-[11px] shrink-0 leading-none">{entry.icon}</span>
-          )}
+          {entry.icon && <Icon icon={entry.icon} className="text-[11px] shrink-0 leading-none" />}
           <span className="text-[10px] text-[var(--text-hi)] font-medium truncate">
             {entry.icon ? entry.label.replace(/^\S+\s/, '') : entry.label}
           </span>
         </div>
         <div className="text-[8px] mt-[1px] flex items-center gap-1.5">
-          {entry.active && (
-            <span className="text-[var(--cyan)] font-bold">▶ NOW</span>
-          )}
-          {entry.done && (
-            <span className="text-[var(--mint)]">✓ done</span>
-          )}
+          {entry.active && <span className="text-[var(--cyan)] font-bold">▶ NOW</span>}
+          {entry.done && <span className="text-[var(--mint)]">✓ done</span>}
           {entry.source && entry.source !== 'mock' && (
             <span className="text-[var(--text-dim)] uppercase tracking-[0.1em]">
               {entry.source}
@@ -266,9 +254,9 @@ function ScheduleRow({ entry, isLast }: { entry: ScheduleEntry; isLast: boolean 
 // ─── Activity feed ────────────────────────────────────────────────────────────
 
 const KIND_COLORS: Record<string, string> = {
-  done:   'text-[var(--mint)]',
-  xp:     'text-[var(--gold)]',
-  start:  'text-[var(--cyan)]',
+  done: 'text-[var(--mint)]',
+  xp: 'text-[var(--gold)]',
+  start: 'text-[var(--cyan)]',
   streak: 'text-[var(--violet)]',
 };
 
@@ -281,7 +269,12 @@ function ActivityFeed({ items }: { items: ActivityItem[] }) {
       <ul className="flex flex-col gap-[3px]">
         {items.map((item, i) => (
           <li key={i} className="flex items-center gap-2 py-[3px]">
-            <span className={cn('text-[10px] shrink-0', KIND_COLORS[item.kind] ?? 'text-[var(--text-lo)]')}>
+            <span
+              className={cn(
+                'text-[10px] shrink-0',
+                KIND_COLORS[item.kind] ?? 'text-[var(--text-lo)]',
+              )}
+            >
               {item.icon}
             </span>
             <span className="text-[9px] text-[var(--text-mid)] flex-1 truncate">{item.text}</span>

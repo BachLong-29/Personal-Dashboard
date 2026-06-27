@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react';
 
 import { useTranslations } from 'next-intl';
 
+import { Icon } from '@/components/common/Icon';
 import type { ScheduleBlock } from '@/types';
 
 import { cn } from '@/libs/utils';
@@ -192,7 +193,11 @@ function WeekPeekDay({
                   style={{ background: t.done ? 'var(--text-dim)' : catColor }}
                 />
                 <span className="text-[9px] text-[var(--text-mid)] truncate flex-1">
-                  {t.icon && t.source !== 'habit' ? `${t.icon} ` : ''}
+                  {t.icon && t.source !== 'habit' ? (
+                    <>
+                      <Icon icon={t.icon} className="leading-none shrink-0" />{' '}
+                    </>
+                  ) : null}
                   {t.title}
                 </span>
                 <span

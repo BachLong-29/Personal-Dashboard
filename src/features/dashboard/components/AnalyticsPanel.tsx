@@ -6,6 +6,7 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGri
 import { cn } from '@/libs/utils';
 
 import { CoinIcon } from '@/components/common/CoinIcon';
+import { Icon } from '@/components/common/Icon';
 import type { Task, UpdateTaskPayload } from '@/types';
 import { taskToUITask } from '@/features/tasks/data/adapters';
 import { toLocalDate } from '@/features/tasks/utils/date.utils';
@@ -936,7 +937,7 @@ export function AnalyticsPanel() {
               {/* Stats row */}
               <div className="flex items-center gap-0 pt-2.5 border-t border-[var(--border)]">
                 <div className={selfStatCls}>
-                  <span className="text-[14px] leading-none">🔥</span>
+                  <Icon icon="🔥" className="text-[14px] leading-none text-[var(--gold)]" />
                   <div>
                     <div className="text-[13px] font-bold text-[var(--gold)] leading-none">
                       {character.streak}

@@ -15,6 +15,7 @@ import {
 } from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
 
+import { Icon } from '@/components/common/Icon';
 import { cn } from '@/libs/utils';
 
 import { HABIT_COLORS } from '../constants';
@@ -334,7 +335,9 @@ export function WeekView({
                                 title={`${item.time ? item.time + ' ' : ''}${task.name}`}
                               >
                                 <div className="flex items-center gap-1 w-full min-w-0">
-                                  <span className={miniTaskIcon}>{task.icon}</span>
+                                  <span className={miniTaskIcon}>
+                                    <Icon icon={task.icon} />
+                                  </span>
                                   <span className={miniTaskName}>{task.name}</span>
                                   {blocked && <span className={miniLock}>🔒</span>}
                                   {task.status === 'done' && <span className={miniDone}>✓</span>}

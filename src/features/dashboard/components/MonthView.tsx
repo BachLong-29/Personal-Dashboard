@@ -2,6 +2,7 @@
 
 import { useMemo } from 'react';
 
+import { Icon } from '@/components/common/Icon';
 import { cn } from '@/libs/utils';
 
 import { HABIT_COLORS } from '../constants';
@@ -192,7 +193,9 @@ export function MonthView({
                       style={{ borderLeftColor: color }}
                       title={`${task.icon} ${task.name}${task.note ? ` — ${task.note}` : ''}`}
                     >
-                      <span className={pillIcon}>{task.icon}</span>
+                      <span className={pillIcon}>
+                        <Icon icon={task.icon} />
+                      </span>
                       <span className={cn(pillName, isDone && pillNameDone)}>{task.name}</span>
                       {isDone && <span className={pillCheck}>✓</span>}
                     </div>

@@ -1,3 +1,4 @@
+import { Icon } from '@/components/common/Icon';
 import { cn } from '@/libs/utils';
 
 import { RARITY_COLOR } from '../constants';
@@ -16,7 +17,9 @@ export function MarketBattlePassNode({ node }: MarketBattlePassNodeProps) {
       tabIndex={0}
     >
       <div className={cn(bpNodeLv, node.current && bpNodeLvCurrent)}>LV {node.lv}</div>
-      <div className={bpNodeIcon}>{node.icon}</div>
+      <div className={bpNodeIcon}>
+        <Icon icon={node.icon} />
+      </div>
       <div className={bpNodeName}>{node.reward}</div>
     </div>
   );

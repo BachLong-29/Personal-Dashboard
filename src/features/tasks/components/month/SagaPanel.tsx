@@ -1,3 +1,4 @@
+import { Icon } from '@/components/common/Icon';
 import { ACTIVITY, catOf, COLOR_VAR, type UITask } from '../../data/mock';
 
 interface SagaPanelProps {
@@ -61,7 +62,9 @@ function SagaCard({ saga }: { saga: UITask }) {
         </div>
         <div className="text-[9px] text-[var(--text-lo)] truncate mb-1.5">{saga.desc}</div>
         <div className="flex items-center gap-2 text-[8px] text-[var(--text-lo)] mb-1.5">
-          <span>{saga.subtasksDone}/{saga.subtasks} chapters</span>
+          <span>
+            {saga.subtasksDone}/{saga.subtasks} chapters
+          </span>
           <span className="opacity-40">·</span>
           <span>{saga.deadline}</span>
           <span className="ml-auto font-bold text-[var(--violet)]">+{saga.xp} XP</span>
@@ -91,7 +94,7 @@ function ActivityFeed() {
       <ul className="flex flex-col gap-1">
         {ACTIVITY.map((a, i) => (
           <li key={i} className="flex items-center gap-2 py-[3px]">
-            <span className="text-[10px] shrink-0">{a.icon}</span>
+            <Icon icon={a.icon} className="w-[10px] shrink-0" />
             <span className="text-[9px] text-[var(--text-mid)] flex-1 truncate">{a.text}</span>
             <span className="text-[8px] text-[var(--text-lo)] shrink-0">{a.ts}</span>
           </li>

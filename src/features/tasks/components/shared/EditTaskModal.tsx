@@ -4,6 +4,7 @@ import { useRef, useState } from 'react';
 
 import { useTranslations } from 'next-intl';
 
+import { Icon } from '@/components/common/Icon';
 import { Modal, ModalBody, ModalFoot, ModalHead } from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
 import { Checkbox } from '@/components/ui/Checkbox';
@@ -251,7 +252,7 @@ export function EditTaskModal({ task, open, onClose, onSave, saving }: EditTaskM
           </div>
           <div className="[font-family:var(--f-title)] text-[20px] sm:text-[22px] font-bold tracking-[0.04em] text-[var(--text-hi)]">
             <span className="flex items-center gap-2 truncate max-w-full">
-              {task.icon && <span className="text-[18px] leading-none shrink-0">{task.icon}</span>}
+              {task.icon && <Icon icon={task.icon} className="text-[18px] leading-none shrink-0" />}
               <span className="text-[16px] sm:text-[18px] truncate">{task.title}</span>
             </span>
           </div>

@@ -10,6 +10,7 @@ import { useTaskBlocks } from '@/features/schedule/hooks/useScheduleBlocks';
 
 import { catOf, fmtEst, COLOR_VAR, type UITask } from '../../data/mock';
 import { diffColors, qcxBtnGhost, qcxBtnPrimary } from './styles';
+import { Icon } from '@/components/common/Icon';
 
 // ─── Session helpers ────────────────────────────────────────────────────────────
 
@@ -113,7 +114,9 @@ export function QuestCard({
             </button>
 
             {task.icon && (
-              <span className="text-[13px] leading-none shrink-0 select-none">{task.icon}</span>
+              <span className="text-[13px] leading-none shrink-0 select-none">
+                <Icon icon={task.icon} />
+              </span>
             )}
 
             <span

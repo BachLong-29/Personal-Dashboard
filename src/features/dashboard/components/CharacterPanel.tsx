@@ -2,6 +2,7 @@
 
 import { useTranslations } from 'next-intl';
 
+import { Icon } from '@/components/common/Icon';
 import type { Character, DashboardSettings } from '../types';
 import { Link } from '@/i18n/navigation';
 import { cn } from '@/libs/utils';
@@ -58,7 +59,9 @@ export function CharacterPanel({ char, settings }: CharacterPanelProps) {
       <div className={avatarWrap}>
         <div className={halo} />
         <div className={avatarRing}>
-          <div className={avatarInner}>{companion?.glyph ?? '🧝‍♀️'}</div>
+          <div className={avatarInner}>
+            <Icon useMappedColor icon={companion?.glyph ?? '🧝‍♀️'} />
+          </div>
           <div className={rankBadge}>{rank.name[0]?.toUpperCase() ?? char.rank}</div>
         </div>
       </div>

@@ -1,6 +1,7 @@
 'use client';
 
 import { cn } from '@/libs/utils';
+import { Icon } from './Icon';
 
 /** TaskColor token → CSS value. Mirrors projects' COLOR_CSS (includes blue). */
 const PROJECT_COLOR: Record<string, string> = {
@@ -36,7 +37,9 @@ export function ProjectBadge({ name, icon, color, iconOnly, className }: Project
       style={{ color: c, borderColor: `${c}55`, background: `${c}12` }}
       title={`Project · ${name}`}
     >
-      <span className="leading-none">{icon ?? '◫'}</span>
+      <span className="leading-none">
+        <Icon icon={icon ?? '◫'} />
+      </span>
       {!iconOnly && <span className="overflow-hidden text-ellipsis">{name}</span>}
     </span>
   );

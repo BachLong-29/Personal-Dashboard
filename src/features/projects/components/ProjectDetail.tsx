@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 
 import { CoinIcon } from '@/components/common/CoinIcon';
+import { Icon } from '@/components/common/Icon';
 import DashboardTopbar from '@/features/dashboard/components/DashboardTopbar';
 import { useProfile } from '@/features/profile/hooks/useProfile';
 import { buildEmptyChar, profileToCharacter } from '@/features/dashboard/utils/character.utils';
@@ -112,7 +113,7 @@ export function ProjectDetail({ id }: { id: string }) {
           href="/projects"
           className="text-[11px] text-[var(--text-mid)] hover:text-[var(--gold)] no-underline w-fit"
         >
-          ◂ Projects
+          <Icon icon="◂" /> Projects
         </Link>
 
         {/* Header */}
@@ -124,7 +125,7 @@ export function ProjectDetail({ id }: { id: string }) {
               borderColor: `color-mix(in oklch, ${accent} 35%, transparent)`,
             }}
           >
-            {project.icon}
+            <Icon icon={project.icon} />
           </span>
 
           <div className="flex-1 min-w-[200px]">

@@ -4,6 +4,8 @@ import { useRef, useState } from 'react';
 import Image from 'next/image';
 import { useLocale, useTranslations } from 'next-intl';
 
+import { CoinIcon } from '@/components/common/CoinIcon';
+import { Icon } from '@/components/common/Icon';
 import { Button } from '@/components/ui/Button';
 import { locales, localeLabels, type Locale } from '@/i18n/config';
 import { Link, usePathname, useRouter } from '@/i18n/navigation';
@@ -146,14 +148,14 @@ const DashboardTopbar = (props: DashboardTopbarProps) => {
               {/* Currencies */}
               <div className={modalCurrencyRow}>
                 <div className={modalCurrencyItem}>
-                  <span className={gemIcon} aria-hidden />
+                  <Icon icon="diamond" className={cn(currencyIcon, 'text-[var(--cyan)]')} />
                   <div>
                     <div className={modalCurrencyVal}>{char.gems.toLocaleString()}</div>
                   </div>
                 </div>
                 <div className={modalCurrencyDivider} />
                 <div className={modalCurrencyItem}>
-                  <span className={coinIcon} aria-hidden />
+                  <CoinIcon className={currencyIcon} />
                   <div>
                     <div className={cn(modalCurrencyVal, 'text-[var(--gold)]')}>
                       {char.coins.toLocaleString()}
@@ -181,7 +183,7 @@ const DashboardTopbar = (props: DashboardTopbarProps) => {
                   className={modalNavLink}
                   onClick={() => setShowUserModal(false)}
                 >
-                  <span>📋</span>
+                  <Icon icon="📋" />
                   <span>Quest Log</span>
                 </Link>
                 <Link
@@ -189,7 +191,7 @@ const DashboardTopbar = (props: DashboardTopbarProps) => {
                   className={modalNavLink}
                   onClick={() => setShowUserModal(false)}
                 >
-                  <span>🚀</span>
+                  <Icon icon="🚀" />
                   <span>{tNav('projects')}</span>
                 </Link>
                 <Link
@@ -197,7 +199,7 @@ const DashboardTopbar = (props: DashboardTopbarProps) => {
                   className={cn(modalNavLink, 'text-[var(--violet)]')}
                   onClick={() => setShowUserModal(false)}
                 >
-                  <span>🛍</span>
+                  <Icon icon="🛍" />
                   <span>{tNav('marketplace')}</span>
                 </Link>
               </div>
@@ -215,7 +217,7 @@ const DashboardTopbar = (props: DashboardTopbarProps) => {
                   }}
                   title={localeLabels[locale]}
                 >
-                  <span>🌐</span>
+                  <Icon icon="🌐" />
                   <span>{localeLabels[locale]}</span>
                   <span className="ml-auto opacity-50 text-[9px]">→ switch</span>
                 </button>
@@ -230,12 +232,12 @@ const DashboardTopbar = (props: DashboardTopbarProps) => {
         {/* ── Gems + Coins (single unified bar) ──────────────────────────── */}
         <div className={cn(currencyBar, 'hidden sm:flex')}>
           <span className="flex items-center gap-1">
-            <span className={gemIcon} aria-hidden />
+            <Icon icon="diamond" className={cn(currencyIcon, 'text-[var(--cyan)]')} />
             <span className="text-[var(--cyan)]">{char.gems.toLocaleString()}</span>
           </span>
           <span className="w-px h-3 bg-[var(--border)] opacity-60" />
           <span className="flex items-center gap-1">
-            <span className={coinIcon} aria-hidden />
+            <CoinIcon className={currencyIcon} />
             <span className="text-[var(--gold)]">{char.coins.toLocaleString()}</span>
           </span>
         </div>
@@ -380,15 +382,21 @@ const DashboardTopbar = (props: DashboardTopbarProps) => {
                 </span>
               </Link>
               <Link href="/marketplace" className={sheetItem} onClick={closeSheet}>
-                <span className={sheetItemIcon}>🛍</span>
+                <span className={sheetItemIcon}>
+                  <Icon icon="🛍" />
+                </span>
                 <span>{tNav('marketplace')}</span>
               </Link>
               <Link href="/tasks" className={sheetItem} onClick={closeSheet}>
-                <span className={sheetItemIcon}>📋</span>
+                <span className={sheetItemIcon}>
+                  <Icon icon="📋" />
+                </span>
                 <span>Quest Log</span>
               </Link>
               <Link href="/projects" className={sheetItem} onClick={closeSheet}>
-                <span className={sheetItemIcon}>🚀</span>
+                <span className={sheetItemIcon}>
+                  <Icon icon="🚀" />
+                </span>
                 <span>{tNav('projects')}</span>
               </Link>
             </div>
@@ -405,7 +413,7 @@ const DashboardTopbar = (props: DashboardTopbarProps) => {
                   closeSheet();
                 }}
               >
-                <span>🌐</span>
+                <Icon icon="🌐" />
                 <span>{locale.toUpperCase()}</span>
               </button>
               <button
@@ -504,12 +512,7 @@ const modalMetaDot = 'opacity-40';
 const modalDivider = 'h-px bg-[var(--border)] mx-4';
 const modalCurrencyRow = 'flex items-center px-4 py-3 gap-4';
 const modalCurrencyItem = 'flex items-center gap-2 flex-1';
-// Gold coin icon — masks public/icons/GiTwoCoins.svg and tints it with the system gold.
-const coinIcon =
-  'inline-block w-[20px] h-[20px] shrink-0 bg-[var(--gold)] [mask:url(/icons/GiTwoCoins.svg)_center/contain_no-repeat] [-webkit-mask:url(/icons/GiTwoCoins.svg)_center/contain_no-repeat]';
-// Gem/diamond icon — masks public/icons/GiCutDiamond.svg and tints it with the system blue.
-const gemIcon =
-  'inline-block w-[20px] h-[20px] shrink-0 bg-[var(--cyan)] [mask:url(/icons/GiCutDiamond.svg)_center/contain_no-repeat] [-webkit-mask:url(/icons/GiCutDiamond.svg)_center/contain_no-repeat]';
+const currencyIcon = 'w-[20px] h-[20px] shrink-0';
 const modalCurrencyVal =
   'font-[var(--font-title)] text-[16px] font-bold text-[var(--text-hi)] leading-none';
 const modalCurrencyDivider = 'w-px h-[36px] bg-[var(--border)]';

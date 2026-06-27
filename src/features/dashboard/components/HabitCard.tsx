@@ -1,5 +1,6 @@
 'use client';
 
+import { Icon } from '@/components/common/Icon';
 import { cn } from '@/libs/utils';
 
 import { ALL_HABIT_DAYS, HABIT_COLORS, HABIT_DAY_SHORT } from '../constants';
@@ -51,7 +52,7 @@ export function HabitCard({
       {/* ── Main row ── */}
       <div className={topRow}>
         <div className={iconWrap} style={{ background: `${colorVal}20`, color: colorVal }}>
-          {habit.icon}
+          <Icon icon={habit.icon} />
         </div>
 
         <div className={info}>

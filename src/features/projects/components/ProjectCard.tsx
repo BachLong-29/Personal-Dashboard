@@ -1,6 +1,7 @@
 'use client';
 
 import { CoinIcon } from '@/components/common/CoinIcon';
+import { Icon } from '@/components/common/Icon';
 import { Link } from '@/i18n/navigation';
 import { cn } from '@/libs/utils';
 import type { ProjectDTO } from '@/types/project';
@@ -45,7 +46,7 @@ export function ProjectCard({ project }: { project: ProjectDTO }) {
             borderColor: `color-mix(in oklch, ${accent} 35%, transparent)`,
           }}
         >
-          {project.icon}
+          <Icon icon={project.icon} />
         </span>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">

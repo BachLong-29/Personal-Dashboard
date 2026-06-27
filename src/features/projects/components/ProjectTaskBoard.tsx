@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 
+import { Icon } from '@/components/common/Icon';
 import { cn } from '@/libs/utils';
 import type { Task, TaskStatus } from '@/types';
 
@@ -118,7 +119,7 @@ export function ProjectTaskBoard({ tasks, onChangeStatus, onEdit }: Props) {
                       {t.startDate ? formatSchedule(t.startDate) : '—'}
                     </p>
                     <div className="flex items-center gap-1.5 min-w-0">
-                      <span className="text-[12px] leading-none shrink-0">{t.icon}</span>
+                      <Icon icon={t.icon} className="text-[12px] leading-none shrink-0" />
                       <span className="text-[11px] text-[var(--text-hi)] truncate leading-tight">
                         {t.name}
                       </span>
