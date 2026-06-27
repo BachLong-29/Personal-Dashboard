@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 
+import { CoinIcon } from '@/components/common/CoinIcon';
 import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Modal';
 import { useUpdateQuestStatus } from '../hooks/useUpdateQuestStatus';
@@ -36,7 +37,9 @@ export function ConfirmQuestModal({ quest, onConfirm, onCancel }: ConfirmQuestMo
         </div>
         <div className="confirm-rewards">
           <span className="confirm-reward-pill xp">⚡ +{quest.xp} XP</span>
-          <span className="confirm-reward-pill coin">🪙 +{quest.coins}</span>
+          <span className="confirm-reward-pill coin">
+            <CoinIcon /> +{quest.coins}
+          </span>
         </div>
         {error && (
           <div

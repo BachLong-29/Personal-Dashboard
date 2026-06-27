@@ -1,4 +1,5 @@
 import { useTranslations } from 'next-intl';
+import { CoinIcon } from '@/components/common/CoinIcon';
 import { Link } from '@/i18n/navigation';
 
 const embers = [
@@ -164,7 +165,7 @@ export function LandingHero() {
               XP <strong>+120</strong>
             </div>
             <div className="lp-fc-stat">
-              🪙 <strong>+24</strong>
+              <CoinIcon /> <strong>+24</strong>
             </div>
           </div>
         </div>

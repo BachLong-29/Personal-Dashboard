@@ -2,6 +2,7 @@
 
 import type { ReactNode } from 'react';
 
+import { CoinIcon } from '@/components/common/CoinIcon';
 import { ProjectBadge } from '@/components/common/ProjectBadge';
 import { Button } from '@/components/ui/Button';
 import { Modal, ModalBody, ModalFoot, ModalHead } from '@/components/ui/Modal';
@@ -146,7 +147,9 @@ export function QuestDetailModal({ quest, onClose }: QuestDetailModalProps) {
             <DetailRow label="Rewards">
               <div className="flex items-center gap-2">
                 <div className="reward-pill xp">⚡ {quest.xp} XP</div>
-                <div className="reward-pill coin">🪙 {quest.coins}</div>
+                <div className="reward-pill coin">
+                  <CoinIcon /> {quest.coins}
+                </div>
               </div>
             </DetailRow>
 

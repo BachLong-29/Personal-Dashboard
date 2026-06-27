@@ -1,5 +1,6 @@
 'use client';
 
+import { CoinIcon } from '@/components/common/CoinIcon';
 import { Link } from '@/i18n/navigation';
 import { cn } from '@/libs/utils';
 import type { ProjectDTO } from '@/types/project';
@@ -93,7 +94,9 @@ export function ProjectCard({ project }: { project: ProjectDTO }) {
         <span className="flex items-center gap-2 text-[var(--text-mid)]">
           <span className="text-[var(--gold)]">✦ {project.xp} XP</span>
           <span className="text-[var(--text-lo)]">·</span>
-          <span className="text-[var(--gold)]">🪙 {project.coins}</span>
+          <span className="text-[var(--gold)]">
+            <CoinIcon /> {project.coins}
+          </span>
         </span>
         {dl && (
           <span className={overdue ? 'text-[var(--rose)] font-bold' : 'text-[var(--text-lo)]'}>

@@ -5,8 +5,10 @@ import { motion } from 'framer-motion';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import { cn } from '@/libs/utils';
 
+import { CoinIcon } from '@/components/common/CoinIcon';
 import type { Task, UpdateTaskPayload } from '@/types';
 import { taskToUITask } from '@/features/tasks/data/adapters';
+import { toLocalDate } from '@/features/tasks/utils/date.utils';
 import { EditTaskModal } from '@/features/tasks/components/shared/EditTaskModal';
 import { useStats } from '../hooks/useStats';
 import { useStatsHeatmap } from '../hooks/useStatsHeatmap';
@@ -343,7 +345,7 @@ function CalendarHeatmap({
       const week: Array<{ date: string; future: boolean }> = [];
       for (let i = 0; i < 7; i++) {
         const isFuture = d > today;
-        const dateStr = d.toISOString().slice(0, 10);
+        const dateStr = toLocalDate(d);
         week.push({ date: dateStr, future: isFuture });
         if (!isFuture) {
           totalDays++;
@@ -944,7 +946,9 @@ export function AnalyticsPanel() {
                 </div>
                 <div className="w-px h-8 bg-[var(--border)] mx-1" />
                 <div className={selfStatCls}>
-                  <span className="text-[14px] leading-none">🪙</span>
+                  <span className="text-[14px] leading-none">
+                    <CoinIcon />
+                  </span>
                   <div>
                     <div className="text-[13px] font-bold text-[var(--text-hi)] leading-none">
                       {character.coins.toLocaleString()}

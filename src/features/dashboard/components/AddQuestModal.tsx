@@ -9,6 +9,7 @@ import { Modal, ModalBody, ModalFoot, ModalHead } from '@/components/ui/Modal';
 import { QUEST_ICONS, XP_MAP } from '../constants';
 import { useCreateQuest } from '../hooks/useCreateQuest';
 import type { Difficulty, Quest, QuestType } from '../types';
+import { todayISO } from '@/features/tasks/utils/date.utils';
 
 interface AddQuestModalProps {
   onAdd: (quest: Quest) => void;
@@ -33,7 +34,7 @@ export function AddQuestModal({ onAdd, onClose }: AddQuestModalProps) {
   const [desc, setDesc] = useState('');
   const [type, setType] = useState<QuestType>('focus');
   const [diff, setDiff] = useState<Difficulty>('B');
-  const [dueDate, setDueDate] = useState(() => new Date().toISOString().substring(0, 10));
+  const [dueDate, setDueDate] = useState(() => todayISO());
 
   const { mutate: createQuest, isPending, error } = useCreateQuest();
 

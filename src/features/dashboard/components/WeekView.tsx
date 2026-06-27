@@ -32,6 +32,7 @@ import { Modal, ModalBody, ModalFoot, ModalHead } from '@/components/ui/Modal';
 import { AddTaskModal } from '@/features/tasks/components/shared/AddTaskModal';
 import { EditTaskModal } from '@/features/tasks/components/shared/EditTaskModal';
 import { taskToUITask } from '@/features/tasks/data/adapters';
+import { todayISO } from '@/features/tasks/utils/date.utils';
 import type { Task as CoreTask } from '@/types/task';
 
 interface WeekViewProps {
@@ -84,7 +85,7 @@ export function WeekView({
   onNavigateTab,
 }: WeekViewProps) {
   const weekEnd = addDays(weekStart, 6);
-  const todayStr = new Date().toISOString().substring(0, 10);
+  const todayStr = todayISO();
 
   const { data: allTasks = [], isLoading } = useTasks(weekStart, weekEnd);
   const { data: weekQuests = [] } = useQuests(weekStart, weekEnd);

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslations } from 'next-intl';
 
+import { CoinIcon } from '@/components/common/CoinIcon';
 import { Button } from '@/components/ui/Button';
 import { cn } from '@/libs/utils';
 
@@ -166,7 +167,9 @@ export function PenaltyModal({
               <span className={penaltyConsVal}>−{escalation.statLoss}</span>
             </div>
             <div className={penaltyConsRow}>
-              <span className={penaltyConsIcon}>🪙</span>
+              <span className={penaltyConsIcon}>
+                <CoinIcon />
+              </span>
               <span className={penaltyConsLabel}>COIN LOSS</span>
               <span className={penaltyConsVal}>−{escalation.coinLoss}</span>
             </div>

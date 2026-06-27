@@ -146,20 +146,18 @@ const DashboardTopbar = (props: DashboardTopbarProps) => {
               {/* Currencies */}
               <div className={modalCurrencyRow}>
                 <div className={modalCurrencyItem}>
-                  <span className={modalCurrencyIcon}>💠</span>
+                  <span className={gemIcon} aria-hidden />
                   <div>
                     <div className={modalCurrencyVal}>{char.gems.toLocaleString()}</div>
-                    <div className={modalCurrencyKey}>Gems</div>
                   </div>
                 </div>
                 <div className={modalCurrencyDivider} />
                 <div className={modalCurrencyItem}>
-                  <span className={modalCurrencyIcon}>🪙</span>
+                  <span className={coinIcon} aria-hidden />
                   <div>
                     <div className={cn(modalCurrencyVal, 'text-[var(--gold)]')}>
                       {char.coins.toLocaleString()}
                     </div>
-                    <div className={modalCurrencyKey}>Gold</div>
                   </div>
                 </div>
               </div>
@@ -232,12 +230,12 @@ const DashboardTopbar = (props: DashboardTopbarProps) => {
         {/* ── Gems + Coins (single unified bar) ──────────────────────────── */}
         <div className={cn(currencyBar, 'hidden sm:flex')}>
           <span className="flex items-center gap-1">
-            <span className="text-[13px] leading-none">💠</span>
+            <span className={gemIcon} aria-hidden />
             <span className="text-[var(--cyan)]">{char.gems.toLocaleString()}</span>
           </span>
           <span className="w-px h-3 bg-[var(--border)] opacity-60" />
           <span className="flex items-center gap-1">
-            <span className="text-[13px] leading-none">🪙</span>
+            <span className={coinIcon} aria-hidden />
             <span className="text-[var(--gold)]">{char.coins.toLocaleString()}</span>
           </span>
         </div>
@@ -506,10 +504,14 @@ const modalMetaDot = 'opacity-40';
 const modalDivider = 'h-px bg-[var(--border)] mx-4';
 const modalCurrencyRow = 'flex items-center px-4 py-3 gap-4';
 const modalCurrencyItem = 'flex items-center gap-2 flex-1';
-const modalCurrencyIcon = 'text-[22px] leading-none';
+// Gold coin icon — masks public/icons/GiTwoCoins.svg and tints it with the system gold.
+const coinIcon =
+  'inline-block w-[20px] h-[20px] shrink-0 bg-[var(--gold)] [mask:url(/icons/GiTwoCoins.svg)_center/contain_no-repeat] [-webkit-mask:url(/icons/GiTwoCoins.svg)_center/contain_no-repeat]';
+// Gem/diamond icon — masks public/icons/GiCutDiamond.svg and tints it with the system blue.
+const gemIcon =
+  'inline-block w-[20px] h-[20px] shrink-0 bg-[var(--cyan)] [mask:url(/icons/GiCutDiamond.svg)_center/contain_no-repeat] [-webkit-mask:url(/icons/GiCutDiamond.svg)_center/contain_no-repeat]';
 const modalCurrencyVal =
   'font-[var(--font-title)] text-[16px] font-bold text-[var(--text-hi)] leading-none';
-const modalCurrencyKey = 'text-[9px] text-[var(--text-mid)] tracking-[0.1em] uppercase mt-[2px]';
 const modalCurrencyDivider = 'w-px h-[36px] bg-[var(--border)]';
 
 const modalNavLinks = 'px-3 py-2 flex flex-col gap-0.5';

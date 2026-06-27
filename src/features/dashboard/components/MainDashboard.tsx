@@ -32,6 +32,8 @@ type MobilePanel = 'center' | 'character' | 'timer';
 const DOW_TO_HABIT_DAY = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'] as const;
 
 export default function MainDashboard() {
+  const settings: DashboardSettings = DEFAULT_SETTINGS;
+
   // Stable date strings — computed once on mount, never stale within a session.
   // Local date (not UTC) so habit/task logs match the same format used by /tasks.
   const todayDateStr = useMemo(() => {
@@ -76,8 +78,6 @@ export default function MainDashboard() {
     (level: number, rank?: string) => setLevelUp({ level, rank }),
     [],
   );
-
-  const settings: DashboardSettings = DEFAULT_SETTINGS;
 
   const { awardProgress, applyGamePatch } = useCharacterProgress(char, setChar, handleLevelUp);
 

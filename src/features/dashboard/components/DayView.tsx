@@ -20,6 +20,7 @@ import { ProjectBadge } from '@/components/common/ProjectBadge';
 import { AddTaskModal } from '@/features/tasks/components/shared/AddTaskModal';
 import { EditTaskModal } from '@/features/tasks/components/shared/EditTaskModal';
 import { taskToUITask } from '@/features/tasks/data/adapters';
+import { todayISO } from '@/features/tasks/utils/date.utils';
 import type { UpdateTaskPayload } from '@/types';
 import { TaskCard } from './TaskCard';
 
@@ -154,7 +155,7 @@ export function DayView({ date, display, quests = [], onToggle, onDateChange }: 
     setDeletingTask(undefined);
   }
 
-  const todayStr = new Date().toISOString().substring(0, 10);
+  const todayStr = todayISO();
   const isToday = date === todayStr;
 
   return (

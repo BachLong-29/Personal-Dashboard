@@ -2,6 +2,7 @@
 
 import { useTranslations } from 'next-intl';
 
+import { CoinIcon } from '@/components/common/CoinIcon';
 import { Button } from '@/components/ui/Button';
 
 import type { MarketFeaturedReward, MarketReward } from '../types';
@@ -40,10 +41,12 @@ export function MarketFeaturedBanner({ featured, onClaim }: MarketFeaturedBanner
         <div className={featuredLore}>{featured.lore}</div>
         <div className={featuredMeta}>
           <div className={featuredPrice}>
-            <span className={featuredPriceCurrent}>🪙 {featured.price.toLocaleString()}</span>
+            <span className={featuredPriceCurrent}>
+              <CoinIcon /> {featured.price.toLocaleString()}
+            </span>
             {featured.originalPrice != null && (
               <span className={featuredPriceOriginal}>
-                🪙 {featured.originalPrice.toLocaleString()}
+                <CoinIcon /> {featured.originalPrice.toLocaleString()}
               </span>
             )}
             {featured.discount != null && (

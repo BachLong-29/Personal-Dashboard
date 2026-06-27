@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 
+import { CoinIcon } from '@/components/common/CoinIcon';
 import DashboardTopbar from '@/features/dashboard/components/DashboardTopbar';
 import { useProfile } from '@/features/profile/hooks/useProfile';
 import { buildEmptyChar, profileToCharacter } from '@/features/dashboard/utils/character.utils';
@@ -154,7 +155,9 @@ export function ProjectDetail({ id }: { id: string }) {
 
             <div className="flex items-center gap-3 mt-2 text-[11px] [font-family:var(--f-title)] tracking-[0.04em]">
               <span className="text-[var(--gold)]">✦ {project.xp} XP</span>
-              <span className="text-[var(--gold)]">🪙 {project.coins}</span>
+              <span className="text-[var(--gold)]">
+                <CoinIcon /> {project.coins}
+              </span>
               {project.deadline && (
                 <span className="text-[var(--text-lo)]">
                   ⏱{' '}

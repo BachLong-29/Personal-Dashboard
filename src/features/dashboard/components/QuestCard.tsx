@@ -2,6 +2,7 @@
 
 import { useRef } from 'react';
 
+import { CoinIcon } from '@/components/common/CoinIcon';
 import { ProjectBadge } from '@/components/common/ProjectBadge';
 
 import { HABIT_COLORS, QUEST_ICONS } from '../constants';
@@ -87,7 +88,9 @@ export function QuestCard({ quest, onToggle, animationsEnabled, onViewDetail }: 
           <div className={`diff-badge diff-${quest.difficulty}`}>{quest.difficulty}</div>
         )}
         <div className="reward-pill xp">⚡ {quest.xp}</div>
-        <div className="reward-pill coin">🪙 {quest.coins}</div>
+        <div className="reward-pill coin">
+          <CoinIcon /> {quest.coins}
+        </div>
       </div>
       {onViewDetail && (
         <button

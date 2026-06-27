@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useState } from 'react';
 
+import { toLocalDate } from '@/features/tasks/utils/date.utils';
+
 export type ScheduleSubTab = 'day' | 'week' | 'month';
 
 export interface ScheduleDisplayOptions {
@@ -21,7 +23,7 @@ interface ScheduleState {
 const STORAGE_KEY = 'aetheria_schedule_state';
 
 function getTodayStr(): string {
-  return new Date().toISOString().substring(0, 10);
+  return toLocalDate(new Date());
 }
 
 function getMonday(dateStr: string): string {
@@ -29,7 +31,7 @@ function getMonday(dateStr: string): string {
   const day = d.getDay();
   const diff = day === 0 ? -6 : 1 - day;
   d.setDate(d.getDate() + diff);
-  return d.toISOString().substring(0, 10);
+  return toLocalDate(d);
 }
 
 function defaultState(): ScheduleState {
@@ -95,10 +97,7 @@ export function useScheduleState() {
       })),
     [],
   );
-  const setMonth = useCallback(
-    (month: number) => setState((s) => ({ ...s, month })),
-    [],
-  );
+  const setMonth = useCallback((month: number) => setState((s) => ({ ...s, month })), []);
   const setDisplay = useCallback(
     (display: Partial<ScheduleDisplayOptions>) =>
       setState((s) => ({ ...s, display: { ...s.display, ...display } })),

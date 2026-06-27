@@ -10,6 +10,7 @@ import { useHabits } from '../hooks/useHabits';
 import { useTasks } from '../hooks/useTasks';
 import type { CenterTab, Habit, HabitColor, Quest, Task, TaskColor } from '../types';
 import type { ScheduleDisplayOptions } from '../hooks/useScheduleState';
+import { todayISO } from '@/features/tasks/utils/date.utils';
 
 interface MonthViewProps {
   year: number;
@@ -67,7 +68,7 @@ export function MonthView({
 
   const { data: allTasks = [] } = useTasks(monthStart, monthEnd);
   const { data: habits = [] } = useHabits();
-  const todayStr = new Date().toISOString().substring(0, 10);
+  const todayStr = todayISO();
   const { data: todayHabitLogs = [] } = useHabitLogs(todayStr);
 
   const calendarDays = useMemo(() => getCalendarDays(year, month), [year, month]);

@@ -4,6 +4,7 @@ import Image from 'next/image';
 import { useMemo, useState } from 'react';
 import { useTranslations } from 'next-intl';
 
+import { CoinIcon } from '@/components/common/CoinIcon';
 import { Button } from '@/components/ui/Button';
 import { Link } from '@/i18n/navigation';
 import { cn } from '@/libs/utils';
@@ -30,7 +31,9 @@ export function MarketPlace() {
     ...(REWARD_DATA.player as Omit<MarketPlayerState, 'achievement'>),
     achievement: 0,
   }));
-  const [rewards, setRewards] = useState<MarketReward[]>(() => REWARD_DATA.rewards as MarketReward[]);
+  const [rewards, setRewards] = useState<MarketReward[]>(
+    () => REWARD_DATA.rewards as MarketReward[],
+  );
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [flashColor, setFlashColor] = useState<string | null>(null);
 
@@ -102,7 +105,9 @@ export function MarketPlace() {
           <span>{player.gems.toLocaleString()}</span>
         </div>
         <div className={cn(currencyPill, currencyPillCoins)}>
-          <span className={currencyPillIcon}>🪙</span>
+          <span className={currencyPillIcon}>
+            <CoinIcon />
+          </span>
           <span>{player.coins.toLocaleString()}</span>
         </div>
         <Link className={manageBtn} href="/manage/rewards">
@@ -263,8 +268,7 @@ const topbar =
   'flex items-center gap-3 px-6 py-3 bg-[linear-gradient(180deg,var(--panel),oklch(0.06_0.02_260_/_0.95))] border-b border-[var(--border)] backdrop-blur-[10px] sticky top-0 z-50';
 const topbarBack =
   'flex items-center gap-1.5 text-[11px] text-[var(--text-mid)] no-underline px-3 py-1.5 rounded-[6px] border border-[var(--border)] bg-[var(--panel2)] font-[var(--font-title)] tracking-[0.1em] transition-all duration-200 hover:border-[var(--gold)] hover:text-[var(--gold)]';
-const topbarLogo =
-  'h-9 w-9 object-contain drop-shadow-[0_0_12px_var(--violet-glow)]';
+const topbarLogo = 'h-9 w-9 object-contain drop-shadow-[0_0_12px_var(--violet-glow)]';
 const topbarDiamond = 'text-[var(--gold)] text-[8px] opacity-50';
 const topbarSection =
   'font-[var(--font-title)] text-[12px] tracking-[0.2em] text-[var(--text-mid)]';

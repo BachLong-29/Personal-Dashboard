@@ -6,6 +6,7 @@ import { useRouter } from '@/i18n/navigation';
 import { useOnClickOutside } from '@/hooks/useOnClickOutside';
 import { cn } from '@/libs/utils';
 import { useUIStore } from '@/stores/ui.store';
+import { toLocalDate } from '@/features/tasks/utils/date.utils';
 import { useNotifications, type Notification } from '../hooks/useNotifications';
 import {
   useDeleteNotification,
@@ -21,7 +22,7 @@ function getNextMondayStr(): string {
   // Sunday → +1 day; any other day → next week's Monday
   const toMonday = day === 0 ? 1 : 7 - day + 1;
   d.setDate(d.getDate() + toMonday);
-  return d.toISOString().substring(0, 10);
+  return toLocalDate(d);
 }
 
 const TYPE_ICON: Record<string, string> = {

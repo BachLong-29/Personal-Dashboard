@@ -1,5 +1,7 @@
 import { useTranslations } from 'next-intl';
 
+import { CoinIcon } from '@/components/common/CoinIcon';
+
 export function SystemSection() {
   const t = useTranslations('landing.system');
 
@@ -45,9 +47,7 @@ export function SystemSection() {
             <span className="small">02.</span> {t('levelLabel')}
           </div>
           <h3>{t('levelTitle')}</h3>
-          <p>
-            {t.rich('levelDesc', { em: (chunks) => <em>{chunks}</em> })}
-          </p>
+          <p>{t.rich('levelDesc', { em: (chunks) => <em>{chunks}</em> })}</p>
           <div className="mock">
             <div
               style={{
@@ -123,9 +123,7 @@ export function SystemSection() {
             <span className="small">03.</span> {t('rewardLabel')}
           </div>
           <h3>{t('rewardTitle')}</h3>
-          <p>
-            {t.rich('rewardDesc', { em: (chunks) => <em>{chunks}</em> })}
-          </p>
+          <p>{t.rich('rewardDesc', { em: (chunks) => <em>{chunks}</em> })}</p>
           <div className="mock">
             <div
               style={{
@@ -170,7 +168,7 @@ export function SystemSection() {
                   fontSize: 13,
                 }}
               >
-                🪙 800
+                <CoinIcon /> 800
               </div>
             </div>
             <div
@@ -218,7 +216,7 @@ export function SystemSection() {
                   fontSize: 13,
                 }}
               >
-                🪙 2.4k
+                <CoinIcon /> 2.4k
               </div>
             </div>
           </div>
