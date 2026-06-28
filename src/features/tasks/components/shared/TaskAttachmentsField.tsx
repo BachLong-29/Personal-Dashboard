@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Image from 'next/image';
+import { useTranslations } from 'next-intl';
 
 import { Upload } from '@/components/ui/Upload';
 import { apiClient } from '@/libs/axios';
@@ -21,6 +22,7 @@ interface TaskAttachmentsFieldProps {
 }
 
 export function TaskAttachmentsField({ value, onChange }: TaskAttachmentsFieldProps) {
+  const t = useTranslations('tasks');
   const [pending, setPending] = useState<PendingItem[]>([]);
 
   const totalCount = value.length + pending.length;
@@ -89,7 +91,7 @@ export function TaskAttachmentsField({ value, onChange }: TaskAttachmentsFieldPr
           maxSizeMb={5}
           files={[]}
           onFilesChange={handleFiles}
-          hint={`${MAX_ATTACHMENTS - totalCount} remaining`}
+          hint={t('taskForm.attachmentsField.remaining', { count: MAX_ATTACHMENTS - totalCount })}
         />
       )}
 
@@ -126,7 +128,7 @@ export function TaskAttachmentsField({ value, onChange }: TaskAttachmentsFieldPr
               <div className="absolute inset-0 flex items-center justify-center">
                 {item.error ? (
                   <span className="text-[var(--rose)] text-[11px] [font-family:var(--f-mono)] px-2 text-center">
-                    Upload failed
+                    {t('taskForm.attachmentsField.uploadFailed')}
                   </span>
                 ) : (
                   <div className="w-6 h-6 border-2 border-[var(--gold)] border-t-transparent rounded-full animate-spin" />

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useTranslations } from 'next-intl';
 
 import type { UITask } from '../../data/mock';
 import type { ColKey } from './TaskAllRow';
@@ -102,16 +103,83 @@ interface TaskAllTableProps {
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export function TaskAllTable({ sorted, visibleCols, catMap, onEdit, onDelete }: TaskAllTableProps) {
+  const t = useTranslations('tasks');
   const [expandedId, setExpandedId] = useState<string | null>(null);
-
-  const visibleDefs = COL_DEFS.filter((c) => visibleCols.has(c.key));
+  const colDefs: ColDef[] = [
+    {
+      key: 'status',
+      label: t('taskAllView.columns.status'),
+      headerLabel: t('taskAllView.columns.status'),
+      headerClass: 'w-20 shrink-0',
+      defaultVisible: true,
+    },
+    {
+      key: 'category',
+      label: t('taskAllView.columns.category'),
+      headerLabel: t('taskAllView.columns.category'),
+      headerClass: 'w-20 shrink-0',
+      defaultVisible: true,
+    },
+    {
+      key: 'priority',
+      label: t('taskAllView.columns.priority'),
+      headerLabel: t('taskAllView.columns.priorityShort'),
+      headerClass: 'w-10 text-center shrink-0',
+      defaultVisible: true,
+    },
+    {
+      key: 'deadline',
+      label: t('taskAllView.columns.deadline'),
+      headerLabel: t('taskAllView.columns.deadline'),
+      headerClass: 'w-24 shrink-0',
+      defaultVisible: true,
+    },
+    {
+      key: 'progress',
+      label: t('taskAllView.columns.progress'),
+      headerLabel: t('taskAllView.columns.progress'),
+      headerClass: 'w-[60px] shrink-0',
+      defaultVisible: true,
+    },
+    {
+      key: 'xp',
+      label: t('taskAllView.columns.xp'),
+      headerLabel: t('taskAllView.columns.xp'),
+      headerClass: 'w-12 text-right shrink-0',
+      defaultVisible: true,
+    },
+    {
+      key: 'est',
+      label: t('taskAllView.columns.est'),
+      headerLabel: t('taskAllView.columns.est'),
+      headerClass: 'w-10 text-right shrink-0',
+      defaultVisible: true,
+    },
+    {
+      key: 'streak',
+      label: t('taskAllView.columns.streak'),
+      headerLabel: t('taskAllView.columns.streak'),
+      headerClass: 'w-10 text-right shrink-0',
+      defaultVisible: false,
+    },
+    {
+      key: 'subtasks',
+      label: t('taskAllView.columns.subtasks'),
+      headerLabel: t('taskAllView.columns.subtasksShort'),
+      headerClass: 'w-8 text-right shrink-0',
+      defaultVisible: false,
+    },
+  ];
+  const visibleDefs = colDefs.filter((c) => visibleCols.has(c.key));
 
   return (
     <div className="flex-1 overflow-auto min-w-0">
       {/* ── Header ───────────────────────────────────────────────────────── */}
       <div className={tableHeader}>
         <span className="w-[16px] shrink-0" />
-        <span className="w-[140px] shrink-0 md:flex-1 md:w-auto md:min-w-0 truncate">Task</span>
+        <span className="w-[140px] shrink-0 md:flex-1 md:w-auto md:min-w-0 truncate">
+          {t('taskAllView.columns.task')}
+        </span>
         {visibleDefs.map((c) => (
           <span key={c.key} className={c.headerClass}>
             {c.headerLabel}
@@ -124,8 +192,12 @@ export function TaskAllTable({ sorted, visibleCols, catMap, onEdit, onDelete }: 
       {sorted.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-16 gap-2 text-center opacity-50">
           <div className="text-[32px]">◈</div>
-          <div className="text-[12px] font-bold text-[var(--text-mid)]">No tasks found</div>
-          <div className="text-[10px] text-[var(--text-lo)]">Try a different status filter</div>
+          <div className="text-[12px] font-bold text-[var(--text-mid)]">
+            {t('taskAllView.table.emptyTitle')}
+          </div>
+          <div className="text-[10px] text-[var(--text-lo)]">
+            {t('taskAllView.table.emptyDescription')}
+          </div>
         </div>
       ) : (
         sorted.map((t) => (

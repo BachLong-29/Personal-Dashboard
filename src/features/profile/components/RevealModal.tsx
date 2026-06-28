@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, startTransition } from 'react';
+import { useTranslations } from 'next-intl';
 import { cn } from '@/libs/utils';
 import {
   findAccent,
@@ -84,6 +85,8 @@ function Particles({ count = 60, accent }: { count?: number; accent: string }) {
 
 // ─── Seal overlay ──────────────────────────────────────────────────────────────
 function SealOverlay({ accent, sealed }: { accent: HeroAccent; sealed: boolean }) {
+  const t = useTranslations('profile');
+
   return (
     <div
       className={cn('fixed inset-0 z-[200] grid place-items-center', sealed ? 'seal-bloomed' : '')}
@@ -233,10 +236,14 @@ function SealOverlay({ accent, sealed }: { accent: HeroAccent; sealed: boolean }
           className="[font-family:var(--f-mono)] text-[11px] tracking-[0.4em] uppercase"
           style={{ color: accent.glow }}
         >
-          {sealed ? 'IDENTITY SEALED' : 'SEALING'}
+          {sealed
+            ? t('revealModal.sealOverlay.identitySealed')
+            : t('revealModal.sealOverlay.sealing')}
         </div>
         <div className="[font-family:var(--f-title)] italic text-[30px] mt-2">
-          {sealed ? 'Your chapter has begun.' : 'Bind the new self.'}
+          {sealed
+            ? t('revealModal.sealOverlay.chapterBegun')
+            : t('revealModal.sealOverlay.bindNewSelf')}
         </div>
       </div>
     </div>
@@ -328,6 +335,7 @@ interface RevealModalProps {
 }
 
 export function RevealModal({ form, onClose, onConfirm }: RevealModalProps) {
+  const t = useTranslations('profile');
   const [phase, setPhase] = useState<Phase>('entering');
   const accent = findAccent(form.accent);
   const cls = findClass(form.classId);
@@ -420,7 +428,7 @@ export function RevealModal({ form, onClose, onConfirm }: RevealModalProps) {
       >
         {/* title bar */}
         <div className="flex flex-wrap justify-between gap-1 [font-family:var(--f-mono)] text-[9px] tracking-[0.32em] uppercase text-text-lo mb-6 sm:mb-8 pb-3 border-b border-border-lo">
-          <span>CHAPTER OPENING · {player.season.toUpperCase()}</span>
+          <span>{t('revealModal.chapterOpening', { season: player.season.toUpperCase() })}</span>
           <span style={{ color: accent.glow }}>RANK · {rank.name.toUpperCase()}</span>
         </div>
 

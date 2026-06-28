@@ -60,13 +60,65 @@
     "cancel": "Hủy",
     "delete": "Xóa",
     "edit": "Chỉnh sửa",
+    "done": "Xong",
     "level": "Cấp",
     "streak": "Chuỗi",
     "class": "Lớp",
     "exp": "EXP",
     "loading": "Đang tải...",
     "error": "Đã có lỗi xảy ra",
-    "success": "Thành công"
+    "success": "Thành công",
+    "toggleTheme": "Chuyển giao diện",
+    "selectLanguage": "Chọn ngôn ngữ",
+    "searchInputPlaceholder": "Tìm kiếm…",
+    "emptyState": {
+      "title": "Chưa có gì ở đây"
+    },
+    "modal": {
+      "close": "Đóng"
+    },
+    "select": {
+      "placeholder": "Chọn một tùy chọn"
+    },
+    "commandPalette": {
+      "placeholder": "Chạy một lệnh…",
+      "searching": "Đang tìm…",
+      "noResults": "Không có kết quả cho \"{query}\""
+    },
+    "datePicker": {
+      "placeholder": "Chọn ngày",
+      "days": {
+        "mon": "T2",
+        "tue": "T3",
+        "wed": "T4",
+        "thu": "T5",
+        "fri": "T6",
+        "sat": "T7",
+        "sun": "CN"
+      },
+      "months": {
+        "january": "Tháng Một",
+        "february": "Tháng Hai",
+        "march": "Tháng Ba",
+        "april": "Tháng Tư",
+        "may": "Tháng Năm",
+        "june": "Tháng Sáu",
+        "july": "Tháng Bảy",
+        "august": "Tháng Tám",
+        "september": "Tháng Chín",
+        "october": "Tháng Mười",
+        "november": "Tháng Mười Một",
+        "december": "Tháng Mười Hai"
+      }
+    },
+    "upload": {
+      "addMore": "Thêm nữa",
+      "dropArtifactsHere": "Thả tệp vào đây",
+      "or": "hoặc",
+      "clickToBrowse": "bấm để chọn",
+      "uploadFailed": "Tải lên thất bại",
+      "remaining": "Còn {count}"
+    }
   },
   "dashboard": {
     "endDay": "KẾT THÚC NGÀY",
@@ -76,6 +128,7 @@
     },
     "streakDays": "🔥 {count} ngày liên tiếp",
     "achievements": "Thành tích",
+    "questLog": "Nhật ký nhiệm vụ",
     "tabs": {
       "quests": "Nhiệm vụ",
       "habits": "Thói quen",
@@ -98,6 +151,9 @@
     },
     "schedule": {
       "title": "Lịch hôm nay"
+    },
+    "scheduleView": {
+      "openQuestLog": "Mở nhật ký nhiệm vụ"
     },
     "analytics": {
       "title": "Phân tích tuần",
@@ -128,6 +184,21 @@
       }
     },
     "addQuest": {
+      "title": "Quest mới",
+      "fields": {
+        "questName": "Tên quest",
+        "description": "Mô tả",
+        "dueDate": "Hạn chót",
+        "type": "Loại",
+        "difficulty": "Độ khó"
+      },
+      "placeholders": {
+        "title": "Nhập tiêu đề quest...",
+        "description": "Cần làm gì?"
+      },
+      "errors": {
+        "saveFailed": "Tạo quest thất bại. Vui lòng thử lại."
+      },
       "buttons": {
         "cancel": "Hủy",
         "confirm": "Thêm nhiệm vụ",
@@ -143,6 +214,57 @@
     },
     "motivation": {
       "dailyWisdom": "Lời hay mỗi ngày"
+    },
+    "habitPanel": {
+      "title": "Thói quen hằng ngày",
+      "manageCategories": "Quản lý danh mục",
+      "categories": "Danh mục",
+      "newHabit": "Habit mới",
+      "all": "Tất cả",
+      "loading": "◆ Đang tải habit... ◆",
+      "emptyAll": "◆ Chưa có habit nào. Hãy tạo một cái! ◆",
+      "emptyDay": "◆ Không có habit vào {day} ◆",
+      "deleteTitle": "Xóa habit",
+      "deleteDescription": "Habit này sẽ bị xóa vĩnh viễn và sẽ không còn xuất hiện trong các quest hằng ngày của bạn. Hành động này không thể hoàn tác.",
+      "deleteConfirm": "Xóa habit"
+    },
+    "addHabitModal": {
+      "titleEdit": "Sửa habit",
+      "titleCreate": "Habit mới",
+      "fields": {
+        "habitName": "Tên habit",
+        "schedule": "Lịch",
+        "duration": "Thời lượng (phút, tùy chọn)",
+        "category": "Danh mục",
+        "color": "Màu",
+        "icon": "Icon",
+        "note": "Ghi chú (tùy chọn)",
+        "time": "GIỜ"
+      },
+      "placeholders": {
+        "name": "ví dụ: Thiền buổi sáng",
+        "duration": "ví dụ: 30",
+        "categoryName": "Tên danh mục...",
+        "note": "Ghi chú về habit này..."
+      },
+      "actions": {
+        "addTimeSlot": "Thêm khung giờ",
+        "newCategory": "Mới",
+        "saving": "Đang lưu...",
+        "saveChanges": "Lưu thay đổi",
+        "createHabit": "Tạo habit"
+      },
+      "hints": {
+        "alreadyInOtherSlot": "Đã ở khung giờ khác — bấm để chuyển sang đây",
+        "removeTimeSlot": "Xóa khung giờ này",
+        "required": "bắt buộc",
+        "unassigned": "{days} chưa gán",
+        "loadingCategories": "Đang tải danh mục...",
+        "addCategory": "Thêm danh mục",
+        "changeIcon": "Đổi icon",
+        "pickIcon": "Chọn icon",
+        "saveFailed": "Lưu habit thất bại. Vui lòng thử lại."
+      }
     },
     "guild": {
       "title": "Bang hội ◆ Aetheria",
@@ -385,6 +507,17 @@
       "vault": "Kho báu"
     }
   },
+  "profile": {
+    "revealModal": {
+      "sealOverlay": {
+        "identitySealed": "BẢN NGÃ ĐÃ NIÊM ẤN",
+        "sealing": "ĐANG NIÊM ẤN",
+        "chapterBegun": "Chương của bạn đã bắt đầu.",
+        "bindNewSelf": "Hãy kết ấn bản ngã mới."
+      },
+      "chapterOpening": "KHAI CHƯƠNG · {season}"
+    }
+  },
   "tasks": {
     "weekPeek": {
       "today": "HÔM NAY",
@@ -399,7 +532,19 @@
       "save": "✦ Lưu thay đổi",
       "saving": "⏳ Đang lưu…",
       "reschedule": "↺ Dời lịch",
-      "manageSchedule": "🗓 Quản lý lịch"
+      "manageSchedule": "Quản lý lịch",
+      "blockWarning": {
+        "title": "Cập nhật lịch",
+        "message": "Task có <strong>{count} buổi</strong> lịch. Mở Session Planner để cập nhật sau khi lưu?"
+      }
+    },
+    "addTaskModal": {
+      "tag": "QUEST MỚI",
+      "title": "＋ Tạo task",
+      "buttons": {
+        "create": "✦ Tạo task",
+        "saving": "⏳ Đang lưu…"
+      }
     },
     "defer": {
       "checkboxLabel": "Không thể hoàn thành hôm nay",
@@ -412,6 +557,231 @@
         "priorityShift": "Ưu tiên thay đổi đột xuất",
         "health": "Sức khỏe / cá nhân"
       }
+    },
+    "activeBlock": {
+      "idleTitle": "Không có quest đang hoạt động · {time}",
+      "idleSubtitle": "Cõi giới đang yên ắng",
+      "idleDescription": "Kéo một quest vào khung giờ để bắt đầu, hoặc rèn một quest mới"
+    },
+    "slotColumn": {
+      "empty": "Kéo một quest vào đây, hoặc rèn một quest mới."
+    },
+    "taskDayView": {
+      "chapterOne": "CHƯƠNG I",
+      "previousDay": "Ngày trước",
+      "nextDay": "Ngày sau",
+      "today": "HÔM NAY"
+    },
+    "pageHeader": {
+      "title": "Nhật ký nhiệm vụ",
+      "todayProgress": " trên {total} đã hoàn thành hôm nay · ",
+      "weekProgress": " trên {total} trong tuần này ",
+      "addTask": "Thêm task",
+      "forgeQuest": "Rèn quest",
+      "week": "Tuần",
+      "month": "Tháng",
+      "searchPlaceholder": "Tìm quest, tag…",
+      "all": "Tất cả",
+      "moreCategories": "Thêm danh mục",
+      "view": {
+        "day": "NGÀY",
+        "all": "TẤT CẢ"
+      }
+    },
+    "taskAllView": {
+      "summary": {
+        "done": "đã xong",
+        "xp": "/ {total} XP",
+        "sagas": "saga"
+      },
+      "sort": {
+        "label": "Sắp xếp",
+        "deadline": "Hạn chót",
+        "xp": "XP",
+        "priority": "Ưu tiên",
+        "title": "Tiêu đề",
+        "mobileTitle": "Sắp xếp theo"
+      },
+      "status": {
+        "all": "Tất cả",
+        "todo": "Cần làm",
+        "inProgress": "Đang làm",
+        "pending": "Chờ xử lý",
+        "waiting": "Đang chờ",
+        "done": "Xong"
+      },
+      "columns": {
+        "button": "Cột",
+        "title": "Cột",
+        "showHide": "Ẩn / hiện cột",
+        "task": "Task",
+        "status": "Trạng thái",
+        "category": "Danh mục",
+        "priority": "Ưu tiên",
+        "priorityShort": "ƯT",
+        "deadline": "Hạn chót",
+        "progress": "Tiến độ",
+        "xp": "XP",
+        "est": "Ước tính",
+        "streak": "Chuỗi",
+        "subtasks": "Task con",
+        "subtasksShort": "Con"
+      },
+      "table": {
+        "emptyTitle": "Không tìm thấy task",
+        "emptyDescription": "Hãy thử bộ lọc trạng thái khác",
+        "note": "GHI CHÚ CỦA HIỀN GIẢ",
+        "progressDone": "{percent}% đã xong",
+        "edit": "Sửa",
+        "delete": "Xóa"
+      },
+      "deleteModal": {
+        "title": "Xóa task",
+        "description": "Task này sẽ bị xóa vĩnh viễn. Hành động này không thể hoàn tác."
+      }
+    },
+    "taskForm": {
+      "labels": {
+        "icon": "Icon",
+        "project": "Dự án",
+        "name": "Tên",
+        "status": "Trạng thái",
+        "startDate": "Ngày bắt đầu",
+        "endDate": "Ngày kết thúc",
+        "duration": "Thời lượng (phút)",
+        "category": "Danh mục",
+        "color": "Màu",
+        "note": "Ghi chú",
+        "attachments": "Tệp đính kèm",
+        "dependencies": "Phụ thuộc"
+      },
+      "optional": "tùy chọn",
+      "optionalMax3": "tùy chọn · tối đa 3",
+      "required": "bắt buộc",
+      "placeholders": {
+        "name": "Tiêu đề quest…",
+        "endDate": "Giống ngày bắt đầu",
+        "duration": "60",
+        "categoryName": "Tên danh mục…",
+        "note": "Mô tả tùy chọn…",
+        "searchTasks": "Tìm task…"
+      },
+      "project": {
+        "empty": "Chưa có dự án nào — hãy tạo trong trang Projects để nhóm các task.",
+        "none": "Không có"
+      },
+      "iconPicker": {
+        "pickEmoji": "Chọn emoji",
+        "pick": "Chọn",
+        "clear": "✕ xóa"
+      },
+      "categoryActions": {
+        "cancel": "✕ Hủy",
+        "new": "+ Mới",
+        "add": "Thêm"
+      },
+      "dependencies": {
+        "help": "Task này sẽ bị chặn cho đến khi tất cả task được chọn hoàn thành.",
+        "noneFound": "Không tìm thấy task nào.",
+        "hiddenSelected": "✓ Đã chọn thêm {count} mục (tìm kiếm để xem)"
+      },
+      "attachmentsField": {
+        "remaining": "Còn {count}",
+        "uploadFailed": "Tải lên thất bại"
+      }
+    },
+    "weekPeek": {
+      "today": "HÔM NAY",
+      "done": "XONG",
+      "missed": "BỎ LỠ",
+      "more": "+ {count} nữa…",
+      "collapse": "Thu gọn",
+      "eyebrow": "CUỘN GIẤY",
+      "title": "Tuần này",
+      "free": "— trống —",
+      "questCount": "{count, plural, one {# quest} other {# quest}}"
+    },
+    "scheduleStrip": {
+      "eyebrow": "ĐỒNG HỒ CÁT",
+      "title": "Hành trình hôm nay",
+      "none": "không có",
+      "nextInMinutes": "{count}p → tiếp theo",
+      "nextInHoursMinutes": "{hours}h {minutes}p → tiếp theo",
+      "empty": "KHÔNG CÓ QUEST HÔM NAY",
+      "now": "▶ NGAY BÂY GIỜ",
+      "done": "✓ đã xong",
+      "recentEchoes": "DẤU VANG GẦN ĐÂY",
+      "activityInProgress": "{title} — đang thực hiện",
+      "activityNow": "bây giờ",
+      "activityCleared": "{title} đã hoàn tất",
+      "activityToday": "hôm nay",
+      "activityXp": "+{xp} XP · +{coins} 🪙"
+    },
+    "slotColumn": {
+      "empty": "Kéo một quest vào đây, hoặc rèn một quest mới.",
+      "showMore": "▾ +{count} {count, plural, one {quest nữa} other {quest nữa}}",
+      "showLess": "▴ Thu gọn",
+      "expandSection": "Mở rộng mục",
+      "collapseSection": "Thu gọn mục"
+    },
+    "overdueReview": {
+      "allCaughtUp": "Đã xử lý hết! ✓",
+      "title": "Quest quá hạn",
+      "missedCount": "· lỡ {count} mục",
+      "empty": "Không có task quá hạn. Giữ vững nhé!",
+      "levelCritical": "🔴 Nghiêm trọng",
+      "levelLate": "⚠ Trễ hạn",
+      "daysOverdue": "quá hạn {count} ngày",
+      "dueDate": "· hạn {date}",
+      "wasDate": "· trước đó là {date}",
+      "newDate": "Ngày mới",
+      "set": "Đặt",
+      "doneAction": "✓ Xong",
+      "abandon": "Bỏ",
+      "confirmAbandon": "Xác nhận bỏ?",
+      "yesAbandon": "Có, bỏ đi",
+      "reviewHint": "Hãy rà từng quest để giữ tiến độ của bạn đi đúng hướng.",
+      "dismiss": "Đóng"
+    }
+  },
+  "schedule": {
+    "sessionPlanner": {
+      "tag": "TRÌNH LẬP KẾ HOẠCH BUỔI",
+      "allocated": "Đã phân bổ",
+      "remaining": "Còn lại {duration} chưa xếp",
+      "overloadedDays": "Ngày quá tải: {days}",
+      "empty": "Chưa có buổi nào. Thêm thủ công hoặc dùng Auto-fill.",
+      "fields": {
+        "day": "Ngày",
+        "time": "Giờ",
+        "minutes": "Phút"
+      },
+      "actions": {
+        "save": "Lưu",
+        "cancel": "Hủy",
+        "all": "Tất cả",
+        "add": "+ Thêm",
+        "autofill": "⚡ Auto-fill ({duration})",
+        "done": "✓ Xong",
+        "later": "Để sau"
+      },
+      "status": {
+        "overlap": "✕ trùng",
+        "tight": "⚠ sát"
+      },
+      "titles": {
+        "save": "Lưu",
+        "cancel": "Hủy",
+        "overlap": "Trùng giờ",
+        "tight": "Nghỉ quá ngắn",
+        "editSession": "Sửa buổi",
+        "deleteSession": "Xóa buổi",
+        "fillAll": "Đẩy toàn bộ thời lượng còn lại vào ô phút"
+      }
+    },
+    "dayTimeline": {
+      "dayCapacity": "Công suất ngày",
+      "empty": "Ngày trống — chưa có buổi nào"
     }
   }
 }

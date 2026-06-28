@@ -1,5 +1,7 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
+
 import { cn } from '@/libs/utils';
 
 import { ProjectBadge } from '@/components/common/ProjectBadge';
@@ -31,8 +33,18 @@ export const STATUS_META: Record<string, { label: string; color: string; bg: str
 };
 
 function StatusBadge({ status }: { status?: string }) {
+  const t = useTranslations('tasks');
   if (!status) return <span className="w-20 shrink-0" />;
-  const meta = STATUS_META[status] ?? { label: status, color: 'var(--text-lo)', bg: 'transparent' };
+  const labels: Record<string, string> = {
+    todo: t('taskAllView.status.todo'),
+    in_progress: t('taskAllView.status.inProgress'),
+    pending: t('taskAllView.status.pending'),
+    waiting: t('taskAllView.status.waiting'),
+    done: t('taskAllView.status.done'),
+  };
+  const meta = STATUS_META[status]
+    ? { ...STATUS_META[status], label: labels[status] ?? status }
+    : { label: status, color: 'var(--text-lo)', bg: 'transparent' };
   return (
     <span
       className="text-[8px] font-bold px-1.5 py-0.5 rounded border tracking-[0.06em] font-[var(--font-title)] shrink-0 w-20 overflow-hidden whitespace-nowrap text-ellipsis"
@@ -66,10 +78,27 @@ export function TaskAllRow({
   visibleCols,
   catLabel,
 }: TaskAllRowProps) {
+  const t = useTranslations('tasks');
   const c = catOf(task.cat);
   const p = priOf(task.priority);
   const catColor = COLOR_VAR[task.color ?? c.color] ?? 'var(--text-lo)';
-  const statusMeta = STATUS_META[task.status ?? ''];
+  const statusLabels: Record<string, string> = {
+    todo: t('taskAllView.status.todo'),
+    in_progress: t('taskAllView.status.inProgress'),
+    pending: t('taskAllView.status.pending'),
+    waiting: t('taskAllView.status.waiting'),
+    done: t('taskAllView.status.done'),
+  };
+  const statusMeta = task.status
+    ? {
+        ...(STATUS_META[task.status] ?? {
+          label: task.status,
+          color: 'var(--text-lo)',
+          bg: 'transparent',
+        }),
+        label: statusLabels[task.status] ?? task.status,
+      }
+    : undefined;
 
   return (
     <>
@@ -234,7 +263,7 @@ function RowDetail({
   onDelete?: (task: UITask) => void;
 }) {
   const c = catOf(task.cat);
-
+  const t = useTranslations('tasks');
   return (
     <div
       className="flex flex-col gap-2 px-3 sm:px-4 py-3 bg-[oklch(0.66_0.22_295_/_0.04)] border-b border-[var(--border)] border-l-2"
@@ -270,7 +299,9 @@ function RowDetail({
         <span className="text-[8px] text-[var(--text-lo)]">⏱ {fmtEst(task.est)}</span>
         {(task.progress || 0) > 0 && (
           <span className="text-[8px] text-[var(--text-lo)]">
-            {Math.round((task.progress || 0) * 100)}% done
+            {t('taskAllView.table.progressDone', {
+              percent: Math.round((task.progress || 0) * 100),
+            })}
           </span>
         )}
       </div>
@@ -282,7 +313,7 @@ function RowDetail({
           {task.expandedNote && (
             <div className="p-2 bg-[oklch(0.66_0.22_295_/_0.06)] border border-[oklch(0.66_0.22_295_/_0.2)] rounded-[var(--r-sm)]">
               <div className="text-[7px] tracking-[0.12em] text-[var(--violet)] font-bold mb-1">
-                SAGE&apos;S NOTE
+                {t('taskAllView.table.note')}
               </div>
               <div className="text-[9px] text-[var(--text-mid)] leading-[1.5]">
                 {task.expandedNote}
@@ -301,7 +332,7 @@ function RowDetail({
                 onEdit(task);
               }}
             >
-              ✎ Edit
+              ✎ {t('taskAllView.table.edit')}
             </button>
           )}
           {onDelete && (
@@ -313,7 +344,7 @@ function RowDetail({
                 onDelete(task);
               }}
             >
-              ✕ Delete
+              ✕ {t('taskAllView.table.delete')}
             </button>
           )}
         </div>

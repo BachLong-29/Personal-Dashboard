@@ -61,32 +61,32 @@ export function AddQuestModal({ onAdd, onClose }: AddQuestModalProps) {
 
   return (
     <Modal open onClose={onClose}>
-      <ModalHead tag="✦" title="New Quest" />
+      <ModalHead tag="✦" title={t('addQuest.title')} />
       <ModalBody>
         <div className="modal-field">
-          <div className="modal-label">Quest Name</div>
+          <div className="modal-label">{t('addQuest.fields.questName')}</div>
           <Input
             className="modal-input"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            placeholder="Enter quest title..."
+            placeholder={t('addQuest.placeholders.title')}
             autoFocus
             disabled={isPending}
             onKeyDown={(e) => e.key === 'Enter' && handleAdd()}
           />
         </div>
         <div className="modal-field">
-          <div className="modal-label">Description</div>
+          <div className="modal-label">{t('addQuest.fields.description')}</div>
           <Input
             className="modal-input"
             value={desc}
             onChange={(e) => setDesc(e.target.value)}
-            placeholder="What needs to be done?"
+            placeholder={t('addQuest.placeholders.description')}
             disabled={isPending}
           />
         </div>
         <div className="modal-field">
-          <div className="modal-label">Due Date</div>
+          <div className="modal-label">{t('addQuest.fields.dueDate')}</div>
           <Input
             className="modal-input"
             type="date"
@@ -97,14 +97,14 @@ export function AddQuestModal({ onAdd, onClose }: AddQuestModalProps) {
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
           <Select
-            label="Type"
+            label={t('addQuest.fields.type')}
             options={TYPE_OPTIONS}
             value={type}
             onValueChange={(v) => setType(v as QuestType)}
             disabled={isPending}
           />
           <Select
-            label="Difficulty"
+            label={t('addQuest.fields.difficulty')}
             options={DIFF_OPTIONS}
             value={diff}
             onValueChange={(v) => setDiff(v as Difficulty)}
@@ -113,7 +113,7 @@ export function AddQuestModal({ onAdd, onClose }: AddQuestModalProps) {
         </div>
         {error && (
           <div style={{ color: 'var(--danger)', fontSize: 11, textAlign: 'center', marginTop: 6 }}>
-            ✕ Failed to create quest. Please try again.
+            ✕ {t('addQuest.errors.saveFailed')}
           </div>
         )}
       </ModalBody>

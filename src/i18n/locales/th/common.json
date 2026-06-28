@@ -60,13 +60,65 @@
     "cancel": "ยกเลิก",
     "delete": "ลบ",
     "edit": "แก้ไข",
+    "done": "เสร็จ",
     "level": "เลเวล",
     "streak": "สตรีค",
     "class": "คลาส",
     "exp": "EXP",
     "loading": "กำลังโหลด...",
     "error": "เกิดข้อผิดพลาด",
-    "success": "สำเร็จ"
+    "success": "สำเร็จ",
+    "toggleTheme": "สลับธีม",
+    "selectLanguage": "เลือกภาษา",
+    "searchInputPlaceholder": "ค้นหา…",
+    "emptyState": {
+      "title": "ยังไม่มีอะไรที่นี่"
+    },
+    "modal": {
+      "close": "ปิด"
+    },
+    "select": {
+      "placeholder": "เลือกหนึ่งตัวเลือก"
+    },
+    "commandPalette": {
+      "placeholder": "เรียกใช้คำสั่ง…",
+      "searching": "กำลังค้นหา…",
+      "noResults": "ไม่พบผลลัพธ์สำหรับ \"{query}\""
+    },
+    "datePicker": {
+      "placeholder": "เลือกวันที่",
+      "days": {
+        "mon": "จ",
+        "tue": "อ",
+        "wed": "พ",
+        "thu": "พฤ",
+        "fri": "ศ",
+        "sat": "ส",
+        "sun": "อา"
+      },
+      "months": {
+        "january": "มกราคม",
+        "february": "กุมภาพันธ์",
+        "march": "มีนาคม",
+        "april": "เมษายน",
+        "may": "พฤษภาคม",
+        "june": "มิถุนายน",
+        "july": "กรกฎาคม",
+        "august": "สิงหาคม",
+        "september": "กันยายน",
+        "october": "ตุลาคม",
+        "november": "พฤศจิกายน",
+        "december": "ธันวาคม"
+      }
+    },
+    "upload": {
+      "addMore": "เพิ่มอีก",
+      "dropArtifactsHere": "วางไฟล์ไว้ที่นี่",
+      "or": "หรือ",
+      "clickToBrowse": "คลิกเพื่อเลือกไฟล์",
+      "uploadFailed": "อัปโหลดไม่สำเร็จ",
+      "remaining": "เหลืออีก {count}"
+    }
   },
   "dashboard": {
     "endDay": "สิ้นสุดวัน",
@@ -76,6 +128,7 @@
     },
     "streakDays": "🔥 {count} วันติดต่อกัน",
     "achievements": "ความสำเร็จ",
+    "questLog": "บันทึกภารกิจ",
     "tabs": {
       "quests": "ภารกิจ",
       "habits": "นิสัย",
@@ -98,6 +151,9 @@
     },
     "schedule": {
       "title": "ตารางวันนี้"
+    },
+    "scheduleView": {
+      "openQuestLog": "เปิดบันทึกภารกิจ"
     },
     "analytics": {
       "title": "การวิเคราะห์รายสัปดาห์",
@@ -128,6 +184,21 @@
       }
     },
     "addQuest": {
+      "title": "เควสต์ใหม่",
+      "fields": {
+        "questName": "ชื่อเควสต์",
+        "description": "คำอธิบาย",
+        "dueDate": "กำหนดส่ง",
+        "type": "ประเภท",
+        "difficulty": "ความยาก"
+      },
+      "placeholders": {
+        "title": "กรอกชื่อเควสต์...",
+        "description": "ต้องทำอะไรบ้าง?"
+      },
+      "errors": {
+        "saveFailed": "สร้างเควสต์ไม่สำเร็จ โปรดลองอีกครั้ง"
+      },
       "buttons": {
         "cancel": "ยกเลิก",
         "confirm": "เพิ่มภารกิจ",
@@ -143,6 +214,57 @@
     },
     "motivation": {
       "dailyWisdom": "คติประจำวัน"
+    },
+    "habitPanel": {
+      "title": "นิสัยประจำวัน",
+      "manageCategories": "จัดการหมวดหมู่",
+      "categories": "หมวดหมู่",
+      "newHabit": "นิสัยใหม่",
+      "all": "ทั้งหมด",
+      "loading": "◆ กำลังโหลดนิสัย... ◆",
+      "emptyAll": "◆ ยังไม่มีนิสัยเลย สร้างใหม่ได้เลย! ◆",
+      "emptyDay": "◆ ไม่มีนิสัยใน {day} ◆",
+      "deleteTitle": "ลบนิสัย",
+      "deleteDescription": "นิสัยนี้จะถูกลบถาวรและจะไม่ปรากฏในเควสต์ประจำวันของคุณอีก การกระทำนี้ไม่สามารถย้อนกลับได้",
+      "deleteConfirm": "ลบนิสัย"
+    },
+    "addHabitModal": {
+      "titleEdit": "แก้ไขนิสัย",
+      "titleCreate": "นิสัยใหม่",
+      "fields": {
+        "habitName": "ชื่อนิสัย",
+        "schedule": "ตารางเวลา",
+        "duration": "ระยะเวลา (นาที, ไม่บังคับ)",
+        "category": "หมวดหมู่",
+        "color": "สี",
+        "icon": "ไอคอน",
+        "note": "บันทึก (ไม่บังคับ)",
+        "time": "เวลา"
+      },
+      "placeholders": {
+        "name": "เช่น นั่งสมาธิตอนเช้า",
+        "duration": "เช่น 30",
+        "categoryName": "ชื่อหมวดหมู่...",
+        "note": "บันทึกเกี่ยวกับนิสัยนี้..."
+      },
+      "actions": {
+        "addTimeSlot": "เพิ่มช่วงเวลา",
+        "newCategory": "ใหม่",
+        "saving": "กำลังบันทึก...",
+        "saveChanges": "บันทึกการเปลี่ยนแปลง",
+        "createHabit": "สร้างนิสัย"
+      },
+      "hints": {
+        "alreadyInOtherSlot": "อยู่ในช่วงเวลาอื่นแล้ว — คลิกเพื่อย้ายมาที่นี่",
+        "removeTimeSlot": "ลบช่วงเวลานี้",
+        "required": "จำเป็น",
+        "unassigned": "{days} ยังไม่ถูกกำหนด",
+        "loadingCategories": "กำลังโหลดหมวดหมู่...",
+        "addCategory": "เพิ่มหมวดหมู่",
+        "changeIcon": "เปลี่ยนไอคอน",
+        "pickIcon": "เลือกไอคอน",
+        "saveFailed": "บันทึกนิสัยไม่สำเร็จ โปรดลองอีกครั้ง"
+      }
     },
     "guild": {
       "title": "กิลด์ ◆ Aetheria",
@@ -385,6 +507,17 @@
       "vault": "คลัง"
     }
   },
+  "profile": {
+    "revealModal": {
+      "sealOverlay": {
+        "identitySealed": "ผนึกตัวตนแล้ว",
+        "sealing": "กำลังผนึก",
+        "chapterBegun": "บทของคุณได้เริ่มขึ้นแล้ว.",
+        "bindNewSelf": "ผูกมัดตัวตนใหม่."
+      },
+      "chapterOpening": "การเปิดบท · {season}"
+    }
+  },
   "tasks": {
     "weekPeek": {
       "today": "วันนี้",
@@ -399,7 +532,19 @@
       "save": "✦ บันทึกการเปลี่ยนแปลง",
       "saving": "⏳ กำลังบันทึก…",
       "reschedule": "↺ เลื่อนกำหนด",
-      "manageSchedule": "🗓 จัดการตารางเวลา"
+      "manageSchedule": "จัดการตารางเวลา",
+      "blockWarning": {
+        "title": "อัปเดตตารางเวลา",
+        "message": "ภารกิจนี้มี <strong>{count} ช่วงเวลาที่จัดไว้</strong> เปิด Session Planner เพื่ออัปเดตหลังจากบันทึกหรือไม่?"
+      }
+    },
+    "addTaskModal": {
+      "tag": "เควสต์ใหม่",
+      "title": "＋ สร้างงาน",
+      "buttons": {
+        "create": "✦ สร้างงาน",
+        "saving": "⏳ กำลังบันทึก…"
+      }
     },
     "defer": {
       "checkboxLabel": "ไม่สามารถทำให้เสร็จวันนี้",
@@ -412,6 +557,231 @@
         "priorityShift": "ลำดับความสำคัญเปลี่ยนกะทันหัน",
         "health": "สุขภาพ / ส่วนตัว"
       }
+    },
+    "activeBlock": {
+      "idleTitle": "ไม่มีเควสต์ที่กำลังดำเนินอยู่ · {time}",
+      "idleSubtitle": "อาณาจักรแห่งนี้สงบเงียบ",
+      "idleDescription": "ลากเควสต์ลงในช่องเพื่อเริ่ม หรือสร้างเควสต์ใหม่"
+    },
+    "slotColumn": {
+      "empty": "ลากเควสต์มาที่นี่ หรือสร้างเควสต์ใหม่"
+    },
+    "taskDayView": {
+      "chapterOne": "บทที่ I",
+      "previousDay": "วันก่อนหน้า",
+      "nextDay": "วันถัดไป",
+      "today": "วันนี้"
+    },
+    "pageHeader": {
+      "title": "บันทึกภารกิจ",
+      "todayProgress": " จาก {total} ที่เคลียร์แล้ววันนี้ · ",
+      "weekProgress": " จาก {total} ในสัปดาห์นี้ ",
+      "addTask": "เพิ่มงาน",
+      "forgeQuest": "หลอมเควสต์",
+      "week": "สัปดาห์",
+      "month": "เดือน",
+      "searchPlaceholder": "ค้นหาเควสต์ แท็ก…",
+      "all": "ทั้งหมด",
+      "moreCategories": "หมวดหมู่เพิ่มเติม",
+      "view": {
+        "day": "วัน",
+        "all": "ทั้งหมด"
+      }
+    },
+    "taskAllView": {
+      "summary": {
+        "done": "ที่เสร็จแล้ว",
+        "xp": "/ {total} XP",
+        "sagas": "ซากา"
+      },
+      "sort": {
+        "label": "เรียง",
+        "deadline": "กำหนดส่ง",
+        "xp": "XP",
+        "priority": "ลำดับความสำคัญ",
+        "title": "ชื่อเรื่อง",
+        "mobileTitle": "เรียงตาม"
+      },
+      "status": {
+        "all": "ทั้งหมด",
+        "todo": "ต้องทำ",
+        "inProgress": "กำลังทำ",
+        "pending": "รอดำเนินการ",
+        "waiting": "กำลังรอ",
+        "done": "เสร็จ"
+      },
+      "columns": {
+        "button": "คอลัมน์",
+        "title": "คอลัมน์",
+        "showHide": "แสดง / ซ่อนคอลัมน์",
+        "task": "งาน",
+        "status": "สถานะ",
+        "category": "หมวดหมู่",
+        "priority": "ลำดับความสำคัญ",
+        "priorityShort": "ลำดับ",
+        "deadline": "กำหนดส่ง",
+        "progress": "ความคืบหน้า",
+        "xp": "XP",
+        "est": "ประมาณ",
+        "streak": "สตรีค",
+        "subtasks": "งานย่อย",
+        "subtasksShort": "ย่อย"
+      },
+      "table": {
+        "emptyTitle": "ไม่พบงาน",
+        "emptyDescription": "ลองใช้ตัวกรองสถานะอื่น",
+        "note": "บันทึกของผู้วิเศษ",
+        "progressDone": "เสร็จแล้ว {percent}%",
+        "edit": "แก้ไข",
+        "delete": "ลบ"
+      },
+      "deleteModal": {
+        "title": "ลบงาน",
+        "description": "งานนี้จะถูกลบถาวร และไม่สามารถย้อนกลับได้"
+      }
+    },
+    "taskForm": {
+      "labels": {
+        "icon": "ไอคอน",
+        "project": "โปรเจกต์",
+        "name": "ชื่อ",
+        "status": "สถานะ",
+        "startDate": "วันเริ่มต้น",
+        "endDate": "วันสิ้นสุด",
+        "duration": "ระยะเวลา (นาที)",
+        "category": "หมวดหมู่",
+        "color": "สี",
+        "note": "บันทึก",
+        "attachments": "ไฟล์แนบ",
+        "dependencies": "งานที่ต้องพึ่งพา"
+      },
+      "optional": "ไม่บังคับ",
+      "optionalMax3": "ไม่บังคับ · สูงสุด 3",
+      "required": "จำเป็น",
+      "placeholders": {
+        "name": "ชื่อเควสต์…",
+        "endDate": "เหมือนวันเริ่มต้น",
+        "duration": "60",
+        "categoryName": "ชื่อหมวดหมู่…",
+        "note": "คำอธิบายเพิ่มเติม…",
+        "searchTasks": "ค้นหางาน…"
+      },
+      "project": {
+        "empty": "ยังไม่มีโปรเจกต์ — สร้างในหน้า Projects เพื่อจัดกลุ่มงาน",
+        "none": "ไม่มี"
+      },
+      "iconPicker": {
+        "pickEmoji": "เลือกอีโมจิ",
+        "pick": "เลือก",
+        "clear": "✕ ล้าง"
+      },
+      "categoryActions": {
+        "cancel": "✕ ยกเลิก",
+        "new": "+ ใหม่",
+        "add": "เพิ่ม"
+      },
+      "dependencies": {
+        "help": "งานนี้จะถูกบล็อกจนกว่างานที่เลือกทั้งหมดจะเสร็จ",
+        "noneFound": "ไม่พบงาน",
+        "hiddenSelected": "✓ เลือกเพิ่มอีก {count} รายการ (ค้นหาเพื่อดู)"
+      },
+      "attachmentsField": {
+        "remaining": "เหลืออีก {count}",
+        "uploadFailed": "อัปโหลดไม่สำเร็จ"
+      }
+    },
+    "weekPeek": {
+      "today": "วันนี้",
+      "done": "เสร็จ",
+      "missed": "พลาด",
+      "more": "+ อีก {count}…",
+      "collapse": "ย่อ",
+      "eyebrow": "ม้วนกระดาษ",
+      "title": "สัปดาห์นี้",
+      "free": "— ว่าง —",
+      "questCount": "{count, plural, one {# เควสต์} other {# เควสต์}}"
+    },
+    "scheduleStrip": {
+      "eyebrow": "นาฬิกาทราย",
+      "title": "เส้นทางของวันนี้",
+      "none": "ไม่มี",
+      "nextInMinutes": "อีก {count} นาที → ถัดไป",
+      "nextInHoursMinutes": "อีก {hours} ชม. {minutes} นาที → ถัดไป",
+      "empty": "วันนี้ไม่มีเควสต์",
+      "now": "▶ ตอนนี้",
+      "done": "✓ เสร็จแล้ว",
+      "recentEchoes": "เสียงสะท้อนล่าสุด",
+      "activityInProgress": "{title} — กำลังดำเนินอยู่",
+      "activityNow": "ตอนนี้",
+      "activityCleared": "{title} เคลียร์แล้ว",
+      "activityToday": "วันนี้",
+      "activityXp": "+{xp} XP · +{coins} 🪙"
+    },
+    "slotColumn": {
+      "empty": "ลากเควสต์มาที่นี่ หรือสร้างเควสต์ใหม่",
+      "showMore": "▾ +อีก {count} {count, plural, one {เควสต์} other {เควสต์}}",
+      "showLess": "▴ แสดงน้อยลง",
+      "expandSection": "ขยายส่วนนี้",
+      "collapseSection": "ย่อส่วนนี้"
+    },
+    "overdueReview": {
+      "allCaughtUp": "ตามทันหมดแล้ว! ✓",
+      "title": "เควสต์ค้างกำหนด",
+      "missedCount": "· พลาด {count} รายการ",
+      "empty": "ไม่มีงานค้างกำหนด สู้ต่อไป!",
+      "levelCritical": "🔴 วิกฤต",
+      "levelLate": "⚠ ล่าช้า",
+      "daysOverdue": "เกินกำหนด {count} วัน",
+      "dueDate": "· กำหนด {date}",
+      "wasDate": "· เดิมคือ {date}",
+      "newDate": "วันที่ใหม่",
+      "set": "ตั้งค่า",
+      "doneAction": "✓ เสร็จ",
+      "abandon": "ละทิ้ง",
+      "confirmAbandon": "ยืนยันการละทิ้ง?",
+      "yesAbandon": "ใช่ ละทิ้ง",
+      "reviewHint": "ตรวจสอบแต่ละเควสต์เพื่อให้ความคืบหน้าของคุณยังไปต่อได้",
+      "dismiss": "ปิด"
+    }
+  },
+  "schedule": {
+    "sessionPlanner": {
+      "tag": "ตัววางแผนเซสชัน",
+      "allocated": "จัดสรรแล้ว",
+      "remaining": "เหลือ {duration} ที่ยังไม่ถูกจัด",
+      "overloadedDays": "วันที่แน่นเกินไป: {days}",
+      "empty": "ยังไม่มีเซสชัน เพิ่มเองหรือใช้ Auto-fill",
+      "fields": {
+        "day": "วัน",
+        "time": "เวลา",
+        "minutes": "นาที"
+      },
+      "actions": {
+        "save": "บันทึก",
+        "cancel": "ยกเลิก",
+        "all": "ทั้งหมด",
+        "add": "+ เพิ่ม",
+        "autofill": "⚡ Auto-fill ({duration})",
+        "done": "✓ เสร็จ",
+        "later": "ไว้ก่อน"
+      },
+      "status": {
+        "overlap": "✕ ชนกัน",
+        "tight": "⚠ ชิดเกินไป"
+      },
+      "titles": {
+        "save": "บันทึก",
+        "cancel": "ยกเลิก",
+        "overlap": "เวลาซ้อนกัน",
+        "tight": "ช่วงพักสั้นเกินไป",
+        "editSession": "แก้ไขเซสชัน",
+        "deleteSession": "ลบเซสชัน",
+        "fillAll": "ใส่เวลาที่เหลือทั้งหมดลงในช่องนาที"
+      }
+    },
+    "dayTimeline": {
+      "dayCapacity": "ความจุของวัน",
+      "empty": "วันนี้ว่าง — ยังไม่มีเซสชัน"
     }
   }
 }

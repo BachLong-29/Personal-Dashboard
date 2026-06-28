@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { useTranslations } from 'next-intl';
 
 import { Icon } from '@/components/common/Icon';
 import { cn } from '@/libs/utils';
@@ -16,24 +17,8 @@ export interface DatePickerProps {
   className?: string;
 }
 
-const DAYS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
-const MONTHS = [
-  'January',
-  'February',
-  'March',
-  'April',
-  'May',
-  'June',
-  'July',
-  'August',
-  'September',
-  'October',
-  'November',
-  'December',
-];
-
-function formatDate(date: Date): string {
-  return `${MONTHS[date.getMonth()]} ${date.getDate()}, ${date.getFullYear()}`;
+function formatDate(date: Date, months: string[]): string {
+  return `${months[date.getMonth()]} ${date.getDate()}, ${date.getFullYear()}`;
 }
 
 function getCalendarDays(year: number, month: number) {
@@ -64,14 +49,38 @@ export function DatePicker({
   value,
   onChange,
   onClear,
-  placeholder = 'Select date',
+  placeholder,
   label,
   disabled,
   className,
 }: DatePickerProps) {
+  const t = useTranslations('common');
   const today = new Date();
   const [open, setOpen] = useState(false);
   const [hovered, setHovered] = useState(false);
+  const days = [
+    t('datePicker.days.mon'),
+    t('datePicker.days.tue'),
+    t('datePicker.days.wed'),
+    t('datePicker.days.thu'),
+    t('datePicker.days.fri'),
+    t('datePicker.days.sat'),
+    t('datePicker.days.sun'),
+  ];
+  const months = [
+    t('datePicker.months.january'),
+    t('datePicker.months.february'),
+    t('datePicker.months.march'),
+    t('datePicker.months.april'),
+    t('datePicker.months.may'),
+    t('datePicker.months.june'),
+    t('datePicker.months.july'),
+    t('datePicker.months.august'),
+    t('datePicker.months.september'),
+    t('datePicker.months.october'),
+    t('datePicker.months.november'),
+    t('datePicker.months.december'),
+  ];
 
   // Show ✕ when the button is hovered and a value can be cleared
   const showClear = !disabled && !!value && !!onClear && hovered;
@@ -138,7 +147,7 @@ export function DatePicker({
         )}
       >
         <span className={cn(value ? 'text-[var(--text-hi)]' : 'text-[var(--text-dim)]')}>
-          {value ? formatDate(value) : placeholder}
+          {value ? formatDate(value, months) : (placeholder ?? t('datePicker.placeholder'))}
         </span>
         <span
           className={cn(
@@ -155,7 +164,7 @@ export function DatePicker({
             }
           }}
         >
-          {showClear ? '✕' : '📅'}
+          {showClear ? <Icon icon="close" /> : <Icon icon="calendar" />}
         </span>
       </button>
 
@@ -177,7 +186,7 @@ export function DatePicker({
               <Icon icon="ArrowLeft" className="text-[14px]" />
             </button>
             <span className="[font-family:var(--f-title)] text-[15px] tracking-[0.08em] text-[var(--text-hi)]">
-              {MONTHS[viewMonth]} {viewYear}
+              {months[viewMonth]} {viewYear}
             </span>
             <button
               type="button"
@@ -189,7 +198,7 @@ export function DatePicker({
           </div>
 
           <div className="grid grid-cols-7 gap-0.5">
-            {DAYS.map((d, i) => (
+            {days.map((d, i) => (
               <span
                 key={`dow-${i}`}
                 className="aspect-square flex items-center justify-center [font-family:var(--f-title)] text-[9px] tracking-[0.1em] text-[var(--text-dim)]"

@@ -1,5 +1,7 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
+
 import { cn } from '@/libs/utils';
 
 import { Link } from '@/i18n/navigation';
@@ -18,6 +20,7 @@ const CURRENT_YEAR = new Date().getFullYear();
 const YEARS = Array.from({ length: 5 }, (_, i) => CURRENT_YEAR - 2 + i);
 
 export function ScheduleView({ onAddQuest, onNavigateTab }: ScheduleViewProps) {
+  const tDash = useTranslations('dashboard');
   const {
     tab,
     year,
@@ -91,8 +94,8 @@ export function ScheduleView({ onAddQuest, onNavigateTab }: ScheduleViewProps) {
             ))}
           </select>
 
-          <Link href="/tasks" className={taskLogBtn} title="Open Quest Log">
-            ❖ Quest Log
+          <Link href="/tasks" className={taskLogBtn} title={tDash('scheduleView.openQuestLog')}>
+            ❖ {tDash('questLog')}
           </Link>
         </div>
       </div>

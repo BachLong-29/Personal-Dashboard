@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { useTranslations } from 'next-intl';
 
 import { cn } from '@/libs/utils';
 
@@ -64,6 +65,7 @@ export function PageHeader({
   weekDone,
   weekTotal,
 }: PageHeaderProps) {
+  const t = useTranslations('tasks');
   const [moreOpen, setMoreOpen] = useState(false);
   const moreRef = useRef<HTMLDivElement>(null);
 
@@ -94,12 +96,16 @@ export function PageHeader({
         <div className={tagLine}>
           ✦ &nbsp; CHRONICLE · {monthName} {yr} &nbsp; ✦
         </div>
-        <h1 className={titleText}>Quest Log</h1>
+        <h1 className={titleText}>{t('pageHeader.title')}</h1>
         <p className="hidden sm:block text-[10px] mt-0.5">
           <span className="text-[var(--text-hi)] font-semibold">{todayDone}</span>
-          <span className="text-[var(--text-lo)]"> of {todayTotal} cleared today · </span>
+          <span className="text-[var(--text-lo)]">
+            {t('pageHeader.todayProgress', { total: todayTotal })}
+          </span>
           <span className="text-[var(--text-hi)] font-semibold">{weekDone}</span>
-          <span className="text-[var(--text-lo)]"> of {weekTotal} this week </span>
+          <span className="text-[var(--text-lo)]">
+            {t('pageHeader.weekProgress', { total: weekTotal })}
+          </span>
         </p>
       </div>
 
@@ -107,10 +113,10 @@ export function PageHeader({
       <div className="flex items-center gap-2 ml-auto flex-wrap justify-end">
         <ViewSwitch view={view} onChange={onViewChange} />
         <button type="button" className={addTaskBtn} onClick={onAddTask}>
-          <span>＋</span> <span className="hidden sm:inline">Add Task</span>
+          <span>＋</span> <span className="hidden sm:inline">{t('pageHeader.addTask')}</span>
         </button>
         <button type="button" className={forgeBtn} onClick={onForge}>
-          <span>＋</span> <span className="hidden sm:inline">Forge Quest</span>
+          <span>＋</span> <span className="hidden sm:inline">{t('pageHeader.forgeQuest')}</span>
         </button>
       </div>
 
@@ -119,7 +125,7 @@ export function PageHeader({
         {/* Realm chips — API categories */}
         <FilterGroup label="Realm">
           <Chip active={filterCat === 'all'} onClick={() => onFilterCat('all')}>
-            All
+            {t('pageHeader.all')}
           </Chip>
 
           {visibleCats.map((c, i) => (
@@ -146,7 +152,7 @@ export function PageHeader({
 
               {moreOpen && (
                 <div className={morePanel}>
-                  <span className={morePanelTitle}>More categories</span>
+                  <span className={morePanelTitle}>{t('pageHeader.moreCategories')}</span>
                   {moreCats.map((c, i) => {
                     const color = CHIP_COLORS[(i + VISIBLE_LIMIT) % CHIP_COLORS.length];
                     const active = filterCat === c.id;
@@ -181,14 +187,14 @@ export function PageHeader({
                 className={cn(segBtn, splitMode === 'week' && segBtnActive)}
                 onClick={() => onSplitMode('week')}
               >
-                Week
+                {t('pageHeader.week')}
               </button>
               <button
                 type="button"
                 className={cn(segBtn, splitMode === 'month' && segBtnActive)}
                 onClick={() => onSplitMode('month')}
               >
-                Month
+                {t('pageHeader.month')}
               </button>
             </div>
           </FilterGroup>
@@ -201,7 +207,7 @@ export function PageHeader({
             <input
               type="text"
               className={searchInput}
-              placeholder="Search quests, tags…"
+              placeholder={t('pageHeader.searchPlaceholder')}
               value={search}
               onChange={(e) => onSearch(e.target.value)}
             />
@@ -215,11 +221,13 @@ export function PageHeader({
 // ─── View switch ──────────────────────────────────────────────────────────────
 
 const VIEW_META: Array<{ id: ViewMode; glyph: string; label: string }> = [
-  { id: 'day', glyph: '◐', label: 'DAY' },
-  { id: 'all', glyph: '≡', label: 'ALL' },
+  { id: 'day', glyph: '◐', label: 'day' },
+  { id: 'all', glyph: '≡', label: 'all' },
 ];
 
 function ViewSwitch({ view, onChange }: { view: ViewMode; onChange: (v: ViewMode) => void }) {
+  const t = useTranslations('tasks');
+
   return (
     <div className="flex bg-[var(--panel2)] border border-[var(--border)] rounded-[var(--r-sm)] overflow-hidden">
       {VIEW_META.map((v) => (
@@ -229,7 +237,7 @@ function ViewSwitch({ view, onChange }: { view: ViewMode; onChange: (v: ViewMode
           className={cn(vsBtnBase, view === v.id && vsBtnActive)}
           onClick={() => onChange(v.id)}
         >
-          {v.glyph} <span>{v.label}</span>
+          {v.glyph} <span>{t(`pageHeader.view.${v.label}`)}</span>
         </button>
       ))}
     </div>

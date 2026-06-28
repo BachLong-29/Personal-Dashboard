@@ -2,6 +2,7 @@
 
 import type { CSSProperties, ReactNode } from 'react';
 import { useEffect } from 'react';
+import { useTranslations } from 'next-intl';
 import { cn } from '@/libs/utils';
 
 export interface ModalProps {
@@ -90,6 +91,8 @@ export function Modal({
   containerStyle,
   bottomSheet,
 }: ModalProps) {
+  const t = useTranslations('common');
+
   useEffect(() => {
     if (!open) return;
     const handleKeyDown = (e: globalThis.KeyboardEvent) => {
@@ -131,7 +134,7 @@ export function Modal({
             type="button"
             onClick={onClose}
             className="absolute top-3 right-3 z-10 w-7 h-7 flex items-center justify-center rounded-[var(--r-sm)] text-[var(--text-lo)] hover:text-[var(--text-hi)] hover:bg-[var(--panel2)] transition-all text-[13px]"
-            aria-label="Close"
+            aria-label={t('modal.close')}
           >
             ✕
           </button>

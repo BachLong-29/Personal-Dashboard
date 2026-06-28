@@ -3,6 +3,7 @@
 import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react';
 import data from '@emoji-mart/data';
 import Picker from '@emoji-mart/react';
+import { useTranslations } from 'next-intl';
 
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
@@ -66,13 +67,7 @@ const COLOR_OPTIONS: { value: TaskColor; label: string; css: string }[] = [
   { value: 'blue', label: 'Blue', css: 'oklch(0.65 0.18 250)' },
 ];
 
-const STATUS_OPTIONS: { value: TaskStatus; label: string }[] = [
-  { value: 'todo', label: '○  To Do' },
-  { value: 'in_progress', label: '◈  In Progress' },
-  { value: 'pending', label: '⏳  Pending' },
-  { value: 'waiting', label: '◷  Waiting' },
-  { value: 'done', label: '✓  Done' },
-];
+const STATUS_VALUES: TaskStatus[] = ['todo', 'in_progress', 'pending', 'waiting', 'done'];
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
@@ -80,6 +75,7 @@ export const TaskForm = forwardRef<TaskFormHandle, TaskFormProps>(function TaskF
   { mode, defaultValues, editingId, hideProject, onSubmit, onCanSaveChange, saving },
   ref,
 ) {
+  const t = useTranslations('tasks');
   // ── Form state ───────────────────────────────────────────────────────────────
   const [name, setName] = useState(defaultValues?.name ?? '');
   const [note, setNote] = useState(defaultValues?.note ?? '');
@@ -105,6 +101,31 @@ export const TaskForm = forwardRef<TaskFormHandle, TaskFormProps>(function TaskF
   const { mutate: createCategory, isPending: isAddingCat } = useCreateCategory();
   const { data: depResults = [] } = useTaskSearch(depQuery, 10, editingId);
   const { data: projects = [] } = useProjects('active');
+  const statusOptions = STATUS_VALUES.map((value) => ({
+    value,
+    label:
+      value === 'todo'
+        ? '○  To Do'
+        : value === 'in_progress'
+          ? '◈  In Progress'
+          : value === 'pending'
+            ? '⏳  Pending'
+            : value === 'waiting'
+              ? '◷  Waiting'
+              : '✓  Done',
+  })).map((option) => ({
+    ...option,
+    label:
+      option.value === 'todo'
+        ? `○  ${t('taskAllView.status.todo')}`
+        : option.value === 'in_progress'
+          ? `◈  ${t('taskAllView.status.inProgress')}`
+          : option.value === 'pending'
+            ? `⏳  ${t('taskAllView.status.pending')}`
+            : option.value === 'waiting'
+              ? `◷  ${t('taskAllView.status.waiting')}`
+              : `✓  ${t('taskAllView.status.done')}`,
+  }));
 
   // ── Derived ──────────────────────────────────────────────────────────────────
   const resolvedTagId = tagId || (categories.length > 0 ? (categories[0] as Category).id : '');
@@ -186,7 +207,7 @@ export const TaskForm = forwardRef<TaskFormHandle, TaskFormProps>(function TaskF
       {/* ── Icon ──────────────────────────────────────────────────────── */}
       <div className="flex flex-col gap-1.5">
         <label className={fieldLabel}>
-          Icon <span className={requiredMark}>*</span>
+          {t('taskForm.labels.icon')} <span className={requiredMark}>*</span>
         </label>
         <div className="flex items-center gap-3">
           <button
@@ -197,12 +218,14 @@ export const TaskForm = forwardRef<TaskFormHandle, TaskFormProps>(function TaskF
               showPicker && 'border-[var(--gold)] shadow-[0_0_10px_oklch(0.74_0.17_85_/_0.3)]',
               icon && 'border-[oklch(0.74_0.17_85_/_0.5)]',
             )}
-            title="Pick emoji"
+            title={t('taskForm.iconPicker.pickEmoji')}
           >
             {icon ? (
               <span className="text-[22px] leading-none">{icon}</span>
             ) : (
-              <span className="text-[10px] text-[var(--text-lo)]">Pick</span>
+              <span className="text-[10px] text-[var(--text-lo)]">
+                {t('taskForm.iconPicker.pick')}
+              </span>
             )}
           </button>
           {icon && (
@@ -211,7 +234,7 @@ export const TaskForm = forwardRef<TaskFormHandle, TaskFormProps>(function TaskF
               onClick={() => setIcon('')}
               className="text-[10px] text-[var(--text-lo)] hover:text-[var(--rose)] transition-colors cursor-pointer"
             >
-              ✕ clear
+              {t('taskForm.iconPicker.clear')}
             </button>
           )}
         </div>
@@ -233,12 +256,11 @@ export const TaskForm = forwardRef<TaskFormHandle, TaskFormProps>(function TaskF
       {!hideProject && (
         <div className="flex flex-col gap-1.5">
           <label className={fieldLabel}>
-            Project <span className={optionalMark}>optional</span>
+            {t('taskForm.labels.project')}{' '}
+            <span className={optionalMark}>{t('taskForm.optional')}</span>
           </label>
           {projects.length === 0 ? (
-            <p className="text-[10px] text-[var(--text-lo)]">
-              No projects yet — create one in the Projects page to group tasks.
-            </p>
+            <p className="text-[10px] text-[var(--text-lo)]">{t('taskForm.project.empty')}</p>
           ) : (
             <div className="flex flex-wrap gap-1.5 max-h-[88px] overflow-y-auto">
               <button
@@ -246,7 +268,7 @@ export const TaskForm = forwardRef<TaskFormHandle, TaskFormProps>(function TaskF
                 onClick={() => setProjectId('')}
                 className={cn(catChip, projectId === '' && catChipActive)}
               >
-                None
+                {t('taskForm.project.none')}
               </button>
               {projects.map((p) => (
                 <button
@@ -267,28 +289,28 @@ export const TaskForm = forwardRef<TaskFormHandle, TaskFormProps>(function TaskF
 
       {/* ── Name ──────────────────────────────────────────────────────── */}
       <Input
-        label="Name"
+        label={t('taskForm.labels.name')}
         value={name}
         onChange={(e) => setName(e.target.value)}
         required
-        placeholder="Quest title…"
+        placeholder={t('taskForm.placeholders.name')}
         onKeyDown={(e) => e.key === 'Enter' && canSave && handleSubmit()}
       />
 
       {/* ── Status (edit mode only) ────────────────────────────────────── */}
       {mode === 'edit' && (
         <Select
-          label="Status"
+          label={t('taskForm.labels.status')}
           value={status}
           onValueChange={(v) => setStatus(v as TaskStatus)}
-          options={STATUS_OPTIONS.map((s) => ({ value: s.value, label: s.label }))}
+          options={statusOptions}
         />
       )}
 
       {/* ── Dates ─────────────────────────────────────────────────────── */}
       <div className="grid grid-cols-2 gap-3">
         <DatePicker
-          label="Start date"
+          label={t('taskForm.labels.startDate')}
           value={startDate}
           onChange={(d) => {
             setStartDate(d);
@@ -300,11 +322,11 @@ export const TaskForm = forwardRef<TaskFormHandle, TaskFormProps>(function TaskF
           onClear={() => setStartDate(null)}
         />
         <DatePicker
-          label="End date"
+          label={t('taskForm.labels.endDate')}
           value={endDate}
           onChange={setEndDate}
           onClear={() => setEndDate(null)}
-          placeholder="Same as start"
+          placeholder={t('taskForm.placeholders.endDate')}
         />
       </div>
       {dateError && <p className="text-[10px] text-[var(--rose)] -mt-2">{dateError}</p>}
@@ -313,13 +335,13 @@ export const TaskForm = forwardRef<TaskFormHandle, TaskFormProps>(function TaskF
       <div className="flex items-end gap-3">
         <div className="flex-1">
           <Input
-            label="Duration (min)"
+            label={t('taskForm.labels.duration')}
             type="number"
             min={1}
             max={1440}
             value={duration}
             onChange={(e) => setDuration(e.target.value)}
-            placeholder="60"
+            placeholder={t('taskForm.placeholders.duration')}
           />
         </div>
         {durationHint && (
@@ -331,14 +353,14 @@ export const TaskForm = forwardRef<TaskFormHandle, TaskFormProps>(function TaskF
       <div className="flex flex-col gap-1.5">
         <div className="flex items-center justify-between">
           <label className={fieldLabel}>
-            Category <span className={requiredMark}>*</span>
+            {t('taskForm.labels.category')} <span className={requiredMark}>*</span>
           </label>
           <button
             type="button"
             onClick={() => setShowAddCat((v) => !v)}
             className="text-[9px] font-bold tracking-[0.08em] uppercase font-[var(--font-title)] text-[var(--text-lo)] hover:text-[var(--gold)] transition-colors cursor-pointer"
           >
-            {showAddCat ? '✕ Cancel' : '+ New'}
+            {showAddCat ? t('taskForm.categoryActions.cancel') : t('taskForm.categoryActions.new')}
           </button>
         </div>
 
@@ -347,7 +369,7 @@ export const TaskForm = forwardRef<TaskFormHandle, TaskFormProps>(function TaskF
             <Input
               value={newCatName}
               onChange={(e) => setNewCatName(e.target.value)}
-              placeholder="Category name…"
+              placeholder={t('taskForm.placeholders.categoryName')}
               onKeyDown={(e) => {
                 if (e.key === 'Enter') handleAddCategory();
                 if (e.key === 'Escape') setShowAddCat(false);
@@ -355,7 +377,7 @@ export const TaskForm = forwardRef<TaskFormHandle, TaskFormProps>(function TaskF
               autoFocus
             />
             <Button variant="primary" size="sm" onClick={handleAddCategory} disabled={isAddingCat}>
-              {isAddingCat ? '…' : 'Add'}
+              {isAddingCat ? '…' : t('taskForm.categoryActions.add')}
             </Button>
           </div>
         )}
@@ -376,7 +398,7 @@ export const TaskForm = forwardRef<TaskFormHandle, TaskFormProps>(function TaskF
 
       {/* ── Color ─────────────────────────────────────────────────────── */}
       <div className="flex flex-col gap-1.5">
-        <span className={fieldLabel}>Color</span>
+        <span className={fieldLabel}>{t('taskForm.labels.color')}</span>
         <div className="flex items-center gap-2.5">
           {COLOR_OPTIONS.map((c) => (
             <button
@@ -399,14 +421,14 @@ export const TaskForm = forwardRef<TaskFormHandle, TaskFormProps>(function TaskF
       {/* ── Note ──────────────────────────────────────────────────────── */}
       <div className="flex flex-col gap-1.5">
         <label className={fieldLabel}>
-          Note <span className={optionalMark}>optional</span>
+          {t('taskForm.labels.note')} <span className={optionalMark}>{t('taskForm.optional')}</span>
         </label>
         <textarea
           value={note}
           onChange={(e) => setNote(e.target.value)}
           rows={2}
           maxLength={500}
-          placeholder="Optional description…"
+          placeholder={t('taskForm.placeholders.note')}
           className={textareaClass}
         />
       </div>
@@ -414,7 +436,8 @@ export const TaskForm = forwardRef<TaskFormHandle, TaskFormProps>(function TaskF
       {/* ── Attachments ───────────────────────────────────────────────── */}
       <div className="flex flex-col gap-1.5">
         <label className={fieldLabel}>
-          Attachments <span className={optionalMark}>optional · max 3</span>
+          {t('taskForm.labels.attachments')}{' '}
+          <span className={optionalMark}>{t('taskForm.optionalMax3')}</span>
         </label>
         <TaskAttachmentsField value={attachments} onChange={setAttachments} />
       </div>
@@ -422,20 +445,23 @@ export const TaskForm = forwardRef<TaskFormHandle, TaskFormProps>(function TaskF
       {/* ── Dependencies ──────────────────────────────────────────────── */}
       <div className="flex flex-col gap-1.5">
         <label className={fieldLabel}>
-          Dependencies <span className={optionalMark}>optional</span>
+          {t('taskForm.labels.dependencies')}{' '}
+          <span className={optionalMark}>{t('taskForm.optional')}</span>
         </label>
         <p className="text-[10px] text-[var(--text-lo)] -mt-0.5">
-          This task will be blocked until all selected tasks are done.
+          {t('taskForm.dependencies.help')}
         </p>
         <input
           type="text"
           value={depQuery}
           onChange={(e) => setDepQuery(e.target.value)}
-          placeholder="Search tasks…"
+          placeholder={t('taskForm.placeholders.searchTasks')}
           className={depSearchInput}
         />
         {depResults.length === 0 ? (
-          <p className="text-[10px] text-[var(--text-lo)] text-center py-2">No tasks found.</p>
+          <p className="text-[10px] text-[var(--text-lo)] text-center py-2">
+            {t('taskForm.dependencies.noneFound')}
+          </p>
         ) : (
           <div className="flex flex-col gap-1 max-h-[130px] overflow-y-auto">
             {depResults.map((t) => (
@@ -455,7 +481,7 @@ export const TaskForm = forwardRef<TaskFormHandle, TaskFormProps>(function TaskF
         )}
         {hiddenSelectedCount > 0 && (
           <p className="text-[10px] text-[var(--text-lo)]">
-            ✓ {hiddenSelectedCount} more selected (search to view)
+            {t('taskForm.dependencies.hiddenSelected', { count: hiddenSelectedCount })}
           </p>
         )}
       </div>

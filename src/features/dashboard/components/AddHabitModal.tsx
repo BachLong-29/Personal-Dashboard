@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import data from '@emoji-mart/data';
 import Picker from '@emoji-mart/react';
+import { useTranslations } from 'next-intl';
 
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui';
@@ -41,6 +42,8 @@ interface AddHabitModalProps {
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export function AddHabitModal({ editing, onClose, onSaved }: AddHabitModalProps) {
+  const tDash = useTranslations('dashboard');
+  const tCommon = useTranslations('common');
   const { data: categories = [], isLoading: catsLoading } = useCategories();
 
   // ── Form state ──────────────────────────────────────────────────────────────
@@ -181,16 +184,19 @@ export function AddHabitModal({ editing, onClose, onSaved }: AddHabitModalProps)
 
   return (
     <Modal open onClose={onClose} maxWidth="540px" scrollable>
-      <ModalHead tag="✦" title={editing ? 'Edit Habit' : 'New Habit'} />
+      <ModalHead
+        tag="✦"
+        title={editing ? tDash('addHabitModal.titleEdit') : tDash('addHabitModal.titleCreate')}
+      />
       <ModalBody scrollable>
         {/* Name */}
         <div className="modal-field">
-          <div className="modal-label">Habit Name *</div>
+          <div className="modal-label">{tDash('addHabitModal.fields.habitName')} *</div>
           <Input
             className="modal-input"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder="e.g. Morning Meditation"
+            placeholder={tDash('addHabitModal.placeholders.name')}
             autoFocus
             disabled={isPending}
             onKeyDown={(e) => e.key === 'Enter' && canSave && handleSave()}
@@ -199,7 +205,7 @@ export function AddHabitModal({ editing, onClose, onSaved }: AddHabitModalProps)
 
         {/* Schedule builder */}
         <div className="modal-field">
-          <div className="modal-label">Schedule *</div>
+          <div className="modal-label">{tDash('addHabitModal.fields.schedule')} *</div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {schedule.map((entry) => (
               <div key={entry.id} className={scheduleRow}>
@@ -214,7 +220,7 @@ export function AddHabitModal({ editing, onClose, onSaved }: AddHabitModalProps)
                         type="button"
                         disabled={isPending}
                         title={
-                          inOther ? 'Already in another time slot — click to move here' : undefined
+                          inOther ? tDash('addHabitModal.hints.alreadyInOtherSlot') : undefined
                         }
                         onClick={() => toggleDayInEntry(entry.id, day)}
                         className={cn(dayChip, active && dayChipActive, inOther && dayChipOther)}
@@ -229,7 +235,7 @@ export function AddHabitModal({ editing, onClose, onSaved }: AddHabitModalProps)
                       type="button"
                       onClick={() => removeEntry(entry.id)}
                       className={removeRowBtn}
-                      title="Remove this time slot"
+                      title={tDash('addHabitModal.hints.removeTimeSlot')}
                       disabled={isPending}
                     >
                       ✕
@@ -239,7 +245,7 @@ export function AddHabitModal({ editing, onClose, onSaved }: AddHabitModalProps)
 
                 {/* Time input */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <span className={timeLabel}>TIME</span>
+                  <span className={timeLabel}>{tDash('addHabitModal.fields.time')}</span>
                   <input
                     type="time"
                     className={cn('modal-input', timeInput)}
@@ -250,7 +256,7 @@ export function AddHabitModal({ editing, onClose, onSaved }: AddHabitModalProps)
                   />
                   {!entry.time && (
                     <span style={{ fontSize: 10, color: 'var(--rose)', opacity: 0.85 }}>
-                      required
+                      {tDash('addHabitModal.hints.required')}
                     </span>
                   )}
                 </div>
@@ -259,9 +265,13 @@ export function AddHabitModal({ editing, onClose, onSaved }: AddHabitModalProps)
 
             {unassignedDays.length > 0 && (
               <button type="button" onClick={addEntry} disabled={isPending} className={addSlotBtn}>
-                + Add time slot
+                + {tDash('addHabitModal.actions.addTimeSlot')}
                 <span style={{ fontSize: 9, opacity: 0.6, marginLeft: 4 }}>
-                  ({unassignedDays.map((d) => HABIT_DAY_SHORT[d]).join('·')} unassigned)
+                  (
+                  {tDash('addHabitModal.hints.unassigned', {
+                    days: unassignedDays.map((d) => HABIT_DAY_SHORT[d]).join('·'),
+                  })}
+                  )
                 </span>
               </button>
             )}
@@ -270,7 +280,7 @@ export function AddHabitModal({ editing, onClose, onSaved }: AddHabitModalProps)
 
         {/* Duration (optional) */}
         <div className="modal-field">
-          <div className="modal-label">Duration (minutes, optional)</div>
+          <div className="modal-label">{tDash('addHabitModal.fields.duration')}</div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <Input
               className="modal-input"
@@ -279,7 +289,7 @@ export function AddHabitModal({ editing, onClose, onSaved }: AddHabitModalProps)
               max="1440"
               value={duration}
               onChange={(e) => setDuration(e.target.value)}
-              placeholder="e.g. 30"
+              placeholder={tDash('addHabitModal.placeholders.duration')}
               disabled={isPending}
               style={{ width: 120 }}
             />
@@ -297,10 +307,10 @@ export function AddHabitModal({ editing, onClose, onSaved }: AddHabitModalProps)
 
         {/* Category */}
         <div className="modal-field">
-          <div className="modal-label">Category *</div>
+          <div className="modal-label">{tDash('addHabitModal.fields.category')} *</div>
           {catsLoading ? (
             <div style={{ fontSize: 11, color: 'var(--text-lo)', padding: '6px 0' }}>
-              Loading categories...
+              {tDash('addHabitModal.hints.loadingCategories')}
             </div>
           ) : (
             <>
@@ -323,9 +333,9 @@ export function AddHabitModal({ editing, onClose, onSaved }: AddHabitModalProps)
                     disabled={isPending}
                     onClick={() => setShowAddCat(true)}
                     className={addCatBtn}
-                    title="Add category"
+                    title={tDash('addHabitModal.hints.addCategory')}
                   >
-                    + New
+                    + {tDash('addHabitModal.actions.newCategory')}
                   </button>
                 )}
               </div>
@@ -337,7 +347,7 @@ export function AddHabitModal({ editing, onClose, onSaved }: AddHabitModalProps)
                     style={{ flex: 1 }}
                     value={newCatName}
                     onChange={(e) => setNewCatName(e.target.value)}
-                    placeholder="Category name..."
+                    placeholder={tDash('addHabitModal.placeholders.categoryName')}
                     autoFocus
                     disabled={isAddingCat}
                     onKeyDown={(e) => {
@@ -377,7 +387,7 @@ export function AddHabitModal({ editing, onClose, onSaved }: AddHabitModalProps)
 
         {/* Color */}
         <div className="modal-field">
-          <div className="modal-label">Color *</div>
+          <div className="modal-label">{tDash('addHabitModal.fields.color')} *</div>
           <div style={{ display: 'flex', gap: 8 }}>
             {(Object.entries(HABIT_COLORS) as [HabitColor, { label: string; value: string }][]).map(
               ([key, { label, value }]) => (
@@ -407,7 +417,7 @@ export function AddHabitModal({ editing, onClose, onSaved }: AddHabitModalProps)
 
         {/* Icon */}
         <div className="modal-field">
-          <div className="modal-label">Icon *</div>
+          <div className="modal-label">{tDash('addHabitModal.fields.icon')} *</div>
           <button
             type="button"
             disabled={isPending}
@@ -420,7 +430,9 @@ export function AddHabitModal({ editing, onClose, onSaved }: AddHabitModalProps)
               <span style={{ fontSize: 18, opacity: 0.4 }}>+</span>
             )}
             <span style={{ fontSize: 10, color: 'var(--text-mid)', letterSpacing: '0.06em' }}>
-              {icon ? 'Change icon' : 'Pick an icon'}
+              {icon
+                ? tDash('addHabitModal.hints.changeIcon')
+                : tDash('addHabitModal.hints.pickIcon')}
             </span>
           </button>
           {showPicker && (
@@ -442,19 +454,19 @@ export function AddHabitModal({ editing, onClose, onSaved }: AddHabitModalProps)
 
         {/* Note */}
         <div className="modal-field">
-          <div className="modal-label">Note (optional)</div>
+          <div className="modal-label">{tDash('addHabitModal.fields.note')}</div>
           <Input
             className="modal-input"
             value={note}
             onChange={(e) => setNote(e.target.value)}
-            placeholder="Any notes about this habit..."
+            placeholder={tDash('addHabitModal.placeholders.note')}
             disabled={isPending}
           />
         </div>
 
         {error && (
           <div style={{ color: 'var(--danger)', fontSize: 11, textAlign: 'center', marginTop: 6 }}>
-            ✕ Failed to save habit. Please try again.
+            ✕ {tDash('addHabitModal.hints.saveFailed')}
           </div>
         )}
       </ModalBody>
@@ -466,7 +478,7 @@ export function AddHabitModal({ editing, onClose, onSaved }: AddHabitModalProps)
           onClick={onClose}
           disabled={isPending}
         >
-          Cancel
+          {tCommon('cancel')}
         </Button>
         <Button
           type="button"
@@ -475,7 +487,9 @@ export function AddHabitModal({ editing, onClose, onSaved }: AddHabitModalProps)
           onClick={handleSave}
           disabled={!canSave || isPending}
         >
-          {isPending ? 'Saving...' : `${editing ? 'Save Changes' : 'Create Habit'} ✦`}
+          {isPending
+            ? tDash('addHabitModal.actions.saving')
+            : `${editing ? tDash('addHabitModal.actions.saveChanges') : tDash('addHabitModal.actions.createHabit')} ✦`}
         </Button>
       </ModalFoot>
     </Modal>

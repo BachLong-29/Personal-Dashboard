@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useTranslations } from 'next-intl';
 
 import { cn } from '@/libs/utils';
 
@@ -332,19 +333,21 @@ function ActiveState({ task, slotMeta, remainingMs, isTimed, now }: ActiveStateP
 // ─── Idle state ───────────────────────────────────────────────────────────────
 
 function IdleState({ now }: { now: Date }) {
+  const t = useTranslations('tasks');
+
   return (
     <div className={idleWrap}>
       <div className={idlePulse} />
 
       <div className="flex-1 min-w-0">
         <div className="text-[9px] font-black tracking-[0.14em] font-[var(--font-title)] text-[var(--text-lo)] uppercase mb-[3px]">
-          No Active Quest · {fmtClock(now)}
+          {t('activeBlock.idleTitle', { time: fmtClock(now) })}
         </div>
         <div className="text-[12px] font-semibold text-[var(--text-mid)]">
-          All quiet in this realm
+          {t('activeBlock.idleSubtitle')}
         </div>
         <div className="text-[9px] text-[var(--text-lo)] mt-[2px]">
-          Drag a quest into a slot to begin, or forge a new one
+          {t('activeBlock.idleDescription')}
         </div>
       </div>
 

@@ -194,7 +194,7 @@ const DashboardTopbar = (props: DashboardTopbarProps) => {
                   onClick={() => setShowUserModal(false)}
                 >
                   <Icon icon="📋" />
-                  <span>Quest Log</span>
+                  <span>{tDash('questLog')}</span>
                 </Link>
                 <Link
                   href="/projects"
@@ -401,7 +401,7 @@ const DashboardTopbar = (props: DashboardTopbarProps) => {
                 <span className={sheetItemIcon}>
                   <Icon icon="📋" />
                 </span>
-                <span>Quest Log</span>
+                <span>{tDash('questLog')}</span>
               </Link>
               <Link href="/projects" className={sheetItem} onClick={closeSheet}>
                 <span className={sheetItemIcon}>

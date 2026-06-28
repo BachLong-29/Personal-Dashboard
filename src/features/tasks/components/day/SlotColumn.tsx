@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useDraggable, useDroppable } from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
+import { useTranslations } from 'next-intl';
 
 import { cn } from '@/libs/utils';
 
@@ -40,6 +41,7 @@ export function SlotColumn({
   onMoveToNextDay,
   draggingId,
 }: SlotColumnProps) {
+  const t = useTranslations('tasks');
   const { setNodeRef, isOver } = useDroppable({ id: slot.id });
   const [showAll, setShowAll] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
@@ -98,7 +100,7 @@ export function SlotColumn({
               style={{ color: slot.color, borderColor: `${slot.color.replace(')', ' / 0.35)')}` }}
               onClick={() => setShowAll(true)}
             >
-              ▾ +{hiddenCount} more quest{hiddenCount !== 1 ? 's' : ''}
+              {t('slotColumn.showMore', { count: hiddenCount })}
             </button>
           )}
           {showAll && tasks.length > PAGE_SIZE && (
@@ -108,7 +110,7 @@ export function SlotColumn({
               style={{ color: 'var(--text-lo)', borderColor: 'var(--border)' }}
               onClick={() => setShowAll(false)}
             >
-              ▴ Show less
+              {t('slotColumn.showLess')}
             </button>
           )}
         </>
@@ -127,13 +129,15 @@ interface SlotHeaderProps {
 }
 
 function SlotHeader({ slot, count, collapsed, onToggle }: SlotHeaderProps) {
+  const t = useTranslations('tasks');
+
   return (
     <button
       type="button"
       className={slotHead}
       onClick={onToggle}
       aria-expanded={!collapsed}
-      title={collapsed ? 'Expand section' : 'Collapse section'}
+      title={collapsed ? t('slotColumn.expandSection') : t('slotColumn.collapseSection')}
     >
       {/* Caret */}
       <span
@@ -182,6 +186,8 @@ function SlotHeader({ slot, count, collapsed, onToggle }: SlotHeaderProps) {
 // ─── Empty slot ───────────────────────────────────────────────────────────────
 
 function EmptySlot({ color }: { color: string }) {
+  const t = useTranslations('tasks');
+
   return (
     <div className="flex items-center gap-2 py-3 px-2 text-[var(--text-lo)]">
       <div
@@ -190,7 +196,7 @@ function EmptySlot({ color }: { color: string }) {
       >
         +
       </div>
-      <span className="text-[10px] opacity-50">Drag a quest here, or forge a new one.</span>
+      <span className="text-[10px] opacity-50">{t('slotColumn.empty')}</span>
     </div>
   );
 }

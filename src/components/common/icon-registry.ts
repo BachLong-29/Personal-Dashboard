@@ -1,17 +1,18 @@
 /**
- * Registry of SVG icons that live in `public/icons/`.
+ * Registry of bundled icons that live in `public/icons/`.
  *
  * Maps a stable key → public path. A key may be the file's `Gi*` name, a
  * friendlier alias, or a supported emoji alias; all resolve to the same asset.
  * Anything *not* listed here is treated as a plain value and rendered as-is by
  * `<Icon />`.
  *
- * To add an icon: drop the `.svg` into `public/icons/`, then add an entry below.
+ * To add an icon: drop the asset into `public/icons/`, then add an entry below.
  */
 const ICON_FILES = [
   'ArrowLeft',
   'ArrowRight',
   'GiBookshelf',
+  'GiCalendar',
   'GiCutDiamond',
   'GiEclipseFlare',
   'GiEightBall',
@@ -20,6 +21,7 @@ const ICON_FILES = [
   'GiHighShot',
   'GiLion',
   'GiNotebook',
+  'GiPirateFlag',
   'GiPowerButton',
   'GiRingingBell',
   'GiSmallFire',
@@ -27,6 +29,7 @@ const ICON_FILES = [
   'GiTicTacToe',
   'GiTwoCoins',
   'GiWireframeGlobe',
+  'GiZeusSword',
 ] as const;
 
 type IconFile = (typeof ICON_FILES)[number];
@@ -45,6 +48,7 @@ const ICON_ALIASES: Record<string, IconFile> = {
   shot: 'GiHighShot',
   lion: 'GiLion',
   notebook: 'GiNotebook',
+  pirateflag: 'GiPirateFlag',
   power: 'GiPowerButton',
   bell: 'GiRingingBell',
   fire: 'GiSmallFire',
@@ -52,6 +56,9 @@ const ICON_ALIASES: Record<string, IconFile> = {
   tictactoe: 'GiTicTacToe',
   coins: 'GiTwoCoins',
   globe: 'GiWireframeGlobe',
+  calendar: 'GiCalendar',
+  zeussword: 'GiZeusSword',
+  close: 'GiZeusSword',
 };
 
 /** Emoji aliases → file name. Useful when stored data uses emoji values. */
@@ -79,6 +86,7 @@ const ICON_EMOJI_ALIASES: Record<string, IconFile> = {
   '📜': 'GiNotebook',
   // '🚀': 'GiBookshelf',
   '📋': 'GiNotebook',
+  '📅': 'GiCalendar',
 };
 
 /** Optional default colors for bundled icons. */

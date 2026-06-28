@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useTranslations } from 'next-intl';
 
 import { Modal, ModalHead, ModalBody, ModalFoot } from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
@@ -32,6 +33,8 @@ interface Props {
 // ─── Row component ────────────────────────────────────────────────────────────
 
 function OverdueRow({ item, onRemove }: { item: OverdueItem; onRemove: (id: string) => void }) {
+  const t = useTranslations('tasks');
+  const tCommon = useTranslations('common');
   const { mutate: updateTask, isPending } = useUpdateTask();
   const [showReschedule, setShowReschedule] = useState(false);
   const [rescheduleDate, setRescheduleDate] = useState<Date | null>(null);
@@ -58,7 +61,10 @@ function OverdueRow({ item, onRemove }: { item: OverdueItem; onRemove: (id: stri
       ? 'bg-[oklch(0.72_0.18_5_/_0.12)] border-[oklch(0.72_0.18_5_/_0.3)] text-[var(--rose)]'
       : 'bg-[oklch(0.74_0.17_85_/_0.1)] border-[oklch(0.74_0.17_85_/_0.3)] text-[var(--gold)]';
 
-  const levelLabel = item.overdueLevel === 'critical' ? '🔴 Critical' : '⚠ Late';
+  const levelLabel =
+    item.overdueLevel === 'critical'
+      ? t('overdueReview.levelCritical')
+      : t('overdueReview.levelLate');
 
   return (
     <div
@@ -88,11 +94,11 @@ function OverdueRow({ item, onRemove }: { item: OverdueItem; onRemove: (id: stri
             </span>
           </div>
           <p className="text-[10px] text-[var(--text-lo)]">
-            {item.daysOverdue}d overdue
+            {t('overdueReview.daysOverdue', { count: item.daysOverdue })}
             {item.endDate
-              ? ` · due ${item.endDate}`
+              ? ` ${t('overdueReview.dueDate', { date: item.endDate })}`
               : item.startDate
-                ? ` · was ${item.startDate}`
+                ? ` ${t('overdueReview.wasDate', { date: item.startDate })}`
                 : ''}
           </p>
         </div>
@@ -103,7 +109,7 @@ function OverdueRow({ item, onRemove }: { item: OverdueItem; onRemove: (id: stri
         <div className="flex items-end gap-2 pl-[26px]">
           <div className="flex-1">
             <DatePicker
-              label="New date"
+              label={t('overdueReview.newDate')}
               value={rescheduleDate}
               onChange={setRescheduleDate}
               onClear={() => setRescheduleDate(null)}
@@ -115,7 +121,7 @@ function OverdueRow({ item, onRemove }: { item: OverdueItem; onRemove: (id: stri
             onClick={handleReschedule}
             disabled={!rescheduleDate || isPending}
           >
-            {isPending ? '…' : 'Set'}
+            {isPending ? '…' : t('overdueReview.set')}
           </Button>
           <Button
             size="sm"
@@ -142,10 +148,10 @@ function OverdueRow({ item, onRemove }: { item: OverdueItem; onRemove: (id: stri
                 onClick={() => setShowReschedule(true)}
                 disabled={isPending}
               >
-                ↺ Reschedule
+                ↺ {t('editModal.reschedule')}
               </Button>
               <Button size="sm" variant="primary" onClick={handleDone} disabled={isPending}>
-                {isPending ? '…' : '✓ Done'}
+                {isPending ? '…' : t('overdueReview.doneAction')}
               </Button>
               <Button
                 size="sm"
@@ -154,14 +160,16 @@ function OverdueRow({ item, onRemove }: { item: OverdueItem; onRemove: (id: stri
                 disabled={isPending}
                 className="text-[var(--rose)] hover:border-[oklch(0.72_0.18_5_/_0.4)]"
               >
-                Abandon
+                {t('overdueReview.abandon')}
               </Button>
             </>
           ) : (
             <>
-              <span className="text-[10px] text-[var(--rose)]">Confirm abandon?</span>
+              <span className="text-[10px] text-[var(--rose)]">
+                {t('overdueReview.confirmAbandon')}
+              </span>
               <Button size="sm" variant="ghost" onClick={handleAbandon} disabled={isPending}>
-                {isPending ? '…' : 'Yes, abandon'}
+                {isPending ? '…' : t('overdueReview.yesAbandon')}
               </Button>
               <Button
                 size="sm"
@@ -169,7 +177,7 @@ function OverdueRow({ item, onRemove }: { item: OverdueItem; onRemove: (id: stri
                 onClick={() => setConfirmAbandon(false)}
                 disabled={isPending}
               >
-                Cancel
+                {tCommon('cancel')}
               </Button>
             </>
           )}
@@ -182,6 +190,7 @@ function OverdueRow({ item, onRemove }: { item: OverdueItem; onRemove: (id: stri
 // ─── Modal ────────────────────────────────────────────────────────────────────
 
 export function OverdueReviewModal({ open, items, onRemoveItem, onDismiss }: Props) {
+  const t = useTranslations('tasks');
   const allDone = items.length === 0;
 
   return (
@@ -190,12 +199,12 @@ export function OverdueReviewModal({ open, items, onRemoveItem, onDismiss }: Pro
         tag="OVERDUE"
         title={
           allDone ? (
-            'All caught up! ✓'
+            t('overdueReview.allCaughtUp')
           ) : (
             <span>
-              ⚠ Overdue Quests{' '}
+              ⚠ {t('overdueReview.title')}{' '}
               <span className="text-[var(--text-lo)] font-normal text-[14px]">
-                · {items.length} missed
+                {t('overdueReview.missedCount', { count: items.length })}
               </span>
             </span>
           )
@@ -205,7 +214,7 @@ export function OverdueReviewModal({ open, items, onRemoveItem, onDismiss }: Pro
       <ModalBody className="max-h-[calc(72vh-120px)] overflow-y-auto">
         {allDone ? (
           <p className="text-[12px] text-[var(--text-lo)] text-center py-6">
-            No overdue tasks. Keep it up!
+            {t('overdueReview.empty')}
           </p>
         ) : (
           <div className="flex flex-col gap-2">
@@ -219,10 +228,10 @@ export function OverdueReviewModal({ open, items, onRemoveItem, onDismiss }: Pro
       <ModalFoot>
         <div className="flex items-center justify-between w-full">
           <p className="text-[10px] text-[var(--text-lo)]">
-            {allDone ? '' : 'Review each quest to keep your progress on track.'}
+            {allDone ? '' : t('overdueReview.reviewHint')}
           </p>
           <Button variant="ghost" onClick={onDismiss}>
-            Dismiss
+            {t('overdueReview.dismiss')}
           </Button>
         </div>
       </ModalFoot>

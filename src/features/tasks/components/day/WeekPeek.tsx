@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react';
 
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 
 import { Icon } from '@/components/common/Icon';
 import type { ScheduleBlock } from '@/types';
@@ -27,15 +27,17 @@ function getTodayMonBased(): number {
 }
 
 /** ISO "YYYY-MM-DD" of a date that is `offsetDays` away from today */
-function dateLabel(offsetDays: number): string {
+function dateLabel(offsetDays: number, locale: string): string {
   const d = new Date();
   d.setDate(d.getDate() + offsetDays);
-  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  return d.toLocaleDateString(locale, { month: 'short', day: 'numeric' });
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export function WeekPeek({ tasks, taskBlocks = [] }: WeekPeekProps) {
+  const locale = useLocale();
+  const t = useTranslations('tasks.weekPeek');
   /**
    * todayMonBased: which WEEK_DAYS.idx corresponds to today.
    * e.g. if today is Wednesday → todayMonBased = 2
@@ -56,8 +58,8 @@ export function WeekPeek({ tasks, taskBlocks = [] }: WeekPeekProps) {
   return (
     <div className={sidePanel}>
       <div className={panelHead}>
-        <span className={panelEyebrow}>PARCHMENT</span>
-        <h3 className={panelTitle}>This Week</h3>
+        <span className={panelEyebrow}>{t('eyebrow')}</span>
+        <h3 className={panelTitle}>{t('title')}</h3>
       </div>
       <div className="flex flex-col gap-[3px] mt-2 overflow-y-auto">
         {WEEK_DAYS.map((d) => {
@@ -70,7 +72,7 @@ export function WeekPeek({ tasks, taskBlocks = [] }: WeekPeekProps) {
             <WeekPeekDay
               key={d.idx}
               shortLabel={d.short}
-              dateLabel={dateLabel(offsetFromToday)}
+              dateLabel={dateLabel(offsetFromToday, locale)}
               tasks={ts}
               done={done}
               isToday={isToday}
@@ -132,7 +134,7 @@ function WeekPeekDay({
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-1.5 mb-1">
           {tasks.length === 0 ? (
-            <span className="text-[8px] text-[var(--text-dim)] italic">— free —</span>
+            <span className="text-[8px] text-[var(--text-dim)] italic">{t('free')}</span>
           ) : (
             <>
               <span
@@ -141,7 +143,7 @@ function WeekPeekDay({
                   isPast && !isToday ? 'text-[var(--text-dim)]' : 'text-[var(--text-lo)]',
                 )}
               >
-                {tasks.length} {tasks.length === 1 ? 'quest' : 'quests'}
+                {t('questCount', { count: tasks.length })}
               </span>
               <span
                 className={cn(

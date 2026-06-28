@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { useTranslations } from 'next-intl';
 import { cn } from '@/libs/utils';
 
 export interface NoDataProps {
@@ -9,13 +10,9 @@ export interface NoDataProps {
   className?: string;
 }
 
-export function NoData({
-  icon = '⚔',
-  title = 'Nothing Here',
-  message,
-  action,
-  className,
-}: NoDataProps) {
+export function NoData({ icon = '⚔', title, message, action, className }: NoDataProps) {
+  const t = useTranslations('common');
+
   return (
     <div className={cn('text-center py-[60px] px-5', className)}>
       <div
@@ -33,7 +30,7 @@ export function NoData({
         />
       </div>
       <div className="[font-family:var(--f-title)] text-[18px] tracking-[0.06em] text-[var(--text-hi)] mb-1.5">
-        {title}
+        {title ?? t('emptyState.title')}
       </div>
       {message && (
         <p className="text-[var(--text-lo)] text-[13px] max-w-[360px] mx-auto mb-4 leading-relaxed">

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useTranslations } from 'next-intl';
 
 import { Button } from '@/components/ui/Button';
 import { cn } from '@/libs/utils';
@@ -21,6 +22,8 @@ interface HabitPanelProps {
 }
 
 export function HabitPanel({ todayStr }: HabitPanelProps) {
+  const tDash = useTranslations('dashboard');
+  const tCommon = useTranslations('common');
   const { data: habits = [], isLoading } = useHabits();
   const { data: logs = [] } = useHabitLogs(todayStr);
   const { data: categories = [] } = useCategories();
@@ -79,19 +82,19 @@ export function HabitPanel({ todayStr }: HabitPanelProps) {
       <div className={header}>
         <div className={titleGroup}>
           <span className={sparkle}>✦</span>
-          <span className={titleText}>Daily Habits</span>
+          <span className={titleText}>{tDash('habitPanel.title')}</span>
         </div>
         <div style={{ display: 'flex', gap: 6 }}>
           <button
             type="button"
             className={manageCatBtn}
             onClick={() => setShowCategoryModal(true)}
-            title="Manage Categories"
+            title={tDash('habitPanel.manageCategories')}
           >
-            ◈ Categories
+            ◈ {tDash('habitPanel.categories')}
           </button>
           <Button variant="primary" size="sm" onClick={() => setShowModal(true)}>
-            <span>+</span> New Habit
+            <span>+</span> {tDash('habitPanel.newHabit')}
           </Button>
         </div>
       </div>
@@ -103,7 +106,7 @@ export function HabitPanel({ todayStr }: HabitPanelProps) {
           className={cn(filterPill, filterDay === null && filterPillActive)}
           onClick={() => setFilterDay(null)}
         >
-          All
+          {tDash('habitPanel.all')}
         </button>
         {ALL_HABIT_DAYS.map((day) => (
           <button
@@ -125,12 +128,14 @@ export function HabitPanel({ todayStr }: HabitPanelProps) {
       {/* ── List ── */}
       <div className={listWrap}>
         {isLoading ? (
-          <div className={empty}>◆ Loading habits... ◆</div>
+          <div className={empty}>{tDash('habitPanel.loading')}</div>
         ) : filteredHabits.length === 0 ? (
           <div className={empty}>
             {habits.length === 0
-              ? '◆ No habits yet. Create one! ◆'
-              : `◆ No habits on ${filterDay ? HABIT_DAY_LABELS[filterDay] : ''} ◆`}
+              ? tDash('habitPanel.emptyAll')
+              : tDash('habitPanel.emptyDay', {
+                  day: filterDay ? HABIT_DAY_LABELS[filterDay] : '',
+                })}
           </div>
         ) : (
           filteredHabits.map((h) => (
@@ -157,7 +162,7 @@ export function HabitPanel({ todayStr }: HabitPanelProps) {
         <ModalHead
           title={
             <>
-              <span style={{ color: 'var(--rose)' }}>⚠</span> Delete Habit
+              <span style={{ color: 'var(--rose)' }}>⚠</span> {tDash('habitPanel.deleteTitle')}
             </>
           }
         />
@@ -182,8 +187,7 @@ export function HabitPanel({ todayStr }: HabitPanelProps) {
                 </span>
               </div>
               <p style={{ fontSize: 12, color: 'var(--text-mid)', lineHeight: 1.6, margin: 0 }}>
-                This habit will be permanently removed and will no longer appear in your daily
-                quests. This action cannot be undone.
+                {tDash('habitPanel.deleteDescription')}
               </p>
             </>
           )}
@@ -194,7 +198,7 @@ export function HabitPanel({ todayStr }: HabitPanelProps) {
             className="modal-btn cancel"
             onClick={() => setDeletingHabit(undefined)}
           >
-            Cancel
+            {tCommon('cancel')}
           </button>
           <button
             type="button"
@@ -208,7 +212,7 @@ export function HabitPanel({ todayStr }: HabitPanelProps) {
               boxShadow: '0 0 12px var(--rose-glow)',
             }}
           >
-            Delete Habit
+            {tDash('habitPanel.deleteConfirm')}
           </button>
         </ModalFoot>
       </Modal>

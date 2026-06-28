@@ -60,13 +60,65 @@
     "cancel": "Cancel",
     "delete": "Delete",
     "edit": "Edit",
+    "done": "Done",
     "level": "Level",
     "streak": "Streak",
     "class": "Class",
     "exp": "EXP",
     "loading": "Loading...",
     "error": "Something went wrong",
-    "success": "Success"
+    "success": "Success",
+    "toggleTheme": "Toggle theme",
+    "selectLanguage": "Select language",
+    "searchInputPlaceholder": "Search…",
+    "emptyState": {
+      "title": "Nothing Here"
+    },
+    "modal": {
+      "close": "Close"
+    },
+    "select": {
+      "placeholder": "Select an option"
+    },
+    "commandPalette": {
+      "placeholder": "Run a command…",
+      "searching": "Searching…",
+      "noResults": "No results for \"{query}\""
+    },
+    "datePicker": {
+      "placeholder": "Select date",
+      "days": {
+        "mon": "M",
+        "tue": "T",
+        "wed": "W",
+        "thu": "T",
+        "fri": "F",
+        "sat": "S",
+        "sun": "S"
+      },
+      "months": {
+        "january": "January",
+        "february": "February",
+        "march": "March",
+        "april": "April",
+        "may": "May",
+        "june": "June",
+        "july": "July",
+        "august": "August",
+        "september": "September",
+        "october": "October",
+        "november": "November",
+        "december": "December"
+      }
+    },
+    "upload": {
+      "addMore": "Add More",
+      "dropArtifactsHere": "Drop Artifacts Here",
+      "or": "or",
+      "clickToBrowse": "click to browse",
+      "uploadFailed": "Upload failed",
+      "remaining": "{count} remaining"
+    }
   },
   "dashboard": {
     "endDay": "END DAY",
@@ -76,6 +128,7 @@
     },
     "streakDays": "🔥 {count} Day Streak",
     "achievements": "Achievements",
+    "questLog": "Quest Log",
     "tabs": {
       "quests": "Quests",
       "habits": "Habits",
@@ -98,6 +151,9 @@
     },
     "schedule": {
       "title": "Today's Schedule"
+    },
+    "scheduleView": {
+      "openQuestLog": "Open Quest Log"
     },
     "analytics": {
       "title": "Weekly Analytics",
@@ -128,6 +184,21 @@
       }
     },
     "addQuest": {
+      "title": "New Quest",
+      "fields": {
+        "questName": "Quest Name",
+        "description": "Description",
+        "dueDate": "Due Date",
+        "type": "Type",
+        "difficulty": "Difficulty"
+      },
+      "placeholders": {
+        "title": "Enter quest title...",
+        "description": "What needs to be done?"
+      },
+      "errors": {
+        "saveFailed": "Failed to create quest. Please try again."
+      },
       "buttons": {
         "cancel": "Cancel",
         "confirm": "Add Quest",
@@ -143,6 +214,57 @@
     },
     "motivation": {
       "dailyWisdom": "Daily Wisdom"
+    },
+    "habitPanel": {
+      "title": "Daily Habits",
+      "manageCategories": "Manage Categories",
+      "categories": "Categories",
+      "newHabit": "New Habit",
+      "all": "All",
+      "loading": "◆ Loading habits... ◆",
+      "emptyAll": "◆ No habits yet. Create one! ◆",
+      "emptyDay": "◆ No habits on {day} ◆",
+      "deleteTitle": "Delete Habit",
+      "deleteDescription": "This habit will be permanently removed and will no longer appear in your daily quests. This action cannot be undone.",
+      "deleteConfirm": "Delete Habit"
+    },
+    "addHabitModal": {
+      "titleEdit": "Edit Habit",
+      "titleCreate": "New Habit",
+      "fields": {
+        "habitName": "Habit Name",
+        "schedule": "Schedule",
+        "duration": "Duration (minutes, optional)",
+        "category": "Category",
+        "color": "Color",
+        "icon": "Icon",
+        "note": "Note (optional)",
+        "time": "TIME"
+      },
+      "placeholders": {
+        "name": "e.g. Morning Meditation",
+        "duration": "e.g. 30",
+        "categoryName": "Category name...",
+        "note": "Any notes about this habit..."
+      },
+      "actions": {
+        "addTimeSlot": "Add time slot",
+        "newCategory": "New",
+        "saving": "Saving...",
+        "saveChanges": "Save Changes",
+        "createHabit": "Create Habit"
+      },
+      "hints": {
+        "alreadyInOtherSlot": "Already in another time slot — click to move here",
+        "removeTimeSlot": "Remove this time slot",
+        "required": "required",
+        "unassigned": "{days} unassigned",
+        "loadingCategories": "Loading categories...",
+        "addCategory": "Add category",
+        "changeIcon": "Change icon",
+        "pickIcon": "Pick an icon",
+        "saveFailed": "Failed to save habit. Please try again."
+      }
     },
     "guild": {
       "title": "Guild ◆ Aetheria",
@@ -385,6 +507,17 @@
       "vault": "Vault"
     }
   },
+  "profile": {
+    "revealModal": {
+      "sealOverlay": {
+        "identitySealed": "IDENTITY SEALED",
+        "sealing": "SEALING",
+        "chapterBegun": "Your chapter has begun.",
+        "bindNewSelf": "Bind the new self."
+      },
+      "chapterOpening": "CHAPTER OPENING · {season}"
+    }
+  },
   "tasks": {
     "weekPeek": {
       "today": "TODAY",
@@ -399,7 +532,19 @@
       "save": "✦ Save Changes",
       "saving": "⏳ Saving…",
       "reschedule": "↺ Reschedule",
-      "manageSchedule": "🗓 Manage Schedule"
+      "manageSchedule": "Manage Schedule",
+      "blockWarning": {
+        "title": "Update Schedule",
+        "message": "This task has <strong>{count} scheduled sessions</strong>. Open Session Planner to update them after saving?"
+      }
+    },
+    "addTaskModal": {
+      "tag": "NEW QUEST",
+      "title": "＋ Create Task",
+      "buttons": {
+        "create": "✦ Create Task",
+        "saving": "⏳ Saving…"
+      }
     },
     "defer": {
       "checkboxLabel": "Cannot complete today",
@@ -412,6 +557,231 @@
         "priorityShift": "Priority changed unexpectedly",
         "health": "Health / personal"
       }
+    },
+    "activeBlock": {
+      "idleTitle": "No Active Quest · {time}",
+      "idleSubtitle": "All quiet in this realm",
+      "idleDescription": "Drag a quest into a slot to begin, or forge a new one"
+    },
+    "slotColumn": {
+      "empty": "Drag a quest here, or forge a new one."
+    },
+    "taskDayView": {
+      "chapterOne": "CHAPTER I",
+      "previousDay": "Previous day",
+      "nextDay": "Next day",
+      "today": "TODAY"
+    },
+    "pageHeader": {
+      "title": "Quest Log",
+      "todayProgress": " of {total} cleared today · ",
+      "weekProgress": " of {total} this week ",
+      "addTask": "Add Task",
+      "forgeQuest": "Forge Quest",
+      "week": "Week",
+      "month": "Month",
+      "searchPlaceholder": "Search quests, tags…",
+      "all": "All",
+      "moreCategories": "More categories",
+      "view": {
+        "day": "DAY",
+        "all": "ALL"
+      }
+    },
+    "taskAllView": {
+      "summary": {
+        "done": "done",
+        "xp": "/ {total} XP",
+        "sagas": "sagas"
+      },
+      "sort": {
+        "label": "Sort",
+        "deadline": "Deadline",
+        "xp": "XP",
+        "priority": "Priority",
+        "title": "Title",
+        "mobileTitle": "Sort by"
+      },
+      "status": {
+        "all": "All",
+        "todo": "To Do",
+        "inProgress": "In Progress",
+        "pending": "Pending",
+        "waiting": "Waiting",
+        "done": "Done"
+      },
+      "columns": {
+        "button": "Cols",
+        "title": "Columns",
+        "showHide": "Show / hide columns",
+        "task": "Task",
+        "status": "Status",
+        "category": "Category",
+        "priority": "Priority",
+        "priorityShort": "Pri",
+        "deadline": "Deadline",
+        "progress": "Progress",
+        "xp": "XP",
+        "est": "Est",
+        "streak": "Streak",
+        "subtasks": "Subtasks",
+        "subtasksShort": "Sub"
+      },
+      "table": {
+        "emptyTitle": "No tasks found",
+        "emptyDescription": "Try a different status filter",
+        "note": "SAGE'S NOTE",
+        "progressDone": "{percent}% done",
+        "edit": "Edit",
+        "delete": "Delete"
+      },
+      "deleteModal": {
+        "title": "Delete Task",
+        "description": "This task will be permanently deleted. This action cannot be undone."
+      }
+    },
+    "taskForm": {
+      "labels": {
+        "icon": "Icon",
+        "project": "Project",
+        "name": "Name",
+        "status": "Status",
+        "startDate": "Start date",
+        "endDate": "End date",
+        "duration": "Duration (min)",
+        "category": "Category",
+        "color": "Color",
+        "note": "Note",
+        "attachments": "Attachments",
+        "dependencies": "Dependencies"
+      },
+      "optional": "optional",
+      "optionalMax3": "optional · max 3",
+      "required": "required",
+      "placeholders": {
+        "name": "Quest title…",
+        "endDate": "Same as start",
+        "duration": "60",
+        "categoryName": "Category name…",
+        "note": "Optional description…",
+        "searchTasks": "Search tasks…"
+      },
+      "project": {
+        "empty": "No projects yet — create one in the Projects page to group tasks.",
+        "none": "None"
+      },
+      "iconPicker": {
+        "pickEmoji": "Pick emoji",
+        "pick": "Pick",
+        "clear": "✕ clear"
+      },
+      "categoryActions": {
+        "cancel": "✕ Cancel",
+        "new": "+ New",
+        "add": "Add"
+      },
+      "dependencies": {
+        "help": "This task will be blocked until all selected tasks are done.",
+        "noneFound": "No tasks found.",
+        "hiddenSelected": "✓ {count} more selected (search to view)"
+      },
+      "attachmentsField": {
+        "remaining": "{count} remaining",
+        "uploadFailed": "Upload failed"
+      }
+    },
+    "weekPeek": {
+      "today": "TODAY",
+      "done": "DONE",
+      "missed": "MISSED",
+      "more": "+ {count} more…",
+      "collapse": "Show less",
+      "eyebrow": "PARCHMENT",
+      "title": "This Week",
+      "free": "— free —",
+      "questCount": "{count, plural, one {# quest} other {# quests}}"
+    },
+    "scheduleStrip": {
+      "eyebrow": "HOURGLASS",
+      "title": "Today's Path",
+      "none": "none",
+      "nextInMinutes": "{count}m → next",
+      "nextInHoursMinutes": "{hours}h {minutes}m → next",
+      "empty": "NO QUESTS TODAY",
+      "now": "▶ NOW",
+      "done": "✓ done",
+      "recentEchoes": "RECENT ECHOES",
+      "activityInProgress": "{title} — in progress",
+      "activityNow": "now",
+      "activityCleared": "{title} cleared",
+      "activityToday": "today",
+      "activityXp": "+{xp} XP · +{coins} 🪙"
+    },
+    "slotColumn": {
+      "empty": "Drag a quest here, or forge a new one.",
+      "showMore": "▾ +{count} more {count, plural, one {quest} other {quests}}",
+      "showLess": "▴ Show less",
+      "expandSection": "Expand section",
+      "collapseSection": "Collapse section"
+    },
+    "overdueReview": {
+      "allCaughtUp": "All caught up! ✓",
+      "title": "Overdue Quests",
+      "missedCount": "· {count} missed",
+      "empty": "No overdue tasks. Keep it up!",
+      "levelCritical": "🔴 Critical",
+      "levelLate": "⚠ Late",
+      "daysOverdue": "{count}d overdue",
+      "dueDate": "· due {date}",
+      "wasDate": "· was {date}",
+      "newDate": "New date",
+      "set": "Set",
+      "doneAction": "✓ Done",
+      "abandon": "Abandon",
+      "confirmAbandon": "Confirm abandon?",
+      "yesAbandon": "Yes, abandon",
+      "reviewHint": "Review each quest to keep your progress on track.",
+      "dismiss": "Dismiss"
+    }
+  },
+  "schedule": {
+    "sessionPlanner": {
+      "tag": "SESSION PLANNER",
+      "allocated": "Allocated",
+      "remaining": "{duration} remaining unscheduled",
+      "overloadedDays": "Overloaded days: {days}",
+      "empty": "No sessions yet. Add one manually or use Auto-fill.",
+      "fields": {
+        "day": "Day",
+        "time": "Time",
+        "minutes": "Minutes"
+      },
+      "actions": {
+        "save": "Save",
+        "cancel": "Cancel",
+        "all": "All",
+        "add": "+ Add",
+        "autofill": "⚡ Auto-fill ({duration})",
+        "done": "✓ Done",
+        "later": "Later"
+      },
+      "status": {
+        "overlap": "✕ overlap",
+        "tight": "⚠ tight"
+      },
+      "titles": {
+        "save": "Save",
+        "cancel": "Cancel",
+        "overlap": "Time overlap",
+        "tight": "Break too short",
+        "editSession": "Edit session",
+        "deleteSession": "Delete session",
+        "fillAll": "Put all remaining duration into the minutes field"
+      }
+    },
+    "dayTimeline": {
+      "dayCapacity": "Day Capacity",
+      "empty": "Day is empty — no sessions yet"
     }
   }
 }

@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { useTranslations } from 'next-intl';
 
 import { cn } from '@/libs/utils';
 import { Modal, ModalBody, ModalFoot, ModalHead } from '@/components/ui/Modal';
@@ -15,22 +16,6 @@ import type { ColKey } from './TaskAllRow';
 
 type SortByLocal = 'deadline' | 'xp' | 'priority' | 'title';
 type StatusFilter = 'all' | 'todo' | 'in_progress' | 'pending' | 'waiting' | 'done';
-
-const SORT_BY_OPTIONS: { id: SortByLocal; label: string }[] = [
-  { id: 'deadline', label: 'Deadline' },
-  { id: 'xp', label: 'XP' },
-  { id: 'priority', label: 'Priority' },
-  { id: 'title', label: 'Title' },
-];
-
-const STATUS_FILTER_OPTIONS: { id: StatusFilter; label: string; color?: string }[] = [
-  { id: 'all', label: 'All' },
-  { id: 'todo', label: 'To Do' },
-  { id: 'in_progress', label: 'In Progress', color: 'var(--cyan)' },
-  { id: 'pending', label: 'Pending', color: 'var(--gold)' },
-  { id: 'waiting', label: 'Waiting', color: 'var(--amber)' },
-  { id: 'done', label: 'Done', color: 'var(--mint)' },
-];
 
 const PRIORITY_ORDER: Record<string, number> = {
   critical: 0,
@@ -49,6 +34,8 @@ interface TaskAllViewProps {
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export function TaskAllView({ tasks, onEdit }: TaskAllViewProps) {
+  const t = useTranslations('tasks');
+  const tCommon = useTranslations('common');
   const [sortBy, setSortBy] = useState<SortByLocal>('deadline');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [deletingTask, setDeletingTask] = useState<UITask | null>(null);
@@ -59,6 +46,31 @@ export function TaskAllView({ tasks, onEdit }: TaskAllViewProps) {
 
   const { mutate: deleteTask } = useDeleteTask();
   const { data: categories = [] } = useCategories();
+  const sortByOptions: { id: SortByLocal; label: string }[] = [
+    { id: 'deadline', label: t('taskAllView.sort.deadline') },
+    { id: 'xp', label: t('taskAllView.sort.xp') },
+    { id: 'priority', label: t('taskAllView.sort.priority') },
+    { id: 'title', label: t('taskAllView.sort.title') },
+  ];
+  const statusFilterOptions: { id: StatusFilter; label: string; color?: string }[] = [
+    { id: 'all', label: t('taskAllView.status.all') },
+    { id: 'todo', label: t('taskAllView.status.todo') },
+    { id: 'in_progress', label: t('taskAllView.status.inProgress'), color: 'var(--cyan)' },
+    { id: 'pending', label: t('taskAllView.status.pending'), color: 'var(--gold)' },
+    { id: 'waiting', label: t('taskAllView.status.waiting'), color: 'var(--amber)' },
+    { id: 'done', label: t('taskAllView.status.done'), color: 'var(--mint)' },
+  ];
+  const columnLabels: Record<ColKey, string> = {
+    status: t('taskAllView.columns.status'),
+    category: t('taskAllView.columns.category'),
+    priority: t('taskAllView.columns.priority'),
+    deadline: t('taskAllView.columns.deadline'),
+    progress: t('taskAllView.columns.progress'),
+    xp: t('taskAllView.columns.xp'),
+    est: t('taskAllView.columns.est'),
+    streak: t('taskAllView.columns.streak'),
+    subtasks: t('taskAllView.columns.subtasks'),
+  };
 
   const catMap = useMemo(
     () => Object.fromEntries(categories.map((c) => [c.id, c.name])),
@@ -117,17 +129,29 @@ export function TaskAllView({ tasks, onEdit }: TaskAllViewProps) {
       <div className={toolbar}>
         {/* Summary pills */}
         <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-          <SummaryPill value={`${done}/${total}`} label="done" color="mint" />
-          <SummaryPill value={`+${xpEarned}`} label={`/ ${xpTotal} XP`} color="violet" />
-          <SummaryPill value={taskOnly.filter((t) => t.saga).length} label="sagas" color="gold" />
+          <SummaryPill
+            value={`${done}/${total}`}
+            label={t('taskAllView.summary.done')}
+            color="mint"
+          />
+          <SummaryPill
+            value={`+${xpEarned}`}
+            label={t('taskAllView.summary.xp', { total: xpTotal })}
+            color="violet"
+          />
+          <SummaryPill
+            value={taskOnly.filter((t) => t.saga).length}
+            label={t('taskAllView.summary.sagas')}
+            color="gold"
+          />
         </div>
 
         <div className="flex-1" />
 
         {/* Sort — desktop only (mobile sort lives inside col picker) */}
         <div className={cn(controlGroup, 'hidden sm:flex')}>
-          <span className={controlLabel}>Sort</span>
-          {SORT_BY_OPTIONS.map((opt) => (
+          <span className={controlLabel}>{t('taskAllView.sort.label')}</span>
+          {sortByOptions.map((opt) => (
             <button
               key={opt.id}
               type="button"
@@ -145,17 +169,17 @@ export function TaskAllView({ tasks, onEdit }: TaskAllViewProps) {
             type="button"
             className={cn(segBtn, colPickerOpen && segBtnActive)}
             onClick={() => setColPickerOpen((v) => !v)}
-            title="Show / hide columns"
+            title={t('taskAllView.columns.showHide')}
           >
-            ⊞ Cols
+            ⊞ {t('taskAllView.columns.button')}
           </button>
 
           {colPickerOpen && (
             <div className={colPicker}>
               {/* Mobile-only sort section */}
               <div className="sm:hidden mb-2 pb-2 border-b border-[var(--border)]">
-                <span className={colPickerTitle}>Sort by</span>
-                {SORT_BY_OPTIONS.map((opt) => (
+                <span className={colPickerTitle}>{t('taskAllView.sort.mobileTitle')}</span>
+                {sortByOptions.map((opt) => (
                   <button
                     key={opt.id}
                     type="button"
@@ -174,7 +198,7 @@ export function TaskAllView({ tasks, onEdit }: TaskAllViewProps) {
               </div>
 
               {/* Column visibility */}
-              <span className={colPickerTitle}>Columns</span>
+              <span className={colPickerTitle}>{t('taskAllView.columns.title')}</span>
               {COL_DEFS.map((c: ColDef) => (
                 <label key={c.key} className={colPickerRow}>
                   <input
@@ -183,7 +207,7 @@ export function TaskAllView({ tasks, onEdit }: TaskAllViewProps) {
                     onChange={() => toggleCol(c.key)}
                     className="accent-[var(--gold)] shrink-0 cursor-pointer"
                   />
-                  {c.label}
+                  {columnLabels[c.key]}
                 </label>
               ))}
             </div>
@@ -193,7 +217,7 @@ export function TaskAllView({ tasks, onEdit }: TaskAllViewProps) {
 
       {/* ── Status filter bar — horizontal scroll on mobile ──────────────── */}
       <div className={statusBar}>
-        {STATUS_FILTER_OPTIONS.map((opt) => {
+        {statusFilterOptions.map((opt) => {
           const active = statusFilter === opt.id;
           const count =
             opt.id === 'all' ? taskOnly.length : taskOnly.filter((t) => t.status === opt.id).length;
@@ -234,7 +258,7 @@ export function TaskAllView({ tasks, onEdit }: TaskAllViewProps) {
         <ModalHead
           title={
             <>
-              <span style={{ color: 'var(--rose)' }}>⚠</span> Delete Task
+              <span style={{ color: 'var(--rose)' }}>⚠</span> {t('taskAllView.deleteModal.title')}
             </>
           }
         />
@@ -259,14 +283,14 @@ export function TaskAllView({ tasks, onEdit }: TaskAllViewProps) {
                 </span>
               </div>
               <p style={{ fontSize: 12, color: 'var(--text-mid)', margin: 0, lineHeight: 1.6 }}>
-                This task will be permanently deleted. This action cannot be undone.
+                {t('taskAllView.deleteModal.description')}
               </p>
             </>
           )}
         </ModalBody>
         <ModalFoot>
           <button type="button" className="modal-btn cancel" onClick={() => setDeletingTask(null)}>
-            Cancel
+            {tCommon('cancel')}
           </button>
           <button
             type="button"
@@ -282,7 +306,7 @@ export function TaskAllView({ tasks, onEdit }: TaskAllViewProps) {
               color: '#fff',
             }}
           >
-            Delete
+            {tCommon('delete')}
           </button>
         </ModalFoot>
       </Modal>

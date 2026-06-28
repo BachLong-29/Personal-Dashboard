@@ -10,6 +10,7 @@ import {
   useSensors,
   type DragEndEvent,
 } from '@dnd-kit/core';
+import { useTranslations } from 'next-intl';
 
 import { Icon } from '@/components/common/Icon';
 import type { ScheduleBlock } from '@/types';
@@ -82,6 +83,8 @@ export function TaskDayView({
   splitMode,
   hideSidePanel = false,
 }: TaskDayViewProps) {
+  const t = useTranslations('tasks');
+
   // ── Date offset derived from controlled prop ─────────────────────────────────
   const selectedOffset = useMemo(() => computeOffset(selectedDate), [selectedDate]);
 
@@ -130,7 +133,7 @@ export function TaskDayView({
           {/* Panel head with date navigation */}
           <div className="flex items-center gap-2 px-4 py-2 border-b border-[var(--border)] shrink-0">
             <span className="text-[8px] tracking-[0.18em] text-[var(--text-lo)] font-[var(--font-title)] font-bold shrink-0">
-              CHAPTER I
+              {t('taskDayView.chapterOne')}
             </span>
 
             {/* Date navigation */}
@@ -139,7 +142,7 @@ export function TaskDayView({
               <button
                 type="button"
                 onClick={() => shiftDate(-1)}
-                title="Previous day"
+                title={t('taskDayView.previousDay')}
                 className={navArrowBtn}
               >
                 <Icon icon="ArrowLeft" className="text-[14px]" />
@@ -154,7 +157,7 @@ export function TaskDayView({
               <button
                 type="button"
                 onClick={() => shiftDate(1)}
-                title="Next day"
+                title={t('taskDayView.nextDay')}
                 className={navArrowBtn}
               >
                 <Icon icon="ArrowRight" className="text-[14px]" />
@@ -167,7 +170,7 @@ export function TaskDayView({
                   onClick={() => setSelectedDate(new Date())}
                   className={todayChipCls}
                 >
-                  TODAY
+                  {t('taskDayView.today')}
                 </button>
               )}
             </div>

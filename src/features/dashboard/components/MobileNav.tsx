@@ -2,6 +2,7 @@ import { memo } from 'react';
 
 import { useTranslations } from 'next-intl';
 
+import { Icon } from '@/components/common/Icon';
 import { cn } from '@/libs/utils';
 
 import type { CenterTab } from '../types';
@@ -26,14 +27,14 @@ export const MobileNav = memo(function MobileNav({
   const items = [
     {
       id: 'habits',
-      icon: '🔥',
+      icon: 'fire',
       label: t('tabs.habits'),
       isActive: mobilePanel === 'center' && centerTab === 'habits',
       onClick: () => onTabChange('habits'),
     },
     {
       id: 'schedule',
-      icon: '📅',
+      icon: 'calendar',
       label: t('tabs.schedule'),
       isActive: mobilePanel === 'center' && centerTab === 'schedule',
       onClick: () => onTabChange('schedule'),
@@ -71,7 +72,7 @@ export const MobileNav = memo(function MobileNav({
           onClick={item.onClick}
           className={cn(navBtn, item.isActive && navBtnActive)}
         >
-          <span className="text-[16px] leading-none">{item.icon}</span>
+          <Icon icon={item.icon} className="text-[16px] leading-none" />
           <span className="leading-none">{item.label}</span>
         </button>
       ))}

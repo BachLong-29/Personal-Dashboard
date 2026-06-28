@@ -2,6 +2,7 @@
 
 import type { ReactNode, ChangeEvent, KeyboardEvent } from 'react';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { cn } from '@/libs/utils';
 
 export interface CommandItem {
@@ -39,7 +40,7 @@ export function CommandPalette({
   open,
   onClose,
   groups,
-  placeholder = 'Run a command…',
+  placeholder,
   className,
   query: queryProp,
   onQueryChange,
@@ -47,6 +48,7 @@ export function CommandPalette({
   loading = false,
   emptyLabel,
 }: CommandPaletteProps) {
+  const t = useTranslations('common');
   const [innerQuery, setInnerQuery] = useState('');
   const isControlled = queryProp !== undefined;
   const query = isControlled ? queryProp : innerQuery;
@@ -140,7 +142,7 @@ export function CommandPalette({
           <input
             ref={inputRef}
             value={query}
-            placeholder={placeholder}
+            placeholder={placeholder ?? t('commandPalette.placeholder')}
             onChange={(e: ChangeEvent<HTMLInputElement>) => {
               setQuery(e.target.value);
               setSelectedKey(null);
@@ -204,12 +206,14 @@ export function CommandPalette({
           ))}
 
           {loading && filtered.length === 0 && (
-            <div className="text-center py-6 text-[var(--text-lo)] text-[13px]">Searching…</div>
+            <div className="text-center py-6 text-[var(--text-lo)] text-[13px]">
+              {t('commandPalette.searching')}
+            </div>
           )}
 
           {!loading && filtered.length === 0 && (
             <div className="text-center py-6 text-[var(--text-lo)] text-[13px]">
-              {emptyLabel ?? `No results for "${query}"`}
+              {emptyLabel ?? t('commandPalette.noResults', { query })}
             </div>
           )}
         </div>

@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo } from 'react';
+import { useTranslations } from 'next-intl';
 import { Icon } from '@/components/common/Icon';
 import { cn } from '@/libs/utils';
 
@@ -102,37 +103,42 @@ function buildSchedule(tasks: UITask[]): ScheduleEntry[] {
 }
 
 /** Build activity items from done / in-progress tasks */
-function buildActivity(tasks: UITask[]): ActivityItem[] {
+function buildActivity(
+  tasks: UITask[],
+  translate: (key: string, values?: Record<string, string | number>) => string,
+): ActivityItem[] {
   const items: ActivityItem[] = [];
 
   // In-progress tasks first (show as "active sessions")
   tasks
-    .filter((t) => t.status === 'in_progress' && !t.done)
+    .filter((task) => task.status === 'in_progress' && !task.done)
     .slice(0, 2)
-    .forEach((t) => {
+    .forEach((task) => {
       items.push({
         icon: '◈',
-        text: `${t.title} — in progress`,
-        ts: 'now',
+        text: translate('scheduleStrip.activityInProgress', { title: task.title }),
+        ts: translate('scheduleStrip.activityNow'),
         kind: 'start',
       });
     });
 
   // Completed tasks + XP/coins
   tasks
-    .filter((t) => t.done)
+    .filter((task) => task.done)
     .slice(0, 4)
-    .forEach((t) => {
+    .forEach((task) => {
       items.push({
         icon: '✓',
-        text: `${t.icon ? `${t.icon} ` : ''}${t.title} cleared`,
-        ts: 'today',
+        text: translate('scheduleStrip.activityCleared', {
+          title: `${task.icon ? `${task.icon} ` : ''}${task.title}`,
+        }),
+        ts: translate('scheduleStrip.activityToday'),
         kind: 'done',
       });
-      if (t.xp > 0) {
+      if (task.xp > 0) {
         items.push({
           icon: '✦',
-          text: `+${t.xp} XP · +${t.coins} 🪙`,
+          text: translate('scheduleStrip.activityXp', { xp: task.xp, coins: task.coins }),
           ts: '',
           kind: 'xp',
         });
@@ -143,7 +149,10 @@ function buildActivity(tasks: UITask[]): ActivityItem[] {
 }
 
 /** "Xm → next" label */
-function nextTaskLabel(entries: ScheduleEntry[]): string {
+function nextTaskLabel(
+  entries: ScheduleEntry[],
+  t: (key: string, values?: Record<string, string | number>) => string,
+): string {
   const now = nowMins();
 
   // Find next upcoming entry (not done, not active)
@@ -156,10 +165,13 @@ function nextTaskLabel(entries: ScheduleEntry[]): string {
     .filter((e) => e.startMins > now)
     .sort((a, b) => a.startMins - b.startMins)[0];
 
-  if (!next) return 'none';
+  if (!next) return t('scheduleStrip.none');
   const diff = next.startMins - now;
-  if (diff < 60) return `${diff}m → next`;
-  return `${Math.floor(diff / 60)}h ${diff % 60}m → next`;
+  if (diff < 60) return t('scheduleStrip.nextInMinutes', { count: diff });
+  return t('scheduleStrip.nextInHoursMinutes', {
+    hours: Math.floor(diff / 60),
+    minutes: diff % 60,
+  });
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -170,17 +182,18 @@ interface ScheduleStripProps {
 }
 
 export function ScheduleStrip({ tasks }: ScheduleStripProps) {
+  const t = useTranslations('tasks');
   const entries = useMemo(() => buildSchedule(tasks), [tasks]);
-  const activity = useMemo(() => buildActivity(tasks), [tasks]);
-  const nextLabel = useMemo(() => nextTaskLabel(entries), [entries]);
+  const activity = useMemo(() => buildActivity(tasks, t), [tasks, t]);
+  const nextLabel = useMemo(() => nextTaskLabel(entries, t), [entries, t]);
 
   return (
     <div className={cn(sidePanel, 'flex-1 flex flex-col min-h-0')}>
       <div className={panelHead}>
-        <span className={panelEyebrow}>HOURGLASS</span>
-        <h3 className={panelTitle}>Today&apos;s Path</h3>
+        <span className={panelEyebrow}>{t('scheduleStrip.eyebrow')}</span>
+        <h3 className={panelTitle}>{t('scheduleStrip.title')}</h3>
         <div className="flex-1" />
-        {nextLabel !== 'none' && (
+        {nextLabel !== t('scheduleStrip.none') && (
           <span className="text-[9px] text-[var(--text-lo)]">{nextLabel}</span>
         )}
       </div>
@@ -189,7 +202,7 @@ export function ScheduleStrip({ tasks }: ScheduleStripProps) {
         <div className="flex flex-col items-center justify-center py-8 text-[var(--text-lo)]">
           <div className="text-[22px] opacity-30 mb-1.5">◇</div>
           <div className="text-[9px] font-[var(--font-title)] tracking-[0.14em]">
-            NO QUESTS TODAY
+            {t('scheduleStrip.empty')}
           </div>
         </div>
       ) : (
@@ -209,6 +222,8 @@ export function ScheduleStrip({ tasks }: ScheduleStripProps) {
 // ─── Schedule row ─────────────────────────────────────────────────────────────
 
 function ScheduleRow({ entry, isLast }: { entry: ScheduleEntry; isLast: boolean }) {
+  const t = useTranslations('tasks');
+
   return (
     <div className={cn('flex items-start gap-2 py-[5px]', entry.done && 'opacity-50')}>
       {/* Time column */}
@@ -238,8 +253,10 @@ function ScheduleRow({ entry, isLast }: { entry: ScheduleEntry; isLast: boolean 
           </span>
         </div>
         <div className="text-[8px] mt-[1px] flex items-center gap-1.5">
-          {entry.active && <span className="text-[var(--cyan)] font-bold">▶ NOW</span>}
-          {entry.done && <span className="text-[var(--mint)]">✓ done</span>}
+          {entry.active && (
+            <span className="text-[var(--cyan)] font-bold">{t('scheduleStrip.now')}</span>
+          )}
+          {entry.done && <span className="text-[var(--mint)]">{t('scheduleStrip.done')}</span>}
           {entry.source && entry.source !== 'mock' && (
             <span className="text-[var(--text-dim)] uppercase tracking-[0.1em]">
               {entry.source}
@@ -261,10 +278,12 @@ const KIND_COLORS: Record<string, string> = {
 };
 
 function ActivityFeed({ items }: { items: ActivityItem[] }) {
+  const t = useTranslations('tasks');
+
   return (
     <div className="mt-2 pt-2 border-t border-[var(--border)] shrink-0">
       <div className="text-[8px] tracking-[0.12em] text-[var(--text-lo)] font-bold mb-1.5">
-        RECENT ECHOES
+        {t('scheduleStrip.recentEchoes')}
       </div>
       <ul className="flex flex-col gap-[3px]">
         {items.map((item, i) => (

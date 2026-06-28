@@ -1,6 +1,7 @@
 'use client';
 
 import { useRef, useState } from 'react';
+import { useTranslations } from 'next-intl';
 
 import { Modal, ModalHead, ModalBody, ModalFoot } from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
@@ -40,6 +41,8 @@ export function AddTaskModal({
   defaultValues,
   projectId,
 }: AddTaskModalProps) {
+  const t = useTranslations('tasks');
+  const tCommon = useTranslations('common');
   const { mutate: createTask, isPending } = useCreateTask();
   const formRef = useRef<TaskFormHandle>(null);
   const [canSave, setCanSave] = useState(false);
@@ -91,7 +94,7 @@ export function AddTaskModal({
   return (
     <>
       <Modal open={open} onClose={onClose} maxWidth="560px" bottomSheet scrollable>
-        <ModalHead tag="NEW QUEST" title="＋ Create Task" />
+        <ModalHead tag={t('addTaskModal.tag')} title={t('addTaskModal.title')} />
         <ModalBody scrollable className="px-4 sm:px-6">
           <TaskForm
             ref={formRef}
@@ -106,14 +109,14 @@ export function AddTaskModal({
         <ModalFoot>
           <div className="flex items-center justify-end gap-3 w-full">
             <Button variant="ghost" onClick={onClose} disabled={isPending}>
-              Cancel
+              {tCommon('cancel')}
             </Button>
             <Button
               variant="primary"
               onClick={() => formRef.current?.submit()}
               disabled={isPending || !canSave}
             >
-              {isPending ? '⏳ Saving…' : '✦ Create Task'}
+              {isPending ? t('addTaskModal.buttons.saving') : t('addTaskModal.buttons.create')}
             </Button>
           </div>
         </ModalFoot>

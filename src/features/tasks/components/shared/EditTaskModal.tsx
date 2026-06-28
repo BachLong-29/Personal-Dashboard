@@ -78,11 +78,13 @@ export function EditTaskModal({ task, open, onClose, onSave, saving }: EditTaskM
         onClose={() => setPlannerTask(null)}
       />
       <Modal open={blockWarning !== null} onClose={() => setBlockWarning(null)} maxWidth="380px">
-        <ModalHead title="⚡ Cập nhật lịch" />
+        <ModalHead title={`⚡ ${t('editModal.blockWarning.title')}`} />
         <ModalBody>
           <p className="text-[12px] text-[var(--text-hi)] leading-relaxed">
-            Task có <strong>{blockWarning?.blockCount} buổi</strong> lịch. Mở Session Planner để cập
-            nhật sau khi lưu?
+            {t.rich('editModal.blockWarning.message', {
+              count: blockWarning?.blockCount ?? 0,
+              strong: (chunks) => <strong>{chunks}</strong>,
+            })}
           </p>
         </ModalBody>
         <ModalFoot>
@@ -246,14 +248,14 @@ export function EditTaskModal({ task, open, onClose, onSave, saving }: EditTaskM
                 onClick={() => setPlannerTask(scheduledPlannerTask)}
                 className="flex items-center gap-1 px-2 py-[3px] rounded-[5px] border border-[oklch(0.74_0.17_85_/_0.3)] text-[9px] font-bold tracking-[0.08em] text-[var(--gold)] bg-[oklch(0.74_0.17_85_/_0.06)] hover:bg-[oklch(0.74_0.17_85_/_0.12)] transition-colors"
               >
-                🗓 {t('editModal.manageSchedule')}
+                <Icon icon="calendar" /> {t('editModal.manageSchedule')}
               </button>
             )}
           </div>
           <div className="[font-family:var(--f-title)] text-[20px] sm:text-[22px] font-bold tracking-[0.04em] text-[var(--text-hi)]">
             <span className="flex items-center gap-2 truncate max-w-full">
-              {task.icon && <Icon icon={task.icon} className="text-[18px] leading-none shrink-0" />}
-              <span className="text-[16px] sm:text-[18px] truncate">{task.title}</span>
+              {task.icon && <Icon icon={task.icon} className="text-[24px] leading-none shrink-0" />}
+              <span className="text-[20px] sm:text-[22px] truncate">{task.title}</span>
             </span>
           </div>
         </div>

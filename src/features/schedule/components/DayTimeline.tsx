@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo } from 'react';
+import { useTranslations } from 'next-intl';
 
 import { cn } from '@/libs/utils';
 
@@ -91,6 +92,7 @@ function packLanes(segments: TimelineSegment[]): PlacedSegment[][] {
 const HOUR_TICKS = [0, 6, 12, 18, 24];
 
 export function DayTimeline({ segments, capacityMinutes }: DayTimelineProps) {
+  const t = useTranslations('schedule');
   const lanes = useMemo(() => packLanes(segments), [segments]);
 
   // Capacity uses real (unclamped) minutes of non-preview blocks.
@@ -112,7 +114,7 @@ export function DayTimeline({ segments, capacityMinutes }: DayTimelineProps) {
       {/* Capacity ratio */}
       <div className="flex items-center justify-between text-[10px]">
         <span className="uppercase tracking-[0.12em] font-bold font-[var(--font-title)] text-[var(--text-lo)]">
-          Công suất ngày
+          {t('dayTimeline.dayCapacity')}
         </span>
         <span className="tabular-nums font-bold">
           <span className={over ? 'text-[var(--rose)]' : 'text-[var(--text-hi)]'}>
@@ -160,7 +162,7 @@ export function DayTimeline({ segments, capacityMinutes }: DayTimelineProps) {
         <div className="relative flex flex-col gap-1">
           {lanes.length === 0 && (
             <div className="h-6 rounded-[var(--r-sm)] border border-dashed border-[var(--border)] flex items-center justify-center text-[9px] text-[var(--text-lo)] italic">
-              Ngày trống — chưa có buổi nào
+              {t('dayTimeline.empty')}
             </div>
           )}
           {lanes.map((lane, li) => (

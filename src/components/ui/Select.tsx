@@ -9,6 +9,7 @@ import {
   type KeyboardEvent,
   type ReactNode,
 } from 'react';
+import { useTranslations } from 'next-intl';
 
 import { cn } from '@/libs/utils';
 
@@ -49,7 +50,7 @@ export function Select({
   value,
   defaultValue,
   onValueChange,
-  placeholder = 'Select an option',
+  placeholder,
   label,
   helperText,
   error,
@@ -66,6 +67,7 @@ export function Select({
   renderValue,
   renderOption,
 }: SelectProps) {
+  const t = useTranslations('common');
   const reactId = useId();
   const selectId = id ?? reactId;
   const listboxId = `${selectId}-listbox`;
@@ -233,7 +235,9 @@ export function Select({
           )}
         >
           <span className={cn('truncate', !selectedOption && 'text-[var(--text-dim)]')}>
-            {renderValue ? renderValue(selectedOption) : (selectedOption?.label ?? placeholder)}
+            {renderValue
+              ? renderValue(selectedOption)
+              : (selectedOption?.label ?? placeholder ?? t('select.placeholder'))}
           </span>
 
           <span

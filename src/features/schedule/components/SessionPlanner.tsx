@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import { useLocale, useTranslations } from 'next-intl';
 
 import { Modal, ModalHead, ModalBody, ModalFoot } from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
@@ -73,9 +74,9 @@ function fmtDur(min: number): string {
   return [h ? `${h}h` : '', m ? `${m}m` : ''].filter(Boolean).join(' ') || '0m';
 }
 
-function fmtDate(d: string): string {
+function fmtDate(d: string, locale: string): string {
   const p = d.split('-');
-  return new Date(Number(p[0]), Number(p[1]) - 1, Number(p[2])).toLocaleDateString('en-US', {
+  return new Date(Number(p[0]), Number(p[1]) - 1, Number(p[2])).toLocaleDateString(locale, {
     weekday: 'short',
     month: 'short',
     day: 'numeric',
@@ -88,6 +89,8 @@ const MAX_BLOCK_MINUTES = 1440; // absolute hard cap (24h)
 const DEFAULT_CAPACITY = 600; // fallback daily work minutes
 
 export function SessionPlanner({ open, task, onClose }: SessionPlannerProps) {
+  const t = useTranslations('schedule');
+  const locale = useLocale();
   const { data: blocks = [] } = useTaskBlocks(task?.id);
   const { data: profile } = useProfile();
   const createBlock = useCreateScheduleBlock();
@@ -257,13 +260,13 @@ export function SessionPlanner({ open, task, onClose }: SessionPlannerProps) {
 
   return (
     <Modal open={open} onClose={onClose} maxWidth="760px" bottomSheet scrollable>
-      <ModalHead tag="SESSION PLANNER" title={`${task.icon ?? '❖'} ${task.name}`} />
+      <ModalHead tag={t('sessionPlanner.tag')} title={`${task.icon ?? '❖'} ${task.name}`} />
       <ModalBody scrollable className="flex flex-col gap-4 px-4 sm:px-6">
         {/* Allocation bar — task estimate coverage */}
         <div>
           <div className="flex items-center justify-between mb-1.5 text-[10px]">
             <span className="text-[var(--text-lo)] uppercase tracking-[0.12em] font-bold font-[var(--font-title)]">
-              Đã phân bổ
+              {t('sessionPlanner.allocated')}
             </span>
             <span className="text-[var(--text-hi)] font-bold tabular-nums">
               {fmtDur(allocated)} / {estimate > 0 ? fmtDur(estimate) : '—'}
@@ -278,7 +281,7 @@ export function SessionPlanner({ open, task, onClose }: SessionPlannerProps) {
           </div>
           {estimate > 0 && remaining > 0 && (
             <div className="mt-1 text-[9px] text-[var(--text-lo)]">
-              Còn lại {fmtDur(remaining)} chưa xếp
+              {t('sessionPlanner.remaining', { duration: fmtDur(remaining) })}
             </div>
           )}
         </div>
@@ -287,7 +290,7 @@ export function SessionPlanner({ open, task, onClose }: SessionPlannerProps) {
         <div className="flex flex-col gap-1.5 rounded-[var(--r-sm)] border border-[var(--border)] bg-[var(--panel)] p-3">
           <div className="flex items-center justify-between">
             <span className="text-[9px] uppercase tracking-[0.12em] font-bold font-[var(--font-title)] text-[var(--text-lo)]">
-              {fmtDate(focusedDate)}
+              {fmtDate(focusedDate, locale)}
             </span>
           </div>
           <DayTimeline segments={timelineSegments} capacityMinutes={dailyCapacity} />
@@ -298,8 +301,9 @@ export function SessionPlanner({ open, task, onClose }: SessionPlannerProps) {
           <div className="flex items-center gap-2 px-3 py-2 rounded-[var(--r-sm)] bg-[oklch(0.62_0.24_22_/_0.08)] border border-[oklch(0.62_0.24_22_/_0.3)]">
             <span className="text-[var(--rose)] text-[11px]">🔥</span>
             <span className="text-[9px] text-[var(--text-mid)]">
-              Ngày quá tải:{' '}
-              <b className="text-[var(--text-hi)]">{overloadedDates.map(fmtDate).join(', ')}</b>
+              {t('sessionPlanner.overloadedDays', {
+                days: overloadedDates.map((date) => fmtDate(date, locale)).join(', '),
+              })}
             </span>
           </div>
         )}
@@ -308,7 +312,7 @@ export function SessionPlanner({ open, task, onClose }: SessionPlannerProps) {
         <div className="flex flex-col gap-1.5">
           {sorted.length === 0 && (
             <div className="text-[10px] text-[var(--text-lo)] italic py-2 text-center">
-              Chưa có buổi nào. Thêm thủ công hoặc dùng Auto-fill.
+              {t('sessionPlanner.empty')}
             </div>
           )}
           {sorted.map((b) => {
@@ -323,7 +327,7 @@ export function SessionPlanner({ open, task, onClose }: SessionPlannerProps) {
                   key={b.id}
                   className="flex flex-wrap items-end gap-2 px-2.5 py-2 rounded-[var(--r-sm)] border border-[var(--gold)] bg-[var(--panel2)]"
                 >
-                  <Field label="Ngày">
+                  <Field label={t('sessionPlanner.fields.day')}>
                     <input
                       type="date"
                       value={eDate}
@@ -331,7 +335,7 @@ export function SessionPlanner({ open, task, onClose }: SessionPlannerProps) {
                       className={inputCls}
                     />
                   </Field>
-                  <Field label="Giờ">
+                  <Field label={t('sessionPlanner.fields.time')}>
                     <input
                       type="time"
                       value={eTime}
@@ -339,7 +343,7 @@ export function SessionPlanner({ open, task, onClose }: SessionPlannerProps) {
                       className={inputCls}
                     />
                   </Field>
-                  <Field label="Phút">
+                  <Field label={t('sessionPlanner.fields.minutes')}>
                     <input
                       type="number"
                       min={1}
@@ -358,7 +362,7 @@ export function SessionPlanner({ open, task, onClose }: SessionPlannerProps) {
                       onClick={saveEdit}
                       disabled={busy || !eDur || !!editDurError}
                       className="px-2.5 py-1.5 text-[10px] font-bold rounded-[var(--r-sm)] border border-[oklch(0.76_0.14_162_/_0.4)] text-[var(--mint)] hover:bg-[oklch(0.76_0.14_162_/_0.1)] transition-all disabled:opacity-40 disabled:cursor-not-allowed"
-                      title="Lưu"
+                      title={t('sessionPlanner.titles.save')}
                     >
                       ✓
                     </button>
@@ -367,7 +371,7 @@ export function SessionPlanner({ open, task, onClose }: SessionPlannerProps) {
                       onClick={cancelEdit}
                       disabled={busy}
                       className="px-2.5 py-1.5 text-[10px] font-bold rounded-[var(--r-sm)] border border-[var(--border)] text-[var(--text-lo)] hover:text-[var(--text-hi)] transition-all disabled:opacity-40"
-                      title="Hủy"
+                      title={t('sessionPlanner.titles.cancel')}
                     >
                       ✕
                     </button>
@@ -390,7 +394,7 @@ export function SessionPlanner({ open, task, onClose }: SessionPlannerProps) {
                 )}
               >
                 <span className="text-[10px] text-[var(--text-hi)] font-semibold w-[92px] shrink-0">
-                  {fmtDate(b.date)}
+                  {fmtDate(b.date, locale)}
                 </span>
                 <span className="text-[10px] text-[var(--text-mid)] tabular-nums">
                   {b.startTime}–{addMinutes(b.startTime, b.duration)}
@@ -399,13 +403,19 @@ export function SessionPlanner({ open, task, onClose }: SessionPlannerProps) {
                   {fmtDur(b.duration)}
                 </span>
                 {hard && (
-                  <span className="text-[9px] text-[var(--rose)]" title="Trùng giờ">
-                    ✕ trùng
+                  <span
+                    className="text-[9px] text-[var(--rose)]"
+                    title={t('sessionPlanner.titles.overlap')}
+                  >
+                    {t('sessionPlanner.status.overlap')}
                   </span>
                 )}
                 {!hard && soft && (
-                  <span className="text-[9px] text-[var(--gold)]" title="Nghỉ quá ngắn">
-                    ⚠ sát
+                  <span
+                    className="text-[9px] text-[var(--gold)]"
+                    title={t('sessionPlanner.titles.tight')}
+                  >
+                    {t('sessionPlanner.status.tight')}
                   </span>
                 )}
                 <button
@@ -413,7 +423,7 @@ export function SessionPlanner({ open, task, onClose }: SessionPlannerProps) {
                   onClick={() => startEdit(b)}
                   disabled={busy}
                   className="w-5 h-5 flex items-center justify-center text-[var(--text-lo)] hover:text-[var(--gold)] rounded transition-colors disabled:opacity-40"
-                  title="Sửa buổi"
+                  title={t('sessionPlanner.titles.editSession')}
                 >
                   ✎
                 </button>
@@ -422,7 +432,7 @@ export function SessionPlanner({ open, task, onClose }: SessionPlannerProps) {
                   onClick={() => deleteBlock.mutate(b.id)}
                   disabled={busy}
                   className="w-5 h-5 flex items-center justify-center text-[var(--text-lo)] hover:text-[var(--rose)] rounded transition-colors disabled:opacity-40"
-                  title="Xóa buổi"
+                  title={t('sessionPlanner.titles.deleteSession')}
                 >
                   🗑
                 </button>
@@ -434,7 +444,7 @@ export function SessionPlanner({ open, task, onClose }: SessionPlannerProps) {
         {/* Add-session form */}
         <div className="flex flex-col gap-1.5 pt-2 border-t border-[var(--border)]">
           <div className="flex flex-wrap items-end gap-2">
-            <Field label="Ngày">
+            <Field label={t('sessionPlanner.fields.day')}>
               <input
                 type="date"
                 value={date || task.startDate}
@@ -443,7 +453,7 @@ export function SessionPlanner({ open, task, onClose }: SessionPlannerProps) {
                 className={inputCls}
               />
             </Field>
-            <Field label="Giờ">
+            <Field label={t('sessionPlanner.fields.time')}>
               <input
                 type="time"
                 value={time}
@@ -451,7 +461,7 @@ export function SessionPlanner({ open, task, onClose }: SessionPlannerProps) {
                 className={inputCls}
               />
             </Field>
-            <Field label="Phút">
+            <Field label={t('sessionPlanner.fields.minutes')}>
               <input
                 type="number"
                 min={1}
@@ -468,9 +478,10 @@ export function SessionPlanner({ open, task, onClose }: SessionPlannerProps) {
               onClick={handleFillAll}
               disabled={busy || (remaining <= 0 && estimate <= 0)}
               className="px-2.5 py-1.5 text-[10px] font-bold rounded-[var(--r-sm)] border border-[oklch(0.76_0.16_205_/_0.4)] text-[var(--cyan)] hover:bg-[oklch(0.76_0.16_205_/_0.1)] transition-all disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
-              title="Đẩy toàn bộ thời lượng còn lại vào ô phút"
+              title={t('sessionPlanner.titles.fillAll')}
             >
-              All{remaining > 0 ? ` (${fmtDur(remaining)})` : ''}
+              {t('sessionPlanner.actions.all')}
+              {remaining > 0 ? ` (${fmtDur(remaining)})` : ''}
             </button>
             <button
               type="button"
@@ -478,7 +489,7 @@ export function SessionPlanner({ open, task, onClose }: SessionPlannerProps) {
               disabled={busy || !durStr || !!addDurError}
               className="px-3 py-1.5 text-[10px] font-bold rounded-[var(--r-sm)] border border-[var(--border)] text-[var(--text-mid)] hover:text-[var(--text-hi)] hover:border-[oklch(0.74_0.17_85_/_0.4)] transition-all disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
             >
-              + Thêm
+              {t('sessionPlanner.actions.add')}
             </button>
           </div>
           {addDurError && <span className="text-[9px] text-[var(--rose)]">{addDurError}</span>}
@@ -489,11 +500,11 @@ export function SessionPlanner({ open, task, onClose }: SessionPlannerProps) {
         <div className="flex items-center justify-end gap-2 w-full">
           {remaining > 0 && estimate > 0 && (
             <Button variant="ghost" onClick={handleAutoFill} disabled={busy}>
-              ⚡ Auto-fill ({fmtDur(remaining)})
+              {t('sessionPlanner.actions.autofill', { duration: fmtDur(remaining) })}
             </Button>
           )}
           <Button variant="primary" onClick={onClose} disabled={busy}>
-            {allocated > 0 ? '✓ Xong' : 'Để sau'}
+            {allocated > 0 ? t('sessionPlanner.actions.done') : t('sessionPlanner.actions.later')}
           </Button>
         </div>
       </ModalFoot>

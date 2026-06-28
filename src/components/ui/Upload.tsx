@@ -2,6 +2,7 @@
 
 import type { ChangeEvent, DragEvent } from 'react';
 import { useRef, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { cn } from '@/libs/utils';
 
 export interface UploadFile {
@@ -31,6 +32,7 @@ export function Upload({
   hint,
   className,
 }: UploadProps) {
+  const t = useTranslations('common');
   const inputRef = useRef<HTMLInputElement>(null);
   const [dragging, setDragging] = useState(false);
 
@@ -83,10 +85,11 @@ export function Upload({
           ⬆
         </div>
         <div className="[font-family:var(--f-title)] text-[15px] tracking-[0.06em] text-[var(--text-hi)] mb-1">
-          {files.length > 0 ? 'Add More' : 'Drop Artifacts Here'}
+          {files.length > 0 ? t('upload.addMore') : t('upload.dropArtifactsHere')}
         </div>
         <div className="text-[11px] text-[var(--text-lo)]">
-          or <strong className="text-[var(--gold)]">click to browse</strong>
+          {t('upload.or')}{' '}
+          <strong className="text-[var(--gold)]">{t('upload.clickToBrowse')}</strong>
           {hint && ` · ${hint}`}
         </div>
       </div>
