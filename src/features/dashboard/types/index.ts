@@ -1,3 +1,5 @@
+import type { TaskProgress } from '@/types/schedule-block';
+
 export type QuestType = 'focus' | 'habit' | 'reflect' | 'admin' | 'create' | 'health' | 'break';
 export type Difficulty = 'S' | 'A' | 'B' | 'C' | 'D';
 export type CenterTab = 'schedule' | 'stats' | 'habits';
@@ -74,6 +76,7 @@ export interface Task {
   attachments: string[];
   dependencies: string[];
   active: boolean;
+  progress?: TaskProgress;
   createdAt: string;
   updatedAt: string;
 }

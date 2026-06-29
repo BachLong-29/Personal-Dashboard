@@ -34,7 +34,9 @@ import { AddTaskModal } from '@/features/tasks/components/shared/AddTaskModal';
 import { EditTaskModal } from '@/features/tasks/components/shared/EditTaskModal';
 import { taskToUITask } from '@/features/tasks/data/adapters';
 import { todayISO } from '@/features/tasks/utils/date.utils';
-import type { Task as CoreTask } from '@/types/task';
+import type { ScheduleBlock, Task as CoreTask } from '@/types';
+import { useProfile } from '@/features/profile/hooks/useProfile';
+import { useScheduleBlocks } from '@/features/schedule/hooks/useScheduleBlocks';
 
 interface WeekViewProps {
   weekStart: string;
@@ -50,7 +52,14 @@ type ActiveDrag =
   | { type: 'habit'; item: Habit; color: string; dayStr: string };
 
 type DayItem =
-  | { kind: 'task'; item: Task; time?: string; color: string }
+  | {
+      kind: 'task';
+      item: Task;
+      time?: string;
+      color: string;
+      plannedMinutes: number;
+      blockId: string;
+    }
   | { kind: 'quest'; item: Quest; time?: string }
   | { kind: 'habit'; item: Habit; time?: string; color: string };
 
@@ -76,6 +85,16 @@ function dayDiff(from: string, to: string): number {
   return Math.round((new Date(to).getTime() - new Date(from).getTime()) / 86400000);
 }
 
+function formatUsageHours(minutes: number): string {
+  const safeMinutes = Math.max(0, minutes);
+  const hours = Math.floor(safeMinutes / 60);
+  const mins = safeMinutes % 60;
+
+  if (hours === 0) return `${mins}m`;
+  if (mins === 0) return `${hours}h`;
+  return `${hours}h ${mins}m`;
+}
+
 const DAY_SHORT = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
 export function WeekView({
@@ -89,6 +108,11 @@ export function WeekView({
   const todayStr = todayISO();
 
   const { data: allTasks = [], isLoading } = useTasks(weekStart, weekEnd);
+  const { data: weekTaskBlocks = [], isLoading: isLoadingBlocks } = useScheduleBlocks({
+    from: weekStart,
+    to: weekEnd,
+    sourceType: 'task',
+  });
   const { data: weekQuests = [] } = useQuests(weekStart, weekEnd);
   const { mutate: updateTask } = useUpdateTask();
   const { mutate: deleteTask } = useDeleteTask();
@@ -96,6 +120,7 @@ export function WeekView({
   const { data: habits = [] } = useHabits();
   const { data: todayHabitLogs = [] } = useHabitLogs(todayStr);
   const { mutate: updateHabit } = useUpdateHabit();
+  const { data: profileData } = useProfile();
 
   const [editing, setEditing] = useState<Task | undefined>(undefined);
   const [showAddModal, setShowAddModal] = useState(false);
@@ -131,11 +156,36 @@ export function WeekView({
   }, [weekQuests]);
 
   const weekDays = getWeekDays(weekStart);
+  const dailyWorkingHoursMinutes = profileData?.settings.dailyCapacityMinutes ?? 600;
+  const taskMap = useMemo(
+    () => new Map((allTasks as Task[]).map((task) => [task.id, task])),
+    [allTasks],
+  );
 
-  function getTasksForDay(dateStr: string): Task[] {
-    return (allTasks as Task[]).filter(
-      (t) => t.active && t.startDate <= dateStr && (t.endDate ?? t.startDate) >= dateStr,
-    );
+  function getTaskBlocksForDay(dateStr: string): Array<{
+    task: Task;
+    block: ScheduleBlock;
+    color: string;
+  }> {
+    return weekTaskBlocks
+      .filter((block) => block.date === dateStr && block.duration > 0)
+      .map((block) => {
+        const task = taskMap.get(block.sourceId);
+        if (!task || !task.active) return null;
+        return {
+          task,
+          block,
+          color: HABIT_COLORS[task.color as TaskColor]?.value ?? 'var(--gold)',
+        };
+      })
+      .filter(
+        (entry): entry is { task: Task; block: ScheduleBlock; color: string } => entry !== null,
+      )
+      .sort((a, b) => a.block.startTime.localeCompare(b.block.startTime));
+  }
+
+  function getTaskUsageForDay(blocks: ScheduleBlock[]): number {
+    return blocks.reduce((sum, block) => sum + block.duration, 0);
   }
 
   const DOW_TO_HABIT_DAY = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'] as const;
@@ -247,11 +297,19 @@ export function WeekView({
       {/* 7-column grid */}
       <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
         <div className={gridWrap}>
-          {isLoading ? (
+          {isLoading || isLoadingBlocks ? (
             <div className={loadingMsg}>Loading...</div>
           ) : (
             weekDays.map((dayStr, i) => {
-              const dayTasks = getTasksForDay(dayStr);
+              const dayTaskEntries = getTaskBlocksForDay(dayStr);
+              const taskUsageMinutes = getTaskUsageForDay(
+                dayTaskEntries.map((entry) => entry.block),
+              );
+              console.log('[WeekView] taskUsageMinutes', {
+                dayStr,
+                taskUsageMinutes,
+                dayTaskEntries,
+              });
               const isToday = dayStr === todayStr;
               const dayNum = new Date(dayStr).getDate();
 
@@ -259,15 +317,21 @@ export function WeekView({
                 <DroppableDay key={dayStr} id={dayStr} isToday={isToday}>
                   {/* Day header */}
                   <div className={dayHeader}>
-                    <button
-                      type="button"
-                      className={cn(dayLabel, isToday && dayLabelToday)}
-                      onClick={() => onNavigateDay(dayStr)}
-                      title={`Go to ${dayStr}`}
-                    >
-                      <span>{DAY_SHORT[i]}</span>
-                      <span className={dayNum2}>{dayNum}</span>
-                    </button>
+                    <div className={dayHeaderMain}>
+                      <button
+                        type="button"
+                        className={cn(dayLabel, isToday && dayLabelToday)}
+                        onClick={() => onNavigateDay(dayStr)}
+                        title={`Go to ${dayStr}`}
+                      >
+                        <span>{DAY_SHORT[i]}</span>
+                        <span className={dayNum2}>{dayNum}</span>
+                      </button>
+                      <div className={dayUsageText}>
+                        {formatUsageHours(taskUsageMinutes)} /{' '}
+                        {formatUsageHours(dailyWorkingHoursMinutes)}
+                      </div>
+                    </div>
                     <button
                       type="button"
                       className={dayAddBtn}
@@ -282,14 +346,19 @@ export function WeekView({
                   <div className={dayTaskList}>
                     {(() => {
                       const dow = DOW_TO_HABIT_DAY[new Date(dayStr).getDay()];
+                      console.log('[WeekView] dayTasks before render items', {
+                        dayStr,
+                        dayTaskEntries,
+                      });
 
                       const items: DayItem[] = [
-                        ...dayTasks.map((t) => ({
+                        ...dayTaskEntries.map(({ task, block, color }) => ({
                           kind: 'task' as const,
-                          item: t,
-                          // Time-of-day now lives in schedule blocks, not on the task itself.
-                          time: undefined,
-                          color: HABIT_COLORS[t.color as TaskColor]?.value ?? 'var(--gold)',
+                          item: task,
+                          time: block.startTime,
+                          color,
+                          plannedMinutes: block.duration,
+                          blockId: block.id,
                         })),
                         ...(display.showQuests ? (questsByDate[dayStr] ?? []) : []).map((q) => ({
                           kind: 'quest' as const,
@@ -318,10 +387,11 @@ export function WeekView({
                         if (item.kind === 'task') {
                           const task = item.item;
                           const blocked = isBlocked(task);
+                          const plannedMinutes = item.plannedMinutes;
                           return (
                             <DraggableItem
-                              key={task.id}
-                              id={`task|${task.id}|${dayStr}`}
+                              key={item.blockId}
+                              id={`task|${task.id}|${dayStr}|${item.blockId}`}
                               data={{ type: 'task', item: task, color: item.color, dayStr }}
                             >
                               <div
@@ -342,7 +412,12 @@ export function WeekView({
                                   {blocked && <span className={miniLock}>🔒</span>}
                                   {task.status === 'done' && <span className={miniDone}>✓</span>}
                                 </div>
-                                {item.time && <span className={miniTime}>{item.time}</span>}
+                                <div className={miniMetaRow}>
+                                  {item.time && <span className={miniTime}>{item.time}</span>}
+                                  <span className={miniPlanned}>
+                                    {formatUsageHours(plannedMinutes)}
+                                  </span>
+                                </div>
                               </div>
                             </DraggableItem>
                           );
@@ -573,10 +648,13 @@ const dayColOver =
 
 const dayHeader =
   'flex items-center justify-between px-1.5 py-1 border-b border-[var(--border)] shrink-0';
+const dayHeaderMain = 'flex flex-col items-start min-w-0';
 const dayLabel =
   'flex flex-col items-center cursor-pointer hover:text-[var(--gold)] transition-colors';
 const dayLabelToday = 'text-[var(--gold)]';
 const dayNum2 = 'text-[13px] font-bold leading-none mt-0.5';
+const dayUsageText =
+  'mt-1 inline-flex items-center rounded-[4px] border border-[oklch(0.74_0.17_85_/_0.35)] bg-[oklch(0.74_0.17_85_/_0.12)] px-1.5 py-[3px] text-[8px] leading-none text-[var(--gold)] font-[var(--font-title)] whitespace-nowrap shadow-[0_0_10px_oklch(0.74_0.17_85_/_0.12)]';
 
 const dayAddBtn =
   'w-4 h-4 flex items-center justify-center text-[11px] text-[var(--text-lo)] hover:text-[var(--gold)] cursor-pointer transition-colors leading-none';
@@ -593,7 +671,9 @@ const miniTaskIcon = 'text-[10px] shrink-0';
 const miniTaskName = 'flex-1 truncate text-[var(--text-hi)] leading-tight';
 const miniLock = 'text-[8px] shrink-0';
 const miniDone = 'text-[9px] text-[oklch(0.76_0.14_162)] shrink-0';
+const miniMetaRow = 'flex items-center justify-between gap-2';
 const miniTime = 'text-[7px] text-[var(--text-lo)] shrink-0 font-[var(--font-title)]';
+const miniPlanned = 'text-[7px] text-[var(--gold)] shrink-0 font-[var(--font-title)] tabular-nums';
 const miniTaskNoGrab = '!cursor-pointer active:!cursor-pointer';
 
 const dragOverlayItem =

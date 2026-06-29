@@ -2,6 +2,7 @@
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
+import { queryKeys } from '@/constants/query-keys';
 import { apiClient } from '@/libs/axios';
 import type { ApiResponse, Task, UpdateTaskPayload } from '@/types';
 
@@ -15,6 +16,8 @@ export function useUpdateTask() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.scheduleBlocks.all });
+      queryClient.invalidateQueries({ queryKey: queryKeys.calendar.all });
     },
   });
 }

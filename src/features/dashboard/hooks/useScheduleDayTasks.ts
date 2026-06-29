@@ -1,21 +1,21 @@
 import { startTransition, useEffect, useMemo, useRef, useState } from 'react';
 
+import { useProjects } from '@/features/projects/hooks/useProjects';
 import {
-  useScheduleBlocks,
   useCreateScheduleBlock,
+  useScheduleBlocks,
   useUpdateScheduleBlock,
 } from '@/features/schedule/hooks/useScheduleBlocks';
 import {
-  taskToUITask,
-  questToUITask,
   habitToUITask,
   isHabitScheduledForDate,
+  questToUITask,
   slotToDefaultTime,
+  taskToUITask,
 } from '@/features/tasks/data/adapters';
-import { MOCK_TASKS, type UITask } from '@/features/tasks/data/mock';
-import { toLocalDate, offsetToISO } from '@/features/tasks/utils/date.utils';
-import { useProjects } from '@/features/projects/hooks/useProjects';
-import type { UpdateTaskPayload, ScheduleBlock, TaskColor } from '@/types';
+import { type UITask } from '@/features/tasks/data/mock';
+import { offsetToISO, toLocalDate } from '@/features/tasks/utils/date.utils';
+import type { ScheduleBlock, TaskColor, UpdateTaskPayload } from '@/types';
 
 import { useCreateTask } from './useCreateTask';
 import { useHabitLogs } from './useHabitLogs';
@@ -23,9 +23,9 @@ import { useHabitLogsRange } from './useHabitLogsRange';
 import { useHabits } from './useHabits';
 import { useQuests } from './useQuests';
 import { useTaskLogs } from './useTaskLogs';
+import { useTasks } from './useTasks';
 import { useToggleHabitLog } from './useToggleHabitLog';
 import { useToggleTaskLog } from './useToggleTaskLog';
-import { useTasks } from './useTasks';
 import { useUpdateQuestStatus } from './useUpdateQuestStatus';
 import { useUpdateTask } from './useUpdateTask';
 
@@ -268,7 +268,7 @@ export function useScheduleDayTasks({
 
   // ── Local tasks state ──────────────────────────────────────────────────────
   const apiLoadedRef = useRef(false);
-  const [tasks, setTasks] = useState<UITask[]>(() => MOCK_TASKS.map((t) => ({ ...t })));
+  const [tasks, setTasks] = useState<UITask[]>(() => []);
 
   useEffect(() => {
     if (apiMerged.length === 0) return;
