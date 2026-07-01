@@ -18,6 +18,7 @@ import { cn } from '@/libs/utils';
 import { useOnClickOutside } from '@/hooks/useOnClickOutside';
 import { useUIStore } from '@/stores/ui.store';
 import { NotificationBell } from './NotificationBell';
+import { FigmaCharacterCard } from '@/components/common/FigmaCharacterCard';
 
 interface DashboardTopbarProps {
   char: Character;
@@ -86,7 +87,17 @@ const DashboardTopbar = (props: DashboardTopbarProps) => {
       <div className={topBar}>
         {/* ── User identity trigger → dropdown ────────────────────────────── */}
         <div ref={userModalRef} className="relative block">
-          <button type="button" className={userTrigger} onClick={handleUserTriggerClick}>
+          {/* Mobile: Figma character card replaces the text trigger */}
+          <div className="block min-[1025px]:hidden">
+            <FigmaCharacterCard onClick={handleUserTriggerClick} />
+          </div>
+
+          {/* Desktop: original text trigger */}
+          <button
+            type="button"
+            className={cn(userTrigger, 'hidden min-[1025px]:flex')}
+            onClick={handleUserTriggerClick}
+          >
             <span className={avatarBadge}>
               {avatar ? (
                 <Image

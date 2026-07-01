@@ -11,6 +11,7 @@
 const ICON_FILES = [
   'ArrowLeft',
   'ArrowRight',
+  'CardChevron',
   'GiBookshelf',
   'GiCalendar',
   'GiCutDiamond',
@@ -39,6 +40,7 @@ type IconExtension = 'png' | 'svg';
 const ICON_ALIASES: Record<string, IconFile> = {
   arrowleft: 'ArrowLeft',
   arrowright: 'ArrowRight',
+  chevron: 'CardChevron',
   book: 'GiBookshelf',
   diamond: 'GiCutDiamond',
   flare: 'GiEclipseFlare',
