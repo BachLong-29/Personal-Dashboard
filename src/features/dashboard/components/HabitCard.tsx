@@ -12,9 +12,12 @@ interface HabitCardProps {
   todayDone?: boolean;
   isToday?: boolean;
   expanded?: boolean;
+  activateLabel?: string;
+  inactivateLabel?: string;
   onToggle?: () => void;
   onEdit: (habit: Habit) => void;
   onDelete: (id: string) => void;
+  onToggleActive: (habit: Habit) => void;
 }
 
 function buildScheduleText(habit: Habit): string {
@@ -38,9 +41,12 @@ export function HabitCard({
   todayDone,
   isToday,
   expanded,
+  activateLabel = 'Activate',
+  inactivateLabel = 'Inactivate',
   onToggle,
   onEdit,
   onDelete,
+  onToggleActive,
 }: HabitCardProps) {
   const colorVal = HABIT_COLORS[habit.color as HabitColor]?.value ?? HABIT_COLORS.gold.value;
   const colorLabel = HABIT_COLORS[habit.color as HabitColor]?.label ?? habit.color;
@@ -48,7 +54,7 @@ export function HabitCard({
   const scheduleText = buildScheduleText(habit);
 
   return (
-    <div className={card} style={{ borderLeftColor: colorVal }}>
+    <div className={cn(card, !habit.active && cardInactive)} style={{ borderLeftColor: colorVal }}>
       {/* ── Main row ── */}
       <div className={topRow}>
         <div className={iconWrap} style={{ background: `${colorVal}20`, color: colorVal }}>
@@ -78,6 +84,15 @@ export function HabitCard({
         </div>
 
         <div className={actions}>
+          <button
+            type="button"
+            className={cn(actionBtn, habit.active ? inactivateBtn : activateBtn)}
+            title={habit.active ? inactivateLabel : activateLabel}
+            aria-label={habit.active ? inactivateLabel : activateLabel}
+            onClick={() => onToggleActive(habit)}
+          >
+            {habit.active ? '⏸' : '▶'}
+          </button>
           <button type="button" className={actionBtn} title="Edit" onClick={() => onEdit(habit)}>
             ✎
           </button>
@@ -178,6 +193,7 @@ export function HabitCard({
 /* ── Layout ── */
 const card =
   'flex flex-col rounded-[var(--r-sm)] bg-[var(--panel2)] border border-[var(--border)] border-l-[3px] transition-all duration-200 hover:border-[var(--border-hi)] group';
+const cardInactive = 'opacity-40 grayscale-[0.6]';
 const topRow = 'flex items-center gap-2.5 px-3 py-2.5';
 
 /* ── Icon ── */
@@ -211,6 +227,9 @@ const actions = 'flex gap-1 shrink-0';
 const actionBtn =
   'w-6 h-6 rounded-[var(--r-sm)] flex items-center justify-center text-[11px] text-[var(--text-mid)] bg-[var(--panel3)] border border-[var(--border)] cursor-pointer hover:text-[var(--text-hi)] hover:border-[var(--border-hi)] transition-all';
 const deleteBtn = 'hover:text-[var(--rose)] hover:border-[var(--rose)]';
+const inactivateBtn = 'hover:text-[var(--warning)] hover:border-[var(--warning)]';
+const activateBtn =
+  'text-[var(--mint)] border-[oklch(0.76_0.14_162_/_0.4)] hover:text-[var(--mint)] hover:border-[var(--mint)]';
 
 /* ── Detail panel ── */
 const detailPanel = 'border-t px-3 pt-2.5 pb-3 flex flex-col gap-2.5';

@@ -226,7 +226,12 @@
       "emptyDay": "◆ No habits on {day} ◆",
       "deleteTitle": "Delete Habit",
       "deleteDescription": "This habit will be permanently removed and will no longer appear in your daily quests. This action cannot be undone.",
-      "deleteConfirm": "Delete Habit"
+      "deleteConfirm": "Delete Habit",
+      "activate": "Activate",
+      "inactivate": "Inactivate",
+      "inactivateTitle": "Inactivate Habit",
+      "inactivateDescription": "This habit will be paused and will no longer appear in your daily quests. You can reactivate it anytime.",
+      "inactivateConfirm": "Inactivate Habit"
     },
     "addHabitModal": {
       "titleEdit": "Edit Habit",

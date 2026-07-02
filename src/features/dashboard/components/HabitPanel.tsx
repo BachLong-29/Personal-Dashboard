@@ -11,6 +11,7 @@ import { useCategories } from '../hooks/useCategories';
 import { useDeleteHabit } from '../hooks/useDeleteHabit';
 import { useHabitLogs } from '../hooks/useHabitLogs';
 import { useHabits } from '../hooks/useHabits';
+import { useUpdateHabit } from '../hooks/useUpdateHabit';
 import type { Habit, HabitDay } from '../types';
 import { Modal, ModalBody, ModalFoot, ModalHead } from '@/components/ui/Modal';
 import { AddHabitModal } from './AddHabitModal';
@@ -28,10 +29,12 @@ export function HabitPanel({ todayStr }: HabitPanelProps) {
   const { data: logs = [] } = useHabitLogs(todayStr);
   const { data: categories = [] } = useCategories();
   const { mutate: deleteHabit } = useDeleteHabit();
+  const { mutate: updateHabit } = useUpdateHabit();
 
   const [showModal, setShowModal] = useState(false);
   const [editing, setEditing] = useState<Habit | undefined>(undefined);
   const [deletingHabit, setDeletingHabit] = useState<Habit | undefined>(undefined);
+  const [inactivatingHabit, setInactivatingHabit] = useState<Habit | undefined>(undefined);
   const [showCategoryModal, setShowCategoryModal] = useState(false);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [filterDay, setFilterDay] = useState<HabitDay | null>(null);
@@ -43,9 +46,11 @@ export function HabitPanel({ todayStr }: HabitPanelProps) {
   const todayDayStr = DOW_TO_HABIT_DAY[todayDay] as HabitDay;
   const catMap = Object.fromEntries(categories.map((c) => [c.id, c.name]));
 
-  const filteredHabits = filterDay
-    ? habits.filter((h) => h.schedule.some((e) => e.days.includes(filterDay)))
-    : habits;
+  const filteredHabits = (
+    filterDay ? habits.filter((h) => h.schedule.some((e) => e.days.includes(filterDay))) : habits
+  )
+    .slice()
+    .sort((a, b) => Number(b.active) - Number(a.active)); // active first, inactive after
 
   function handleEdit(habit: Habit) {
     setEditing(habit);
@@ -60,6 +65,22 @@ export function HabitPanel({ todayStr }: HabitPanelProps) {
     if (!deletingHabit) return;
     deleteHabit(deletingHabit.id);
     setDeletingHabit(undefined);
+  }
+
+  function handleToggleActive(habit: Habit) {
+    if (habit.active) {
+      // Inactivating requires confirmation first
+      setInactivatingHabit(habit);
+    } else {
+      // Reactivating is instant
+      updateHabit({ id: habit.id, active: true });
+    }
+  }
+
+  function handleInactivateConfirm() {
+    if (!inactivatingHabit) return;
+    updateHabit({ id: inactivatingHabit.id, active: false });
+    setInactivatingHabit(undefined);
   }
 
   function handleClose() {
@@ -146,9 +167,12 @@ export function HabitPanel({ todayStr }: HabitPanelProps) {
               isToday={h.schedule.some((e) => e.days.includes(todayDayStr))}
               todayDone={logMap[h.id] ?? false}
               expanded={expandedId === h.id}
+              activateLabel={tDash('habitPanel.activate')}
+              inactivateLabel={tDash('habitPanel.inactivate')}
               onToggle={() => handleToggle(h.id)}
               onEdit={handleEdit}
               onDelete={(id) => handleDeleteRequest(habits.find((x) => x.id === id) as Habit)}
+              onToggleActive={handleToggleActive}
             />
           ))
         )}
@@ -213,6 +237,70 @@ export function HabitPanel({ todayStr }: HabitPanelProps) {
             }}
           >
             {tDash('habitPanel.deleteConfirm')}
+          </button>
+        </ModalFoot>
+      </Modal>
+
+      <Modal
+        open={!!inactivatingHabit}
+        onClose={() => setInactivatingHabit(undefined)}
+        maxWidth="400px"
+      >
+        <ModalHead
+          title={
+            <>
+              <span style={{ color: 'var(--warning)' }}>⏸</span>{' '}
+              {tDash('habitPanel.inactivateTitle')}
+            </>
+          }
+        />
+        <ModalBody>
+          {inactivatingHabit && (
+            <>
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 10,
+                  padding: '10px 14px',
+                  background: 'var(--panel2)',
+                  borderRadius: 'var(--r-sm)',
+                  border: '1px solid var(--border)',
+                  marginBottom: 12,
+                }}
+              >
+                <span style={{ fontSize: 20 }}>{inactivatingHabit.icon}</span>
+                <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-hi)' }}>
+                  {inactivatingHabit.name}
+                </span>
+              </div>
+              <p style={{ fontSize: 12, color: 'var(--text-mid)', lineHeight: 1.6, margin: 0 }}>
+                {tDash('habitPanel.inactivateDescription')}
+              </p>
+            </>
+          )}
+        </ModalBody>
+        <ModalFoot>
+          <button
+            type="button"
+            className="modal-btn cancel"
+            onClick={() => setInactivatingHabit(undefined)}
+          >
+            {tCommon('cancel')}
+          </button>
+          <button
+            type="button"
+            className="modal-btn"
+            onClick={handleInactivateConfirm}
+            style={{
+              flex: 1,
+              background: 'linear-gradient(135deg, oklch(0.55 0.14 75), var(--warning))',
+              borderColor: 'var(--warning)',
+              color: '#1a1206',
+              boxShadow: '0 0 12px oklch(0.8 0.15 80 / 0.35)',
+            }}
+          >
+            {tDash('habitPanel.inactivateConfirm')}
           </button>
         </ModalFoot>
       </Modal>

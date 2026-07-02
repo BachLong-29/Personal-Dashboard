@@ -4,18 +4,14 @@ import type { NextRequest } from 'next/server';
 import { connectDB } from '@/libs/mongodb';
 import { getAuthUser } from '@/server/helpers/get-auth-user';
 import { HabitModel } from '@/server/models/habit.model';
-import {
-  asyncHandler,
-  notFoundResponse,
-  successResponse,
-  unauthorizedResponse,
-} from '@/server';
+import { HabitLogModel } from '@/server/models/habit-log.model';
+import { asyncHandler, notFoundResponse, successResponse, unauthorizedResponse } from '@/server';
 import { validateBody } from '@/server/validate';
 import type { Habit } from '@/types/habit';
 import type { IHabit } from '@/server/models/habit.model';
 
 const HABIT_COLORS = ['gold', 'mint', 'violet', 'cyan', 'rose', 'amber', 'blue'] as const;
-const HABIT_DAYS   = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] as const;
+const HABIT_DAYS = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] as const;
 
 const scheduleEntrySchema = z.object({
   days: z.array(z.enum(HABIT_DAYS)).min(1),
@@ -23,28 +19,28 @@ const scheduleEntrySchema = z.object({
 });
 
 const updateSchema = z.object({
-  name:     z.string().min(1).max(100).optional(),
+  name: z.string().min(1).max(100).optional(),
   schedule: z.array(scheduleEntrySchema).min(1).optional(),
   duration: z.number().int().min(1).max(1440).optional().nullable(),
-  note:     z.string().max(500).optional().nullable(),
-  tagId:    z.string().min(1).optional(),
-  color:    z.enum(HABIT_COLORS).optional(),
-  icon:     z.string().min(1).optional(),
-  active:   z.boolean().optional(),
+  note: z.string().max(500).optional().nullable(),
+  tagId: z.string().min(1).optional(),
+  color: z.enum(HABIT_COLORS).optional(),
+  icon: z.string().min(1).optional(),
+  active: z.boolean().optional(),
 });
 
 function serialize(h: IHabit): Habit {
   return {
-    id:        h._id.toString(),
-    userId:    h.userId.toString(),
-    name:      h.name,
-    schedule:  h.schedule.map((e) => ({ days: e.days, time: e.time })),
-    duration:  h.duration,
-    note:      h.note,
-    tagId:     h.tagId,
-    color:     h.color,
-    icon:      h.icon,
-    active:    h.active,
+    id: h._id.toString(),
+    userId: h.userId.toString(),
+    name: h.name,
+    schedule: h.schedule.map((e) => ({ days: e.days, time: e.time })),
+    duration: h.duration,
+    note: h.note,
+    tagId: h.tagId,
+    color: h.color,
+    icon: h.icon,
+    active: h.active,
     createdAt: h.createdAt.toISOString(),
     updatedAt: h.updatedAt.toISOString(),
   };
@@ -73,7 +69,7 @@ export const PATCH = asyncHandler(async (req: NextRequest, ctx) => {
   return successResponse(serialize(habit), 'Habit updated');
 });
 
-// DELETE /api/v1/habits/:id
+// DELETE /api/v1/habits/:id — hard delete (permanent), cascades to its logs
 export const DELETE = asyncHandler(async (req: NextRequest, ctx) => {
   const user = getAuthUser(req);
   if (!user) return unauthorizedResponse();
@@ -82,13 +78,11 @@ export const DELETE = asyncHandler(async (req: NextRequest, ctx) => {
 
   await connectDB();
 
-  const habit = await HabitModel.findOneAndUpdate(
-    { _id: id, userId: user.sub },
-    { active: false },
-    { new: true },
-  );
+  const habit = await HabitModel.findOneAndDelete({ _id: id, userId: user.sub });
 
   if (!habit) return notFoundResponse('Habit not found');
+
+  await HabitLogModel.deleteMany({ userId: user.sub, habitId: id });
 
   return successResponse(null, 'Habit deleted');
 });

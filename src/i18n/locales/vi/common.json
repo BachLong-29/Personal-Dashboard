@@ -226,7 +226,12 @@
       "emptyDay": "◆ Không có habit vào {day} ◆",
       "deleteTitle": "Xóa habit",
       "deleteDescription": "Habit này sẽ bị xóa vĩnh viễn và sẽ không còn xuất hiện trong các quest hằng ngày của bạn. Hành động này không thể hoàn tác.",
-      "deleteConfirm": "Xóa habit"
+      "deleteConfirm": "Xóa habit",
+      "activate": "Kích hoạt",
+      "inactivate": "Tạm ngưng",
+      "inactivateTitle": "Tạm ngưng habit",
+      "inactivateDescription": "Habit này sẽ được tạm ngưng và không còn xuất hiện trong các quest hằng ngày của bạn. Bạn có thể kích hoạt lại bất cứ lúc nào.",
+      "inactivateConfirm": "Tạm ngưng habit"
     },
     "addHabitModal": {
       "titleEdit": "Sửa habit",
