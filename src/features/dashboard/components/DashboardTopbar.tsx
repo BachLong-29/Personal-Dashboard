@@ -85,19 +85,16 @@ const DashboardTopbar = (props: DashboardTopbarProps) => {
   return (
     <>
       <div className={topBar}>
-        {/* ── User identity trigger → dropdown ────────────────────────────── */}
-        <div ref={userModalRef} className="relative block">
-          {/* Mobile: Figma character card — tapping it opens the bottom sheet */}
-          <div className="block min-[1025px]:hidden">
-            <FigmaCharacterCard
-              name={displayName}
-              rank={rank.name}
-              avatarUrl={avatar}
-              fallbackGlyph={companion?.glyph ?? '🧝‍♀️'}
-              onClick={openSheet}
-            />
-          </div>
+        {/* ── Mobile: Search + Bell (left) ────────────────────────────────── */}
+        <div className="flex min-[1025px]:hidden items-center gap-2">
+          <button type="button" className={tabletMenuBtn} onClick={openSearch} aria-label="Search">
+            <span className="text-[15px] leading-none text-[var(--gold)]">⌕</span>
+          </button>
+          <NotificationBell onEndDay={onEndDay} />
+        </div>
 
+        {/* ── User identity trigger → dropdown (desktop) ──────────────────── */}
+        <div ref={userModalRef} className="relative hidden min-[1025px]:block">
           {/* Desktop: original text trigger */}
           <button
             type="button"
@@ -120,13 +117,10 @@ const DashboardTopbar = (props: DashboardTopbarProps) => {
             <span
               className={cn(
                 topBarLogo,
-                'text-[14px] sm:text-[16px] md:text-[18px] max-w-[2200px] sm:max-w-[260px] md:max-w-none truncate',
+                'font-[family-name:var(--font-bento)] text-[14px] sm:text-[16px] md:text-[18px] max-w-[2200px] sm:max-w-[260px] md:max-w-none truncate',
               )}
             >
               {displayName}
-            </span>
-            <span className={cn(triggerCaret, 'hidden md:inline')}>
-              {showUserModal ? '▲' : '▼'}
             </span>
           </button>
 
@@ -278,12 +272,15 @@ const DashboardTopbar = (props: DashboardTopbarProps) => {
 
         <div className="flex-1" />
 
-        {/* ── Mobile: Search + Bell (menu is opened by tapping the card) ────── */}
-        <div className="flex min-[1025px]:hidden items-center gap-2">
-          <button type="button" className={tabletMenuBtn} onClick={openSearch} aria-label="Search">
-            <span className="text-[15px] leading-none text-[var(--gold)]">⌕</span>
-          </button>
-          <NotificationBell onEndDay={onEndDay} />
+        {/* ── Mobile: character card on the right — tapping opens the sheet ── */}
+        <div className="block min-[1025px]:hidden">
+          <FigmaCharacterCard
+            name={displayName}
+            rank={rank.name}
+            avatarUrl={avatar}
+            fallbackGlyph={companion?.glyph ?? '🧝‍♀️'}
+            onClick={openSheet}
+          />
         </div>
 
         {/* ── Desktop nav (1025px+): Search | Date | Streak | Bell | Logout ─ */}
@@ -492,7 +489,6 @@ const userTrigger =
   'flex items-center gap-2 rounded-[var(--r-sm)] px-2 py-1 transition-colors duration-200 cursor-pointer hover:bg-[oklch(0.74_0.17_85_/_0.06)] focus:outline-none';
 const avatarBadge =
   'relative w-7 h-7 rounded-full bg-[var(--panel2)] border border-[oklch(0.74_0.17_85_/_0.3)] flex items-center justify-center text-[16px] shrink-0 overflow-hidden';
-const triggerCaret = 'text-[8px] text-[var(--text-lo)] ml-[-2px] transition-transform duration-200';
 
 const userModal =
   'absolute top-[calc(100%+8px)] left-0 z-50 w-[260px] bg-[var(--panel)] border border-[oklch(0.74_0.17_85_/_0.35)] rounded-[var(--r)] shadow-[0_8px_32px_oklch(0_0_0_/_0.4),0_0_20px_oklch(0.74_0.17_85_/_0.08)] overflow-hidden';

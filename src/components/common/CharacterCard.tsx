@@ -23,6 +23,17 @@ interface CharacterCardProps {
  * with percentage positions and `cqw` (container-width) font sizes, so the whole
  * card scales as one unit at any width without drifting out of alignment.
  */
+/** Split a name so line 1 holds ≤6 chars (broken at a space when possible)
+ *  and line 2 holds the rest. */
+function splitName(name: string): [string, string] {
+  const MAX_FIRST = 6;
+  if (name.length <= MAX_FIRST) return [name, ''];
+  const head = name.slice(0, MAX_FIRST);
+  const lastSpace = head.lastIndexOf(' ');
+  const splitAt = lastSpace > 0 ? lastSpace : MAX_FIRST;
+  return [name.slice(0, splitAt).trimEnd(), name.slice(splitAt).trimStart()];
+}
+
 export function FigmaCharacterCard({
   name,
   rank,
@@ -30,6 +41,8 @@ export function FigmaCharacterCard({
   fallbackGlyph = '🧝‍♀️',
   onClick,
 }: CharacterCardProps) {
+  const [nameHead, nameTail] = splitName(name);
+
   return (
     <button
       type="button"
@@ -103,14 +116,14 @@ export function FigmaCharacterCard({
           flexDirection: 'column',
           gap: '1.5cqw',
           maxWidth: '42%',
-          fontFamily: "'Sora', var(--font-body, sans-serif)",
+          fontFamily: "var(--font-bento), 'Sora', var(--font-body, sans-serif)",
           color: '#F8D886',
           textAlign: 'left',
         }}
       >
         <span
           style={{
-            fontSize: '4.2cqw',
+            fontSize: '5.5cqw',
             fontWeight: 700,
             lineHeight: 1,
             letterSpacing: '0.06em',
@@ -125,16 +138,26 @@ export function FigmaCharacterCard({
         </span>
         <span
           style={{
-            fontSize: '5cqw',
+            display: 'flex',
+            flexDirection: 'column',
+            fontSize: '6.8cqw',
             fontWeight: 500,
-            lineHeight: 1,
+            lineHeight: 1.15,
             letterSpacing: '0.03em',
-            whiteSpace: 'nowrap',
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
           }}
         >
-          {name}
+          <span style={{ whiteSpace: 'nowrap' }}>{nameHead}</span>
+          {nameTail && (
+            <span
+              style={{
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+              }}
+            >
+              {nameTail}
+            </span>
+          )}
         </span>
       </span>
 
@@ -143,13 +166,13 @@ export function FigmaCharacterCard({
         aria-hidden="true"
         style={{
           position: 'absolute',
-          right: '10%',
-          bottom: '0',
+          right: '12%',
+          top: '42%',
           width: '5.5%',
           opacity: 0.8,
         }}
       >
-        <Icon icon="chevron" className="w-[24px] h-[24px] text-[#F8D886]" />
+        <Icon icon="chevron" className="w-[28px] h-[28px] text-[#F8D886]" />
       </span>
     </button>
   );
