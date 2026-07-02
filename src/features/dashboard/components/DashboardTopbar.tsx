@@ -18,7 +18,7 @@ import { cn } from '@/libs/utils';
 import { useOnClickOutside } from '@/hooks/useOnClickOutside';
 import { useUIStore } from '@/stores/ui.store';
 import { NotificationBell } from './NotificationBell';
-import { FigmaCharacterCard } from '@/components/common/FigmaCharacterCard';
+import { FigmaCharacterCard } from '@/components/common/CharacterCard';
 
 interface DashboardTopbarProps {
   char: Character;
@@ -87,9 +87,15 @@ const DashboardTopbar = (props: DashboardTopbarProps) => {
       <div className={topBar}>
         {/* ── User identity trigger → dropdown ────────────────────────────── */}
         <div ref={userModalRef} className="relative block">
-          {/* Mobile: Figma character card replaces the text trigger */}
+          {/* Mobile: Figma character card — tapping it opens the bottom sheet */}
           <div className="block min-[1025px]:hidden">
-            <FigmaCharacterCard onClick={handleUserTriggerClick} />
+            <FigmaCharacterCard
+              name={displayName}
+              rank={rank.name}
+              avatarUrl={avatar}
+              fallbackGlyph={companion?.glyph ?? '🧝‍♀️'}
+              onClick={openSheet}
+            />
           </div>
 
           {/* Desktop: original text trigger */}
@@ -272,24 +278,12 @@ const DashboardTopbar = (props: DashboardTopbarProps) => {
 
         <div className="flex-1" />
 
-        {/* ── Mobile: Search + Bell + hamburger ────────────────────────────── */}
+        {/* ── Mobile: Search + Bell (menu is opened by tapping the card) ────── */}
         <div className="flex min-[1025px]:hidden items-center gap-2">
           <button type="button" className={tabletMenuBtn} onClick={openSearch} aria-label="Search">
             <span className="text-[15px] leading-none text-[var(--gold)]">⌕</span>
           </button>
           <NotificationBell onEndDay={onEndDay} />
-          <button
-            type="button"
-            className={tabletMenuBtn}
-            onClick={openSheet}
-            aria-label="Open menu"
-          >
-            <svg width="14" height="11" viewBox="0 0 14 11" fill="currentColor">
-              <rect y="0" width="14" height="1.5" rx="0.75" />
-              <rect y="4.75" width="14" height="1.5" rx="0.75" />
-              <rect y="9.5" width="10" height="1.5" rx="0.75" />
-            </svg>
-          </button>
         </div>
 
         {/* ── Desktop nav (1025px+): Search | Date | Streak | Bell | Logout ─ */}

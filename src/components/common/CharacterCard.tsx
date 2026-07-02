@@ -3,7 +3,15 @@
 import Image from 'next/image';
 import { Icon } from '@/components/common/Icon';
 
-interface FigmaCharacterCardProps {
+interface CharacterCardProps {
+  /** Hero display name (profile.heroName ?? char.name). */
+  name: string;
+  /** Rank label shown in the badge slot (e.g. "Adept"). */
+  rank: string;
+  /** User avatar URL; falls back to `fallbackGlyph` when absent. */
+  avatarUrl?: string | null;
+  /** Emoji shown when there is no avatar image. */
+  fallbackGlyph?: string;
   onClick?: () => void;
 }
 
@@ -15,12 +23,18 @@ interface FigmaCharacterCardProps {
  * with percentage positions and `cqw` (container-width) font sizes, so the whole
  * card scales as one unit at any width without drifting out of alignment.
  */
-export function FigmaCharacterCard({ onClick }: FigmaCharacterCardProps) {
+export function FigmaCharacterCard({
+  name,
+  rank,
+  avatarUrl,
+  fallbackGlyph = '🧝‍♀️',
+  onClick,
+}: CharacterCardProps) {
   return (
     <button
       type="button"
       onClick={onClick}
-      aria-label="Character: Cha Hae In SR"
+      aria-label={`Character: ${name}, ${rank}`}
       style={{
         position: 'relative',
         display: 'block',
@@ -43,7 +57,7 @@ export function FigmaCharacterCard({ onClick }: FigmaCharacterCardProps) {
         className="block w-full h-auto select-none pointer-events-none"
       />
 
-      {/* Avatar — gold-bordered rounded frame */}
+      {/* Avatar — rounded frame */}
       <span
         style={{
           position: 'absolute',
@@ -51,24 +65,34 @@ export function FigmaCharacterCard({ onClick }: FigmaCharacterCardProps) {
           top: '55%',
           transform: 'translateY(-50%)',
           width: '27%',
-          aspectRatio: '110 / 113',
+          aspectRatio: '110 / 103',
           borderRadius: '22%',
           overflow: 'hidden',
           background: '#1a0f2e',
+          border: '0.6cqw solid #F8D886',
           boxShadow: '0 0 1.5cqw rgba(248,216,134,0.3)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          fontSize: '12cqw',
+          lineHeight: 1,
         }}
       >
-        <Image
-          src="/figma/avatar-frame.png"
-          alt="Cha Hae In"
-          fill
-          sizes="60px"
-          className="object-cover"
-          style={{ objectPosition: 'top center' }}
-        />
+        {avatarUrl ? (
+          <Image
+            src={avatarUrl}
+            alt={name}
+            fill
+            sizes="60px"
+            className="object-cover"
+            style={{ objectPosition: 'top center' }}
+          />
+        ) : (
+          <span aria-hidden="true">{fallbackGlyph}</span>
+        )}
       </span>
 
-      {/* Identity block — SR + name, stacked */}
+      {/* Identity block — rank + name, stacked */}
       <span
         style={{
           position: 'absolute',
@@ -89,11 +113,15 @@ export function FigmaCharacterCard({ onClick }: FigmaCharacterCardProps) {
             fontSize: '4.2cqw',
             fontWeight: 700,
             lineHeight: 1,
-            letterSpacing: '0.08em',
+            letterSpacing: '0.06em',
             textShadow: '0 0 2cqw rgba(248,216,134,0.55)',
+            textTransform: 'uppercase',
+            whiteSpace: 'nowrap',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
           }}
         >
-          SR
+          {rank}
         </span>
         <span
           style={{
@@ -106,7 +134,7 @@ export function FigmaCharacterCard({ onClick }: FigmaCharacterCardProps) {
             textOverflow: 'ellipsis',
           }}
         >
-          Cha Hae In
+          {name}
         </span>
       </span>
 
@@ -117,7 +145,6 @@ export function FigmaCharacterCard({ onClick }: FigmaCharacterCardProps) {
           position: 'absolute',
           right: '10%',
           bottom: '0',
-          // transform: 'translateY(-50%)',
           width: '5.5%',
           opacity: 0.8,
         }}
