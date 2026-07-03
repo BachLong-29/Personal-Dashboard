@@ -338,26 +338,24 @@ export function useScheduleDayTasks({
             return habitToUITask(h, log, cancelled, selectedDate);
           });
 
-    const hasDayData = dayTaskItems.length > 0 || habitItemsForDay.length > 0;
-
-    const merged = hasDayData
-      ? [
-          ...apiMerged.filter((t) => {
-            // Replace day-placed tasks for this day. When preserveBacklog is set,
-            // backlog items (no startDate) are kept so they stay searchable.
-            if (
-              t.source === 'task' &&
-              t.day === selectedOffset &&
-              (!preserveBacklog || !!t.startDate)
-            )
-              return false;
-            if (!isViewingToday && t.source === 'habit') return false;
-            return true;
-          }),
-          ...dayTaskItems,
-          ...habitItemsForDay,
-        ]
-      : apiMerged;
+    // Always source the selected day's task items from the block-aware
+    // dayTaskItems. The raw apiMerged ledger is date-range based (multi-day
+    // active tasks are clamped to day 0), so falling back to it would bypass
+    // the requireBlock filtering and leak dated-but-unplanned tasks onto the
+    // selected day. When the day has no items, the filtered base already
+    // removes them and dayTaskItems/habitItemsForDay are empty.
+    const merged = [
+      ...apiMerged.filter((t) => {
+        // Replace day-placed tasks for this day. When preserveBacklog is set,
+        // backlog items (no startDate) are kept so they stay searchable.
+        if (t.source === 'task' && t.day === selectedOffset && (!preserveBacklog || !!t.startDate))
+          return false;
+        if (!isViewingToday && t.source === 'habit') return false;
+        return true;
+      }),
+      ...dayTaskItems,
+      ...habitItemsForDay,
+    ];
 
     startTransition(() => setTasks(merged));
     apiLoadedRef.current = true;

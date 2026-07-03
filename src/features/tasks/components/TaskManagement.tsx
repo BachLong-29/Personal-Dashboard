@@ -75,6 +75,9 @@ export function TaskManagement() {
     projectScope: 'all',
     dayTasksSource: 'client',
     preserveBacklog: false,
+    // Only surface tasks that have a planned session (schedule block) on the day —
+    // tasks with a start/end date but no session plan are hidden from the grid.
+    requireBlock: true,
     onEditHabit: () => {
       const locale = params?.locale ?? 'en';
       router.push(`/${locale}/dashboard?tab=habits`);
