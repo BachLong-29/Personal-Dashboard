@@ -95,7 +95,11 @@ export function TaskDayView({
   }
 
   // ── Tasks for selected date ─────────────────────────────────────────────────
-  const selectedTasks = tasks.filter((t) => t.day === selectedOffset);
+  // Backlog tasks (source 'task' with no startDate) default to day 0 in the
+  // adapter, so exclude them here — an unscheduled task belongs to no day.
+  const selectedTasks = tasks.filter(
+    (t) => t.day === selectedOffset && !(t.source === 'task' && !t.startDate),
+  );
   const done = selectedTasks.filter((t) => t.done).length;
   const pct = selectedTasks.length ? Math.round((done / selectedTasks.length) * 100) : 0;
 

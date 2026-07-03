@@ -48,7 +48,7 @@ export function ScheduleDayViewPanel({
     onEdit,
     onSaveEdit,
     onCloseEdit,
-  } = useScheduleDayTasks({ date, showQuests, showHabits });
+  } = useScheduleDayTasks({ date, showQuests, showHabits, requireBlock: true });
 
   // ── Create-modal + expand UI state ─────────────────────────────────────────
   const [showAddQuestModal, setShowAddQuestModal] = useState(false);

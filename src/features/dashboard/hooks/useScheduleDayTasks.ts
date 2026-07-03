@@ -52,6 +52,12 @@ interface UseScheduleDayTasksParams {
    * searchable; the dashboard schedule does not. Default `false`.
    */
   preserveBacklog?: boolean;
+  /**
+   * Only surface tasks that have a schedule *block* on the selected day. When
+   * `true`, day-assigned-but-untimed tasks (startDate only, no block) are hidden
+   * so the day view shows exclusively time-scheduled work. Default `false`.
+   */
+  requireBlock?: boolean;
   /** Invoked when {@link onEdit} is called for a habit-sourced item. */
   onEditHabit?: (task: UITask) => void;
 }
@@ -101,6 +107,7 @@ export function useScheduleDayTasks({
   projectScope = 'active',
   dayTasksSource = 'api',
   preserveBacklog = false,
+  requireBlock = false,
   onEditHabit,
 }: UseScheduleDayTasksParams): UseScheduleDayTasksResult {
   const todayStr = toLocalDate(new Date());
@@ -292,17 +299,18 @@ export function useScheduleDayTasks({
     //    to their full range. Once a task has sessions, it appears solely on the
     //    days those sessions land on (handled by blockItems below), so an in-range
     //    day with no session no longer shows the task.
-    const spanItems: UITask[] = isFetchingDayTasks
-      ? []
-      : apiTasksForDay
-          .filter((t) => !taskIdsWithBlock.has(t.id))
-          .map((t) => {
-            const log = apiTaskLogsForDay.find((l) => l.taskId === t.id);
-            const blockTime = blockMap.get(`${t.id}|${selectedDateStr}`)?.startTime;
-            const ui = taskToUITask(t, log, blockTime);
-            const done = ui.isMultiDay ? !!log || t.status === 'done' : t.status === 'done';
-            return withProject({ ...ui, day: selectedOffset, done });
-          });
+    const spanItems: UITask[] =
+      isFetchingDayTasks || requireBlock
+        ? []
+        : apiTasksForDay
+            .filter((t) => !taskIdsWithBlock.has(t.id))
+            .map((t) => {
+              const log = apiTaskLogsForDay.find((l) => l.taskId === t.id);
+              const blockTime = blockMap.get(`${t.id}|${selectedDateStr}`)?.startTime;
+              const ui = taskToUITask(t, log, blockTime);
+              const done = ui.isMultiDay ? !!log || t.status === 'done' : t.status === 'done';
+              return withProject({ ...ui, day: selectedOffset, done });
+            });
 
     // 2. Block-scheduled items: any task with a block on the selected day, placed
     //    at the block's time — even when its startDate is a different day.
@@ -370,6 +378,7 @@ export function useScheduleDayTasks({
     dayTaskBlocks,
     weekTaskBlocks,
     preserveBacklog,
+    requireBlock,
   ]);
 
   // ── Editing flow ───────────────────────────────────────────────────────────
@@ -542,7 +551,6 @@ export function useScheduleDayTasks({
     return { done, total, pct: total > 0 ? Math.round((done / total) * 100) : 0 };
   }, [visibleTasks, selectedOffset]);
 
-  console.log('visibleTasks', visibleTasks);
   return {
     tasks,
     visibleTasks,
