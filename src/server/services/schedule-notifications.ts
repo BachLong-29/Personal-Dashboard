@@ -27,8 +27,8 @@ function nowMinutes(): number {
 }
 
 function timeToMinutes(time: string): number {
-  const [h, m] = time.split(':').map(Number);
-  return h! * 60 + m!;
+  const [h = 0, m = 0] = time.split(':').map(Number);
+  return h * 60 + m;
 }
 
 /**

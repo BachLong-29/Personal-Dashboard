@@ -12,11 +12,11 @@ import type { TaskLog } from '@/types/task-log';
 
 function serialize(log: ITaskLog): TaskLog {
   return {
-    id:        log._id.toString(),
-    taskId:    log.taskId.toString(),
-    userId:    log.userId.toString(),
-    date:      log.date.toISOString().substring(0, 10),
-    note:      log.note,
+    id: log._id.toString(),
+    taskId: log.taskId.toString(),
+    userId: log.userId.toString(),
+    date: log.date.toISOString().substring(0, 10),
+    note: log.note,
     createdAt: log.createdAt.toISOString(),
     updatedAt: log.updatedAt.toISOString(),
   };
@@ -38,13 +38,13 @@ export const GET = asyncHandler(async (req: NextRequest) => {
 
   await connectDB();
 
-  const start = new Date(query!.date);
-  const end   = new Date(query!.date);
+  const start = new Date(query.date);
+  const end = new Date(query.date);
   end.setDate(end.getDate() + 1);
 
   const logs = await TaskLogModel.find({
     userId: user.sub,
-    date:   { $gte: start, $lt: end },
+    date: { $gte: start, $lt: end },
   });
 
   return successResponse(logs.map(serialize));
@@ -55,8 +55,8 @@ export const GET = asyncHandler(async (req: NextRequest) => {
 
 const toggleSchema = z.object({
   taskId: z.string().min(1),
-  date:   z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'date must be YYYY-MM-DD'),
-  note:   z.string().max(200).optional(),
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'date must be YYYY-MM-DD'),
+  note: z.string().max(200).optional(),
 });
 
 export const POST = asyncHandler(async (req: NextRequest) => {
@@ -69,13 +69,13 @@ export const POST = asyncHandler(async (req: NextRequest) => {
   await connectDB();
 
   const start = new Date(data.date);
-  const end   = new Date(data.date);
+  const end = new Date(data.date);
   end.setDate(end.getDate() + 1);
 
   const existing = await TaskLogModel.findOne({
     userId: user.sub,
     taskId: data.taskId,
-    date:   { $gte: start, $lt: end },
+    date: { $gte: start, $lt: end },
   });
 
   // Toggle: remove if exists, create if not
@@ -87,8 +87,8 @@ export const POST = asyncHandler(async (req: NextRequest) => {
   const log = await TaskLogModel.create({
     userId: user.sub,
     taskId: data.taskId,
-    date:   start,
-    note:   data.note,
+    date: start,
+    note: data.note,
   });
 
   return successResponse(serialize(log), 'Task log created');

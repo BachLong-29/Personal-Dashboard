@@ -43,3 +43,5 @@ next-env.d.ts
 # rules
 # /rules
 
+#mcp
+.mcp.json

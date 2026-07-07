@@ -55,6 +55,9 @@ export function Icon({
 
     if (shouldRenderAsImage) {
       return (
+        // Bundled icon asset sized to 1em and drawn inline like an emoji;
+        // next/image can't size to the font's em box, so a plain <img> is used.
+        // eslint-disable-next-line @next/next/no-img-element
         <img
           aria-hidden
           alt=""

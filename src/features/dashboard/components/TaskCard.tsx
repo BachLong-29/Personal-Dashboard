@@ -62,16 +62,16 @@ function formatTaskDate(startDate: string, endDate?: string): string {
 }
 
 function fmtTime12(hhmm: string): string {
-  const [h, m] = hhmm.split(':').map(Number);
-  const period = h! < 12 ? 'am' : 'pm';
-  const h12 = h! % 12 || 12;
+  const [h = 0, m = 0] = hhmm.split(':').map(Number);
+  const period = h < 12 ? 'am' : 'pm';
+  const h12 = h % 12 || 12;
   return `${h12}:${String(m).padStart(2, '0')}${period}`;
 }
 
 function timeRange(startTime: string, durationMin?: number): string {
   if (!durationMin) return fmtTime12(startTime);
-  const [h, m] = startTime.split(':').map(Number);
-  const totalEnd = Math.min(23 * 60 + 59, h! * 60 + m! + durationMin);
+  const [h = 0, m = 0] = startTime.split(':').map(Number);
+  const totalEnd = Math.min(23 * 60 + 59, h * 60 + m + durationMin);
   const endHH = String(Math.floor(totalEnd / 60)).padStart(2, '0');
   const endMM = String(totalEnd % 60).padStart(2, '0');
   return `${fmtTime12(startTime)} – ${fmtTime12(`${endHH}:${endMM}`)}`;

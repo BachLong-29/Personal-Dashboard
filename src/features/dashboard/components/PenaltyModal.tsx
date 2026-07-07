@@ -34,7 +34,7 @@ interface PenaltyEscalation {
 }
 
 function pickPenalty(seed: number): PenaltyTask {
-  return PENALTY_POOL[Math.abs(seed) % PENALTY_POOL.length] ?? PENALTY_POOL[0]!;
+  return PENALTY_POOL[Math.abs(seed) % PENALTY_POOL.length] ?? PENALTY_POOL[0];
 }
 
 function GlitchTitle({ text }: { text: string }) {
@@ -59,7 +59,9 @@ export function PenaltyModal({
   onFail,
 }: PenaltyModalProps) {
   const t = useTranslations('dashboard');
-  const escalation = PENALTY_ESCALATIONS[Math.min(tier - 1, PENALTY_ESCALATIONS.length - 1)]!;
+  const escalation =
+    PENALTY_ESCALATIONS[Math.min(tier - 1, PENALTY_ESCALATIONS.length - 1)] ??
+    PENALTY_ESCALATIONS[0];
 
   // Computed once on mount and kept stable — a plain value, not a ref read in render.
   const [penalty] = useState<PenaltyTask>(() => pickPenalty(unfinished.length + tier * 7));
@@ -244,7 +246,7 @@ export function PenaltyModal({
   );
 }
 
-const PENALTY_POOL: PenaltyTask[] = [
+const PENALTY_POOL: [PenaltyTask, ...PenaltyTask[]] = [
   {
     id: 'p_pushups',
     title: '30 PUSH-UPS',
@@ -277,7 +279,7 @@ const PENALTY_POOL: PenaltyTask[] = [
   },
 ];
 
-const PENALTY_ESCALATIONS: PenaltyEscalation[] = [
+const PENALTY_ESCALATIONS: [PenaltyEscalation, ...PenaltyEscalation[]] = [
   {
     tier: 1,
     label: 'TIER I',

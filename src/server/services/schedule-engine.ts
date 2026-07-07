@@ -13,8 +13,8 @@ const DOW_TO_HABIT_DAY: HabitDay[] = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 
 
 /** Parse "YYYY-MM-DD" to a local-midnight Date. */
 function parseDate(s: string): Date {
-  const [y, m, d] = s.split('-').map(Number);
-  return new Date(y!, (m ?? 1) - 1, d ?? 1, 0, 0, 0, 0);
+  const [y = 0, m = 1, d = 1] = s.split('-').map(Number);
+  return new Date(y, m - 1, d, 0, 0, 0, 0);
 }
 
 /** Stored Date → "YYYY-MM-DD" using local components. */
@@ -37,7 +37,7 @@ function eachDay(fromStr: string, toStr: string): Array<{ key: string; dow: Habi
   const cur = parseDate(fromStr);
   const end = parseDate(toStr);
   while (cur <= end) {
-    out.push({ key: toKey(cur), dow: DOW_TO_HABIT_DAY[cur.getDay()]! });
+    out.push({ key: toKey(cur), dow: DOW_TO_HABIT_DAY[cur.getDay()] ?? 'sun' });
     cur.setDate(cur.getDate() + 1);
   }
   return out;
@@ -45,8 +45,8 @@ function eachDay(fromStr: string, toStr: string): Array<{ key: string; dow: Habi
 
 /** "HH:MM" + minutes → "HH:MM" (clamped to 23:59). */
 function addMinutes(time: string, minutes: number): string {
-  const [h, m] = time.split(':').map(Number);
-  const total = Math.min(23 * 60 + 59, h! * 60 + m! + minutes);
+  const [h = 0, m = 0] = time.split(':').map(Number);
+  const total = Math.min(23 * 60 + 59, h * 60 + m + minutes);
   return `${String(Math.floor(total / 60)).padStart(2, '0')}:${String(total % 60).padStart(2, '0')}`;
 }
 
@@ -108,11 +108,12 @@ export async function buildCalendar(
   // Lookup maps
   const habitLogDone = new Map(habitLogs.map((l) => [`${l.habitId}:${toKey(l.date)}`, l.done]));
   // habit occurrences replaced by a reschedule task that day
-  const habitReplaced = new Set(
-    tasks
-      .filter((t) => t.habitRef && t.startDate)
-      .map((t) => `${t.habitRef!.toString()}:${toKey(t.startDate!)}`),
-  );
+  const habitReplaced = new Set<string>();
+  for (const t of tasks) {
+    if (t.habitRef && t.startDate) {
+      habitReplaced.add(`${t.habitRef.toString()}:${toKey(t.startDate)}`);
+    }
+  }
   const taskIdsWithBlock = new Set(taskBlockIds.map((id) => id.toString()));
   const questIdsWithBlock = new Set(questBlockIds.map((id) => id.toString()));
 

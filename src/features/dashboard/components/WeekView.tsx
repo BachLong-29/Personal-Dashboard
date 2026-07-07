@@ -305,11 +305,6 @@ export function WeekView({
               const taskUsageMinutes = getTaskUsageForDay(
                 dayTaskEntries.map((entry) => entry.block),
               );
-              console.log('[WeekView] taskUsageMinutes', {
-                dayStr,
-                taskUsageMinutes,
-                dayTaskEntries,
-              });
               const isToday = dayStr === todayStr;
               const dayNum = new Date(dayStr).getDate();
 
@@ -346,10 +341,6 @@ export function WeekView({
                   <div className={dayTaskList}>
                     {(() => {
                       const dow = DOW_TO_HABIT_DAY[new Date(dayStr).getDay()];
-                      console.log('[WeekView] dayTasks before render items', {
-                        dayStr,
-                        dayTaskEntries,
-                      });
 
                       const items: DayItem[] = [
                         ...dayTaskEntries.map(({ task, block, color }) => ({

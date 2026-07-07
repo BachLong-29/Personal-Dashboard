@@ -1395,7 +1395,8 @@ export function BingoView({ goals, streak, onCompleteGoal, onToggleMilestone }: 
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const ctx = canvas.getContext('2d')!;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
 
     const resize = () => {
       const dpr = Math.min(window.devicePixelRatio || 1, 2);
@@ -1441,7 +1442,7 @@ export function BingoView({ goals, streak, onCompleteGoal, onToggleMilestone }: 
           vy: Math.sin(a) * v - (upward ? rand(2, 5) : 0),
           g: gravity,
           size: rand(5, 11),
-          color: colors[Math.floor(Math.random() * colors.length)]!,
+          color: colors[Math.floor(Math.random() * colors.length)] ?? '#ffffff',
           rot: rand(0, Math.PI * 2),
           vrot: rand(-0.3, 0.3),
           shape: Math.random() < 0.45 ? 'rect' : Math.random() < 0.7 ? 'circle' : 'streamer',
@@ -1458,7 +1459,8 @@ export function BingoView({ goals, streak, onCompleteGoal, onToggleMilestone }: 
       runningRef.current = true;
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       for (let i = particlesRef.current.length - 1; i >= 0; i--) {
-        const p = particlesRef.current[i]!;
+        const p = particlesRef.current[i];
+        if (!p) continue;
         p.vy += p.g;
         p.vx *= 0.99;
         p.wob += p.wobs;
@@ -1526,7 +1528,10 @@ export function BingoView({ goals, streak, onCompleteGoal, onToggleMilestone }: 
               spread: Math.PI * 2,
               power: 13,
               gravity: 0.12,
-              colors: [FX_COLORS[Math.floor(Math.random() * FX_COLORS.length)]!, ...FX_COLORS],
+              colors: [
+                FX_COLORS[Math.floor(Math.random() * FX_COLORS.length)] ?? '#ffffff',
+                ...FX_COLORS,
+              ],
             });
           }, k * 260);
         }
@@ -1568,12 +1573,15 @@ export function BingoView({ goals, streak, onCompleteGoal, onToggleMilestone }: 
   /* ── detect newly completed goals ── */
   const prevCompletedIds = useRef<Set<string> | null>(null);
   useEffect(() => {
-    const cur = new Set(boardCells.filter((c) => c?.status === 'completed').map((c) => c!.id));
-    if (prevCompletedIds.current === null) {
+    const cur = new Set(
+      boardCells.filter((c): c is Goal => c?.status === 'completed').map((c) => c.id),
+    );
+    const prev = prevCompletedIds.current;
+    if (prev === null) {
       prevCompletedIds.current = cur;
       return;
     }
-    const newIds = [...cur].filter((id) => !prevCompletedIds.current!.has(id));
+    const newIds = [...cur].filter((id) => !prev.has(id));
     if (newIds.length > 0) {
       const goal = goals.find((g) => g.id === newIds[0]);
       if (goal) {
@@ -1587,9 +1595,10 @@ export function BingoView({ goals, streak, onCompleteGoal, onToggleMilestone }: 
           xp: goal.xp,
           coins: goal.coins,
         });
-        if (goal.linkedTrophy) {
+        const linkedTrophy = goal.linkedTrophy;
+        if (linkedTrophy) {
           setTimeout(
-            () => setAch({ name: goal.linkedTrophy!, reward: `+${goal.xp} XP · +${goal.coins} ◉` }),
+            () => setAch({ name: linkedTrophy, reward: `+${goal.xp} XP · +${goal.coins} ◉` }),
             650,
           );
         }
@@ -1610,8 +1619,10 @@ export function BingoView({ goals, streak, onCompleteGoal, onToggleMilestone }: 
       prevWonLineIds.current = new Set(wonLines.map((l) => l.id));
       return;
     }
-    const newLines = wonLines.filter((l) => !prevWonLineIds.current!.has(l.id));
-    if (newLines.length > 0) {
+    const prevWon = prevWonLineIds.current;
+    const newLines = wonLines.filter((l) => !prevWon.has(l.id));
+    const firstNewLine = newLines[0];
+    if (firstNewLine) {
       const flashCells = [...new Set(newLines.flatMap((l) => l.cells))];
       setTimeout(() => {
         setLineWinCells(flashCells);
@@ -1619,8 +1630,8 @@ export function BingoView({ goals, streak, onCompleteGoal, onToggleMilestone }: 
         fxRef.current?.fireworks(6);
         shake();
         setBingo({
-          line: newLines[0]!.label,
-          cheer: CHEERS[Math.floor(Math.random() * CHEERS.length)]!,
+          line: firstNewLine.label,
+          cheer: CHEERS[Math.floor(Math.random() * CHEERS.length)] ?? '',
         });
       }, 950);
     }

@@ -24,6 +24,6 @@ export const GET = asyncHandler(async (req: NextRequest) => {
 
   await connectDB();
 
-  const items = await buildCalendar(user.sub, query!.from, query!.to);
+  const items = await buildCalendar(user.sub, query.from, query.to);
   return successResponse(items);
 });

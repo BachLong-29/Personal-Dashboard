@@ -44,7 +44,7 @@ const CAT_BAR_STYLE: Record<string, string> = {
 };
 
 export function OverviewView({ allGoals, stats, trophies: _trophies, streak }: OverviewViewProps) {
-  const motiv = MOTIV_LINES[0]!;
+  const motiv = MOTIV_LINES[0];
 
   const statusOrder = ['not-started', 'in-progress', 'completed', 'archived'] as const;
   const statusCounts = statusOrder.map((s) => ({
@@ -62,7 +62,7 @@ export function OverviewView({ allGoals, stats, trophies: _trophies, streak }: O
   allGoals
     .filter((g) => g.status !== 'archived')
     .forEach((g) => {
-      const m = (g.completedDate ?? g.targetLabel).split(' ')[0]!;
+      const m = (g.completedDate ?? g.targetLabel).split(' ')[0] ?? '';
       (byMonth[m] = byMonth[m] ?? []).push(g);
     });
   const months = MONTH_ORDER.filter((m) => byMonth[m]);
@@ -76,7 +76,7 @@ export function OverviewView({ allGoals, stats, trophies: _trophies, streak }: O
   // Simple week dots (last streak days = lit)
   const todayIdx = new Date().getDay();
   const weekDots = [1, 2, 3, 4, 5, 6, 0].map((d, i) => ({
-    d: ['M', 'T', 'W', 'T', 'F', 'S', 'S'][i]!,
+    d: ['M', 'T', 'W', 'T', 'F', 'S', 'S'][i] ?? '',
     lit: streak > 0 && i >= Math.max(0, 7 - streak),
     today: d === todayIdx,
   }));
@@ -299,43 +299,46 @@ export function OverviewView({ allGoals, stats, trophies: _trophies, streak }: O
                 No goals to display
               </p>
             ) : (
-              months.map((m) => (
-                <div key={m}>
-                  <div className="flex items-center gap-2 mb-2">
-                    <span className="text-[10px] font-black text-[var(--text-hi)] font-[var(--font-title)] tracking-[0.06em]">
-                      {m}
-                    </span>
-                    <div className="flex-1 h-px bg-[var(--border)]" />
-                    <span className="text-[9px] text-[var(--text-lo)]">
-                      {byMonth[m]!.length} goal{byMonth[m]!.length > 1 ? 's' : ''}
-                    </span>
-                  </div>
-                  <div className="flex flex-col gap-2">
-                    {byMonth[m]!.map((g) => (
-                      <div
-                        key={g.id}
-                        className="flex items-center gap-2 px-2 py-1.5 bg-[var(--panel2)] rounded-[var(--r-sm)]"
-                      >
-                        <span className="text-[9px] text-[var(--text-lo)] shrink-0 font-[var(--font-title)]">
-                          {g.completedDate ?? g.targetLabel}
-                        </span>
-                        <span className="text-[10px] font-semibold text-[var(--text-hi)] flex-1 truncate">
-                          {g.title}
-                        </span>
-                        <div className="w-[40px] h-[3px] bg-[var(--panel)] rounded-full overflow-hidden shrink-0">
-                          <div
-                            className="h-full rounded-full bg-[var(--gold)] transition-[width] duration-500"
-                            style={{ width: `${g.progress * 100}%` }}
-                          />
+              months.map((m) => {
+                const goals = byMonth[m] ?? [];
+                return (
+                  <div key={m}>
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="text-[10px] font-black text-[var(--text-hi)] font-[var(--font-title)] tracking-[0.06em]">
+                        {m}
+                      </span>
+                      <div className="flex-1 h-px bg-[var(--border)]" />
+                      <span className="text-[9px] text-[var(--text-lo)]">
+                        {goals.length} goal{goals.length > 1 ? 's' : ''}
+                      </span>
+                    </div>
+                    <div className="flex flex-col gap-2">
+                      {goals.map((g) => (
+                        <div
+                          key={g.id}
+                          className="flex items-center gap-2 px-2 py-1.5 bg-[var(--panel2)] rounded-[var(--r-sm)]"
+                        >
+                          <span className="text-[9px] text-[var(--text-lo)] shrink-0 font-[var(--font-title)]">
+                            {g.completedDate ?? g.targetLabel}
+                          </span>
+                          <span className="text-[10px] font-semibold text-[var(--text-hi)] flex-1 truncate">
+                            {g.title}
+                          </span>
+                          <div className="w-[40px] h-[3px] bg-[var(--panel)] rounded-full overflow-hidden shrink-0">
+                            <div
+                              className="h-full rounded-full bg-[var(--gold)] transition-[width] duration-500"
+                              style={{ width: `${g.progress * 100}%` }}
+                            />
+                          </div>
+                          <span className="text-[9px] text-[var(--text-lo)] shrink-0">
+                            {g.status === 'completed' ? '✓' : `${Math.round(g.progress * 100)}%`}
+                          </span>
                         </div>
-                        <span className="text-[9px] text-[var(--text-lo)] shrink-0">
-                          {g.status === 'completed' ? '✓' : `${Math.round(g.progress * 100)}%`}
-                        </span>
-                      </div>
-                    ))}
+                      ))}
+                    </div>
                   </div>
-                </div>
-              ))
+                );
+              })
             )}
           </div>
         </div>

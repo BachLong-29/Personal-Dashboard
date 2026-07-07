@@ -14,13 +14,18 @@ interface TrophiesViewProps {
 
 type TrophyFilter = 'all' | 'unlocked' | 'locked';
 
-const TIER_LABEL: Record<string, string> = { bronze: 'Bronze', silver: 'Silver', gold: 'Gold', legendary: 'Legendary' };
+const TIER_LABEL: Record<string, string> = {
+  bronze: 'Bronze',
+  silver: 'Silver',
+  gold: 'Gold',
+  legendary: 'Legendary',
+};
 
 export function TrophiesView({ trophies, stats }: TrophiesViewProps) {
   const [filter, setFilter] = useState<TrophyFilter>('all');
 
   const recent = trophies.filter((t) => t.recent).slice(0, 3);
-  const shown   = trophies.filter((t) =>
+  const shown = trophies.filter((t) =>
     filter === 'all' ? true : filter === 'unlocked' ? t.unlocked : !t.unlocked,
   );
 
@@ -43,9 +48,15 @@ export function TrophiesView({ trophies, stats }: TrophiesViewProps) {
                 {t.icon}
               </div>
               <div className="flex-1 min-w-0">
-                <div className="text-[8px] text-[var(--gold)] tracking-[0.12em] uppercase font-[var(--font-title)]">✦ RECENTLY EARNED</div>
-                <div className="text-[12px] font-bold text-[var(--text-hi)] font-[var(--font-title)] tracking-[0.03em] truncate">{t.name}</div>
-                <div className="text-[9px] text-[var(--text-lo)]">{t.date} · {t.reward}</div>
+                <div className="text-[8px] text-[var(--gold)] tracking-[0.12em] uppercase font-[var(--font-title)]">
+                  ✦ RECENTLY EARNED
+                </div>
+                <div className="text-[12px] font-bold text-[var(--text-hi)] font-[var(--font-title)] tracking-[0.03em] truncate">
+                  {t.name}
+                </div>
+                <div className="text-[9px] text-[var(--text-lo)]">
+                  {t.date} · {t.reward}
+                </div>
               </div>
             </div>
           ))}
@@ -54,22 +65,53 @@ export function TrophiesView({ trophies, stats }: TrophiesViewProps) {
 
       {/* Stat strip */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-3">
-        <StatCard tone="gold"   ico="🏆" label="Unlocked"  value={stats.trophies}     suffix={`/${stats.totalTrophies}`} sub="trophies earned" />
-        <StatCard tone="violet" ico="♛" label="Legendary" value={tierCounts[0]!.n}   sub="rarest tier" />
-        <StatCard tone="mint"   ico="✧" label="In Reach"  value={stats.lockedTrophies} sub="locked & tracking" />
-        <StatCard tone="cyan"   ico="◈" label="Collected" value={Math.round((stats.trophies / (stats.totalTrophies || 1)) * 100)} suffix="%" sub="of all glory" />
+        <StatCard
+          tone="gold"
+          ico="🏆"
+          label="Unlocked"
+          value={stats.trophies}
+          suffix={`/${stats.totalTrophies}`}
+          sub="trophies earned"
+        />
+        <StatCard
+          tone="violet"
+          ico="♛"
+          label="Legendary"
+          value={tierCounts[0]?.n ?? 0}
+          sub="rarest tier"
+        />
+        <StatCard
+          tone="mint"
+          ico="✧"
+          label="In Reach"
+          value={stats.lockedTrophies}
+          sub="locked & tracking"
+        />
+        <StatCard
+          tone="cyan"
+          ico="◈"
+          label="Collected"
+          value={Math.round((stats.trophies / (stats.totalTrophies || 1)) * 100)}
+          suffix="%"
+          sub="of all glory"
+        />
       </div>
 
       {/* Header + filter */}
       <div className="flex flex-wrap items-center gap-2 sm:gap-3">
         <div className="flex items-center gap-2 flex-1 min-w-0">
           <span className="font-[var(--font-title)] text-[var(--gold)] text-[12px]">★</span>
-          <span className="font-[var(--font-title)] text-[13px] font-bold text-[var(--text-hi)] tracking-[0.04em]">Trophy Hall</span>
+          <span className="font-[var(--font-title)] text-[13px] font-bold text-[var(--text-hi)] tracking-[0.04em]">
+            Trophy Hall
+          </span>
         </div>
         {/* Tier legend */}
         <div className="hidden sm:flex items-center gap-3">
           {tierCounts.map(({ tier, n }) => (
-            <span key={tier} className="text-[9px] text-[var(--text-lo)] font-[var(--font-title)] tracking-[0.06em]">
+            <span
+              key={tier}
+              className="text-[9px] text-[var(--text-lo)] font-[var(--font-title)] tracking-[0.06em]"
+            >
               {TIER_LABEL[tier]} <span className="text-[var(--text-mid)] font-bold">{n}</span>
             </span>
           ))}

@@ -29,6 +29,13 @@ const eslintConfig = defineConfig([
       'no-var': 'error',
     },
   },
+  {
+    // CLI/build scripts: console output is their intended interface.
+    files: ['scripts/**'],
+    rules: {
+      'no-console': 'off',
+    },
+  },
 ]);
 
 export default eslintConfig;

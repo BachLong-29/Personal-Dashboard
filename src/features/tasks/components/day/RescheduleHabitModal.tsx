@@ -17,7 +17,7 @@ interface SlotPreset {
   color: string;
 }
 
-const SLOT_PRESETS: SlotPreset[] = [
+const SLOT_PRESETS: [SlotPreset, SlotPreset, SlotPreset, ...SlotPreset[]] = [
   { slot: 'morning', glyph: '◐', label: 'Dawn', time: '07:00', color: 'oklch(0.74 0.17 85)' },
   { slot: 'deep', glyph: '❖', label: 'Deep Work', time: '10:00', color: 'oklch(0.66 0.22 295)' },
   {
@@ -49,7 +49,7 @@ export function RescheduleHabitModal({
 }: RescheduleHabitModalProps) {
   const currentTime = task.startTime ?? '';
 
-  const defaultPreset = SLOT_PRESETS.find((p) => p.time !== currentTime) ?? SLOT_PRESETS[2]!;
+  const defaultPreset = SLOT_PRESETS.find((p) => p.time !== currentTime) ?? SLOT_PRESETS[2];
 
   const [selectedTime, setSelectedTime] = useState(defaultPreset.time);
   const [customTime, setCustomTime] = useState('');

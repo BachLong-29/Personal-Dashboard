@@ -30,8 +30,8 @@ export const GET = asyncHandler(async (req: NextRequest) => {
   const setting = await UserSettingModel.findOne({ userId: user.sub }).lean();
   const sched = setting?.schedule ?? DEFAULT_SCHEDULE_SETTINGS;
 
-  const items = await buildCalendar(user.sub, query!.from, query!.to);
-  const dateKeys = dateKeysBetween(query!.from, query!.to);
+  const items = await buildCalendar(user.sub, query.from, query.to);
+  const dateKeys = dateKeysBetween(query.from, query.to);
 
   const insights: CalendarInsights = {
     conflicts: detectConflicts(items, sched.minBreakMinutes ?? 15),

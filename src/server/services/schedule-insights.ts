@@ -1,15 +1,18 @@
 import type { CalendarItem } from '@/types/calendar';
 import type { CapacityStatus, DayCapacity, ScheduleConflict } from '@/types/calendar-insights';
 
+/** A calendar item guaranteed to have a concrete start time. */
+type TimedItem = CalendarItem & { startTime: string };
+
 /** "HH:MM" → minutes since midnight. */
 function toMinutes(time: string): number {
-  const [h, m] = time.split(':').map(Number);
-  return h! * 60 + m!;
+  const [h = 0, m = 0] = time.split(':').map(Number);
+  return h * 60 + m;
 }
 
 /** Items that participate in time-based checks (have a real start time + duration). */
-function timedItems(items: CalendarItem[]): CalendarItem[] {
-  return items.filter((i) => i.startTime !== null && i.duration > 0);
+function timedItems(items: CalendarItem[]): TimedItem[] {
+  return items.filter((i): i is TimedItem => i.startTime !== null && i.duration > 0);
 }
 
 /**
@@ -23,7 +26,7 @@ export function detectConflicts(
   const conflicts: ScheduleConflict[] = [];
 
   // Group by date
-  const byDate = new Map<string, CalendarItem[]>();
+  const byDate = new Map<string, TimedItem[]>();
   for (const item of timedItems(items)) {
     const list = byDate.get(item.date) ?? [];
     list.push(item);
@@ -31,15 +34,17 @@ export function detectConflicts(
   }
 
   for (const [date, list] of byDate) {
-    const sorted = [...list].sort((a, b) => toMinutes(a.startTime!) - toMinutes(b.startTime!));
+    const sorted = [...list].sort((a, b) => toMinutes(a.startTime) - toMinutes(b.startTime));
     for (let i = 0; i < sorted.length - 1; i++) {
-      const a = sorted[i]!;
-      const aStart = toMinutes(a.startTime!);
+      const a = sorted[i];
+      if (!a) continue;
+      const aStart = toMinutes(a.startTime);
       const aEnd = aStart + a.duration;
 
       for (let j = i + 1; j < sorted.length; j++) {
-        const b = sorted[j]!;
-        const bStart = toMinutes(b.startTime!);
+        const b = sorted[j];
+        if (!b) continue;
+        const bStart = toMinutes(b.startTime);
         if (bStart >= aEnd) {
           // b starts after a ends → measure the gap (soft conflict candidate)
           const gap = bStart - aEnd;
@@ -64,12 +69,12 @@ export function detectConflicts(
   return conflicts;
 }
 
-function endpoint(i: CalendarItem) {
+function endpoint(i: TimedItem) {
   return {
     id: i.id,
     title: i.title,
-    startTime: i.startTime!,
-    endTime: i.endTime ?? i.startTime!,
+    startTime: i.startTime,
+    endTime: i.endTime ?? i.startTime,
   };
 }
 

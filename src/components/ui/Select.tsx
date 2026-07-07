@@ -209,6 +209,7 @@ export function Select({
         <button
           id={selectId}
           type="button"
+          role="combobox"
           disabled={disabled}
           aria-haspopup="listbox"
           aria-expanded={open}
