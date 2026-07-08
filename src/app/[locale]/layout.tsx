@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from 'next';
-import { Geist, Geist_Mono } from 'next/font/google';
+import { Geist, Geist_Mono, IM_Fell_English_SC } from 'next/font/google';
 import localFont from 'next/font/local';
 import { NextIntlClientProvider } from 'next-intl';
 import { getMessages } from 'next-intl/server';
@@ -18,6 +18,12 @@ const geistMono = Geist_Mono({ subsets: ['latin'], variable: '--font-geist-mono'
 const bento = localFont({
   src: '../../../public/fonts/Bento.ttf',
   variable: '--font-bento',
+  display: 'swap',
+});
+const fell = IM_Fell_English_SC({
+  subsets: ['latin'],
+  weight: '400',
+  variable: '--font-fell',
   display: 'swap',
 });
 
@@ -76,7 +82,7 @@ export default async function LocaleLayout({
       suppressHydrationWarning
     >
       <body
-        className={`${geistSans.variable} ${geistMono.variable} ${bento.variable} min-h-screen bg-background font-sans antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} ${bento.variable} ${fell.variable} min-h-screen bg-background font-sans antialiased`}
       >
         <NextIntlClientProvider messages={messages}>
           <Providers>{children}</Providers>

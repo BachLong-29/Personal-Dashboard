@@ -282,7 +282,7 @@ export function WeekView({
           className={navBtn}
           onClick={() => onWeekChange(addDays(weekStart, -7))}
         >
-          ‹
+          <Icon icon="ArrowLeft" className="text-[14px]" />
         </button>
         <span className={navLabel}>{formatWeekRange(weekStart)}</span>
         <button
@@ -290,7 +290,7 @@ export function WeekView({
           className={navBtn}
           onClick={() => onWeekChange(addDays(weekStart, 7))}
         >
-          ›
+          <Icon icon="ArrowRight" className="text-[14px]" />
         </button>
       </div>
 

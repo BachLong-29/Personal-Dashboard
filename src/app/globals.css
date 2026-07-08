@@ -62,6 +62,7 @@
   --gold: rgb(234, 171, 5);
   --gold-2: oklch(0.68 0.14 82);
   --gold-glow: oklch(0.78 0.16 82 / 0.35);
+  --gold-border: #574f3e;
   --violet: oklch(0.68 0.22 295);
   --violet-2: oklch(0.55 0.2 295);
   --violet-glow: oklch(0.68 0.22 295 / 0.35);
@@ -194,6 +195,7 @@
   --color-gold: var(--gold);
   --color-gold-2: var(--gold-2);
   --color-gold-glow: var(--gold-glow);
+  --color-gold-border: var(--gold-border);
   --color-violet: var(--violet);
   --color-violet-2: var(--violet-2);
   --color-violet-glow: var(--violet-glow);

@@ -3,6 +3,7 @@
 import { useMemo } from 'react';
 import { useTranslations } from 'next-intl';
 
+import { GoldPanel } from '@/components/common/GoldPanel';
 import { Icon } from '@/components/common/Icon';
 import { cn } from '@/libs/utils';
 import { Link } from '@/i18n/navigation';
@@ -47,7 +48,7 @@ export function AchievementsPanel() {
   }, [goals]);
 
   return (
-    <div className={cn(panelBase, panelGold)}>
+    <GoldPanel>
       <div className={panelHeader}>
         <span className={panelHeaderTitle}>{t('achievements')}</span>
         <Link
@@ -77,14 +78,9 @@ export function AchievementsPanel() {
               </div>
             ))}
       </div>
-    </div>
+    </GoldPanel>
   );
 }
-
-const panelBase =
-  "bg-[var(--panel)] border border-[var(--border)] rounded-[var(--r)] overflow-hidden relative before:content-[''] before:absolute before:inset-0 before:pointer-events-none before:rounded-[inherit] before:[background-image:repeating-linear-gradient(0deg,transparent,transparent_28px,oklch(1_0_0_/_0.012)_28px,oklch(1_0_0_/_0.012)_29px),repeating-linear-gradient(90deg,transparent,transparent_28px,oklch(1_0_0_/_0.012)_28px,oklch(1_0_0_/_0.012)_29px)]";
-const panelGold =
-  'border-[oklch(0.74_0.17_85_/_0.35)] shadow-[0_0_20px_oklch(0.74_0.17_85_/_0.06),inset_0_0_20px_oklch(0.74_0.17_85_/_0.03)]';
 
 const panelHeader =
   'flex items-center gap-2 px-[14px] pt-[10px] pb-[8px] border-b border-[var(--border)]';

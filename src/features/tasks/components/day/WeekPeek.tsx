@@ -17,6 +17,8 @@ interface WeekPeekProps {
   tasks: UITask[];
   /** Task schedule blocks for the visible week — drives session-aware placement. */
   taskBlocks?: ScheduleBlock[];
+  /** Render without the built-in panel shell (bg/border) — e.g. when wrapped by an outer panel. */
+  bare?: boolean;
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -35,7 +37,7 @@ function dateLabel(offsetDays: number, locale: string): string {
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-export function WeekPeek({ tasks, taskBlocks = [] }: WeekPeekProps) {
+export function WeekPeek({ tasks, taskBlocks = [], bare = false }: WeekPeekProps) {
   const locale = useLocale();
   const t = useTranslations('tasks.weekPeek');
   /**
@@ -56,7 +58,7 @@ export function WeekPeek({ tasks, taskBlocks = [] }: WeekPeekProps) {
   const sessions = useMemo(() => buildTaskSessions(taskBlocks), [taskBlocks]);
 
   return (
-    <div className={sidePanel}>
+    <div className={bare ? 'p-3' : sidePanel}>
       <div className={panelHead}>
         <span className={panelEyebrow}>{t('eyebrow')}</span>
         <h3 className={panelTitle}>{t('title')}</h3>

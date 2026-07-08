@@ -1,13 +1,22 @@
 'use client';
 
-import { useTranslations } from 'next-intl';
+import { useRef, useState } from 'react';
+import { useLocale, useTranslations } from 'next-intl';
 
+import Image from 'next/image';
+
+import subBg from '@/assets/images/Sub_BG.png';
+import { GoldPanel } from '@/components/common/GoldPanel';
 import { Icon } from '@/components/common/Icon';
 import type { Character, DashboardSettings } from '../types';
-import { Link } from '@/i18n/navigation';
 import { cn } from '@/libs/utils';
+import { locales, localeLabels, type Locale } from '@/i18n/config';
+import { Link, usePathname, useRouter } from '@/i18n/navigation';
 import { useProfile } from '@/features/profile/hooks/useProfile';
-import { findClass, findCompanion, findRank } from '@/constants/hero-data';
+import { useAuthStore } from '@/features/auth/stores/auth.store';
+import { useLogout } from '@/features/auth/hooks/useLogout';
+import { useOnClickOutside } from '@/hooks/useOnClickOutside';
+import { findClass, findCompanion } from '@/constants/hero-data';
 import type { HeroStats } from '@/types/profile';
 
 interface CharacterPanelProps {
@@ -26,16 +35,32 @@ const STAT_CONFIG: { key: string; field: keyof HeroStats; color: string }[] = [
 export function CharacterPanel({ char, settings }: CharacterPanelProps) {
   const tNav = useTranslations('nav');
   const tCommon = useTranslations('common');
+  const tDash = useTranslations('dashboard');
   const { data: profileData } = useProfile();
 
   const profile = profileData?.profile;
+  const avatar = useAuthStore((s) => s.user?.avatar);
+  const logout = useLogout();
+
+  const locale = useLocale() as Locale;
+  const router = useRouter();
+  const pathname = usePathname();
+
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+  useOnClickOutside(menuRef, () => setMenuOpen(false));
+
+  const handleToggleLocale = () => {
+    const currentIndex = locales.indexOf(locale);
+    const nextLocale = locales[(currentIndex + 1) % locales.length] ?? locales[0];
+    router.replace(pathname, { locale: nextLocale });
+  };
 
   const xpPct = (char.xp / char.xpNext) * 100;
   const displayName = profile?.heroName || settings.characterName || char.name;
   const displayTitle = profile?.title || char.title;
   const heroClass = profile ? findClass(profile.classId) : null;
   const companion = profile ? findCompanion(profile.companionId) : null;
-  const rank = findRank(char.level);
 
   const statPool = profile?.statPool ?? 30;
   const heroStats = STAT_CONFIG.map((s) => ({
@@ -46,24 +71,107 @@ export function CharacterPanel({ char, settings }: CharacterPanelProps) {
   }));
 
   return (
-    <div className={cn(panelBase, panelGold, 'shrink-0')}>
-      <div className={cornerTL} />
-      <div className={cornerTR} />
-      <div className={cornerBL} />
-      <div className={cornerBR} />
+    <GoldPanel className="shrink-0">
       <div className={panelHeader}>
         <span className={profileLabel}>{tNav('profile')}</span>
         <span className="flex-1" />
-        <span className={levelLabel}>Lv.{char.level}</span>
+        <div ref={menuRef} className="relative">
+          <button
+            type="button"
+            className={cn(levelLabel, levelTrigger)}
+            onClick={() => setMenuOpen((v) => !v)}
+            aria-haspopup="menu"
+            aria-expanded={menuOpen}
+          >
+            <Icon
+              icon="CardChevron"
+              useMappedColor={false}
+              className="text-[14px] -scale-y-100 transition-transform duration-200"
+            />
+          </button>
+          {menuOpen && (
+            <div className={menuDropdown} role="menu">
+              <Link
+                href="/profile"
+                className={menuItem}
+                role="menuitem"
+                onClick={() => setMenuOpen(false)}
+              >
+                <span className="text-[var(--gold)]">✦</span>
+                <span>
+                  {tCommon('edit')} {tNav('profile')}
+                </span>
+              </Link>
+              <Link
+                href="/tasks"
+                className={menuItem}
+                role="menuitem"
+                onClick={() => setMenuOpen(false)}
+              >
+                <Icon icon="📋" />
+                <span>{tDash('questLog')}</span>
+              </Link>
+              <Link
+                href="/projects"
+                className={menuItem}
+                role="menuitem"
+                onClick={() => setMenuOpen(false)}
+              >
+                <Icon icon="🚀" />
+                <span>{tNav('projects')}</span>
+              </Link>
+              <Link
+                href="/marketplace"
+                className={cn(menuItem, 'text-[var(--violet)]')}
+                role="menuitem"
+                onClick={() => setMenuOpen(false)}
+              >
+                <Icon icon="🛍" />
+                <span>{tNav('marketplace')}</span>
+              </Link>
+              <div className="h-px bg-[var(--border)] my-1" />
+              <button
+                type="button"
+                className={cn(menuItem, 'w-full text-left')}
+                role="menuitem"
+                onClick={() => {
+                  handleToggleLocale();
+                  setMenuOpen(false);
+                }}
+              >
+                <Icon icon="🌐" />
+                <span>{localeLabels[locale]}</span>
+                <span className="ml-auto text-[9px] opacity-50">↺</span>
+              </button>
+              <div className="h-px bg-[var(--border)] my-1" />
+              <button
+                type="button"
+                className={cn(menuItem, 'w-full text-left text-[var(--rose)]')}
+                role="menuitem"
+                onClick={() => {
+                  logout();
+                  setMenuOpen(false);
+                }}
+              >
+                <span>⏻</span>
+                <span>Logout</span>
+              </button>
+            </div>
+          )}
+        </div>
       </div>
       <div className={avatarWrap}>
         <div className={halo} />
         <div className={avatarRing}>
           <div className={avatarInner}>
-            <Icon useMappedColor icon={companion?.glyph ?? '🧝‍♀️'} />
+            {avatar ? (
+              <Image src={avatar} alt="Avatar" fill sizes="156px" className="object-cover" />
+            ) : (
+              <Icon useMappedColor icon={companion?.glyph ?? '🧝‍♀️'} />
+            )}
           </div>
-          <div className={rankBadge}>{rank.name[0]?.toUpperCase() ?? char.rank}</div>
         </div>
+        <Image src={subBg} alt="" aria-hidden width={50} height={29} className={avatarBase} />
       </div>
       <div className={charName}>{displayName}</div>
       <div className={charTitleLine}>◆ {displayTitle} ◆</div>
@@ -109,48 +217,37 @@ export function CharacterPanel({ char, settings }: CharacterPanelProps) {
           </div>
         ))}
       </div>
-      <div className="px-[14px] pb-[14px]">
-        <Link href="/profile" className={editProfileBtn}>
-          ✦ {tCommon('edit')} {tNav('profile')}
-        </Link>
-      </div>
-    </div>
+    </GoldPanel>
   );
 }
-
-const panelBase =
-  "bg-[var(--panel)] border border-[var(--border)] rounded-[var(--r)] overflow-hidden relative before:content-[''] before:absolute before:inset-0 before:pointer-events-none before:rounded-[inherit] before:[background-image:repeating-linear-gradient(0deg,transparent,transparent_28px,oklch(1_0_0_/_0.012)_28px,oklch(1_0_0_/_0.012)_29px),repeating-linear-gradient(90deg,transparent,transparent_28px,oklch(1_0_0_/_0.012)_28px,oklch(1_0_0_/_0.012)_29px)]";
-
-const panelGold =
-  'border-[oklch(0.74_0.17_85_/_0.35)] shadow-[0_0_20px_oklch(0.74_0.17_85_/_0.06),inset_0_0_20px_oklch(0.74_0.17_85_/_0.03)]';
 
 const panelHeader =
   'flex items-center gap-2 px-[14px] pt-[10px] pb-[8px] border-b border-[var(--border)]';
 
-const cornerBase = 'absolute w-3 h-3 pointer-events-none border-[var(--gold-dim)]';
-const cornerTL = cn(cornerBase, 'top-[5px] left-[5px] border-t-[1.5px] border-l-[1.5px]');
-const cornerTR = cn(cornerBase, 'top-[5px] right-[5px] border-t-[1.5px] border-r-[1.5px]');
-const cornerBL = cn(cornerBase, 'bottom-[5px] left-[5px] border-b-[1.5px] border-l-[1.5px]');
-const cornerBR = cn(cornerBase, 'bottom-[5px] right-[5px] border-b-[1.5px] border-r-[1.5px]');
-
 const profileLabel =
   'text-[9px] text-[var(--gold)] font-[var(--font-title)] font-bold tracking-[0.15em]';
 const levelLabel = 'text-[10px] text-[var(--text-mid)]';
+const levelTrigger =
+  'flex items-center gap-1 cursor-pointer hover:text-[var(--gold)] transition-[color,filter] duration-200 focus:outline-none hover:[filter:drop-shadow(0_0_5px_var(--gold-border))_drop-shadow(0_0_12px_var(--gold-glow))]';
+const menuDropdown =
+  'absolute top-[calc(100%+6px)] right-0 z-50 min-w-[168px] bg-[var(--panel)] border border-[oklch(0.74_0.17_85_/_0.35)] rounded-[var(--r-sm)] shadow-[0_8px_24px_oklch(0_0_0_/_0.45)] overflow-hidden py-1';
+const menuItem =
+  'flex items-center gap-2 px-3 py-2 text-[11px] font-semibold text-[var(--text-hi)] font-[var(--font-title)] tracking-[0.04em] no-underline transition-colors duration-150 hover:bg-[var(--panel2)] cursor-pointer';
 
 const avatarWrap = 'relative flex justify-center px-4 pt-4 pb-2';
+const avatarBase =
+  'absolute -bottom-1 left-1/2 -translate-x-1/2 z-10 w-[50px] h-auto pointer-events-none select-none';
 const halo =
-  'absolute w-[110px] h-[110px] rounded-full bg-[radial-gradient(circle,var(--violet-glow)_0%,transparent_70%)] top-2 left-1/2 -translate-x-1/2 pointer-events-none';
+  'absolute w-[184px] h-[184px] rounded-full bg-[radial-gradient(circle,var(--violet-glow)_0%,transparent_70%)] top-2 left-1/2 -translate-x-1/2 pointer-events-none';
 const avatarRing =
-  'relative w-[88px] h-[88px] rounded-full bg-[linear-gradient(135deg,var(--gold),var(--violet),var(--gold))] p-0.5 shadow-[0_0_24px_var(--gold-glow),0_0_48px_var(--violet-glow)]';
+  'relative w-[156px] h-[156px] rounded-[40%] bg-[linear-gradient(135deg,var(--gold),var(--violet),var(--gold))] p-0.5 shadow-[0_0_24px_var(--gold-glow),0_0_48px_var(--violet-glow)]';
 const avatarInner =
-  'w-full h-full rounded-full bg-[var(--panel2)] flex items-center justify-center overflow-hidden text-[36px]';
-const rankBadge =
-  'absolute -bottom-[2px] -right-[2px] w-6 h-6 bg-[linear-gradient(135deg,var(--gold),#b45309)] rounded-[6px] flex items-center justify-center font-[var(--font-title)] text-[11px] font-black text-[#0a0400] border-[1.5px] border-[var(--panel)] shadow-[0_0_10px_var(--gold-glow)]';
+  'relative w-full h-full rounded-[40%] bg-[var(--panel2)] flex items-center justify-center overflow-hidden text-[64px]';
 
 const charName =
-  'font-[var(--font-title)] text-[13px] font-bold text-[var(--text-hi)] text-center px-3 pb-0.5 tracking-[0.05em]';
+  'font-[family-name:var(--font-bento)] text-[22px] tracking-[0.06em] bg-gradient-to-r from-[var(--gold)] to-[var(--violet)] bg-clip-text text-transparent text-center px-3 pb-0.5 truncate';
 const charTitleLine =
-  'text-[10px] text-[var(--violet)] text-center tracking-[0.1em] pb-2 font-medium';
+  'font-[family-name:var(--font-fell)] text-[13px] text-[var(--violet)] text-center tracking-[0.08em] pb-2 font-medium';
 
 const metaWrap = 'flex justify-center gap-3 px-3 pb-2.5';
 const metaItem = 'text-center';
@@ -176,6 +273,3 @@ const statTrack =
 const statFill =
   'h-full rounded-[3px] transition-[width] duration-[600ms] ease-[ease] shadow-[0_0_6px_currentColor]';
 const statVal = 'text-[9px] font-bold text-[var(--text-mid)] w-[22px] text-right shrink-0';
-
-const editProfileBtn =
-  'flex items-center justify-center gap-1.5 w-full py-[7px] rounded-[var(--r-sm)] border border-[oklch(0.74_0.17_85_/_0.35)] text-[var(--gold)] font-[var(--font-title)] text-[10px] tracking-[0.12em] font-bold no-underline transition-all duration-200 hover:bg-[oklch(0.74_0.17_85_/_0.08)] hover:border-[oklch(0.74_0.17_85_/_0.6)]';

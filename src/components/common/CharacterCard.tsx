@@ -34,7 +34,7 @@ function splitName(name: string): [string, string] {
   return [name.slice(0, splitAt).trimEnd(), name.slice(splitAt).trimStart()];
 }
 
-export function FigmaCharacterCard({
+export function CharacterCard({
   name,
   rank,
   avatarUrl,
@@ -166,13 +166,15 @@ export function FigmaCharacterCard({
         aria-hidden="true"
         style={{
           position: 'absolute',
-          right: '12%',
-          top: '42%',
+          right: '5%',
+          top: '50%',
           width: '5.5%',
           opacity: 0.8,
+          filter:
+            'drop-shadow(0 0 0.6cqw rgba(248,216,134,0.6)) drop-shadow(0 0 1.4cqw rgba(248,216,134,0.35))',
         }}
       >
-        <Icon icon="chevron" className="w-[28px] h-[28px] text-[#F8D886]" />
+        <Icon icon="chevron" className="w-[10px] h-[10px] text-[#F8D886]" />
       </span>
     </button>
   );

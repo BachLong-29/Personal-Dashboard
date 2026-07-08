@@ -124,13 +124,13 @@ export function MonthView({
       {/* Navigation */}
       <div className={navRow}>
         <button type="button" className={navBtn} onClick={prevMonth}>
-          ‹
+          <Icon icon="ArrowLeft" className="text-[14px]" />
         </button>
         <span className={navLabel}>
           {MONTH_NAMES[month]} {year}
         </span>
         <button type="button" className={navBtn} onClick={nextMonth}>
-          ›
+          <Icon icon="ArrowRight" className="text-[14px]" />
         </button>
       </div>
 
