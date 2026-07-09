@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 
-import DashboardTopbar from '@/features/dashboard/components/DashboardTopbar';
+import DashboardTopbar from '@/features/dashboard/components/layout/DashboardTopbar';
 import { useProfile } from '@/features/profile/hooks/useProfile';
 import { buildEmptyChar, profileToCharacter } from '@/features/dashboard/utils/character.utils';
 import type { Character } from '@/features/dashboard/types';

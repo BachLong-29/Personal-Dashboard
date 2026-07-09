@@ -5,7 +5,7 @@ import { useQueryClient } from '@tanstack/react-query';
 
 import { CoinIcon } from '@/components/common/CoinIcon';
 import { Icon } from '@/components/common/Icon';
-import DashboardTopbar from '@/features/dashboard/components/DashboardTopbar';
+import DashboardTopbar from '@/features/dashboard/components/layout/DashboardTopbar';
 import { useProfile } from '@/features/profile/hooks/useProfile';
 import { buildEmptyChar, profileToCharacter } from '@/features/dashboard/utils/character.utils';
 import { useUpdateTask } from '@/features/dashboard/hooks/useUpdateTask';

@@ -10,8 +10,8 @@ import { useScheduleDayTasks } from '@/features/dashboard/hooks/useScheduleDayTa
 import { useCategories } from '@/features/dashboard/hooks/useCategories';
 import type { Character } from '@/features/dashboard/types';
 import type { TaskColor } from '@/types';
-import DashboardTopbar from '@/features/dashboard/components/DashboardTopbar';
-import { AddQuestModal } from '@/features/dashboard/components/AddQuestModal';
+import DashboardTopbar from '@/features/dashboard/components/layout/DashboardTopbar';
+import { AddQuestModal } from '@/features/dashboard/components/schedule/AddQuestModal';
 import { AddTaskModal } from './shared/AddTaskModal';
 import { EditTaskModal } from './shared/EditTaskModal';
 import type { TaskFormValues } from './shared/TaskForm';

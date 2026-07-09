@@ -7,50 +7,50 @@ import { findClass } from '@/constants/hero-data';
 import { useProfile } from '@/features/profile/hooks/useProfile';
 import type { Character } from '@/features/dashboard/types';
 import type { UserProfileData, GoalDTO } from '@/types';
-import DashboardTopbar from '@/features/dashboard/components/DashboardTopbar';
+import DashboardTopbar from '@/features/dashboard/components/layout/DashboardTopbar';
 
 import { MOCK_TROPHIES } from '../data/mock';
 import type { Goal, Trophy, AmbitionsTab, AmbitionsStats } from '../types';
-import { GoalsView }    from './GoalsView';
+import { GoalsView } from './GoalsView';
 import { OverviewView } from './OverviewView';
 import { TrophiesView } from './TrophiesView';
-import { BingoView }    from './BingoView';
+import { BingoView } from './BingoView';
 import type { GoalFormData } from './GoalModal';
-import { GoalModal }    from './GoalModal';
+import { GoalModal } from './GoalModal';
 
-import { useGoals }           from '../hooks/useGoals';
-import { useCreateGoal }      from '../hooks/useCreateGoal';
-import { useUpdateGoal }      from '../hooks/useUpdateGoal';
-import { useDeleteGoal }      from '../hooks/useDeleteGoal';
+import { useGoals } from '../hooks/useGoals';
+import { useCreateGoal } from '../hooks/useCreateGoal';
+import { useUpdateGoal } from '../hooks/useUpdateGoal';
+import { useDeleteGoal } from '../hooks/useDeleteGoal';
 import { useToggleMilestone } from '../hooks/useToggleMilestone';
 
 const TABS: { key: AmbitionsTab; icon: string; label: string }[] = [
-  { key: 'goals',    icon: '◈', label: 'Goals' },
+  { key: 'goals', icon: '◈', label: 'Goals' },
   { key: 'overview', icon: '▦', label: 'Overview' },
   { key: 'trophies', icon: '✧', label: 'Trophies' },
-  { key: 'bingo',    icon: '⊞', label: 'Bingo' },
+  { key: 'bingo', icon: '⊞', label: 'Bingo' },
 ];
 
 function dtoToGoal(dto: GoalDTO): Goal {
   return {
-    id:            dto.id,
-    title:         dto.title,
-    cat:           dto.cat,
-    rank:          dto.rank,
-    priority:      dto.priority,
-    status:        dto.status,
-    progress:      dto.progress,
-    xp:            dto.xp,
-    coins:         dto.coins,
-    targetDate:    dto.targetDate,
-    targetLabel:   dto.targetLabel,
-    createdAt:     dto.createdAt,
-    daysLeft:      dto.daysLeft,
-    desc:          dto.desc ?? '',
-    note:          dto.note,
-    linkedTrophy:  dto.linkedTrophy,
+    id: dto.id,
+    title: dto.title,
+    cat: dto.cat,
+    rank: dto.rank,
+    priority: dto.priority,
+    status: dto.status,
+    progress: dto.progress,
+    xp: dto.xp,
+    coins: dto.coins,
+    targetDate: dto.targetDate,
+    targetLabel: dto.targetLabel,
+    createdAt: dto.createdAt,
+    daysLeft: dto.daysLeft,
+    desc: dto.desc ?? '',
+    note: dto.note,
+    linkedTrophy: dto.linkedTrophy,
     completedDate: dto.completedDate,
-    milestones:    dto.milestones,
+    milestones: dto.milestones,
   };
 }
 
@@ -72,15 +72,15 @@ export function AchievementsPage() {
     day: 'numeric',
   });
 
-  const [tab,   setTab]   = useState<AmbitionsTab>('goals');
+  const [tab, setTab] = useState<AmbitionsTab>('goals');
   const [modal, setModal] = useState<{ mode: 'new' | 'edit'; goal?: Goal } | null>(null);
 
   // API hooks
   const { data: rawGoals = [] } = useGoals();
-  const createGoal              = useCreateGoal();
-  const updateGoal              = useUpdateGoal();
-  const deleteGoal              = useDeleteGoal();
-  const toggleMilestone         = useToggleMilestone();
+  const createGoal = useCreateGoal();
+  const updateGoal = useUpdateGoal();
+  const deleteGoal = useDeleteGoal();
+  const toggleMilestone = useToggleMilestone();
 
   const goals: Goal[] = useMemo(() => rawGoals.map(dtoToGoal), [rawGoals]);
 
@@ -88,24 +88,30 @@ export function AchievementsPage() {
   const trophies: Trophy[] = MOCK_TROPHIES;
 
   const stats = useMemo<AmbitionsStats>(() => {
-    const active      = goals.filter((g) => g.status === 'in-progress').length;
-    const completed   = goals.filter((g) => g.status === 'completed').length;
-    const notStarted  = goals.filter((g) => g.status === 'not-started').length;
-    const total       = goals.filter((g) => g.status !== 'archived').length;
-    const denom       = total || 1;
-    const activeGoals = goals.filter((g) => g.status === 'in-progress' || g.status === 'not-started');
+    const active = goals.filter((g) => g.status === 'in-progress').length;
+    const completed = goals.filter((g) => g.status === 'completed').length;
+    const notStarted = goals.filter((g) => g.status === 'not-started').length;
+    const total = goals.filter((g) => g.status !== 'archived').length;
+    const denom = total || 1;
+    const activeGoals = goals.filter(
+      (g) => g.status === 'in-progress' || g.status === 'not-started',
+    );
     const avgProgress = activeGoals.length
       ? Math.round((activeGoals.reduce((a, g) => a + g.progress, 0) / activeGoals.length) * 100)
       : 0;
     const milestonesTotal = goals.reduce((a, g) => a + g.milestones.length, 0);
-    const milestonesDone  = goals.reduce((a, g) => a + g.milestones.filter((m) => m.done).length, 0);
+    const milestonesDone = goals.reduce((a, g) => a + g.milestones.filter((m) => m.done).length, 0);
     const unlockedT = trophies.filter((t) => t.unlocked).length;
     return {
-      total, active, completed, notStarted,
+      total,
+      active,
+      completed,
+      notStarted,
       completionRate: Math.round((completed / denom) * 100),
       avgProgress,
       completedThisYear: completed,
-      milestonesTotal, milestonesDone,
+      milestonesTotal,
+      milestonesDone,
       trophies: unlockedT,
       totalTrophies: trophies.length,
       lockedTrophies: trophies.length - unlockedT,
@@ -113,7 +119,7 @@ export function AchievementsPage() {
   }, [goals, trophies]);
 
   const tabCounts: Partial<Record<AmbitionsTab, number>> = {
-    goals:    goals.filter((g) => g.status !== 'archived').length,
+    goals: goals.filter((g) => g.status !== 'archived').length,
     trophies: stats.trophies,
   };
 
@@ -121,7 +127,10 @@ export function AchievementsPage() {
     toggleMilestone.mutate({ goalId, milestoneId: msId });
   };
 
-  const handleAction = (action: 'edit' | 'complete' | 'archive' | 'restore' | 'delete', goal: Goal) => {
+  const handleAction = (
+    action: 'edit' | 'complete' | 'archive' | 'restore' | 'delete',
+    goal: Goal,
+  ) => {
     if (action === 'edit') {
       setModal({ mode: 'edit', goal });
       return;
@@ -135,7 +144,8 @@ export function AchievementsPage() {
       return;
     }
     if (action === 'restore') {
-      const status = goal.progress >= 1 ? 'completed' : goal.progress > 0 ? 'in-progress' : 'not-started';
+      const status =
+        goal.progress >= 1 ? 'completed' : goal.progress > 0 ? 'in-progress' : 'not-started';
       updateGoal.mutate({ id: goal.id, status });
       return;
     }
@@ -147,21 +157,21 @@ export function AchievementsPage() {
   const handleSave = (data: GoalFormData) => {
     if (modal?.mode === 'edit' && modal.goal) {
       updateGoal.mutate({
-        id:         modal.goal.id,
-        title:      data.title,
-        desc:       data.desc,
-        cat:        data.cat,
-        rank:       data.rank,
-        priority:   data.priority,
+        id: modal.goal.id,
+        title: data.title,
+        desc: data.desc,
+        cat: data.cat,
+        rank: data.rank,
+        priority: data.priority,
         targetDate: data.targetDate,
       });
     } else {
       createGoal.mutate({
-        title:      data.title,
-        desc:       data.desc,
-        cat:        data.cat,
-        rank:       data.rank,
-        priority:   data.priority,
+        title: data.title,
+        desc: data.desc,
+        cat: data.cat,
+        rank: data.rank,
+        priority: data.priority,
         targetDate: data.targetDate,
         milestones: data.milestone ? [{ label: data.milestone, done: false }] : [],
       });
@@ -187,13 +197,16 @@ export function AchievementsPage() {
                 Ambitions &amp; Glory
               </h1>
               <p className="text-[10px] text-[var(--text-mid)] tracking-[0.04em]">
-                <span className="text-[var(--cyan)] font-bold">{stats.active}</span> ambitions in motion
+                <span className="text-[var(--cyan)] font-bold">{stats.active}</span> ambitions in
+                motion
                 {' · '}
                 <span className="text-[var(--mint)] font-bold">{stats.completed}</span> conquered
                 {' · '}
-                <span className="text-[var(--gold)] font-bold">{stats.trophies}</span> trophies earned
+                <span className="text-[var(--gold)] font-bold">{stats.trophies}</span> trophies
+                earned
                 {' · '}
-                <span className="text-[var(--gold)] font-bold">{stats.completionRate}%</span> completion
+                <span className="text-[var(--gold)] font-bold">{stats.completionRate}%</span>{' '}
+                completion
               </p>
             </div>
 
@@ -201,32 +214,36 @@ export function AchievementsPage() {
             <div className="flex items-center gap-2 shrink-0 flex-wrap">
               {/* Tab switcher */}
               <div className="overflow-x-auto [&::-webkit-scrollbar]:hidden">
-              <div className="flex bg-[var(--panel2)] border border-[var(--border)] rounded-[var(--r-sm)] p-0.5 gap-0.5 min-w-max">
-                {TABS.map((t) => (
-                  <button
-                    key={t.key}
-                    type="button"
-                    onClick={() => setTab(t.key)}
-                    className={cn(
-                      'flex items-center gap-1.5 px-3 py-1.5 rounded-[3px] text-[10px] font-bold font-[var(--font-title)] tracking-[0.06em] transition-colors',
-                      tab === t.key
-                        ? 'bg-[oklch(0.74_0.17_85_/_0.15)] text-[var(--gold)]'
-                        : 'text-[var(--text-lo)] hover:text-[var(--text-mid)]',
-                    )}
-                  >
-                    <span>{t.icon}</span>
-                    <span>{t.label}</span>
-                    {tabCounts[t.key] != null && (
-                      <span className={cn(
-                        'text-[8px] px-1.5 py-0.5 rounded-full',
-                        tab === t.key ? 'bg-[oklch(0.74_0.17_85_/_0.2)] text-[var(--gold)]' : 'bg-[var(--panel)] text-[var(--text-lo)]',
-                      )}>
-                        {tabCounts[t.key]}
-                      </span>
-                    )}
-                  </button>
-                ))}
-              </div>
+                <div className="flex bg-[var(--panel2)] border border-[var(--border)] rounded-[var(--r-sm)] p-0.5 gap-0.5 min-w-max">
+                  {TABS.map((t) => (
+                    <button
+                      key={t.key}
+                      type="button"
+                      onClick={() => setTab(t.key)}
+                      className={cn(
+                        'flex items-center gap-1.5 px-3 py-1.5 rounded-[3px] text-[10px] font-bold font-[var(--font-title)] tracking-[0.06em] transition-colors',
+                        tab === t.key
+                          ? 'bg-[oklch(0.74_0.17_85_/_0.15)] text-[var(--gold)]'
+                          : 'text-[var(--text-lo)] hover:text-[var(--text-mid)]',
+                      )}
+                    >
+                      <span>{t.icon}</span>
+                      <span>{t.label}</span>
+                      {tabCounts[t.key] != null && (
+                        <span
+                          className={cn(
+                            'text-[8px] px-1.5 py-0.5 rounded-full',
+                            tab === t.key
+                              ? 'bg-[oklch(0.74_0.17_85_/_0.2)] text-[var(--gold)]'
+                              : 'bg-[var(--panel)] text-[var(--text-lo)]',
+                          )}
+                        >
+                          {tabCounts[t.key]}
+                        </span>
+                      )}
+                    </button>
+                  ))}
+                </div>
               </div>
 
               {/* New goal — only on goals tab */}
@@ -261,9 +278,7 @@ export function AchievementsPage() {
                 streak={char.streak}
               />
             )}
-            {tab === 'trophies' && (
-              <TrophiesView trophies={trophies} stats={stats} />
-            )}
+            {tab === 'trophies' && <TrophiesView trophies={trophies} stats={stats} />}
             {tab === 'bingo' && (
               <BingoView
                 goals={goals}
@@ -295,8 +310,16 @@ export function AchievementsPage() {
 
 function buildEmptyChar(): Character {
   return {
-    name: '', title: '', level: 1, rank: 'E', class: '', streak: 0,
-    xp: 0, xpNext: 1000, coins: 0, gems: 0,
+    name: '',
+    title: '',
+    level: 1,
+    rank: 'E',
+    class: '',
+    streak: 0,
+    xp: 0,
+    xpNext: 1000,
+    coins: 0,
+    gems: 0,
     stats: [
       { key: 'DIS', value: 0, color: 'var(--gold)' },
       { key: 'WIS', value: 0, color: 'var(--violet)' },
@@ -322,11 +345,11 @@ function profileToCharacter(profile: UserProfileData): Character {
     coins: profile.coins ?? 0,
     gems: profile.gems ?? 0,
     stats: [
-      { key: 'DIS', value: scale(profile.stats.discipline),  color: 'var(--gold)' },
-      { key: 'WIS', value: scale(profile.stats.wisdom),      color: 'var(--violet)' },
-      { key: 'END', value: scale(profile.stats.endurance),   color: 'var(--mint)' },
+      { key: 'DIS', value: scale(profile.stats.discipline), color: 'var(--gold)' },
+      { key: 'WIS', value: scale(profile.stats.wisdom), color: 'var(--violet)' },
+      { key: 'END', value: scale(profile.stats.endurance), color: 'var(--mint)' },
       { key: 'COM', value: scale(profile.stats.composition), color: 'var(--cyan)' },
-      { key: 'SER', value: scale(profile.stats.serenity),    color: 'var(--rose)' },
+      { key: 'SER', value: scale(profile.stats.serenity), color: 'var(--rose)' },
     ],
   };
 }
