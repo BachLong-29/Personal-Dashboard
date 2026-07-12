@@ -45,3 +45,7 @@ next-env.d.ts
 
 #mcp
 .mcp.json
+
+# claude code — locally-installed skills (e.g. impeccable) and local settings
+.claude/skills/
+.claude/settings.local.json
