@@ -32,6 +32,9 @@ import type { ScheduleDisplayOptions } from '../../hooks/useScheduleState';
 import { Modal, ModalBody, ModalFoot, ModalHead } from '@/components/ui/Modal';
 import { AddTaskModal } from '@/features/tasks/components/shared/AddTaskModal';
 import { EditTaskModal } from '@/features/tasks/components/shared/EditTaskModal';
+
+import { DayActionMenu } from './DayActionMenu';
+import { TaskPickerModal } from './TaskPickerModal';
 import { taskToUITask } from '@/features/tasks/data/adapters';
 import { todayISO } from '@/features/tasks/utils/date.utils';
 import type { ScheduleBlock, Task as CoreTask } from '@/types';
@@ -130,6 +133,7 @@ export function WeekView({
 
   const [deletingTask, setDeletingTask] = useState<Task | undefined>(undefined);
   const [activeDrag, setActiveDrag] = useState<ActiveDrag | null>(null);
+  const [pickerDay, setPickerDay] = useState<string | null>(null);
 
   const sensors = useSensors(
     useSensor(MouseSensor, { activationConstraint: { distance: 8 } }),
@@ -207,6 +211,13 @@ export function WeekView({
         t.startDate <= dateStr &&
         (t.endDate ?? t.startDate) >= dateStr,
     );
+  }
+
+  function getVisibleTaskIdsForDay(dateStr: string): Set<string> {
+    return new Set([
+      ...getTaskBlocksForDay(dateStr).map((entry) => entry.task.id),
+      ...getSpanTasksForDay(dateStr).map((task) => task.id),
+    ]);
   }
 
   const DOW_TO_HABIT_DAY = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'] as const;
@@ -348,14 +359,10 @@ export function WeekView({
                         {formatUsageHours(dailyWorkingHoursMinutes)}
                       </div>
                     </div>
-                    <button
-                      type="button"
-                      className={dayAddBtn}
-                      onClick={handleAddForDay}
-                      title="Add task"
-                    >
-                      +
-                    </button>
+                    <DayActionMenu
+                      onAddTask={handleAddForDay}
+                      onPickTask={() => setPickerDay(dayStr)}
+                    />
                   </div>
 
                   {/* Items — unified, sorted by time */}
@@ -533,6 +540,15 @@ export function WeekView({
         </DragOverlay>
       </DndContext>
 
+      {/* Pick — assign an existing task onto a day */}
+      <TaskPickerModal
+        open={pickerDay !== null}
+        dateStr={pickerDay ?? ''}
+        excludeIds={pickerDay ? getVisibleTaskIdsForDay(pickerDay) : new Set()}
+        onClose={() => setPickerDay(null)}
+        onPick={(task) => updateTask({ id: task.id, startDate: pickerDay, endDate: pickerDay })}
+      />
+
       {/* Create — unified AddTaskModal */}
       <AddTaskModal
         open={showAddModal}
@@ -677,9 +693,6 @@ const dayLabelToday = 'text-[var(--gold)]';
 const dayNum2 = 'text-[13px] font-bold leading-none mt-0.5';
 const dayUsageText =
   'mt-1 inline-flex items-center rounded-[4px] border border-[oklch(0.74_0.17_85_/_0.35)] bg-[oklch(0.74_0.17_85_/_0.12)] px-1.5 py-[3px] text-[8px] leading-none text-[var(--gold)] font-[var(--font-title)] whitespace-nowrap shadow-[0_0_10px_oklch(0.74_0.17_85_/_0.12)]';
-
-const dayAddBtn =
-  'w-4 h-4 flex items-center justify-center text-[11px] text-[var(--text-lo)] hover:text-[var(--gold)] cursor-pointer transition-colors leading-none';
 
 const dayTaskList = 'px-1 py-1 flex flex-col gap-0.5 md:flex-1 md:overflow-y-auto md:min-h-0';
 
