@@ -146,6 +146,21 @@ export default function MainDashboard() {
     if (tab === 'habits' || tab === 'schedule' || tab === 'stats') return tab;
     return 'schedule';
   });
+
+  // Re-sync when `?tab=` changes on an already-mounted dashboard — e.g. a
+  // notification click does a same-route `router.push('/dashboard?tab=...')`,
+  // which the lazy useState initializer above only ever reads once on mount.
+  // Syncing local state to this external source (the URL) is exactly what
+  // effects are for, so the setState-in-effect rule is disabled here.
+  /* eslint-disable react-hooks/set-state-in-effect */
+  useEffect(() => {
+    const tab = searchParams.get('tab');
+    if (tab === 'habits' || tab === 'schedule' || tab === 'stats') {
+      setCenterTab(tab);
+    }
+  }, [searchParams]);
+  /* eslint-enable react-hooks/set-state-in-effect */
+
   const [mobilePanel, setMobilePanel] = useState<MobilePanel>('center');
 
   const handleTabChange = useCallback((tab: CenterTab) => {

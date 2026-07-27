@@ -1,13 +1,24 @@
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 
-interface Toast {
+export interface Toast {
   id: string;
   type: 'success' | 'error' | 'warning' | 'info';
   message: string;
 }
 
 type ProjectViewMode = 'kanban' | 'list';
+
+/** One-shot navigation intent for the schedule view — set by e.g. a notification
+ * click, consumed (and cleared) by ScheduleView whenever it's mounted, so it
+ * works whether the schedule tab is already active or needs to be switched to. */
+interface PendingScheduleNav {
+  tab: 'day' | 'week' | 'month';
+  dayDate?: string;
+  weekStart?: string;
+  month?: number;
+  year?: number;
+}
 
 interface UIState {
   toasts: Toast[];
@@ -16,6 +27,7 @@ interface UIState {
   searchOpen: boolean;
   /** Task ID to restore + edit after a "Quest Failed" notification click */
   pendingRestoreTaskId: string | null;
+  pendingScheduleNav: PendingScheduleNav | null;
   addToast: (toast: Omit<Toast, 'id'>) => void;
   removeToast: (id: string) => void;
   toggleSidebar: () => void;
@@ -25,6 +37,7 @@ interface UIState {
   closeSearch: () => void;
   toggleSearch: () => void;
   setPendingRestoreTaskId: (id: string | null) => void;
+  setPendingScheduleNav: (nav: PendingScheduleNav | null) => void;
 }
 
 export const useUIStore = create<UIState>()(
@@ -35,11 +48,13 @@ export const useUIStore = create<UIState>()(
       projectViewMode: 'kanban',
       searchOpen: false,
       pendingRestoreTaskId: null,
+      pendingScheduleNav: null,
       setProjectViewMode: (mode) => set({ projectViewMode: mode }),
       openSearch: () => set({ searchOpen: true }),
       closeSearch: () => set({ searchOpen: false }),
       toggleSearch: () => set((state) => ({ searchOpen: !state.searchOpen })),
       setPendingRestoreTaskId: (id) => set({ pendingRestoreTaskId: id }),
+      setPendingScheduleNav: (nav) => set({ pendingScheduleNav: nav }),
       addToast: (toast) =>
         set((state) => ({
           toasts: [...state.toasts, { ...toast, id: crypto.randomUUID() }],

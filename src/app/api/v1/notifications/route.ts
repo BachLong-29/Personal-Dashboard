@@ -4,6 +4,7 @@ import { connectDB } from '@/libs/mongodb';
 import { getAuthUser } from '@/server/helpers/get-auth-user';
 import { NotificationModel, type NotificationType } from '@/server/models/notification.model';
 import { TaskModel } from '@/server/models/task.model';
+import { enforceNotificationCap } from '@/server/services/notification-cleanup';
 import { generateScheduleNotifications } from '@/server/services/schedule-notifications';
 import { asyncHandler, createdResponse, successResponse, unauthorizedResponse } from '@/server';
 import mongoose from 'mongoose';
@@ -34,24 +35,32 @@ export const GET = asyncHandler(async (req: NextRequest) => {
   // Backfill entityId for legacy "Quest Failed" notifications that were created
   // before entityId support was added. Parse task name from message, look up the
   // archived task, and persist the entityId so future clicks work correctly.
-  const legacyFailed = notifications.filter(
-    (n) => n.type === 'system' && !n.entityId && n.title === '☠ Quest Failed',
-  );
+  // Batched into one find + N updates instead of one findOne per notification.
+  const legacyFailed = notifications
+    .map((n) => ({
+      n,
+      taskName:
+        n.type === 'system' && !n.entityId && n.title === '☠ Quest Failed'
+          ? n.message?.match(/^"(.+)" was abandoned/)?.[1]
+          : undefined,
+    }))
+    .filter((x): x is { n: (typeof notifications)[number]; taskName: string } => !!x.taskName);
+
   if (legacyFailed.length > 0) {
+    const names = [...new Set(legacyFailed.map((x) => x.taskName))];
+    const tasks = await TaskModel.find({
+      name: { $in: names },
+      userId: new mongoose.Types.ObjectId(user.sub),
+      active: false,
+    }).lean();
+    const taskByName = new Map(tasks.map((t) => [t.name, t._id.toString()]));
+
     await Promise.all(
-      legacyFailed.map(async (n) => {
-        const match = n.message?.match(/^"(.+)" was abandoned/);
-        if (!match) return;
-        const taskName = match[1];
-        const task = await TaskModel.findOne({
-          name: taskName,
-          userId: n.userId,
-          active: false,
-        }).lean();
-        if (!task) return;
-        const entityId = task._id.toString();
-        await NotificationModel.updateOne({ _id: n._id }, { $set: { entityId } });
+      legacyFailed.map(({ n, taskName }) => {
+        const entityId = taskByName.get(taskName);
+        if (!entityId) return null;
         n.entityId = entityId;
+        return NotificationModel.updateOne({ _id: n._id }, { $set: { entityId } });
       }),
     );
   }
@@ -72,24 +81,30 @@ export const POST = asyncHandler(async (req: NextRequest) => {
     message: string;
     expiresAt?: string;
     entityId?: string;
+    /** Exact-match idempotency key — preferred over the day+type+title fallback below. */
+    dedupeKey?: string;
   };
 
-  // Server-side deduplicate: same type on same calendar day
-  if (body.expiresAt) {
+  const uid = new mongoose.Types.ObjectId(user.sub);
+
+  // Server-side dedupe. Prefer an explicit dedupeKey (exact match, caller
+  // controls the semantics); otherwise fall back to a same-day heuristic
+  // scoped by type AND title so unrelated same-type notifications on the
+  // same day don't get mistaken for each other.
+  if (body.dedupeKey) {
+    const existing = await NotificationModel.findOne({ userId: uid, dedupeKey: body.dedupeKey });
+    if (existing) return successResponse(existing);
+  } else if (body.expiresAt) {
     const dayStart = new Date();
     dayStart.setHours(0, 0, 0, 0);
     const existing = await NotificationModel.findOne({
-      userId: new mongoose.Types.ObjectId(user.sub),
+      userId: uid,
       type: body.type,
+      title: body.title,
       createdAt: { $gte: dayStart },
     });
-    if (existing) {
-      return successResponse(existing);
-    }
+    if (existing) return successResponse(existing);
   }
-
-  const MAX_PER_USER = 20;
-  const uid = new mongoose.Types.ObjectId(user.sub);
 
   const notification = await NotificationModel.create({
     userId: uid,
@@ -98,19 +113,12 @@ export const POST = asyncHandler(async (req: NextRequest) => {
     message: body.message,
     expiresAt: body.expiresAt ? new Date(body.expiresAt) : undefined,
     entityId: body.entityId,
+    dedupeKey: body.dedupeKey,
   });
 
-  // Keep only the 20 most recent — delete anything beyond that
-  const recent = await NotificationModel.find({ userId: uid })
-    .sort({ createdAt: -1 })
-    .limit(MAX_PER_USER)
-    .select('_id')
-    .lean();
-
-  if (recent.length === MAX_PER_USER) {
-    const keepIds = recent.map((n) => n._id);
-    await NotificationModel.deleteMany({ userId: uid, _id: { $nin: keepIds } });
-  }
+  // Keep the table bounded — prefers evicting already-read notifications so
+  // an unread one is never silently lost (see enforceNotificationCap).
+  await enforceNotificationCap(uid);
 
   return createdResponse(notification);
 });

@@ -1,20 +1,19 @@
 'use client';
 
-import { useRef } from 'react';
-
 import { useRouter } from '@/i18n/navigation';
-import { useOnClickOutside } from '@/hooks/useOnClickOutside';
 import { cn } from '@/libs/utils';
 import { useUIStore } from '@/stores/ui.store';
 import { toLocalDate } from '@/features/tasks/utils/date.utils';
-import { useNotifications, type Notification } from '../../hooks/useNotifications';
+import {
+  useNotifications,
+  useUnreadNotificationCount,
+  type Notification,
+} from '../../hooks/useNotifications';
 import {
   useDeleteNotification,
   useMarkAllNotificationsRead,
   useMarkNotificationRead,
 } from '../../hooks/useNotificationActions';
-
-const SCHEDULE_STORAGE_KEY = 'aetheria_schedule_state';
 
 function getNextMondayStr(): string {
   const d = new Date();
@@ -25,12 +24,24 @@ function getNextMondayStr(): string {
   return toLocalDate(d);
 }
 
+const CLICKABLE_TYPES = new Set<Notification['type']>([
+  'planning',
+  'monthly-plan',
+  'system',
+  'deadline',
+  'overload',
+  'conflict',
+]);
+
 const TYPE_ICON: Record<string, string> = {
   planning: '📋',
   'monthly-plan': '🗓',
   reminder: '⏰',
   system: '⚙️',
   reward: '🏆',
+  deadline: '⚠',
+  overload: '🔥',
+  conflict: '✕',
 };
 
 function timeAgo(iso: string): string {
@@ -49,17 +60,14 @@ interface NotificationPanelProps {
 }
 
 export function NotificationPanel({ onClose, onEndDay }: NotificationPanelProps) {
-  const panelRef = useRef<HTMLDivElement>(null);
-  useOnClickOutside(panelRef, onClose);
-
   const router = useRouter();
   const setPendingRestoreTaskId = useUIStore((s) => s.setPendingRestoreTaskId);
+  const setPendingScheduleNav = useUIStore((s) => s.setPendingScheduleNav);
   const { data: notifications = [], isLoading } = useNotifications();
+  const { data: unreadCount = 0 } = useUnreadNotificationCount();
   const { mutate: markRead } = useMarkNotificationRead();
   const { mutate: markAllRead } = useMarkAllNotificationsRead();
   const { mutate: dismiss } = useDeleteNotification();
-
-  const unreadCount = notifications.filter((n) => !n.isRead).length;
 
   const handleItemClick = (n: Notification) => {
     if (!n.isRead) markRead(n._id);
@@ -75,54 +83,37 @@ export function NotificationPanel({ onClose, onEndDay }: NotificationPanelProps)
 
     if (n.type === 'planning') {
       const weekStart = getNextMondayStr();
-      try {
-        const prev = JSON.parse(localStorage.getItem(SCHEDULE_STORAGE_KEY) ?? '{}') as Record<
-          string,
-          unknown
-        >;
-        localStorage.setItem(
-          SCHEDULE_STORAGE_KEY,
-          JSON.stringify({
-            ...prev,
-            tab: 'week',
-            weekStart,
-            year: new Date(weekStart).getFullYear(),
-          }),
-        );
-      } catch {
-        /* ignore */
-      }
+      setPendingScheduleNav({ tab: 'week', weekStart, year: new Date(weekStart).getFullYear() });
       onClose();
       router.push('/dashboard?tab=schedule');
+      return;
     }
 
     if (n.type === 'monthly-plan') {
       const now = new Date();
       const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
-      try {
-        const prev = JSON.parse(localStorage.getItem(SCHEDULE_STORAGE_KEY) ?? '{}') as Record<
-          string,
-          unknown
-        >;
-        localStorage.setItem(
-          SCHEDULE_STORAGE_KEY,
-          JSON.stringify({
-            ...prev,
-            tab: 'month',
-            month: nextMonth.getMonth(),
-            year: nextMonth.getFullYear(),
-          }),
-        );
-      } catch {
-        /* ignore */
-      }
+      setPendingScheduleNav({
+        tab: 'month',
+        month: nextMonth.getMonth(),
+        year: nextMonth.getFullYear(),
+      });
+      onClose();
+      router.push('/dashboard?tab=schedule');
+      return;
+    }
+
+    // Deadline/overload/conflict — jump to today's day view where the user
+    // can see and resolve the underlying schedule issue.
+    if (n.type === 'deadline' || n.type === 'overload' || n.type === 'conflict') {
+      const today = toLocalDate(new Date());
+      setPendingScheduleNav({ tab: 'day', dayDate: today, year: new Date(today).getFullYear() });
       onClose();
       router.push('/dashboard?tab=schedule');
     }
   };
 
   return (
-    <div ref={panelRef} className={panel}>
+    <div className={panel}>
       {/* corner accents */}
       <div className={cn(corner, 'top-[5px] left-[5px] border-t-[1.5px] border-l-[1.5px]')} />
       <div className={cn(corner, 'top-[5px] right-[5px] border-t-[1.5px] border-r-[1.5px]')} />
@@ -151,8 +142,7 @@ export function NotificationPanel({ onClose, onEndDay }: NotificationPanelProps)
             className={cn(
               item,
               !n.isRead && itemUnread,
-              (n.type === 'planning' || n.type === 'monthly-plan' || n.type === 'system') &&
-                itemClickable,
+              CLICKABLE_TYPES.has(n.type) && itemClickable,
             )}
             onClick={() => handleItemClick(n)}
           >
@@ -199,8 +189,13 @@ export function NotificationPanel({ onClose, onEndDay }: NotificationPanelProps)
 
 // ── Styles ────────────────────────────────────────────────────────────────────
 
+// Mobile: `fixed` + viewport-relative inset, independent of where the trigger
+// sits (the bell is on the *left* of the mobile topbar but the *right* on
+// desktop) — anchoring to the trigger's own wrapper with a fixed 360px width
+// pushed the panel mostly off-screen on narrow viewports. Desktop keeps the
+// original trigger-anchored `absolute` positioning.
 const panel =
-  'absolute top-[calc(100%+8px)] right-0 z-50 w-[360px] max-h-[480px] flex flex-col bg-[var(--panel)] border border-[oklch(0.74_0.17_85_/_0.35)] rounded-[var(--r)] shadow-[0_8px_32px_oklch(0_0_0_/_0.4),0_0_20px_oklch(0.74_0.17_85_/_0.08)] overflow-hidden';
+  'fixed left-3 right-3 top-[60px] max-h-[calc(100dvh-80px)] min-[1025px]:absolute min-[1025px]:inset-auto min-[1025px]:left-auto min-[1025px]:right-0 min-[1025px]:top-[calc(100%+8px)] min-[1025px]:w-[360px] min-[1025px]:max-h-[480px] z-50 flex flex-col bg-[var(--panel)] border border-[oklch(0.74_0.17_85_/_0.35)] rounded-[var(--r)] shadow-[0_8px_32px_oklch(0_0_0_/_0.4),0_0_20px_oklch(0.74_0.17_85_/_0.08)] overflow-hidden';
 
 const corner = 'absolute w-3 h-3 pointer-events-none border-[var(--gold-dim)]';
 

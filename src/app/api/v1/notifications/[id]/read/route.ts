@@ -13,6 +13,9 @@ export const PUT = asyncHandler(
     if (!user) return unauthorizedResponse();
 
     const { id } = await ctx.params;
+    if (!id || !mongoose.Types.ObjectId.isValid(id)) {
+      return notFoundResponse('Notification not found');
+    }
     await connectDB();
 
     const notification = await NotificationModel.findOneAndUpdate(

@@ -1,9 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 
+import { useOnClickOutside } from '@/hooks/useOnClickOutside';
 import { cn } from '@/libs/utils';
-import { useNotifications } from '../../hooks/useNotifications';
+import { useUnreadNotificationCount } from '../../hooks/useNotifications';
 import { NotificationPanel } from './NotificationPanel';
 
 interface NotificationBellProps {
@@ -12,11 +13,15 @@ interface NotificationBellProps {
 
 export function NotificationBell({ onEndDay }: NotificationBellProps) {
   const [open, setOpen] = useState(false);
-  const { data: notifications = [] } = useNotifications();
-  const unreadCount = notifications.filter((n) => !n.isRead).length;
+  const containerRef = useRef<HTMLDivElement>(null);
+  const { data: unreadCount = 0 } = useUnreadNotificationCount();
+
+  // Wraps both the trigger and the panel so a click on the bell itself never
+  // races with the outside-click handler (mousedown-close then click-reopen).
+  useOnClickOutside(containerRef, () => setOpen(false));
 
   return (
-    <div className="relative">
+    <div ref={containerRef} className="relative">
       <button
         type="button"
         className={cn(bellBtn, open && bellBtnActive)}

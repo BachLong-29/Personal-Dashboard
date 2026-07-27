@@ -4,6 +4,7 @@ import { NotificationModel } from '@/server/models/notification.model';
 import { DEFAULT_SCHEDULE_SETTINGS, UserSettingModel } from '@/server/models/user-setting.model';
 import { buildCalendar } from '@/server/services/schedule-engine';
 import { computeCapacity, detectConflicts } from '@/server/services/schedule-insights';
+import { enforceNotificationCap } from '@/server/services/notification-cleanup';
 
 interface PendingNotification {
   type: 'reminder' | 'deadline' | 'overload' | 'conflict';
@@ -11,7 +12,15 @@ interface PendingNotification {
   message: string;
   dedupeKey: string;
   expiresAt: Date;
+  entityId?: string;
 }
+
+// In-process throttle: this rebuilds the whole calendar + writes upserts, so
+// skip it if we already ran for this user within the window — every
+// notification-list read (including ones triggered by mark-read/dismiss
+// invalidation) would otherwise redo this on every request.
+const REGEN_THROTTLE_MS = 5 * 60 * 1000;
+const lastGeneratedAt = new Map<string, number>();
 
 function toKey(d: Date): string {
   return [
@@ -36,6 +45,10 @@ function timeToMinutes(time: string): number {
  * Idempotent via dedupeKey — safe to call on every notifications read.
  */
 export async function generateScheduleNotifications(userId: string): Promise<void> {
+  const lastRun = lastGeneratedAt.get(userId);
+  if (lastRun !== undefined && Date.now() - lastRun < REGEN_THROTTLE_MS) return;
+  lastGeneratedAt.set(userId, Date.now());
+
   const setting = await UserSettingModel.findOne({ userId }).lean();
   const sched = setting?.schedule ?? DEFAULT_SCHEDULE_SETTINGS;
 
@@ -81,8 +94,12 @@ export async function generateScheduleNotifications(userId: string): Promise<voi
       type: 'deadline',
       title: `⚠ Đến hạn: ${item.title}`,
       message: `"${item.title}" đến hạn ${when}`,
-      dedupeKey: `deadline:${item.sourceType}:${item.sourceId}`,
+      // Scoped by todayKey (like overload/conflict below) so this regenerates
+      // each day instead of being created once and then silently disappearing
+      // after its first day's expiresAt passes.
+      dedupeKey: `deadline:${todayKey}:${item.sourceType}:${item.sourceId}`,
       expiresAt: endOfToday,
+      entityId: item.sourceId,
     });
   }
 
@@ -126,6 +143,7 @@ export async function generateScheduleNotifications(userId: string): Promise<voi
             message: n.message,
             dedupeKey: n.dedupeKey,
             expiresAt: n.expiresAt,
+            entityId: n.entityId,
             isRead: false,
           },
         },
@@ -133,4 +151,6 @@ export async function generateScheduleNotifications(userId: string): Promise<voi
       ),
     ),
   );
+
+  await enforceNotificationCap(uid);
 }

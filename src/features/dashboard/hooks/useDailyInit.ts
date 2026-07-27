@@ -37,6 +37,7 @@ export function useDailyInit() {
         title: 'Plan Your Week 📋',
         message: "It's Sunday! Take a moment to plan your quests and goals for tomorrow.",
         expiresAt: endOfDay.toISOString(),
+        dedupeKey: `planning:sunday:${today}`,
       },
       { onSuccess: () => localStorage.setItem(SUNDAY_REMINDER_KEY, today) },
     );
@@ -54,6 +55,7 @@ export function useDailyInit() {
         type: 'monthly-plan',
         title: `Plan for ${nextMonthName} 🗓`,
         message: `${nextMonthName} is coming up. Take time today to set your goals and quests for the month ahead.`,
+        dedupeKey: `monthly-plan:${monthKey}`,
       },
       { onSuccess: () => localStorage.setItem(MONTHLY_REMINDER_KEY, monthKey) },
     );

@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation';
 import { verifyAccessToken } from '@/libs/jwt';
 import { TOKEN_KEYS } from '@/constants/auth';
 import { defaultLocale } from '@/i18n/config';
+import { ToastContainer } from '@/components/common/ToastContainer';
 import { GlobalSearch } from '@/features/search/components/GlobalSearch';
 
 async function getSession() {
@@ -36,6 +37,7 @@ export default async function ProtectedLayout({
     <>
       {children}
       <GlobalSearch />
+      <ToastContainer />
     </>
   );
 }

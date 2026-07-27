@@ -39,15 +39,21 @@ export const POST = asyncHandler(async (req: NextRequest, ctx) => {
     return errorResponse('All tasks must be done before completing the project', 400);
   }
 
-  project.status = 'completed';
-  project.completedDate = new Date();
-  await project.save();
+  // Atomic guard against a double-submit racing this same completion — only
+  // one concurrent request's update can match `status: { $ne: 'completed' }`,
+  // so only one proceeds to award XP/coins and create the reward notification.
+  const updated = await ProjectModel.findOneAndUpdate(
+    { _id: id, userId: user.sub, status: { $ne: 'completed' } },
+    { $set: { status: 'completed', completedDate: new Date() } },
+    { new: true },
+  );
+  if (!updated) return errorResponse('Project already completed', 409);
 
   // Award XP / coins to the hero profile
-  if (project.xp > 0 || project.coins > 0) {
+  if (updated.xp > 0 || updated.coins > 0) {
     await UserProfileModel.findOneAndUpdate(
       { userId: user.sub },
-      { $inc: { xp: project.xp, coins: project.coins } },
+      { $inc: { xp: updated.xp, coins: updated.coins } },
     );
   }
 
@@ -55,8 +61,8 @@ export const POST = asyncHandler(async (req: NextRequest, ctx) => {
     userId: user.sub,
     type: 'reward',
     title: '🚀 Project Complete',
-    message: `${project.name} — +${project.xp} XP, +${project.coins} coins`,
+    message: `${updated.name} — +${updated.xp} XP, +${updated.coins} coins`,
   });
 
-  return successResponse(serialize(project, { done, total: tasks.length }), 'Project completed');
+  return successResponse(serialize(updated, { done, total: tasks.length }), 'Project completed');
 });

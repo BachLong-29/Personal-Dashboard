@@ -13,6 +13,9 @@ export const DELETE = asyncHandler(
     if (!user) return unauthorizedResponse();
 
     const { id } = await ctx.params;
+    if (!id || !mongoose.Types.ObjectId.isValid(id)) {
+      return notFoundResponse('Notification not found');
+    }
     await connectDB();
 
     const result = await NotificationModel.findOneAndDelete({

@@ -1,8 +1,10 @@
 'use client';
 
+import { useEffect } from 'react';
 import { useTranslations } from 'next-intl';
 
 import { cn } from '@/libs/utils';
+import { useUIStore } from '@/stores/ui.store';
 
 import { Link } from '@/i18n/navigation';
 import { useScheduleState } from '../../hooks/useScheduleState';
@@ -36,6 +38,22 @@ export function ScheduleView({ onAddQuest, onNavigateTab }: ScheduleViewProps) {
     setDisplay,
     getMonday,
   } = useScheduleState();
+
+  // Apply a one-shot navigation intent (e.g. from clicking a notification)
+  // whenever it's set — works whether ScheduleView is already mounted or was
+  // just mounted by a tab switch, unlike a mount-only localStorage read.
+  const pendingNav = useUIStore((s) => s.pendingScheduleNav);
+  const setPendingNav = useUIStore((s) => s.setPendingScheduleNav);
+  useEffect(() => {
+    if (!pendingNav) return;
+    if (pendingNav.year !== undefined) setYear(pendingNav.year);
+    setTab(pendingNav.tab);
+    if (pendingNav.dayDate) setDayDate(pendingNav.dayDate);
+    if (pendingNav.weekStart) setWeekStart(pendingNav.weekStart);
+    if (pendingNav.month !== undefined) setMonth(pendingNav.month);
+    setPendingNav(null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pendingNav]);
 
   function handleNavigateDay(date: string) {
     setDayDate(date);
