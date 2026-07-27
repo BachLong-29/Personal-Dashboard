@@ -30,6 +30,14 @@
     "password": "Mật khẩu",
     "confirmPassword": "Xác nhận mật khẩu",
     "forgotPassword": "Quên mật khẩu?",
+    "rememberMe": "Ghi nhớ đăng nhập",
+    "entering": "Đang vào...",
+    "loginError": "Email hoặc mật khẩu không đúng. Vui lòng thử lại.",
+    "footer": {
+      "privacy": "Bảo mật",
+      "terms": "Điều khoản",
+      "support": "Hỗ trợ"
+    },
     "name": "Họ và tên",
     "noAccount": "Chưa có tài khoản?",
     "hasAccount": "Đã có tài khoản?",
@@ -52,7 +60,9 @@
       "server": "Máy Chủ",
       "online": "TRỰC TUYẾN",
       "creedTitle": "Tín Điều Aetheria",
-      "creedText": "\"Mỗi bình minh là một nhiệm vụ mới.<br></br>Mỗi hoàng hôn là một huyền thoại được viết nên.\""
+      "creedText": "\"Mỗi bình minh là một nhiệm vụ mới.<br></br>Mỗi hoàng hôn là một huyền thoại được viết nên.\"",
+      "companionPrompt": "Sẵn sàng rèn nên huyền thoại của bạn?",
+      "subtitle": "BẢNG ĐIỀU KHIỂN SỐNG ĐỘNG"
     }
   },
   "common": {

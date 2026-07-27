@@ -233,7 +233,7 @@ export function AuthScene() {
           <div className="wm-brand">AETHERIA</div>
           <div className="wm-glyph">✦</div>
         </div>
-        <div className="wm-subtitle">THE LIVING DASHBOARD</div>
+        <div className="wm-subtitle">{t('scene.subtitle')}</div>
         <div className="wm-divider">
           <span />
           <span className="wm-dia" />
@@ -281,7 +281,7 @@ export function AuthScene() {
 
       <div className="auth-companion">
         <div className="comp-bubble">
-          <div className="comp-bubble-inner">Ready to forge your legend?</div>
+          <div className="comp-bubble-inner">{t('scene.companionPrompt')}</div>
         </div>
         <div className="comp-body">
           <div className="comp-aura" />

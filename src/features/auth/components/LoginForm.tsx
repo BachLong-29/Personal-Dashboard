@@ -10,6 +10,7 @@ import { loginSchema, type LoginFormValues } from '../schemas';
 import { AuthInput } from './AuthInput';
 
 function RememberMeToggle() {
+  const t = useTranslations('auth');
   const [checked, setChecked] = useState(false);
   return (
     <button
@@ -21,14 +22,13 @@ function RememberMeToggle() {
       <div className={`auth-check-box${checked ? ' checked' : ''}`} aria-hidden="true">
         {checked && '✓'}
       </div>
-      <span>Remember me</span>
+      <span>{t('rememberMe')}</span>
     </button>
   );
 }
 
 export function LoginForm() {
   const t = useTranslations('auth');
-  const tCommon = useTranslations('common');
 
   const { mutate: login, isPending, error } = useLogin();
 
@@ -69,20 +69,20 @@ export function LoginForm() {
         <div className="row-between">
           <RememberMeToggle />
           <button type="button" className="auth-link-btn">
-            Forgot password?
+            {t('forgotPassword')}
           </button>
         </div>
 
         {error && (
           <div className="auth-alert kind-error" role="alert">
             <div className="auth-alert-icon">⚠</div>
-            <div className="auth-alert-msg">{tCommon('error')}</div>
+            <div className="auth-alert-msg">{t('loginError')}</div>
           </div>
         )}
 
         <button type="submit" className="auth-primary-btn" disabled={isPending}>
           <span className="auth-pb-ornament">⟡</span>
-          <span>{isPending ? 'ENTERING...' : t('login').toUpperCase()}</span>
+          <span>{isPending ? t('entering') : t('login')}</span>
           {isPending && <div className="auth-pb-loader" aria-hidden="true" />}
           <div className="auth-pb-shine" aria-hidden="true" />
         </button>

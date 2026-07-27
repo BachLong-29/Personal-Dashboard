@@ -1634,7 +1634,7 @@ body {
   transform: rotate(45deg);
 }
 .comp-bubble-inner {
-  font-size: 11px;
+  font-size: 12px;
   color: var(--text-hi);
   line-height: 1.4;
   font-style: italic;
@@ -1755,7 +1755,7 @@ body {
 .bm-tag {
   font-family: var(--f-mono);
   font-size: 8.5px;
-  color: var(--text-dim);
+  color: var(--text-lo);
   letter-spacing: 0.22em;
   margin-top: 2px;
 }
@@ -2049,7 +2049,7 @@ body {
   z-index: 2;
 }
 .auth-field-input::placeholder {
-  color: var(--text-dim);
+  color: var(--text-lo);
 }
 .auth-field-trailing {
   padding-right: 12px;
@@ -2073,7 +2073,7 @@ body {
 }
 .auth-field-err {
   font-family: var(--f-mono);
-  font-size: 10px;
+  font-size: 12px;
   color: var(--rose);
   letter-spacing: 0.06em;
   padding: 0 4px;
@@ -2164,7 +2164,7 @@ body {
   padding: 10px 14px;
   border-radius: 8px;
   overflow: hidden;
-  animation: alert-in 0.4s var(--ease-spring);
+  animation: alert-in 0.4s var(--ease-out);
 }
 @keyframes alert-in {
   from {
@@ -2197,7 +2197,7 @@ body {
   color: var(--rose);
 }
 .auth-alert-msg {
-  font-size: 11px;
+  font-size: 12px;
   color: var(--text-md);
   line-height: 1.5;
   flex: 1;
@@ -2369,7 +2369,7 @@ body {
   font-family: var(--f-mono);
   font-size: 9px;
   letter-spacing: 0.18em;
-  color: var(--text-dim);
+  color: var(--text-lo);
   position: relative;
   z-index: 2;
 }
@@ -2476,6 +2476,19 @@ body {
   }
   .auth-side-bottom {
     padding: 14px 16px 18px;
+  }
+}
+
+/* Respect reduced-motion: neutralize the auth scene's ambient + reveal motion
+   (aurora, motes, stars, button shine, field shake) while keeping every element
+   at its fully-visible end state. */
+@media (prefers-reduced-motion: reduce) {
+  .auth-shell *,
+  .auth-shell *::before,
+  .auth-shell *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
   }
 }
 

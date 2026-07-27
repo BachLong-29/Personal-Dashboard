@@ -30,6 +30,14 @@
     "password": "Password",
     "confirmPassword": "Confirm Password",
     "forgotPassword": "Forgot password?",
+    "rememberMe": "Remember me",
+    "entering": "Entering...",
+    "loginError": "Invalid email or password. Please try again.",
+    "footer": {
+      "privacy": "Privacy",
+      "terms": "Terms",
+      "support": "Support"
+    },
     "name": "Full Name",
     "noAccount": "Don't have an account?",
     "hasAccount": "Already have an account?",
@@ -52,7 +60,9 @@
       "server": "Server",
       "online": "ONLINE",
       "creedTitle": "The Aetherian Creed",
-      "creedText": "\"Every dawn is a new quest.<br></br>Every dusk, a legend written.\""
+      "creedText": "\"Every dawn is a new quest.<br></br>Every dusk, a legend written.\"",
+      "companionPrompt": "Ready to forge your legend?",
+      "subtitle": "THE LIVING DASHBOARD"
     }
   },
   "common": {

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 
 import { LoginForm } from './LoginForm';
 import { RegisterForm } from './RegisterForm';
@@ -15,6 +15,7 @@ interface AuthPanelProps {
 export function AuthPanel({ initialMode = 'login' }: AuthPanelProps) {
   const [mode, setMode] = useState<AuthMode>(initialMode);
   const t = useTranslations('auth');
+  const locale = useLocale();
 
   return (
     <div className="auth-side">
@@ -153,22 +154,22 @@ export function AuthPanel({ initialMode = 'login' }: AuthPanelProps) {
         </div>
 
         <div className="ap-foot">
-          <a href="#">Privacy</a>
+          <a href="#">{t('footer.privacy')}</a>
           <span className="dot">◆</span>
-          <a href="#">Terms</a>
+          <a href="#">{t('footer.terms')}</a>
           <span className="dot">◆</span>
-          <a href="#">Support</a>
+          <a href="#">{t('footer.support')}</a>
         </div>
       </div>
 
       <div className="auth-side-bottom">
         <div className="sb-left">
-          © 2025 <a href="#">Aetheria</a>
+          © {new Date().getFullYear()} <a href="#">Aetheria</a>
         </div>
         <div className="sb-right">
           <span>v2.0.1</span>
           <span className="sep">·</span>
-          <span>EN</span>
+          <span>{locale.toUpperCase()}</span>
         </div>
       </div>
     </div>
