@@ -1,8 +1,8 @@
 'use client';
 
-import { GoldPanel } from '@/components/common/GoldPanel';
 import { Icon } from '@/components/common/Icon';
 import { Link } from '@/i18n/navigation';
+import { cn } from '@/libs/utils';
 import { COLOR_CSS } from '@/features/projects/constants';
 
 import { useProjects } from '@/features/projects/hooks/useProjects';
@@ -11,7 +11,7 @@ export function ProjectsPanel() {
   const { data: projects = [], isLoading } = useProjects('active');
 
   return (
-    <GoldPanel className={projectsPanel}>
+    <div className={cn(panelBase, panelBorder, projectsPanel)}>
       <div className={panelHeader}>
         <span className={panelHeaderTitle}>Projects</span>
         <Link href="/projects" className={viewAllLink}>
@@ -65,11 +65,15 @@ export function ProjectsPanel() {
           })
         )}
       </div>
-    </GoldPanel>
+    </div>
   );
 }
 
 // ── Panel shell ──────────────────────────────────────────────────────────────
+const panelBase =
+  "bg-[var(--panel)] border border-[var(--border)] rounded-[var(--r)] overflow-hidden relative before:content-[''] before:absolute before:inset-0 before:pointer-events-none before:rounded-[inherit] before:[background-image:repeating-linear-gradient(0deg,transparent,transparent_28px,oklch(1_0_0_/_0.012)_28px,oklch(1_0_0_/_0.012)_29px),repeating-linear-gradient(90deg,transparent,transparent_28px,oklch(1_0_0_/_0.012)_28px,oklch(1_0_0_/_0.012)_29px)]";
+const panelBorder =
+  'border-[oklch(0.66_0.22_295_/_0.35)] shadow-[0_0_20px_oklch(0.66_0.22_295_/_0.06),inset_0_0_20px_oklch(0.66_0.22_295_/_0.03)]';
 const projectsPanel = 'shrink-0 flex flex-col max-h-[320px]';
 
 const panelHeader =

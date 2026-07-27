@@ -57,16 +57,18 @@ type DayItem =
       item: Task;
       time?: string;
       color: string;
-      plannedMinutes: number;
-      blockId: string;
+      /** Present only for block-scheduled tasks; span tasks have no session. */
+      plannedMinutes?: number;
+      /** Present only for block-scheduled tasks. */
+      blockId?: string;
     }
   | { kind: 'quest'; item: Quest; time?: string }
   | { kind: 'habit'; item: Habit; time?: string; color: string };
 
+// UTC-based so the result never drifts by a day in negative-UTC timezones.
 function addDays(dateStr: string, n: number): string {
-  const d = new Date(dateStr);
-  d.setDate(d.getDate() + n);
-  return d.toISOString().substring(0, 10);
+  const [y, m, d] = dateStr.split('-').map(Number);
+  return new Date(Date.UTC(y ?? 1970, (m ?? 1) - 1, (d ?? 1) + n)).toISOString().substring(0, 10);
 }
 
 function getWeekDays(weekStart: string): string[] {
@@ -186,6 +188,25 @@ export function WeekView({
 
   function getTaskUsageForDay(blocks: ScheduleBlock[]): number {
     return blocks.reduce((sum, block) => sum + block.duration, 0);
+  }
+
+  // Tasks that have at least one session block this week are placed by their
+  // block(s); everything else falls back to spanning its [startDate, endDate]
+  // range so multi-day (and un-timed single-day) tasks still show and drag.
+  const taskIdsWithBlock = useMemo(
+    () => new Set(weekTaskBlocks.map((block) => block.sourceId)),
+    [weekTaskBlocks],
+  );
+
+  function getSpanTasksForDay(dateStr: string): Task[] {
+    return (allTasks as Task[]).filter(
+      (t) =>
+        t.active &&
+        !taskIdsWithBlock.has(t.id) &&
+        !!t.startDate &&
+        t.startDate <= dateStr &&
+        (t.endDate ?? t.startDate) >= dateStr,
+    );
   }
 
   const DOW_TO_HABIT_DAY = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'] as const;
@@ -351,6 +372,12 @@ export function WeekView({
                           plannedMinutes: block.duration,
                           blockId: block.id,
                         })),
+                        ...getSpanTasksForDay(dayStr).map((task) => ({
+                          kind: 'task' as const,
+                          item: task,
+                          time: undefined,
+                          color: HABIT_COLORS[task.color as TaskColor]?.value ?? 'var(--gold)',
+                        })),
                         ...(display.showQuests ? (questsByDate[dayStr] ?? []) : []).map((q) => ({
                           kind: 'quest' as const,
                           item: q,
@@ -378,11 +405,11 @@ export function WeekView({
                         if (item.kind === 'task') {
                           const task = item.item;
                           const blocked = isBlocked(task);
-                          const plannedMinutes = item.plannedMinutes;
+                          const itemKey = item.blockId ?? `span-${task.id}`;
                           return (
                             <DraggableItem
-                              key={item.blockId}
-                              id={`task|${task.id}|${dayStr}|${item.blockId}`}
+                              key={itemKey}
+                              id={`task|${task.id}|${dayStr}|${itemKey}`}
                               data={{ type: 'task', item: task, color: item.color, dayStr }}
                             >
                               <div
@@ -403,12 +430,16 @@ export function WeekView({
                                   {blocked && <span className={miniLock}>🔒</span>}
                                   {task.status === 'done' && <span className={miniDone}>✓</span>}
                                 </div>
-                                <div className={miniMetaRow}>
-                                  {item.time && <span className={miniTime}>{item.time}</span>}
-                                  <span className={miniPlanned}>
-                                    {formatUsageHours(plannedMinutes)}
-                                  </span>
-                                </div>
+                                {(item.time || item.plannedMinutes != null) && (
+                                  <div className={miniMetaRow}>
+                                    {item.time && <span className={miniTime}>{item.time}</span>}
+                                    {item.plannedMinutes != null && (
+                                      <span className={miniPlanned}>
+                                        {formatUsageHours(item.plannedMinutes)}
+                                      </span>
+                                    )}
+                                  </div>
+                                )}
                               </div>
                             </DraggableItem>
                           );
