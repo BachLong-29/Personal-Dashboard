@@ -14,8 +14,11 @@ export function useUpdateTask() {
       const { data } = await apiClient.patch<ApiResponse<Task>>(`/tasks/${id}`, payload);
       return data.data;
     },
-    onSuccess: () => {
+    onSuccess: (_data, { id }) => {
       queryClient.invalidateQueries({ queryKey: ['tasks'] });
+      // Single-task caches (e.g. the search / notification edit flows) would
+      // otherwise serve the pre-edit task for the default 60s stale window.
+      queryClient.invalidateQueries({ queryKey: ['task', id] });
       queryClient.invalidateQueries({ queryKey: queryKeys.scheduleBlocks.all });
       queryClient.invalidateQueries({ queryKey: queryKeys.calendar.all });
     },
