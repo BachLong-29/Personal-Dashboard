@@ -44,6 +44,28 @@ const TYPE_ICON: Record<string, string> = {
   conflict: '✕',
 };
 
+// Titles are authored server-side with a leading/trailing icon glyph baked in
+// (e.g. "⚠ Đến hạn: ...", "Plan Your Week 📋") — but the panel already shows
+// that same glyph via TYPE_ICON, so leaving it in the title doubles it up
+// visually. Strip it if (and only if) it matches one of TYPE_ICON's own
+// values, so this can never go out of sync with what's actually shown.
+// Split on the variation-selector code point (rather than a regex literal
+// containing it directly, which is easy to mis-paste as an invisible char).
+const VARIATION_SELECTOR_16 = String.fromCharCode(0xfe0f);
+const ICON_GLYPHS = [
+  ...new Set(Object.values(TYPE_ICON).map((g) => g.split(VARIATION_SELECTOR_16).join(''))),
+]
+  .join('')
+  .replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+const EDGE_ICON_REGEX = new RegExp(
+  `^[${ICON_GLYPHS}]\\uFE0F?\\s+|\\s+[${ICON_GLYPHS}]\\uFE0F?$`,
+  'gu',
+);
+
+function cleanTitle(title: string): string {
+  return title.replace(EDGE_ICON_REGEX, '').trim();
+}
+
 function timeAgo(iso: string): string {
   const diff = Date.now() - new Date(iso).getTime();
   const m = Math.floor(diff / 60000);
@@ -148,7 +170,7 @@ export function NotificationPanel({ onClose, onEndDay }: NotificationPanelProps)
           >
             <span className={itemIcon}>{TYPE_ICON[n.type] ?? '🔔'}</span>
             <div className={itemBody}>
-              <div className={itemTitle}>{n.title}</div>
+              <div className={itemTitle}>{cleanTitle(n.title)}</div>
               <div className={itemMessage}>{n.message}</div>
               <div className={itemTime}>{timeAgo(n.createdAt)}</div>
             </div>
