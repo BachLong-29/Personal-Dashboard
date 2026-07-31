@@ -681,7 +681,7 @@ const gridWrap =
 const dayCol =
   'flex flex-col bg-[var(--panel)] md:overflow-hidden md:min-h-0 transition-colors duration-150';
 const dayColToday =
-  'bg-[oklch(0.74_0.17_85_/_0.05)] ring-1 ring-inset ring-[oklch(0.74_0.17_85_/_0.4)] shadow-[inset_0_0_24px_oklch(0.74_0.17_85_/_0.07)]';
+  'bg-[linear-gradient(160deg,oklch(0.74_0.17_85_/_0.16),oklch(0.74_0.17_85_/_0.03))] ring-1 ring-inset ring-[oklch(0.74_0.17_85_/_0.55)] shadow-[0_0_18px_oklch(0.74_0.17_85_/_0.18),inset_0_0_28px_oklch(0.74_0.17_85_/_0.08)]';
 const dayColOver =
   'bg-[oklch(0.74_0.17_85_/_0.1)] ring-1 ring-inset ring-[oklch(0.74_0.17_85_/_0.45)]';
 
