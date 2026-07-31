@@ -534,13 +534,6 @@
     }
   },
   "tasks": {
-    "weekPeek": {
-      "today": "วันนี้",
-      "done": "เสร็จ",
-      "missed": "พลาด",
-      "more": "+ อีก {count}…",
-      "collapse": "ย่อ"
-    },
     "editModal": {
       "tag": "แก้ไขภารกิจ",
       "cancel": "ยกเลิก",
@@ -714,7 +707,8 @@
       "eyebrow": "ม้วนกระดาษ",
       "title": "สัปดาห์นี้",
       "free": "— ว่าง —",
-      "questCount": "{count, plural, one {# เควสต์} other {# เควสต์}}"
+      "questCount": "{count, plural, one {# เควสต์} other {# เควสต์}}",
+      "openWeek": "เปิดมุมมองสัปดาห์"
     },
     "scheduleStrip": {
       "eyebrow": "นาฬิกาทราย",

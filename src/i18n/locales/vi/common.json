@@ -534,13 +534,6 @@
     }
   },
   "tasks": {
-    "weekPeek": {
-      "today": "HÔM NAY",
-      "done": "XONG",
-      "missed": "BỎ LỠ",
-      "more": "+ {count} nữa…",
-      "collapse": "Thu gọn"
-    },
     "editModal": {
       "tag": "CHỈNH SỬA NHIỆM VỤ",
       "cancel": "Hủy",
@@ -714,7 +707,8 @@
       "eyebrow": "CUỘN GIẤY",
       "title": "Tuần này",
       "free": "— trống —",
-      "questCount": "{count, plural, one {# quest} other {# quest}}"
+      "questCount": "{count, plural, one {# quest} other {# quest}}",
+      "openWeek": "Mở lịch tuần"
     },
     "scheduleStrip": {
       "eyebrow": "ĐỒNG HỒ CÁT",

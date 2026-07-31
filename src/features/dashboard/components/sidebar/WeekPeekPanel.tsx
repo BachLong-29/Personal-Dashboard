@@ -4,12 +4,17 @@ import { WeekPeek } from '@/features/tasks/components/day/WeekPeek';
 
 import { useWeekTasks } from '../../hooks/useWeekTasks';
 
+interface WeekPeekPanelProps {
+  /** Opens the full week view (dashboard → Schedule → Week). When omitted, the shortcut button is hidden. */
+  onOpenWeek?: () => void;
+}
+
 /** Feeds the current week's tasks / quests / habits into {@link WeekPeek}. */
-export function WeekPeekPanel() {
+export function WeekPeekPanel({ onOpenWeek }: WeekPeekPanelProps) {
   const { tasks, taskBlocks } = useWeekTasks();
   return (
     <div className={panel}>
-      <WeekPeek tasks={tasks} taskBlocks={taskBlocks} bare />
+      <WeekPeek tasks={tasks} taskBlocks={taskBlocks} bare onOpenWeek={onOpenWeek} />
     </div>
   );
 }

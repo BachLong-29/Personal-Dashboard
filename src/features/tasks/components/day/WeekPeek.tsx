@@ -19,6 +19,8 @@ interface WeekPeekProps {
   taskBlocks?: ScheduleBlock[];
   /** Render without the built-in panel shell (bg/border) — e.g. when wrapped by an outer panel. */
   bare?: boolean;
+  /** Opens the full week view (dashboard → Schedule → Week). When omitted, the shortcut button is hidden. */
+  onOpenWeek?: () => void;
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -37,7 +39,7 @@ function dateLabel(offsetDays: number, locale: string): string {
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-export function WeekPeek({ tasks, taskBlocks = [], bare = false }: WeekPeekProps) {
+export function WeekPeek({ tasks, taskBlocks = [], bare = false, onOpenWeek }: WeekPeekProps) {
   const locale = useLocale();
   const t = useTranslations('tasks.weekPeek');
   /**
@@ -62,6 +64,19 @@ export function WeekPeek({ tasks, taskBlocks = [], bare = false }: WeekPeekProps
       <div className={panelHead}>
         <span className={panelEyebrow}>{t('eyebrow')}</span>
         <h3 className={panelTitle}>{t('title')}</h3>
+        {onOpenWeek && (
+          <button
+            type="button"
+            onClick={onOpenWeek}
+            title={t('openWeek')}
+            aria-label={t('openWeek')}
+            className={openWeekBtn}
+          >
+            <span aria-hidden="true" className="text-[11px] leading-none">
+              ⛶
+            </span>
+          </button>
+        )}
       </div>
       <div className="flex flex-col gap-[3px] mt-2 overflow-y-auto">
         {WEEK_DAYS.map((d) => {
@@ -232,6 +247,9 @@ function WeekPeekDay({
 }
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
+
+const openWeekBtn =
+  'ml-auto shrink-0 grid place-items-center w-6 h-6 rounded-[var(--r-sm)] border border-[var(--border)] bg-[var(--panel2)] text-[var(--text-lo)] cursor-pointer transition-all hover:text-[var(--gold)] hover:border-[oklch(0.74_0.17_85_/_0.4)]';
 
 const dayRow =
   'flex items-start gap-2 p-2 rounded-[var(--r-sm)] transition-colors hover:bg-[var(--panel2)]';

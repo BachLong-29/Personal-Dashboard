@@ -534,13 +534,6 @@
     }
   },
   "tasks": {
-    "weekPeek": {
-      "today": "TODAY",
-      "done": "DONE",
-      "missed": "MISSED",
-      "more": "+ {count} more…",
-      "collapse": "Show less"
-    },
     "editModal": {
       "tag": "EDIT QUEST",
       "cancel": "Cancel",
@@ -714,7 +707,8 @@
       "eyebrow": "PARCHMENT",
       "title": "This Week",
       "free": "— free —",
-      "questCount": "{count, plural, one {# quest} other {# quests}}"
+      "questCount": "{count, plural, one {# quest} other {# quests}}",
+      "openWeek": "Open week view"
     },
     "scheduleStrip": {
       "eyebrow": "HOURGLASS",
