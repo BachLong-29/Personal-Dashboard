@@ -680,7 +680,8 @@ const gridWrap =
 
 const dayCol =
   'flex flex-col bg-[var(--panel)] md:overflow-hidden md:min-h-0 transition-colors duration-150';
-const dayColToday = 'bg-[oklch(0.74_0.17_85_/_0.04)]';
+const dayColToday =
+  'bg-[oklch(0.74_0.17_85_/_0.05)] ring-1 ring-inset ring-[oklch(0.74_0.17_85_/_0.4)] shadow-[inset_0_0_24px_oklch(0.74_0.17_85_/_0.07)]';
 const dayColOver =
   'bg-[oklch(0.74_0.17_85_/_0.1)] ring-1 ring-inset ring-[oklch(0.74_0.17_85_/_0.45)]';
 
