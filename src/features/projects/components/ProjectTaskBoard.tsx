@@ -12,6 +12,8 @@ interface Props {
   tasks: Task[];
   onChangeStatus: (taskId: string, status: TaskStatus) => void;
   onEdit?: (task: Task) => void;
+  /** Hide status columns that have no tasks */
+  hideEmptyColumns?: boolean;
 }
 
 function formatSchedule(startDate: string, startTime?: string): string {
@@ -28,7 +30,7 @@ function formatSchedule(startDate: string, startTime?: string): string {
   return startTime ? `${startTime} · ${dateLabel}` : dateLabel;
 }
 
-export function ProjectTaskBoard({ tasks, onChangeStatus, onEdit }: Props) {
+export function ProjectTaskBoard({ tasks, onChangeStatus, onEdit, hideEmptyColumns }: Props) {
   const [dragId, setDragId] = useState<string | null>(null);
   const [overCol, setOverCol] = useState<TaskStatus | null>(null);
 
@@ -41,10 +43,19 @@ export function ProjectTaskBoard({ tasks, onChangeStatus, onEdit }: Props) {
     setOverCol(null);
   }
 
+  const columns = STATUS_COLUMNS.map((col) => ({
+    ...col,
+    colTasks: tasks.filter((t) => t.status === col.value),
+  }));
+  // Never hide every column — if the whole board is empty, show it as-is.
+  const hasAnyTasks = columns.some((c) => c.colTasks.length > 0);
+  const visibleColumns =
+    hideEmptyColumns && hasAnyTasks ? columns.filter((c) => c.colTasks.length > 0) : columns;
+
   return (
     <div className="flex gap-3 h-full overflow-x-auto pb-2">
-      {STATUS_COLUMNS.map((col) => {
-        const colTasks = tasks.filter((t) => t.status === col.value);
+      {visibleColumns.map((col) => {
+        const colTasks = col.colTasks;
         const statusColor = STATUS_CSS[col.value];
         return (
           <div

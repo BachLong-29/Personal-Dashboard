@@ -50,6 +50,8 @@ export function ProjectDetail({ id }: { id: string }) {
 
   const viewMode = useUIStore((s) => s.projectViewMode);
   const setViewMode = useUIStore((s) => s.setProjectViewMode);
+  const hideEmptyColumns = useUIStore((s) => s.hideEmptyKanbanColumns);
+  const toggleHideEmptyColumns = useUIStore((s) => s.toggleHideEmptyKanbanColumns);
 
   const [showEdit, setShowEdit] = useState(false);
   const [showAddTask, setShowAddTask] = useState(false);
@@ -200,7 +202,7 @@ export function ProjectDetail({ id }: { id: string }) {
 
         {/* Toolbar: view toggle + add task */}
         {!completed && (
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <div className="flex items-center gap-1 bg-[var(--panel)] border border-[var(--border)] rounded-[var(--r-sm)] p-1">
               {(['kanban', 'list'] as const).map((m) => (
                 <button
@@ -218,6 +220,31 @@ export function ProjectDetail({ id }: { id: string }) {
                 </button>
               ))}
             </div>
+            {viewMode === 'kanban' && (
+              <button
+                type="button"
+                onClick={toggleHideEmptyColumns}
+                className={cn(
+                  'flex items-center gap-1.5 px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-[0.06em] rounded-[var(--r-sm)] border transition-all [font-family:var(--f-title)] whitespace-nowrap',
+                  hideEmptyColumns
+                    ? 'bg-[oklch(0.74_0.17_85_/_0.14)] border-[oklch(0.74_0.17_85_/_0.4)] text-[var(--gold)]'
+                    : 'border-[var(--border)] text-[var(--text-mid)] hover:text-[var(--text-hi)]',
+                )}
+                title="Hide empty columns"
+              >
+                <span
+                  className={cn(
+                    'w-3 h-3 flex items-center justify-center rounded-[3px] border shrink-0',
+                    hideEmptyColumns
+                      ? 'bg-[var(--gold)] border-[var(--gold)] text-[#0a0400]'
+                      : 'border-[var(--border-hi)]',
+                  )}
+                >
+                  {hideEmptyColumns && '✓'}
+                </span>
+                Hide empty
+              </button>
+            )}
             <div className="flex-1" />
             <button type="button" onClick={() => setShowAddTask(true)} className={btnGhost}>
               ＋ Add Task
@@ -232,6 +259,7 @@ export function ProjectDetail({ id }: { id: string }) {
               tasks={project.tasks}
               onChangeStatus={handleChangeStatus}
               onEdit={setEditingTask}
+              hideEmptyColumns={hideEmptyColumns}
             />
           ) : (
             <div className="h-full overflow-y-auto">

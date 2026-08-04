@@ -24,6 +24,8 @@ interface UIState {
   toasts: Toast[];
   isSidebarOpen: boolean;
   projectViewMode: ProjectViewMode;
+  /** Kanban board: hide status columns that have no tasks */
+  hideEmptyKanbanColumns: boolean;
   searchOpen: boolean;
   /** Task ID to restore + edit after a "Quest Failed" notification click */
   pendingRestoreTaskId: string | null;
@@ -33,6 +35,7 @@ interface UIState {
   toggleSidebar: () => void;
   setSidebarOpen: (open: boolean) => void;
   setProjectViewMode: (mode: ProjectViewMode) => void;
+  toggleHideEmptyKanbanColumns: () => void;
   openSearch: () => void;
   closeSearch: () => void;
   toggleSearch: () => void;
@@ -46,10 +49,13 @@ export const useUIStore = create<UIState>()(
       toasts: [],
       isSidebarOpen: false,
       projectViewMode: 'kanban',
+      hideEmptyKanbanColumns: false,
       searchOpen: false,
       pendingRestoreTaskId: null,
       pendingScheduleNav: null,
       setProjectViewMode: (mode) => set({ projectViewMode: mode }),
+      toggleHideEmptyKanbanColumns: () =>
+        set((state) => ({ hideEmptyKanbanColumns: !state.hideEmptyKanbanColumns })),
       openSearch: () => set({ searchOpen: true }),
       closeSearch: () => set({ searchOpen: false }),
       toggleSearch: () => set((state) => ({ searchOpen: !state.searchOpen })),
