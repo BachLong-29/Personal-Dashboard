@@ -118,9 +118,9 @@ export function ProjectTaskBoard({ tasks, onChangeStatus, onEdit }: Props) {
                     <p className="text-[9px] text-[var(--text-lo)] [font-family:var(--f-title)] tracking-[0.04em] mb-1 leading-tight whitespace-nowrap">
                       {t.startDate ? formatSchedule(t.startDate) : '—'}
                     </p>
-                    <div className="flex items-center gap-1.5 min-w-0">
-                      <Icon icon={t.icon} className="text-[12px] leading-none shrink-0" />
-                      <span className="text-[11px] text-[var(--text-hi)] truncate leading-tight">
+                    <div className="flex items-start gap-1.5 min-w-0">
+                      <Icon icon={t.icon} className="text-[12px] leading-none shrink-0 mt-[1px]" />
+                      <span className="text-[11px] text-[var(--text-hi)] line-clamp-2 leading-tight">
                         {t.name}
                       </span>
                     </div>
