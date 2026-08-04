@@ -72,8 +72,11 @@ const DashboardTopbar = (props: DashboardTopbarProps) => {
   return (
     <>
       <div className={topBar}>
-        {/* ── Mobile: Search + Bell (left) ────────────────────────────────── */}
+        {/* ── Mobile: Dashboard shortcut + Search + Bell (left) ───────────── */}
         <div className="flex min-[1025px]:hidden items-center gap-2">
+          <Link href="/dashboard" className={tabletMenuBtn} aria-label={tNav('dashboard')}>
+            <span className="text-[15px] leading-none text-[var(--gold)]">⌂</span>
+          </Link>
           <button type="button" className={tabletMenuBtn} onClick={openSearch} aria-label="Search">
             <span className="text-[15px] leading-none text-[var(--gold)]">⌕</span>
           </button>
