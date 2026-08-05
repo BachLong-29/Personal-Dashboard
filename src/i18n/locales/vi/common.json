@@ -750,7 +750,8 @@
       "confirmAbandon": "Xác nhận bỏ?",
       "yesAbandon": "Có, bỏ đi",
       "reviewHint": "Hãy rà từng quest để giữ tiến độ của bạn đi đúng hướng.",
-      "dismiss": "Đóng"
+      "dismiss": "Đóng",
+      "later": "Để sau"
     }
   },
   "schedule": {

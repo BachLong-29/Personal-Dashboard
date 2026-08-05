@@ -750,7 +750,8 @@
       "confirmAbandon": "Confirm abandon?",
       "yesAbandon": "Yes, abandon",
       "reviewHint": "Review each quest to keep your progress on track.",
-      "dismiss": "Dismiss"
+      "dismiss": "Dismiss",
+      "later": "Later"
     }
   },
   "schedule": {

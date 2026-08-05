@@ -7,6 +7,8 @@ import { Modal, ModalHead, ModalBody, ModalFoot } from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
 import { DatePicker } from '@/components/ui/DatePicker';
 import { useUpdateTask } from '@/features/dashboard/hooks/useUpdateTask';
+import { SessionPlanner, type PlannerTask } from '@/features/schedule/components/SessionPlanner';
+import { useTaskBlocks } from '@/features/schedule/hooks/useScheduleBlocks';
 import { cn } from '@/libs/utils';
 
 import type { OverdueItem } from '../../hooks/useOverdueReview';
@@ -32,7 +34,15 @@ interface Props {
 
 // ─── Row component ────────────────────────────────────────────────────────────
 
-function OverdueRow({ item, onRemove }: { item: OverdueItem; onRemove: (id: string) => void }) {
+interface OverdueRowProps {
+  item: OverdueItem;
+  onRemove: (id: string) => void;
+  /** Fires after a successful reschedule when the task already has scheduled
+   * sessions, so the caller can prompt the user to go update them. */
+  onNeedsScheduleUpdate: (plannerTask: PlannerTask, blockCount: number) => void;
+}
+
+function OverdueRow({ item, onRemove, onNeedsScheduleUpdate }: OverdueRowProps) {
   const t = useTranslations('tasks');
   const tCommon = useTranslations('common');
   const { mutate: updateTask, isPending } = useUpdateTask();
@@ -40,15 +50,37 @@ function OverdueRow({ item, onRemove }: { item: OverdueItem; onRemove: (id: stri
   const [rescheduleDate, setRescheduleDate] = useState<Date | null>(null);
   const [confirmAbandon, setConfirmAbandon] = useState(false);
 
+  // Existing scheduled sessions for this task — if any, moving the due date
+  // leaves them pointing at the old date, so the user needs to update them too.
+  const { data: blocks = [] } = useTaskBlocks(item.id);
+
   function handleDone() {
     updateTask({ id: item.id, status: 'done' }, { onSuccess: () => onRemove(item.id) });
   }
 
   function handleReschedule() {
     if (!rescheduleDate) return;
+    const newStartDate = toLocalDate(rescheduleDate);
     updateTask(
-      { id: item.id, startDate: toLocalDate(rescheduleDate), endDate: null },
-      { onSuccess: () => onRemove(item.id) },
+      { id: item.id, startDate: newStartDate, endDate: null },
+      {
+        onSuccess: () => {
+          onRemove(item.id);
+          if (blocks.length > 0) {
+            onNeedsScheduleUpdate(
+              {
+                id: item.id,
+                name: item.name,
+                icon: item.icon,
+                color: item.color,
+                duration: item.duration,
+                startDate: newStartDate,
+              },
+              blocks.length,
+            );
+          }
+        },
+      },
     );
   }
 
@@ -193,48 +225,101 @@ export function OverdueReviewModal({ open, items, onRemoveItem, onDismiss }: Pro
   const t = useTranslations('tasks');
   const allDone = items.length === 0;
 
+  // Post-reschedule prompt — lives on the parent (not OverdueRow) so it
+  // survives the row being removed/unmounted when the item is rescheduled.
+  const [blockWarning, setBlockWarning] = useState<{
+    blockCount: number;
+    plannerData: PlannerTask;
+  } | null>(null);
+  const [plannerTask, setPlannerTask] = useState<PlannerTask | null>(null);
+
   return (
-    <Modal open={open} onClose={onDismiss} maxWidth="520px">
-      <ModalHead
-        tag="OVERDUE"
-        title={
-          allDone ? (
-            t('overdueReview.allCaughtUp')
-          ) : (
-            <span>
-              ⚠ {t('overdueReview.title')}{' '}
-              <span className="text-[var(--text-lo)] font-normal text-[14px]">
-                {t('overdueReview.missedCount', { count: items.length })}
+    <>
+      <Modal open={open} onClose={onDismiss} maxWidth="520px">
+        <ModalHead
+          tag="OVERDUE"
+          title={
+            allDone ? (
+              t('overdueReview.allCaughtUp')
+            ) : (
+              <span>
+                ⚠ {t('overdueReview.title')}{' '}
+                <span className="text-[var(--text-lo)] font-normal text-[14px]">
+                  {t('overdueReview.missedCount', { count: items.length })}
+                </span>
               </span>
-            </span>
-          )
-        }
-      />
+            )
+          }
+        />
 
-      <ModalBody className="max-h-[calc(72vh-120px)] overflow-y-auto">
-        {allDone ? (
-          <p className="text-[12px] text-[var(--text-lo)] text-center py-6">
-            {t('overdueReview.empty')}
-          </p>
-        ) : (
-          <div className="flex flex-col gap-2">
-            {items.map((item) => (
-              <OverdueRow key={item.id} item={item} onRemove={onRemoveItem} />
-            ))}
+        <ModalBody className="max-h-[calc(72vh-120px)] overflow-y-auto">
+          {allDone ? (
+            <p className="text-[12px] text-[var(--text-lo)] text-center py-6">
+              {t('overdueReview.empty')}
+            </p>
+          ) : (
+            <div className="flex flex-col gap-2">
+              {items.map((item) => (
+                <OverdueRow
+                  key={item.id}
+                  item={item}
+                  onRemove={onRemoveItem}
+                  onNeedsScheduleUpdate={(plannerData, blockCount) =>
+                    setBlockWarning({ blockCount, plannerData })
+                  }
+                />
+              ))}
+            </div>
+          )}
+        </ModalBody>
+
+        <ModalFoot>
+          <div className="flex items-center justify-between w-full">
+            <p className="text-[10px] text-[var(--text-lo)]">
+              {allDone ? '' : t('overdueReview.reviewHint')}
+            </p>
+            <Button variant="ghost" onClick={onDismiss}>
+              {t('overdueReview.dismiss')}
+            </Button>
           </div>
-        )}
-      </ModalBody>
+        </ModalFoot>
+      </Modal>
 
-      <ModalFoot>
-        <div className="flex items-center justify-between w-full">
-          <p className="text-[10px] text-[var(--text-lo)]">
-            {allDone ? '' : t('overdueReview.reviewHint')}
+      {/* Post-reschedule — nudge the user to update the task's existing sessions */}
+      <Modal open={blockWarning !== null} onClose={() => setBlockWarning(null)} maxWidth="380px">
+        <ModalHead title={`⚡ ${t('editModal.blockWarning.title')}`} />
+        <ModalBody>
+          <p className="text-[12px] text-[var(--text-hi)] leading-relaxed">
+            {t.rich('editModal.blockWarning.message', {
+              count: blockWarning?.blockCount ?? 0,
+              strong: (chunks) => <strong>{chunks}</strong>,
+            })}
           </p>
-          <Button variant="ghost" onClick={onDismiss}>
-            {t('overdueReview.dismiss')}
-          </Button>
-        </div>
-      </ModalFoot>
-    </Modal>
+        </ModalBody>
+        <ModalFoot>
+          <div className="flex items-center justify-end gap-2 w-full">
+            <Button variant="ghost" onClick={() => setBlockWarning(null)}>
+              {t('overdueReview.later')}
+            </Button>
+            <Button
+              variant="primary"
+              onClick={() => {
+                const data = blockWarning?.plannerData ?? null;
+                setBlockWarning(null);
+                if (data) setPlannerTask(data);
+              }}
+            >
+              {t('editModal.manageSchedule')}
+            </Button>
+          </div>
+        </ModalFoot>
+      </Modal>
+
+      <SessionPlanner
+        open={plannerTask !== null}
+        task={plannerTask}
+        onClose={() => setPlannerTask(null)}
+      />
+    </>
   );
 }
