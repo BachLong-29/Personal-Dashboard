@@ -5,11 +5,12 @@ import { CoinIcon } from '@/components/common/CoinIcon';
 import { Button } from '@/components/ui/Button';
 import { cn } from '@/libs/utils';
 
-import type { Quest } from '../../types';
+import type { PenaltySource, PenaltyUnfinishedItem } from '../../types';
 
 interface PenaltyModalProps {
-  unfinished: Quest[];
+  unfinished: PenaltyUnfinishedItem[];
   tier: number;
+  source: PenaltySource;
   onAccept?: () => void;
   onComplete: () => void;
   onFail: () => void;
@@ -33,8 +34,9 @@ interface PenaltyEscalation {
   rankDemote: boolean;
 }
 
-function pickPenalty(seed: number): PenaltyTask {
-  return PENALTY_POOL[Math.abs(seed) % PENALTY_POOL.length] ?? PENALTY_POOL[0];
+function pickPenalty(seed: number, source: PenaltySource): PenaltyTask {
+  const pool = source === 'task' ? TASK_PENALTY_POOL : PENALTY_POOL;
+  return pool[Math.abs(seed) % pool.length] ?? pool[0];
 }
 
 function GlitchTitle({ text }: { text: string }) {
@@ -54,6 +56,7 @@ function GlitchTitle({ text }: { text: string }) {
 export function PenaltyModal({
   unfinished,
   tier,
+  source,
   onAccept,
   onComplete,
   onFail,
@@ -64,7 +67,9 @@ export function PenaltyModal({
     PENALTY_ESCALATIONS[0];
 
   // Computed once on mount and kept stable — a plain value, not a ref read in render.
-  const [penalty] = useState<PenaltyTask>(() => pickPenalty(unfinished.length + tier * 7));
+  const [penalty] = useState<PenaltyTask>(() => pickPenalty(unfinished.length + tier * 7, source));
+
+  const itemNoun = source === 'task' ? 'task' : 'quest';
 
   const totalSecs = useMemo(() => TIME_BY_TIER[tier] ?? 60 * 60, [tier]);
   const [secsLeft, setSecsLeft] = useState(totalSecs);
@@ -135,15 +140,17 @@ export function PenaltyModal({
           <div className={penaltySectionLabel}>◆ EVIDENCE OF NEGLIGENCE</div>
           <div className={penaltyEvidenceText}>
             You failed to complete <span className={penaltyNum}>{unfinished.length}</span>{' '}
-            {unfinished.length === 1 ? 'quest' : 'quests'} before the day&apos;s end. The System has
-            issued a corrective task.
+            {unfinished.length === 1 ? itemNoun : `${itemNoun}s`} before the day&apos;s end. The
+            System has issued a corrective task.
           </div>
           <div className={penaltyEvidenceList}>
-            {unfinished.map((q) => (
-              <div key={q.id} className={penaltyEvidenceItem}>
+            {unfinished.map((item) => (
+              <div key={item.id} className={penaltyEvidenceItem}>
                 <span className={penaltyEvidenceCross}>✕</span>
-                <span className={penaltyEvidenceName}>{q.title}</span>
-                <span className={penaltyEvidenceRank}>{q.difficulty}-RANK</span>
+                <span className={penaltyEvidenceName}>{item.title}</span>
+                {item.difficulty && (
+                  <span className={penaltyEvidenceRank}>{item.difficulty}-RANK</span>
+                )}
               </div>
             ))}
           </div>
@@ -276,6 +283,34 @@ const PENALTY_POOL: [PenaltyTask, ...PenaltyTask[]] = [
     title: '1KM SOLO WALK',
     desc: 'Walk one kilometer alone. No headphones. Reflect.',
     icon: '🌫️',
+  },
+];
+
+// Mandatory-task pool for penalties triggered by overdue tasks.
+const TASK_PENALTY_POOL: [PenaltyTask, ...PenaltyTask[]] = [
+  {
+    id: 'p_run5k',
+    title: 'CHẠY BỘ 5KM',
+    desc: 'Chạy bộ 5km liên tục. Không được dừng giữa chừng.',
+    icon: '🏃',
+  },
+  {
+    id: 'p_pushup100',
+    title: '100 PUSH-UP',
+    desc: 'Hoàn thành 100 cái push-up. Ngắt quãng cũng được, nhưng phải xong.',
+    icon: '💪',
+  },
+  {
+    id: 'p_crunch100',
+    title: '100 CRUNCH',
+    desc: 'Hoàn thành 100 cái gập bụng (crunch).',
+    icon: '🔥',
+  },
+  {
+    id: 'p_squat100',
+    title: '100 SQUAT',
+    desc: 'Hoàn thành 100 cái squat.',
+    icon: '🦵',
   },
 ];
 

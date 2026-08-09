@@ -156,7 +156,17 @@ export interface PendingQuest {
   burstPos: BurstPos | null;
 }
 
+/** Where a penalty was triggered from — determines which mandatory-task pool it draws from. */
+export type PenaltySource = 'quest' | 'task';
+
+export interface PenaltyUnfinishedItem {
+  id: string;
+  title: string;
+  difficulty?: string;
+}
+
 export interface PenaltyState {
   tier: number;
-  unfinished: Quest[];
+  unfinished: PenaltyUnfinishedItem[];
+  source: PenaltySource;
 }

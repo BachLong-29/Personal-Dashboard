@@ -18,6 +18,7 @@ interface Props {
   onLevelUpDone: () => void;
   penaltyState: PenaltyState | null;
   penaltyFailed: boolean;
+  failedTier: number;
   pendingQuest: PendingQuest | null;
   onPenaltyComplete: () => void;
   onPenaltyFail: () => void;
@@ -39,6 +40,7 @@ export const DashboardOverlays = memo(function DashboardOverlays({
   onLevelUpDone,
   penaltyState,
   penaltyFailed,
+  failedTier,
   pendingQuest,
   onPenaltyComplete,
   onPenaltyFail,
@@ -57,13 +59,12 @@ export const DashboardOverlays = memo(function DashboardOverlays({
         <PenaltyModal
           unfinished={penaltyState.unfinished}
           tier={penaltyState.tier}
+          source={penaltyState.source}
           onComplete={onPenaltyComplete}
           onFail={onPenaltyFail}
         />
       )}
-      {penaltyFailed && (
-        <PenaltyFailureModal tier={penaltyState?.tier ?? 1} onContinue={onFailureContinue} />
-      )}
+      {penaltyFailed && <PenaltyFailureModal tier={failedTier} onContinue={onFailureContinue} />}
       {pendingQuest && (
         <ConfirmQuestModal
           quest={pendingQuest.quest}

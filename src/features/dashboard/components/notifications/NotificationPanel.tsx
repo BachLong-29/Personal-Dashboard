@@ -78,10 +78,9 @@ function timeAgo(iso: string): string {
 
 interface NotificationPanelProps {
   onClose: () => void;
-  onEndDay?: () => void;
 }
 
-export function NotificationPanel({ onClose, onEndDay }: NotificationPanelProps) {
+export function NotificationPanel({ onClose }: NotificationPanelProps) {
   const router = useRouter();
   const setPendingRestoreTaskId = useUIStore((s) => s.setPendingRestoreTaskId);
   const setPendingScheduleNav = useUIStore((s) => s.setPendingScheduleNav);
@@ -188,23 +187,6 @@ export function NotificationPanel({ onClose, onEndDay }: NotificationPanelProps)
           </div>
         ))}
       </div>
-
-      {/* Footer — End Day */}
-      {onEndDay && (
-        <div className={footer}>
-          <button
-            type="button"
-            className={endDayBtn}
-            onClick={() => {
-              onEndDay();
-              onClose();
-            }}
-          >
-            <span>⚠</span>
-            <span>End Day</span>
-          </button>
-        </div>
-      )}
     </div>
   );
 }
@@ -256,8 +238,3 @@ const itemTime = 'text-[9px] text-[var(--text-lo)] tracking-[0.06em] mt-[4px]';
 
 const dismissBtn =
   'w-5 h-5 flex items-center justify-center text-[16px] text-[var(--text-lo)] hover:text-[var(--rose)] transition-colors shrink-0 cursor-pointer leading-none mt-[-2px]';
-
-const footer = 'shrink-0 px-3 py-2.5 border-t border-[var(--border)]';
-
-const endDayBtn =
-  'flex items-center justify-center gap-2 w-full py-[8px] rounded-[var(--r-sm)] border border-[oklch(0.62_0.24_22_/_0.4)] bg-[oklch(0.62_0.24_22_/_0.08)] text-[oklch(0.85_0.18_22)] font-[var(--font-title)] text-[10px] font-bold tracking-[0.18em] cursor-pointer transition-all duration-200 hover:bg-[oklch(0.62_0.24_22_/_0.18)] hover:border-[oklch(0.62_0.24_22_/_0.7)] hover:shadow-[0_0_12px_var(--danger-glow)]';

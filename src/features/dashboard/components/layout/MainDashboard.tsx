@@ -90,9 +90,6 @@ export default function MainDashboard() {
   );
   const onToast = useCallback((reward: { xp: number; coins: number }) => setToast(reward), []);
 
-  // Daily init effects (rollover, Sunday reminder, monthly reminder)
-  useDailyInit();
-
   // Quest / habit / task orchestration
   const { quests, pendingQuest, handleConfirmQuest, handleAddQuest, handleCancelQuest } =
     useQuestOrchestration({
@@ -104,16 +101,6 @@ export default function MainDashboard() {
       onToast,
     });
 
-  // Penalty state machine
-  const {
-    penaltyState,
-    penaltyFailed,
-    handleEndDay,
-    handlePenaltyComplete,
-    handlePenaltyFail,
-    handleFailureContinue,
-  } = usePenaltyFlow({ quests, applyGamePatch, onToast });
-
   // Overdue task review
   const {
     overdueItems,
@@ -121,6 +108,25 @@ export default function MainDashboard() {
     dismissModal: dismissOverdueModal,
     removeItem: removeOverdueItem,
   } = useOverdueReview();
+
+  // Penalty state machine — auto-issues a penalty when tasks are overdue, and
+  // when the daily rollover (below) finds quests left undone from yesterday.
+  const {
+    penaltyState,
+    penaltyFailed,
+    failedTier,
+    issueQuestPenalty,
+    handlePenaltyComplete,
+    handlePenaltyFail,
+    handleFailureContinue,
+  } = usePenaltyFlow({ quests, overdueTasks: overdueItems, applyGamePatch, onToast });
+
+  // Daily init effects (rollover, Sunday reminder, monthly reminder)
+  useDailyInit({ onQuestsRolledOver: issueQuestPenalty });
+
+  // Reschedule/done/abandon review only opens once the task-triggered penalty
+  // (if any) has been resolved — the penalty modal takes priority.
+  const taskPenaltyPending = penaltyState?.source === 'task';
 
   // Restore failed task flow (triggered by notification click)
   const pendingRestoreTaskId = useUIStore((s) => s.pendingRestoreTaskId);
@@ -194,6 +200,7 @@ export default function MainDashboard() {
         onLevelUpDone={handleLevelUpDone}
         penaltyState={penaltyState}
         penaltyFailed={penaltyFailed}
+        failedTier={failedTier}
         pendingQuest={pendingQuest}
         onPenaltyComplete={handlePenaltyComplete}
         onPenaltyFail={handlePenaltyFail}
@@ -203,7 +210,7 @@ export default function MainDashboard() {
       />
 
       <OverdueReviewModal
-        open={showOverdueModal}
+        open={showOverdueModal && !taskPenaltyPending}
         items={overdueItems}
         onRemoveItem={removeOverdueItem}
         onDismiss={dismissOverdueModal}
@@ -222,7 +229,7 @@ export default function MainDashboard() {
 
       {/* h-screen flex-col: establishes the flex context so flex-1/min-h-0 work on children */}
       <div className="flex flex-col h-screen">
-        <DashboardTopbar char={char} dateStr={dateStr} onEndDay={handleEndDay} />
+        <DashboardTopbar char={char} dateStr={dateStr} />
 
         {/* Desktop / Tablet layout (1025px+) */}
         {/* 1025–1279px: 2 columns [220px + 1fr]. 1280px+: 3 columns [220px + 1fr + 260px] */}

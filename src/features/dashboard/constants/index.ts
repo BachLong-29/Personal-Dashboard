@@ -78,6 +78,7 @@ export const SKIP_CONFIRM_STORAGE_KEY = 'aetheria_skip_quest_confirm';
 export const QUEST_ROLLOVER_KEY = 'aetheria_quest_rollover_date';
 export const SUNDAY_REMINDER_KEY = 'aetheria_sunday_planning_reminded';
 export const MONTHLY_REMINDER_KEY = 'aetheria_monthly_planning_reminded';
+export const TASK_PENALTY_KEY = 'aetheria_task_penalty_date';
 
 export const HABIT_XP = 30;
 export const HABIT_COINS = 10;

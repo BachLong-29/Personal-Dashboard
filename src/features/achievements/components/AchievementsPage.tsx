@@ -182,7 +182,7 @@ export function AchievementsPage() {
   return (
     <>
       <div className="flex flex-col h-screen">
-        <DashboardTopbar char={char} dateStr={dateStr} onEndDay={() => {}} />
+        <DashboardTopbar char={char} dateStr={dateStr} />
 
         {/* Page body */}
         <div className="flex-1 overflow-hidden flex flex-col min-h-0">

@@ -1,15 +1,26 @@
 import { useEffect, useRef } from 'react';
 
 import { MONTHLY_REMINDER_KEY, QUEST_ROLLOVER_KEY, SUNDAY_REMINDER_KEY } from '../constants';
+import type { PenaltyUnfinishedItem } from '../types';
 import { useCreateNotification } from './useNotificationActions';
 import { useRolloverQuests } from './useRolloverQuests';
 
-export function useDailyInit() {
+interface Params {
+  /** Called with yesterday's leftover quests once rollover runs, if any. */
+  onQuestsRolledOver: (items: PenaltyUnfinishedItem[]) => void;
+}
+
+export function useDailyInit({ onQuestsRolledOver }: Params) {
   const { mutate: rolloverQuests } = useRolloverQuests();
   const rolloverRef = useRef(rolloverQuests);
   useEffect(() => {
     rolloverRef.current = rolloverQuests;
   }, [rolloverQuests]);
+
+  const onQuestsRolledOverRef = useRef(onQuestsRolledOver);
+  useEffect(() => {
+    onQuestsRolledOverRef.current = onQuestsRolledOver;
+  }, [onQuestsRolledOver]);
 
   const { mutate: createNotification } = useCreateNotification();
   const notifyRef = useRef(createNotification);
@@ -21,7 +32,10 @@ export function useDailyInit() {
     const today = new Date().toDateString();
     if (localStorage.getItem(QUEST_ROLLOVER_KEY) === today) return;
     rolloverRef.current(undefined, {
-      onSuccess: () => localStorage.setItem(QUEST_ROLLOVER_KEY, today),
+      onSuccess: (data) => {
+        localStorage.setItem(QUEST_ROLLOVER_KEY, today);
+        if (data.items.length > 0) onQuestsRolledOverRef.current(data.items);
+      },
     });
   }, []);
 

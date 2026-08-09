@@ -21,11 +21,10 @@ import { NotificationBell } from '../notifications/NotificationBell';
 interface DashboardTopbarProps {
   char: Character;
   dateStr: string;
-  onEndDay: () => void;
 }
 
 const DashboardTopbar = (props: DashboardTopbarProps) => {
-  const { char, dateStr, onEndDay } = props;
+  const { char, dateStr } = props;
 
   const locale = useLocale() as Locale;
   const tNav = useTranslations('nav');
@@ -80,7 +79,7 @@ const DashboardTopbar = (props: DashboardTopbarProps) => {
           <button type="button" className={tabletMenuBtn} onClick={openSearch} aria-label="Search">
             <span className="text-[15px] leading-none text-[var(--gold)]">⌕</span>
           </button>
-          <NotificationBell onEndDay={onEndDay} />
+          <NotificationBell />
         </div>
 
         {/* ── User identity trigger — desktop, returns to dashboard ────────── */}
@@ -151,7 +150,7 @@ const DashboardTopbar = (props: DashboardTopbarProps) => {
         {/* ── Desktop nav (1025px+): Streak | Bell | Logout ──────────────── */}
         <div className="hidden min-[1025px]:flex items-center gap-2">
           <div className={streakPill}>{tDash('streakDays', { count: char.streak })}</div>
-          <NotificationBell onEndDay={onEndDay} />
+          <NotificationBell />
         </div>
       </div>
 

@@ -148,7 +148,7 @@ export function TaskManagement() {
   return (
     <div className="flex flex-col h-screen bg-[var(--bg)] overflow-hidden">
       {/* Topbar */}
-      <DashboardTopbar char={char} dateStr={dateStr} onEndDay={() => {}} />
+      <DashboardTopbar char={char} dateStr={dateStr} />
 
       {/* Page content */}
       <div className="flex-1 flex flex-col min-h-0 overflow-hidden p-3 gap-3">

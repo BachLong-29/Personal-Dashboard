@@ -7,11 +7,7 @@ import { cn } from '@/libs/utils';
 import { useUnreadNotificationCount } from '../../hooks/useNotifications';
 import { NotificationPanel } from './NotificationPanel';
 
-interface NotificationBellProps {
-  onEndDay?: () => void;
-}
-
-export function NotificationBell({ onEndDay }: NotificationBellProps) {
+export function NotificationBell() {
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const { data: unreadCount = 0 } = useUnreadNotificationCount();
@@ -32,7 +28,7 @@ export function NotificationBell({ onEndDay }: NotificationBellProps) {
         {unreadCount > 0 && <span className={badge}>{unreadCount > 9 ? '9+' : unreadCount}</span>}
       </button>
 
-      {open && <NotificationPanel onClose={() => setOpen(false)} onEndDay={onEndDay} />}
+      {open && <NotificationPanel onClose={() => setOpen(false)} />}
     </div>
   );
 }

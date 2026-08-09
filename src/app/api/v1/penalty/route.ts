@@ -17,6 +17,7 @@ const createSchema = z.object({
       }),
     )
     .min(1),
+  source: z.enum(['quest', 'task']).default('quest'),
 });
 
 // GET /api/v1/penalty — returns the active pending penalty or null
@@ -52,6 +53,7 @@ export const POST = asyncHandler(async (req: NextRequest) => {
     userId: user.sub,
     tier: 1,
     status: 'pending',
+    source: data.source,
     triggeredDate: new Date(),
     unfinished: data.items,
   });

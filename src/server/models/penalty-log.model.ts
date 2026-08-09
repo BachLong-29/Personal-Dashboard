@@ -12,6 +12,8 @@ export interface IPenaltyLog extends Document {
   userId: mongoose.Types.ObjectId;
   tier: number;
   status: 'pending' | 'completed';
+  /** What triggered this penalty — determines which mandatory-task pool the client shows. */
+  source: 'quest' | 'task';
   triggeredDate: Date;
   unfinished: IPenaltyUnfinishedItem[];
   createdAt: Date;
@@ -23,6 +25,7 @@ const PenaltyLogSchema = new Schema<IPenaltyLog>(
     userId: { type: Schema.Types.ObjectId, required: true, index: true },
     tier: { type: Number, required: true, default: 1, min: 1, max: 4 },
     status: { type: String, enum: ['pending', 'completed'], default: 'pending' },
+    source: { type: String, enum: ['quest', 'task'], default: 'quest' },
     triggeredDate: { type: Date, required: true, default: () => new Date() },
     unfinished: [
       {

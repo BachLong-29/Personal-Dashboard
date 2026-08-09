@@ -37,7 +37,7 @@ export function ProjectsList() {
 
   return (
     <div className="flex flex-col h-screen bg-[var(--bg)] overflow-hidden">
-      <DashboardTopbar char={char} dateStr={dateStr} onEndDay={() => {}} />
+      <DashboardTopbar char={char} dateStr={dateStr} />
 
       <div className="flex-1 flex flex-col min-h-0 overflow-y-auto p-4 gap-4">
         {/* Header */}

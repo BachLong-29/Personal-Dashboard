@@ -9,7 +9,7 @@ import type { ApiResponse } from '@/types';
 export interface PenaltyUnfinishedItem {
   id: string;
   title: string;
-  difficulty: string;
+  difficulty?: string;
 }
 
 export interface PenaltyLog {
@@ -17,6 +17,7 @@ export interface PenaltyLog {
   userId: string;
   tier: number;
   status: 'pending' | 'completed';
+  source: 'quest' | 'task';
   triggeredDate: string;
   unfinished: PenaltyUnfinishedItem[];
 }
@@ -36,8 +37,8 @@ export function usePenalty() {
 export function useCreatePenalty() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (items: PenaltyUnfinishedItem[]) => {
-      const { data } = await apiClient.post<ApiResponse<PenaltyLog>>('/penalty', { items });
+    mutationFn: async (payload: { items: PenaltyUnfinishedItem[]; source: 'quest' | 'task' }) => {
+      const { data } = await apiClient.post<ApiResponse<PenaltyLog>>('/penalty', payload);
       return data.data;
     },
     onSuccess: () => {
