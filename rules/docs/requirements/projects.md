@@ -103,6 +103,13 @@ Grid các ProjectCard:
     kéo-thả task đổi status (reuse TaskCard). Cập nhật progress sau mỗi lần đổi.
   - **List**: list task có checkbox toggle done + progress bar tổng.
 - Nút "+ Add Task" tạo task với `projectId` gắn sẵn (reuse modal task hiện có).
+- **Search & Filter task con** (client-side, không thêm API — `project.tasks` đã load hết):
+  - Search theo `name` + `note` (case-insensitive, substring).
+  - Filter theo `tagId` (dropdown, load từ `useCategories()`).
+  - Kết quả lọc áp dụng cho cả Kanban lẫn List. Ẩn khi project đã `completed`
+    (toolbar không hiện) — không ảnh hưởng `progress`/`doneTasks`/`totalTasks` ở header
+    (luôn tính trên toàn bộ task, không theo filter).
+  - Component: `ProjectTaskFilters.tsx`.
 
 ## Reuse / Types
 

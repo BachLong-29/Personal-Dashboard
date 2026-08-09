@@ -1,12 +1,13 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 
 import { CoinIcon } from '@/components/common/CoinIcon';
 import { Icon } from '@/components/common/Icon';
 import DashboardTopbar from '@/features/dashboard/components/layout/DashboardTopbar';
 import { useProfile } from '@/features/profile/hooks/useProfile';
+import { useCategories } from '@/features/dashboard/hooks/useCategories';
 import { buildEmptyChar, profileToCharacter } from '@/features/dashboard/utils/character.utils';
 import { useUpdateTask } from '@/features/dashboard/hooks/useUpdateTask';
 import { AddTaskModal } from '@/features/tasks/components/shared/AddTaskModal';
@@ -23,6 +24,7 @@ import { useProject } from '../hooks/useProject';
 import { useArchiveProject, useCompleteProject } from '../hooks/useProjectActions';
 import { ProjectFormModal } from './ProjectFormModal';
 import { ProjectTaskBoard } from './ProjectTaskBoard';
+import { ProjectTaskFilters } from './ProjectTaskFilters';
 import { ProjectTaskList } from './ProjectTaskList';
 
 export function ProjectDetail({ id }: { id: string }) {
@@ -44,6 +46,7 @@ export function ProjectDetail({ id }: { id: string }) {
 
   const queryClient = useQueryClient();
   const { data: project, isLoading } = useProject(id);
+  const { data: categories = [] } = useCategories();
   const updateTask = useUpdateTask();
   const archiveProject = useArchiveProject();
   const completeProject = useCompleteProject();
@@ -56,6 +59,24 @@ export function ProjectDetail({ id }: { id: string }) {
   const [showEdit, setShowEdit] = useState(false);
   const [showAddTask, setShowAddTask] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
+
+  // ── Search & filter ─────────────────────────────────────────────────────────
+  const [search, setSearch] = useState('');
+  const [filterTag, setFilterTag] = useState<string>('all');
+
+  const filteredTasks = useMemo(() => {
+    const tasks = project?.tasks ?? [];
+    return tasks.filter((t) => {
+      if (filterTag !== 'all' && t.tagId !== filterTag) return false;
+      if (search) {
+        const s = search.toLowerCase();
+        if (!t.name.toLowerCase().includes(s) && !(t.note?.toLowerCase().includes(s) ?? false)) {
+          return false;
+        }
+      }
+      return true;
+    });
+  }, [project?.tasks, filterTag, search]);
 
   const refetchProject = () => queryClient.invalidateQueries({ queryKey: ['project', id] });
 
@@ -92,7 +113,7 @@ export function ProjectDetail({ id }: { id: string }) {
   if (isLoading || !project) {
     return (
       <div className="flex flex-col h-screen bg-[var(--bg)]">
-        <DashboardTopbar char={char} dateStr={dateStr} onEndDay={() => {}} />
+        <DashboardTopbar char={char} dateStr={dateStr} />
         <div className="flex-1 flex items-center justify-center text-[13px] text-[var(--text-lo)]">
           {isLoading ? 'Loading project…' : 'Project not found.'}
         </div>
@@ -107,7 +128,7 @@ export function ProjectDetail({ id }: { id: string }) {
 
   return (
     <div className="flex flex-col h-screen bg-[var(--bg)] overflow-hidden">
-      <DashboardTopbar char={char} dateStr={dateStr} onEndDay={() => {}} />
+      <DashboardTopbar char={char} dateStr={dateStr} />
 
       <div className="flex-1 flex flex-col min-h-0 overflow-hidden p-4 gap-4">
         {/* Back */}
@@ -202,53 +223,62 @@ export function ProjectDetail({ id }: { id: string }) {
 
         {/* Toolbar: view toggle + add task */}
         {!completed && (
-          <div className="flex items-center gap-2 flex-wrap">
-            <div className="flex items-center gap-1 bg-[var(--panel)] border border-[var(--border)] rounded-[var(--r-sm)] p-1">
-              {(['kanban', 'list'] as const).map((m) => (
+          <div className="flex flex-col gap-2">
+            <ProjectTaskFilters
+              search={search}
+              onSearch={setSearch}
+              tag={filterTag}
+              onTag={setFilterTag}
+              categories={categories}
+            />
+            <div className="flex items-center gap-2 flex-wrap">
+              <div className="flex items-center gap-1 bg-[var(--panel)] border border-[var(--border)] rounded-[var(--r-sm)] p-1">
+                {(['kanban', 'list'] as const).map((m) => (
+                  <button
+                    key={m}
+                    type="button"
+                    onClick={() => setViewMode(m)}
+                    className={cn(
+                      'px-3 py-1 text-[11px] font-bold uppercase tracking-[0.06em] rounded-[var(--r-sm)] transition-all [font-family:var(--f-title)]',
+                      viewMode === m
+                        ? 'bg-[oklch(0.74_0.17_85_/_0.14)] text-[var(--gold)]'
+                        : 'text-[var(--text-mid)] hover:text-[var(--text-hi)]',
+                    )}
+                  >
+                    {m === 'kanban' ? '▦ Board' : '☰ List'}
+                  </button>
+                ))}
+              </div>
+              {viewMode === 'kanban' && (
                 <button
-                  key={m}
                   type="button"
-                  onClick={() => setViewMode(m)}
+                  onClick={toggleHideEmptyColumns}
                   className={cn(
-                    'px-3 py-1 text-[11px] font-bold uppercase tracking-[0.06em] rounded-[var(--r-sm)] transition-all [font-family:var(--f-title)]',
-                    viewMode === m
-                      ? 'bg-[oklch(0.74_0.17_85_/_0.14)] text-[var(--gold)]'
-                      : 'text-[var(--text-mid)] hover:text-[var(--text-hi)]',
-                  )}
-                >
-                  {m === 'kanban' ? '▦ Board' : '☰ List'}
-                </button>
-              ))}
-            </div>
-            {viewMode === 'kanban' && (
-              <button
-                type="button"
-                onClick={toggleHideEmptyColumns}
-                className={cn(
-                  'flex items-center gap-1.5 px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-[0.06em] rounded-[var(--r-sm)] border transition-all [font-family:var(--f-title)] whitespace-nowrap',
-                  hideEmptyColumns
-                    ? 'bg-[oklch(0.74_0.17_85_/_0.14)] border-[oklch(0.74_0.17_85_/_0.4)] text-[var(--gold)]'
-                    : 'border-[var(--border)] text-[var(--text-mid)] hover:text-[var(--text-hi)]',
-                )}
-                title="Hide empty columns"
-              >
-                <span
-                  className={cn(
-                    'w-3 h-3 flex items-center justify-center rounded-[3px] border shrink-0',
+                    'flex items-center gap-1.5 px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-[0.06em] rounded-[var(--r-sm)] border transition-all [font-family:var(--f-title)] whitespace-nowrap',
                     hideEmptyColumns
-                      ? 'bg-[var(--gold)] border-[var(--gold)] text-[#0a0400]'
-                      : 'border-[var(--border-hi)]',
+                      ? 'bg-[oklch(0.74_0.17_85_/_0.14)] border-[oklch(0.74_0.17_85_/_0.4)] text-[var(--gold)]'
+                      : 'border-[var(--border)] text-[var(--text-mid)] hover:text-[var(--text-hi)]',
                   )}
+                  title="Hide empty columns"
                 >
-                  {hideEmptyColumns && '✓'}
-                </span>
-                Hide empty
+                  <span
+                    className={cn(
+                      'w-3 h-3 flex items-center justify-center rounded-[3px] border shrink-0',
+                      hideEmptyColumns
+                        ? 'bg-[var(--gold)] border-[var(--gold)] text-[#0a0400]'
+                        : 'border-[var(--border-hi)]',
+                    )}
+                  >
+                    {hideEmptyColumns && '✓'}
+                  </span>
+                  Hide empty
+                </button>
+              )}
+              <div className="flex-1" />
+              <button type="button" onClick={() => setShowAddTask(true)} className={btnGhost}>
+                ＋ Add Task
               </button>
-            )}
-            <div className="flex-1" />
-            <button type="button" onClick={() => setShowAddTask(true)} className={btnGhost}>
-              ＋ Add Task
-            </button>
+            </div>
           </div>
         )}
 
@@ -256,7 +286,7 @@ export function ProjectDetail({ id }: { id: string }) {
         <div className="flex-1 min-h-0 overflow-hidden">
           {viewMode === 'kanban' ? (
             <ProjectTaskBoard
-              tasks={project.tasks}
+              tasks={filteredTasks}
               onChangeStatus={handleChangeStatus}
               onEdit={setEditingTask}
               hideEmptyColumns={hideEmptyColumns}
@@ -264,9 +294,10 @@ export function ProjectDetail({ id }: { id: string }) {
           ) : (
             <div className="h-full overflow-y-auto">
               <ProjectTaskList
-                tasks={project.tasks}
+                tasks={filteredTasks}
                 onToggleDone={handleToggleDone}
                 onEdit={setEditingTask}
+                filtered={search !== '' || filterTag !== 'all'}
               />
             </div>
           )}

@@ -180,7 +180,7 @@ function OverdueRow({ item, onRemove, onNeedsScheduleUpdate }: OverdueRowProps) 
                 onClick={() => setShowReschedule(true)}
                 disabled={isPending}
               >
-                ↺ {t('editModal.reschedule')}
+                {t('editModal.reschedule')}
               </Button>
               <Button size="sm" variant="primary" onClick={handleDone} disabled={isPending}>
                 {isPending ? '…' : t('overdueReview.doneAction')}

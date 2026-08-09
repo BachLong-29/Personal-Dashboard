@@ -9,13 +9,19 @@ interface Props {
   tasks: Task[];
   onToggleDone: (task: Task) => void;
   onEdit?: (task: Task) => void;
+  /** True when `tasks` was narrowed by search/filter — changes the empty-state copy */
+  filtered?: boolean;
 }
 
 const STATUS_LABEL = Object.fromEntries(STATUS_COLUMNS.map((c) => [c.value, c.label]));
 
-export function ProjectTaskList({ tasks, onToggleDone, onEdit }: Props) {
+export function ProjectTaskList({ tasks, onToggleDone, onEdit, filtered }: Props) {
   if (tasks.length === 0) {
-    return <div className="text-[12px] text-[var(--text-lo)] text-center py-10">No tasks yet.</div>;
+    return (
+      <div className="text-[12px] text-[var(--text-lo)] text-center py-10">
+        {filtered ? 'No tasks match your filters.' : 'No tasks yet.'}
+      </div>
+    );
   }
 
   return (
