@@ -64,6 +64,12 @@ export function ProjectDetail({ id }: { id: string }) {
   const [search, setSearch] = useState('');
   const [filterTag, setFilterTag] = useState<string>('all');
 
+  // Only offer tags actually used by this project's tasks — not every category in the DB.
+  const usedCategories = useMemo(() => {
+    const usedIds = new Set((project?.tasks ?? []).map((t) => t.tagId));
+    return categories.filter((c) => usedIds.has(c.id));
+  }, [project?.tasks, categories]);
+
   const filteredTasks = useMemo(() => {
     const tasks = project?.tasks ?? [];
     return tasks.filter((t) => {
@@ -229,7 +235,7 @@ export function ProjectDetail({ id }: { id: string }) {
               onSearch={setSearch}
               tag={filterTag}
               onTag={setFilterTag}
-              categories={categories}
+              categories={usedCategories}
             />
             <div className="flex items-center gap-2 flex-wrap">
               <div className="flex items-center gap-1 bg-[var(--panel)] border border-[var(--border)] rounded-[var(--r-sm)] p-1">
