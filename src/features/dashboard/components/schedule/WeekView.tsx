@@ -36,7 +36,7 @@ import { EditTaskModal } from '@/features/tasks/components/shared/EditTaskModal'
 import { DayActionMenu } from './DayActionMenu';
 import { TaskPickerModal } from './TaskPickerModal';
 import { taskToUITask } from '@/features/tasks/data/adapters';
-import { todayISO } from '@/features/tasks/utils/date.utils';
+import { parseLocalDate, todayISO } from '@/features/tasks/utils/date.utils';
 import type { ScheduleBlock, Task as CoreTask } from '@/types';
 import { useProfile } from '@/features/profile/hooks/useProfile';
 import { useScheduleBlocks } from '@/features/schedule/hooks/useScheduleBlocks';
@@ -129,6 +129,7 @@ export function WeekView({
 
   const [editing, setEditing] = useState<Task | undefined>(undefined);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [addForDay, setAddForDay] = useState<string | null>(null);
   const [showEditModal, setShowEditModal] = useState(false);
 
   const [deletingTask, setDeletingTask] = useState<Task | undefined>(undefined);
@@ -241,8 +242,9 @@ export function WeekView({
     setShowEditModal(true);
   }
 
-  function handleAddForDay() {
+  function handleAddForDay(dayStr: string) {
     setEditing(undefined);
+    setAddForDay(dayStr);
     setShowAddModal(true);
   }
 
@@ -360,7 +362,7 @@ export function WeekView({
                       </div>
                     </div>
                     <DayActionMenu
-                      onAddTask={handleAddForDay}
+                      onAddTask={() => handleAddForDay(dayStr)}
                       onPickTask={() => setPickerDay(dayStr)}
                     />
                   </div>
@@ -552,8 +554,15 @@ export function WeekView({
       {/* Create — unified AddTaskModal */}
       <AddTaskModal
         open={showAddModal}
-        onClose={() => setShowAddModal(false)}
-        onSaved={() => setShowAddModal(false)}
+        onClose={() => {
+          setShowAddModal(false);
+          setAddForDay(null);
+        }}
+        onSaved={() => {
+          setShowAddModal(false);
+          setAddForDay(null);
+        }}
+        defaultValues={addForDay ? { startDate: parseLocalDate(addForDay) } : undefined}
       />
 
       {/* Edit — unified EditTaskModal */}

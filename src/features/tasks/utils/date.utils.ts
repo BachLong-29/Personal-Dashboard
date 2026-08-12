@@ -6,6 +6,12 @@ export function toLocalDate(d: Date): string {
   ].join('-');
 }
 
+/** Parse a `YYYY-MM-DD` string into a local-midnight Date — inverse of {@link toLocalDate}. */
+export function parseLocalDate(dateStr: string): Date {
+  const [y, m, d] = dateStr.split('-').map(Number);
+  return new Date(y ?? 1970, (m ?? 1) - 1, d ?? 1);
+}
+
 export function todayISO(): string {
   return toLocalDate(new Date());
 }

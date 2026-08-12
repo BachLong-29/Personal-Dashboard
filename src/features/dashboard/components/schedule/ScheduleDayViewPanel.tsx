@@ -7,7 +7,7 @@ import { useTranslations } from 'next-intl';
 import { TaskDayView } from '@/features/tasks/components/day/TaskDayView';
 import { AddTaskModal } from '@/features/tasks/components/shared/AddTaskModal';
 import { EditTaskModal } from '@/features/tasks/components/shared/EditTaskModal';
-import { toLocalDate } from '@/features/tasks/utils/date.utils';
+import { parseLocalDate, toLocalDate } from '@/features/tasks/utils/date.utils';
 
 import { useScheduleDayTasks } from '../../hooks/useScheduleDayTasks';
 import type { Quest } from '../../types';
@@ -126,6 +126,7 @@ export function ScheduleDayViewPanel({
         open={showAddTaskModal}
         onClose={() => setShowAddTaskModal(false)}
         onSaved={() => setShowAddTaskModal(false)}
+        defaultValues={{ startDate: parseLocalDate(date) }}
       />
       {showAddHabitModal && (
         <AddHabitModal

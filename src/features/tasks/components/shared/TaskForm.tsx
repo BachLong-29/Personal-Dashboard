@@ -69,6 +69,11 @@ const COLOR_OPTIONS: { value: TaskColor; label: string; css: string }[] = [
 
 const STATUS_VALUES: TaskStatus[] = ['todo', 'in_progress', 'pending', 'waiting', 'done'];
 
+/** Pre-selected so a new task can be saved without opening the emoji picker. */
+const DEFAULT_ICON = '📄';
+/** Name of the category auto-selected for new tasks when present in the user's list. */
+const DEFAULT_CATEGORY_NAME = 'task';
+
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export const TaskForm = forwardRef<TaskFormHandle, TaskFormProps>(function TaskForm(
@@ -79,7 +84,7 @@ export const TaskForm = forwardRef<TaskFormHandle, TaskFormProps>(function TaskF
   // ── Form state ───────────────────────────────────────────────────────────────
   const [name, setName] = useState(defaultValues?.name ?? '');
   const [note, setNote] = useState(defaultValues?.note ?? '');
-  const [icon, setIcon] = useState(defaultValues?.icon ?? '');
+  const [icon, setIcon] = useState(defaultValues?.icon ?? DEFAULT_ICON);
   const [tagId, setTagId] = useState(defaultValues?.tagId ?? '');
   const [color, setColor] = useState<TaskColor>(defaultValues?.color ?? 'gold');
   const [status, setStatus] = useState<TaskStatus>(defaultValues?.status ?? 'todo');
@@ -128,7 +133,11 @@ export const TaskForm = forwardRef<TaskFormHandle, TaskFormProps>(function TaskF
   }));
 
   // ── Derived ──────────────────────────────────────────────────────────────────
-  const resolvedTagId = tagId || (categories.length > 0 ? (categories[0] as Category).id : '');
+  const defaultCategory = (categories as Category[]).find(
+    (c) => c.name.toLowerCase() === DEFAULT_CATEGORY_NAME,
+  );
+  const resolvedTagId =
+    tagId || defaultCategory?.id || (categories.length > 0 ? (categories[0] as Category).id : '');
 
   const dateError =
     startDate && endDate && endDate.getTime() < startDate.getTime()
