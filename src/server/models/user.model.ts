@@ -2,12 +2,17 @@ import type { Document } from 'mongoose';
 import mongoose, { Schema } from 'mongoose';
 
 export type UserRole = 'admin' | 'user' | 'moderator';
+export type AuthProvider = 'local' | 'google';
 
 export interface IUser extends Document {
   _id: mongoose.Types.ObjectId;
   email: string;
   name: string;
-  password: string;
+  /** Required for provider === 'local' — absent for OAuth-only accounts */
+  password?: string;
+  provider: AuthProvider;
+  /** Google `sub` claim — set when the account is linked to Google */
+  googleId?: string;
   role: UserRole;
   avatar?: string;
   createdAt: Date;
@@ -31,7 +36,22 @@ const userSchema = new Schema<IUser>(
     },
     password: {
       type: String,
-      required: true,
+      required: [
+        function (this: IUser) {
+          return this.provider === 'local';
+        },
+        'Password is required for local accounts',
+      ],
+    },
+    provider: {
+      type: String,
+      enum: ['local', 'google'] satisfies AuthProvider[],
+      default: 'local',
+    },
+    googleId: {
+      type: String,
+      unique: true,
+      sparse: true,
     },
     role: {
       type: String,
