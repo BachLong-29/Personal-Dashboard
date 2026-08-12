@@ -4,6 +4,8 @@ const clientEnvSchema = z.object({
   NEXT_PUBLIC_APP_URL: z.string().url(),
   NEXT_PUBLIC_APP_NAME: z.string().min(1),
   NEXT_PUBLIC_API_URL: z.string().url(),
+  // Optional — Google login is unavailable (button hidden) until this is set
+  NEXT_PUBLIC_GOOGLE_CLIENT_ID: z.string().min(1).optional(),
 });
 
 const serverEnvSchema = z.object({
@@ -11,12 +13,14 @@ const serverEnvSchema = z.object({
   ACCESS_TOKEN_EXPIRY: z.string().default('15m'),
   REFRESH_TOKEN_EXPIRY: z.string().default('7d'),
   MONGODB_URI: z.string().url(),
+  GOOGLE_CLIENT_ID: z.string().min(1).optional(),
 });
 
 const _clientEnv = clientEnvSchema.safeParse({
   NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
   NEXT_PUBLIC_APP_NAME: process.env.NEXT_PUBLIC_APP_NAME,
   NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL,
+  NEXT_PUBLIC_GOOGLE_CLIENT_ID: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID,
 });
 
 if (!_clientEnv.success) {
@@ -32,6 +36,7 @@ export function validateServerEnv() {
     ACCESS_TOKEN_EXPIRY: process.env.ACCESS_TOKEN_EXPIRY,
     REFRESH_TOKEN_EXPIRY: process.env.REFRESH_TOKEN_EXPIRY,
     MONGODB_URI: process.env.MONGODB_URI,
+    GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID,
   });
 
   if (!result.success) {

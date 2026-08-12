@@ -19,7 +19,7 @@ export const POST = asyncHandler(async (req) => {
   await connectDB();
 
   const user = await UserModel.findOne({ email: data.email.toLowerCase() });
-  if (!user) return unauthorizedResponse('Invalid credentials');
+  if (!user || !user.password) return unauthorizedResponse('Invalid credentials');
 
   const isValid = await bcrypt.compare(data.password, user.password);
   if (!isValid) return unauthorizedResponse('Invalid credentials');

@@ -14,6 +14,9 @@ export const authEndpoints = {
   register: (credentials: RegisterCredentials) =>
     apiClient.post<ApiResponse<User>>('/auth/register', credentials),
 
+  google: (credential: string) =>
+    apiClient.post<ApiResponse<AuthSession>>('/auth/google', { credential }),
+
   refresh: (refreshToken: string) =>
     apiClient.post<ApiResponse<{ accessToken: string; refreshToken: string }>>('/auth/refresh', {
       refreshToken,
