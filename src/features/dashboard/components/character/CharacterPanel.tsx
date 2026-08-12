@@ -121,6 +121,15 @@ export function CharacterPanel({ char, settings }: CharacterPanelProps) {
                 <span>{tNav('projects')}</span>
               </Link>
               <Link
+                href="/finance"
+                className={menuItem}
+                role="menuitem"
+                onClick={() => setMenuOpen(false)}
+              >
+                <Icon icon="💰" />
+                <span>{tNav('finance')}</span>
+              </Link>
+              <Link
                 href="/marketplace"
                 className={cn(menuItem, 'text-[var(--violet)]')}
                 role="menuitem"

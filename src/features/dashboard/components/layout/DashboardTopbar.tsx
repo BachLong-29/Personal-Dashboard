@@ -255,6 +255,12 @@ const DashboardTopbar = (props: DashboardTopbarProps) => {
                 </span>
                 <span>{tNav('projects')}</span>
               </Link>
+              <Link href="/finance" className={sheetItem} onClick={closeSheet}>
+                <span className={sheetItemIcon}>
+                  <Icon icon="💰" />
+                </span>
+                <span>{tNav('finance')}</span>
+              </Link>
             </div>
 
             <div className="h-px bg-[var(--border)] mx-4 my-1" />

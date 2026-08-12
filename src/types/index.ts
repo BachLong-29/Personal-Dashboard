@@ -13,3 +13,4 @@ export type * from './search';
 export type * from './schedule-block';
 export type * from './calendar';
 export type * from './calendar-insights';
+export type * from './finance';

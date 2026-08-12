@@ -20,7 +20,10 @@ const BACKGROUND_STYLE: CSSProperties = {
   backgroundImage: `linear-gradient(rgba(8,6,16,0.55), rgba(8,6,16,0.55)), url(${mainBackground.src})`,
   backgroundSize: 'cover, auto 250%',
   backgroundPosition: 'center, center',
-  backgroundRepeat: 'no-repeat, no-repeat',
+  // Wide/short panels (e.g. page headers) are narrower than one zoomed tile of
+  // the art at "auto 250%" height, so repeat-x tiles it instead of leaving a
+  // single letterboxed patch in the middle.
+  backgroundRepeat: 'no-repeat, repeat-x',
 };
 
 /**
