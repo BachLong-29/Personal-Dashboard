@@ -104,22 +104,23 @@ Transaction {
 
 ```
 src/app/[locale]/(protected)/finance/
-└── page.tsx     // trang chính
+├── layout.tsx             // topbar + tab nav (Overview/Accounts/Budget/Transactions)
+├── page.tsx                // Overview (Ledger)
+├── wallets/page.tsx        // Accounts (wallet CRUD)
+├── budget/page.tsx         // stub — xem finance-budget.md
+└── transactions/page.tsx   // stub — full ledger, TBD
 ```
 
-Thêm mục "Finance" vào sidebar/nav (protected).
+Tab chuyển route qua Next.js App Router (client-side, không reload) — không state-switch nội bộ.
 
 ## UI — FinancePage Layout
 
-- **Header**: tổng số dư (tổng các wallet) + nút "+ Add Transaction".
-- **Wallet strip**: card ngang scroll-x cho từng wallet (icon, tên, balance). Click → filter
-  transaction list theo wallet đó. Nút "+ Wallet" cuối strip.
-- **Filter bar**: search theo note, dropdown category, dropdown type (income/expense/all),
-  date range picker.
-- **Transaction list**: nhóm theo ngày, mỗi item hiện icon category, note, wallet, amount
-  (màu xanh cho income, đỏ cho expense).
-- Responsive: wallet strip → scroll ngang trên mobile; filter bar → collapse vào dropdown
-  "Filters" trên `< sm`; list giữ 1 cột mọi breakpoint.
+- **Header**: tổng số dư + nút "+ Add Transaction".
+- **Wallet strip**: card ngang scroll-x/wallet (icon, tên, balance), click filter theo wallet;
+  nút "+ Wallet" cuối strip.
+- **Filter bar**: search note, dropdown category/type/month — collapse trên `< sm`.
+- **Transaction list**: nhóm theo ngày, icon category + note + wallet + amount (xanh income /
+  đỏ expense), 1 cột mọi breakpoint.
 
 ## Reuse / Types
 
@@ -142,8 +143,7 @@ Thêm mục "Finance" vào sidebar/nav (protected).
 | 3   | [finance-recurring.md](./finance-recurring.md) | Giao dịch định kỳ (lazy-generate)        |
 | 4   | [finance-stats.md](./finance-stats.md)         | Biểu đồ thu/chi theo tháng/category      |
 
-**Thứ tự triển khai đề xuất:** Wallet + FinanceCategory + Transaction (nền tảng) → SePay
-webhook → Stats → Budget → Recurring.
+**Thứ tự triển khai đề xuất:** Wallet + FinanceCategory + Transaction → SePay → Stats → Budget → Recurring.
 
 </requirement>
 
