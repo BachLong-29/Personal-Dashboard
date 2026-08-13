@@ -12,6 +12,16 @@ import type {
   TransactionFilters,
   SepayStatus,
   SepayKeyResult,
+  Budget,
+  CreateBudgetPayload,
+  UpdateBudgetPayload,
+  FinanceOverview,
+  FinanceGoal,
+  CreateFinanceGoalPayload,
+  UpdateFinanceGoalPayload,
+  CreateContributionPayload,
+  GoalContribution,
+  BalanceForecast,
 } from '@/types';
 
 function toQueryString(filters?: TransactionFilters): string {
@@ -65,4 +75,38 @@ export const financeEndpoints = {
 
   removeTransaction: (id: string) =>
     apiClient.delete<ApiResponse<null>>(`/finance/transactions/${id}`),
+
+  listBudgets: (month: string) =>
+    apiClient.get<ApiResponse<Budget[]>>(`/finance/budgets?month=${month}`),
+
+  createBudget: (payload: CreateBudgetPayload) =>
+    apiClient.post<ApiResponse<Budget>>('/finance/budgets', payload),
+
+  updateBudget: (id: string, payload: UpdateBudgetPayload) =>
+    apiClient.patch<ApiResponse<Budget>>(`/finance/budgets/${id}`, payload),
+
+  removeBudget: (id: string) => apiClient.delete<ApiResponse<null>>(`/finance/budgets/${id}`),
+
+  listGoals: (month: string, today: string) =>
+    apiClient.get<ApiResponse<FinanceGoal[]>>(`/finance/goals?month=${month}&today=${today}`),
+
+  createGoal: (payload: CreateFinanceGoalPayload) =>
+    apiClient.post<ApiResponse<FinanceGoal>>('/finance/goals', payload),
+
+  updateGoal: (id: string, payload: UpdateFinanceGoalPayload) =>
+    apiClient.patch<ApiResponse<FinanceGoal>>(`/finance/goals/${id}`, payload),
+
+  removeGoal: (id: string) => apiClient.delete<ApiResponse<null>>(`/finance/goals/${id}`),
+
+  listContributions: (goalId: string) =>
+    apiClient.get<ApiResponse<GoalContribution[]>>(`/finance/goals/${goalId}/contributions`),
+
+  addContribution: (goalId: string, payload: CreateContributionPayload) =>
+    apiClient.post<ApiResponse<FinanceGoal>>(`/finance/goals/${goalId}/contributions`, payload),
+
+  getForecast: (today: string) =>
+    apiClient.get<ApiResponse<BalanceForecast>>(`/finance/forecast?today=${today}`),
+
+  getOverview: (month: string, today: string) =>
+    apiClient.get<ApiResponse<FinanceOverview>>(`/finance/overview?month=${month}&today=${today}`),
 };

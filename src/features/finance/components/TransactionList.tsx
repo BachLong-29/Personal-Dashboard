@@ -2,6 +2,7 @@
 
 import { useMemo } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
+import { useLocale, useTranslations } from 'next-intl';
 
 import type { FinanceCategory, Transaction, Wallet } from '@/types';
 
@@ -23,6 +24,8 @@ export function TransactionList({
   isLoading,
   onEdit,
 }: TransactionListProps) {
+  const t = useTranslations('finance');
+  const locale = useLocale();
   const categoryMap = useMemo(() => new Map(categories.map((c) => [c.id, c])), [categories]);
   const walletMap = useMemo(() => new Map(wallets.map((w) => [w.id, w])), [wallets]);
 
@@ -58,10 +61,8 @@ export function TransactionList({
         className="flex flex-col items-center gap-3 py-16 text-center"
       >
         <div className="text-[40px] opacity-60">💸</div>
-        <div className="text-[14px] font-bold text-[var(--text-mid)]">No transactions yet</div>
-        <div className="text-[12px] text-[var(--text-lo)]">
-          Add your first income or expense to get started.
-        </div>
+        <div className="text-[14px] font-bold text-[var(--text-hi)]">{t('transactions.empty')}</div>
+        <div className="text-[12px] text-[var(--text-mid)]">{t('transactions.emptyHint')}</div>
       </motion.div>
     );
   }
@@ -73,8 +74,12 @@ export function TransactionList({
         return (
           <div key={date}>
             <div className="mb-1.5 flex items-center justify-between px-1">
-              <span className="text-[10px] font-bold uppercase tracking-[0.1em] text-[var(--text-lo)] [font-family:var(--f-title)]">
-                {formatDateGroup(date)}
+              <span className="text-[10px] font-bold uppercase tracking-[0.1em] text-[var(--text-mid)] [font-family:var(--f-title)]">
+                {formatDateGroup(
+                  date,
+                  { today: t('common.today'), yesterday: t('common.yesterday') },
+                  locale,
+                )}
               </span>
               <span
                 className="text-[10px] font-bold tabular-nums"

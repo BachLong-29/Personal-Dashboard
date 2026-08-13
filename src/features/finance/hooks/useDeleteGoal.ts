@@ -1,0 +1,19 @@
+'use client';
+
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+
+import { financeEndpoints } from '@/services/endpoints/finance';
+
+export function useDeleteGoal() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { data } = await financeEndpoints.removeGoal(id);
+      return data.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['finance', 'goals'] });
+    },
+  });
+}

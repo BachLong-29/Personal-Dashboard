@@ -2,6 +2,8 @@
 
 import { useState } from 'react';
 
+import { useTranslations } from 'next-intl';
+
 import { Modal, ModalHead, ModalBody, ModalFoot } from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
 import { cn } from '@/libs/utils';
@@ -16,6 +18,7 @@ interface Props {
 }
 
 export function SepayConnectModal({ wallet, onClose }: Props) {
+  const t = useTranslations('finance');
   const walletId = wallet?.id ?? null;
   const { data: status, isLoading } = useSepayStatus(walletId);
   const generateKey = useGenerateSepayKey(walletId);
@@ -42,7 +45,7 @@ export function SepayConnectModal({ wallet, onClose }: Props) {
 
   return (
     <Modal open={!!wallet} onClose={handleClose} maxWidth="440px">
-      <ModalHead tag="BANK SYNC" title="🔌 Connect SePay" />
+      <ModalHead tag={t('sepay.tag')} title={'🔌 ' + t('sepay.title')} />
       <ModalBody className="flex flex-col gap-4">
         {wallet && (
           <div className="flex items-center gap-2 text-[12px] text-[var(--text-mid)]">
@@ -56,13 +59,13 @@ export function SepayConnectModal({ wallet, onClose }: Props) {
                     : 'border-[var(--border)] text-[var(--text-lo)]',
                 )}
               >
-                {status.connected ? 'Connected' : 'Not synced yet'}
+                {status.connected ? t('sepay.connected') : t('sepay.notSynced')}
               </span>
             )}
           </div>
         )}
 
-        <Field label="Webhook URL">
+        <Field label={t('sepay.webhookUrl')}>
           <div className="flex gap-2">
             <input
               className={input}
@@ -77,16 +80,14 @@ export function SepayConnectModal({ wallet, onClose }: Props) {
               onClick={() => status && copy(status.webhookUrl, 'url')}
               disabled={!status}
             >
-              {copied === 'url' ? 'Copied!' : 'Copy'}
+              {copied === 'url' ? t('sepay.copied') : t('sepay.copy')}
             </Button>
           </div>
-          <span className="text-[11px] text-[var(--text-lo)]">
-            Paste this into your SePay dashboard webhook config (auth method: API Key).
-          </span>
+          <span className="text-[11px] text-[var(--text-lo)]">{t('sepay.webhookHint')}</span>
         </Field>
 
         {revealedKey ? (
-          <Field label="API Key — save it now, shown only once">
+          <Field label={t('sepay.apiKeyLabel')}>
             <div className="flex gap-2">
               <input
                 className={cn(input, 'text-[var(--gold)]')}
@@ -100,12 +101,10 @@ export function SepayConnectModal({ wallet, onClose }: Props) {
                 size="sm"
                 onClick={() => copy(revealedKey, 'key')}
               >
-                {copied === 'key' ? 'Copied!' : 'Copy'}
+                {copied === 'key' ? t('sepay.copied') : t('sepay.copy')}
               </Button>
             </div>
-            <span className="text-[11px] text-[var(--rose)]">
-              You won&apos;t be able to see this key again after closing this window.
-            </span>
+            <span className="text-[11px] text-[var(--rose)]">{t('sepay.apiKeyWarning')}</span>
           </Field>
         ) : (
           <Button
@@ -115,13 +114,13 @@ export function SepayConnectModal({ wallet, onClose }: Props) {
             isLoading={generateKey.isPending}
             disabled={!wallet}
           >
-            {status?.configured ? '↻ Rotate API Key' : '✦ Generate API Key'}
+            {status?.configured ? '↻ ' + t('sepay.rotate') : '✦ ' + t('sepay.generate')}
           </Button>
         )}
       </ModalBody>
       <ModalFoot>
         <Button variant="ghost" onClick={handleClose}>
-          Done
+          {t('sepay.done')}
         </Button>
       </ModalFoot>
     </Modal>

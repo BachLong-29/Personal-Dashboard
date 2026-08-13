@@ -48,3 +48,5 @@ export const CATEGORY_ICONS = [
   '🐾',
   '☕',
 ];
+
+export const GOAL_ICONS = ['🎯', '🎓', '🏠', '🚗', '✈️', '💻', '🛟', '💍', '🏝', '🎁'];

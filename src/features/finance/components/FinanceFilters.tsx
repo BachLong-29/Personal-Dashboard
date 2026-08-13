@@ -1,17 +1,18 @@
 'use client';
 
 import { motion } from 'framer-motion';
+import { useTranslations } from 'next-intl';
 
 import { InputSearch } from '@/components/ui/InputSearch';
 import { Select } from '@/components/ui/Select';
-import type { FinanceCategory, TransactionType } from '@/types';
+import type { FinanceCategory, TransactionType, Wallet } from '@/types';
 
 type TypeFilter = TransactionType | 'all';
 
-const TYPE_TABS: { value: TypeFilter; label: string }[] = [
-  { value: 'all', label: 'All' },
-  { value: 'income', label: 'Income' },
-  { value: 'expense', label: 'Expense' },
+const TYPE_TABS: { value: TypeFilter; key: 'all' | 'income' | 'expense' }[] = [
+  { value: 'all', key: 'all' },
+  { value: 'income', key: 'income' },
+  { value: 'expense', key: 'expense' },
 ];
 
 interface FinanceFiltersProps {
@@ -22,6 +23,9 @@ interface FinanceFiltersProps {
   categoryId: string;
   onCategoryChange: (v: string) => void;
   categories: FinanceCategory[];
+  walletId: string;
+  onWalletChange: (v: string) => void;
+  wallets: Wallet[];
 }
 
 export function FinanceFilters({
@@ -32,18 +36,27 @@ export function FinanceFilters({
   categoryId,
   onCategoryChange,
   categories,
+  walletId,
+  onWalletChange,
+  wallets,
 }: FinanceFiltersProps) {
+  const t = useTranslations('finance.filters');
+
   const categoryOptions = [
-    { value: '', label: 'All categories' },
+    { value: '', label: t('allCategories') },
     ...categories.map((c) => ({ value: c.id, label: `${c.icon} ${c.name}` })),
+  ];
+  const walletOptions = [
+    { value: '', label: t('allWallets') },
+    ...wallets.map((w) => ({ value: w.id, label: `${w.icon} ${w.name}` })),
   ];
 
   return (
-    <div className="flex flex-col gap-2 sm:flex-row sm:items-stretch">
+    <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-stretch">
       <InputSearch
         value={search}
         onChange={onSearchChange}
-        placeholder="Search transactions…"
+        placeholder={t('search')}
         className="h-[42px] sm:max-w-[220px]"
       />
 
@@ -69,7 +82,7 @@ export function FinanceFilters({
                   : 'relative flex h-full items-center text-[var(--text-mid)] hover:text-[var(--text-hi)]'
               }
             >
-              {tab.label}
+              {t(tab.key)}
             </span>
           </button>
         ))}
@@ -79,7 +92,15 @@ export function FinanceFilters({
         options={categoryOptions}
         value={categoryId}
         onValueChange={onCategoryChange}
-        placeholder="All categories"
+        placeholder={t('allCategories')}
+        containerClassName="sm:max-w-[180px]"
+      />
+
+      <Select
+        options={walletOptions}
+        value={walletId}
+        onValueChange={onWalletChange}
+        placeholder={t('allWallets')}
         containerClassName="sm:max-w-[180px]"
       />
     </div>

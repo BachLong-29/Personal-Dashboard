@@ -2,12 +2,15 @@
 
 import { useState } from 'react';
 import { motion } from 'framer-motion';
+import { useTranslations } from 'next-intl';
 
 import { Modal, ModalHead, ModalBody, ModalFoot } from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
 import { Select } from '@/components/ui/Select';
 import { cn } from '@/libs/utils';
 import type { FinanceCategory, Transaction, TransactionType, Wallet } from '@/types';
+
+import type { QuickEntryDraft } from '../quick-entry';
 
 import { COLOR_CSS } from '../constants';
 import { formatAmountInput, toAmountDigits } from '../utils';
@@ -28,6 +31,8 @@ interface Props {
   transaction?: Transaction | null;
   /** Preselected wallet when creating from a selected wallet card. */
   defaultWalletId?: string | null;
+  /** Prefilled values from the quick-add parser — the user still confirms before saving. */
+  draft?: QuickEntryDraft | null;
 }
 
 export function TransactionFormModal({
@@ -37,7 +42,9 @@ export function TransactionFormModal({
   categories,
   transaction,
   defaultWalletId,
+  draft,
 }: Props) {
+  const t = useTranslations('finance');
   const isEdit = !!transaction;
   const createTx = useCreateTransaction();
   const updateTx = useUpdateTransaction();
@@ -65,11 +72,11 @@ export function TransactionFormModal({
         setNote(transaction.note ?? '');
         setDate(transaction.date);
       } else {
-        setType('expense');
-        setWalletId(defaultWalletId || wallets[0]?.id || '');
-        setCategoryId('');
-        setAmount('');
-        setNote('');
+        setType(draft?.type ?? 'expense');
+        setWalletId(draft?.walletId || defaultWalletId || wallets[0]?.id || '');
+        setCategoryId(draft?.categoryId ?? '');
+        setAmount(draft ? String(draft.amount) : '');
+        setNote(draft?.note ?? '');
         setDate(today());
       }
     }
@@ -111,26 +118,28 @@ export function TransactionFormModal({
   return (
     <Modal open={open} onClose={onClose} maxWidth="480px">
       <ModalHead
-        tag={isEdit ? 'EDIT TRANSACTION' : 'NEW TRANSACTION'}
-        title={isEdit ? '✎ Edit Transaction' : '＋ Add Transaction'}
+        tag={isEdit ? t('transactions.editTag') : t('transactions.newTag')}
+        title={`${isEdit ? '✎' : '＋'} ${
+          isEdit ? t('transactions.editTitle') : t('transactions.newTitle')
+        }`}
       />
       <ModalBody className="max-h-[calc(80vh-130px)] overflow-y-auto flex flex-col gap-4">
         {/* Type toggle */}
         <div className="relative flex gap-1 rounded-[var(--r-sm)] border border-[var(--border)] bg-[var(--panel)] p-1">
-          {(['expense', 'income'] as TransactionType[]).map((t) => (
+          {(['expense', 'income'] as TransactionType[]).map((option) => (
             <button
-              key={t}
+              key={option}
               type="button"
-              onClick={() => handleTypeChange(t)}
+              onClick={() => handleTypeChange(option)}
               className="relative flex-1 py-2 text-[12px] font-bold uppercase tracking-[0.06em] [font-family:var(--f-title)]"
             >
-              {type === t && (
+              {type === option && (
                 <motion.span
                   layoutId="tx-type-pill"
                   transition={{ type: 'spring', stiffness: 400, damping: 32 }}
                   className={cn(
                     'absolute inset-0 rounded-[var(--r-sm)]',
-                    t === 'income'
+                    option === 'income'
                       ? 'bg-[oklch(0.76_0.14_162_/_0.14)]'
                       : 'bg-[oklch(0.72_0.18_5_/_0.14)]',
                   )}
@@ -140,21 +149,23 @@ export function TransactionFormModal({
                 className="relative"
                 style={{
                   color:
-                    type === t
-                      ? t === 'income'
+                    type === option
+                      ? option === 'income'
                         ? 'var(--mint)'
                         : 'var(--rose)'
                       : 'var(--text-mid)',
                 }}
               >
-                {t === 'income' ? '↓ Income' : '↑ Expense'}
+                {option === 'income'
+                  ? `↓ ${t('transactions.income')}`
+                  : `↑ ${t('transactions.expense')}`}
               </span>
             </button>
           ))}
         </div>
 
         {/* Amount */}
-        <Field label="Amount">
+        <Field label={t('transactions.amount')}>
           <input
             type="text"
             inputMode="numeric"
@@ -167,17 +178,17 @@ export function TransactionFormModal({
         </Field>
 
         {/* Wallet */}
-        <Field label="Wallet">
+        <Field label={t('transactions.wallet')}>
           <Select
             options={wallets.map((w) => ({ value: w.id, label: `${w.icon} ${w.name}` }))}
             value={walletId}
             onValueChange={setWalletId}
-            placeholder="Select wallet"
+            placeholder={t('transactions.wallet')}
           />
         </Field>
 
         {/* Category grid */}
-        <Field label="Category">
+        <Field label={t('transactions.category')}>
           <div className="flex flex-wrap gap-1.5">
             {filteredCategories.map((c) => {
               const accent = COLOR_CSS[c.color];
@@ -208,18 +219,18 @@ export function TransactionFormModal({
         </Field>
 
         {/* Note */}
-        <Field label="Note (optional)">
+        <Field label={t('transactions.note')}>
           <input
             className={input}
             value={note}
             onChange={(e) => setNote(e.target.value)}
             maxLength={200}
-            placeholder="What was this for?"
+            placeholder={t('transactions.notePlaceholder')}
           />
         </Field>
 
         {/* Date */}
-        <Field label="Date">
+        <Field label={t('transactions.date')}>
           <input
             type="date"
             className={input}
@@ -231,15 +242,15 @@ export function TransactionFormModal({
       <ModalFoot className={isEdit ? 'justify-between' : undefined}>
         {isEdit && (
           <Button variant="danger" size="sm" onClick={handleDelete} isLoading={deleteTx.isPending}>
-            Delete
+            {t('common.delete')}
           </Button>
         )}
         <div className="flex gap-2">
           <Button variant="ghost" onClick={onClose} disabled={saving}>
-            Cancel
+            {t('common.cancel')}
           </Button>
           <Button variant="primary" onClick={handleSubmit} disabled={!canSave} isLoading={saving}>
-            {isEdit ? '✦ Save' : '✦ Add'}
+            ✦ {isEdit ? t('common.save') : t('common.create')}
           </Button>
         </div>
       </ModalFoot>

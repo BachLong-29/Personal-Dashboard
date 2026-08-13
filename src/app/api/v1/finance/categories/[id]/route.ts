@@ -3,9 +3,15 @@ import { NextResponse } from 'next/server';
 
 import { connectDB } from '@/libs/mongodb';
 import { getAuthUser } from '@/server/helpers/get-auth-user';
+import { BudgetModel } from '@/server/models/budget.model';
 import { FinanceCategoryModel } from '@/server/models/finance-category.model';
 import { TransactionModel } from '@/server/models/transaction.model';
 import { asyncHandler, notFoundResponse, successResponse, unauthorizedResponse } from '@/server';
+
+function currentMonthKey(): string {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+}
 
 // DELETE /api/v1/finance/categories/:id
 export const DELETE = asyncHandler(async (req: NextRequest, ctx) => {
@@ -22,6 +28,21 @@ export const DELETE = asyncHandler(async (req: NextRequest, ctx) => {
       {
         success: false,
         message: 'Cannot delete: this category is used by one or more transactions.',
+      },
+      { status: 409 },
+    );
+  }
+
+  const hasBudget = await BudgetModel.exists({
+    userId: user.sub,
+    categoryId: id,
+    month: { $gte: currentMonthKey() },
+  });
+  if (hasBudget) {
+    return NextResponse.json(
+      {
+        success: false,
+        message: 'Cannot delete: this category has a budget set for the current or a future month.',
       },
       { status: 409 },
     );

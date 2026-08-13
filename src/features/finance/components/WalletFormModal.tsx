@@ -2,22 +2,31 @@
 
 import { useState } from 'react';
 
+import { useTranslations } from 'next-intl';
+
 import { Modal, ModalHead, ModalBody, ModalFoot } from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
 import { cn } from '@/libs/utils';
-import type { TaskColor } from '@/types';
+import type { TaskColor, Wallet } from '@/types';
 import type { WalletType } from '@/types/finance';
 
 import { COLOR_CSS, COLOR_OPTIONS, WALLET_ICONS, WALLET_TYPE_OPTIONS } from '../constants';
 import { useCreateWallet } from '../hooks/useCreateWallet';
+import { useUpdateWallet } from '../hooks/useUpdateWallet';
 
 interface Props {
   open: boolean;
   onClose: () => void;
+  /** Pass a wallet to edit it; omit to create a new one. */
+  wallet?: Wallet | null;
 }
 
-export function WalletFormModal({ open, onClose }: Props) {
+export function WalletFormModal({ open, onClose, wallet }: Props) {
+  const t = useTranslations('finance');
   const createWallet = useCreateWallet();
+  const updateWallet = useUpdateWallet();
+  const isEdit = !!wallet;
+  const isPending = createWallet.isPending || updateWallet.isPending;
 
   const [name, setName] = useState('');
   const [type, setType] = useState<WalletType>('bank');
@@ -26,74 +35,94 @@ export function WalletFormModal({ open, onClose }: Props) {
   const [bankCode, setBankCode] = useState('');
   const [bankAccountNumber, setBankAccountNumber] = useState('');
 
-  const canSave = name.trim().length > 0 && !createWallet.isPending;
-
-  function reset() {
-    setName('');
-    setType('bank');
-    setIcon(WALLET_ICONS[0] ?? '🏦');
-    setColor('gold');
-    setBankCode('');
-    setBankAccountNumber('');
+  // Re-seed form fields whenever the modal opens, so edit prefills and create starts blank.
+  // Adjusted during render (not an effect) to avoid an extra render pass on open.
+  const [prevOpen, setPrevOpen] = useState(open);
+  if (open !== prevOpen) {
+    setPrevOpen(open);
+    if (open) {
+      setName(wallet?.name ?? '');
+      setType(wallet?.type ?? 'bank');
+      setIcon(wallet?.icon ?? WALLET_ICONS[0] ?? '🏦');
+      setColor(wallet?.color ?? 'gold');
+      setBankCode(wallet?.bankCode ?? '');
+      setBankAccountNumber(wallet?.bankAccountNumber ?? '');
+    }
   }
+
+  const typeLabels: Record<WalletType, string> = {
+    bank: t('wallet.typeBank'),
+    cash: t('wallet.typeCash'),
+    ewallet: t('wallet.typeEwallet'),
+  };
+
+  const canSave = name.trim().length > 0 && !isPending;
 
   function handleSubmit() {
     if (!canSave) return;
+
+    const bankFields = {
+      bankCode: type === 'bank' ? bankCode.trim() || undefined : undefined,
+      bankAccountNumber: type === 'bank' ? bankAccountNumber.trim() || undefined : undefined,
+    };
+
+    if (wallet) {
+      updateWallet.mutate(
+        { id: wallet.id, name: name.trim(), icon, color, ...bankFields },
+        { onSuccess: onClose },
+      );
+      return;
+    }
+
     createWallet.mutate(
-      {
-        name: name.trim(),
-        type,
-        icon,
-        color,
-        bankCode: type === 'bank' ? bankCode.trim() || undefined : undefined,
-        bankAccountNumber: type === 'bank' ? bankAccountNumber.trim() || undefined : undefined,
-      },
-      {
-        onSuccess: () => {
-          reset();
-          onClose();
-        },
-      },
+      { name: name.trim(), type, icon, color, ...bankFields },
+      { onSuccess: onClose },
     );
   }
 
   return (
     <Modal open={open} onClose={onClose} maxWidth="440px">
-      <ModalHead tag="NEW WALLET" title="＋ Add Wallet" />
+      <ModalHead
+        tag={isEdit ? t('wallet.editTag') : t('wallet.newTag')}
+        title={isEdit ? '✎ ' + t('wallet.editTitle') : '＋ ' + t('wallet.newTitle')}
+      />
       <ModalBody className="flex flex-col gap-4">
-        <Field label="Name">
+        <Field label={t('wallet.name')}>
           <input
             className={input}
             value={name}
             onChange={(e) => setName(e.target.value)}
             maxLength={50}
-            placeholder="e.g. Vietcombank, Cash"
+            placeholder={t('wallet.namePlaceholder')}
             autoFocus
           />
         </Field>
 
-        <Field label="Type">
+        <Field label={t('wallet.type')}>
           <div className="flex gap-2">
-            {WALLET_TYPE_OPTIONS.map((t) => (
+            {WALLET_TYPE_OPTIONS.map((option) => (
               <button
-                key={t.value}
+                key={option.value}
                 type="button"
-                onClick={() => setType(t.value)}
+                onClick={() => setType(option.value)}
+                disabled={isEdit}
+                title={isEdit ? t('wallet.typeLocked') : undefined}
                 className={cn(
                   'flex flex-1 items-center justify-center gap-1.5 rounded-[var(--r-sm)] border px-2 py-2 text-[11px] font-bold uppercase tracking-[0.04em] transition-all',
-                  type === t.value
+                  type === option.value
                     ? 'border-[var(--gold)] bg-[oklch(0.74_0.17_85_/_0.1)] text-[var(--gold)]'
                     : 'border-[var(--border)] text-[var(--text-mid)] hover:text-[var(--text-hi)]',
+                  isEdit && 'cursor-not-allowed opacity-50 hover:text-[var(--text-mid)]',
                 )}
               >
-                <span>{t.icon}</span>
-                {t.label}
+                <span>{option.icon}</span>
+                {typeLabels[option.value]}
               </button>
             ))}
           </div>
         </Field>
 
-        <Field label="Icon">
+        <Field label={t('wallet.icon')}>
           <div className="flex flex-wrap gap-1.5">
             {WALLET_ICONS.map((ic) => (
               <button
@@ -113,7 +142,7 @@ export function WalletFormModal({ open, onClose }: Props) {
           </div>
         </Field>
 
-        <Field label="Color">
+        <Field label={t('wallet.color')}>
           <div className="flex flex-wrap gap-2">
             {COLOR_OPTIONS.map((c) => (
               <button
@@ -136,7 +165,7 @@ export function WalletFormModal({ open, onClose }: Props) {
 
         {type === 'bank' && (
           <div className="grid grid-cols-2 gap-3">
-            <Field label="Bank Code">
+            <Field label={t('wallet.bankCode')}>
               <input
                 className={input}
                 value={bankCode}
@@ -144,7 +173,7 @@ export function WalletFormModal({ open, onClose }: Props) {
                 placeholder="VCB"
               />
             </Field>
-            <Field label="Account Number">
+            <Field label={t('wallet.accountNumber')}>
               <input
                 className={input}
                 value={bankAccountNumber}
@@ -156,16 +185,11 @@ export function WalletFormModal({ open, onClose }: Props) {
         )}
       </ModalBody>
       <ModalFoot>
-        <Button variant="ghost" onClick={onClose} disabled={createWallet.isPending}>
-          Cancel
+        <Button variant="ghost" onClick={onClose} disabled={isPending}>
+          {t('common.cancel')}
         </Button>
-        <Button
-          variant="primary"
-          onClick={handleSubmit}
-          disabled={!canSave}
-          isLoading={createWallet.isPending}
-        >
-          ✦ Create
+        <Button variant="primary" onClick={handleSubmit} disabled={!canSave} isLoading={isPending}>
+          ✦ {isEdit ? t('common.save') : t('common.create')}
         </Button>
       </ModalFoot>
     </Modal>

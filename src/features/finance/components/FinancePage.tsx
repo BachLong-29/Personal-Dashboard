@@ -1,198 +1,180 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { motion } from 'framer-motion';
+import { useState } from 'react';
+import { motion, useReducedMotion } from 'framer-motion';
+import { useTranslations } from 'next-intl';
 
-import { Button } from '@/components/ui/Button';
+import { Button, buttonVariants } from '@/components/ui/Button';
 import { GoldPanel } from '@/components/common/GoldPanel';
-import DashboardTopbar from '@/features/dashboard/components/layout/DashboardTopbar';
-import { useProfile } from '@/features/profile/hooks/useProfile';
-import { buildEmptyChar, profileToCharacter } from '@/features/dashboard/utils/character.utils';
-import type { Character } from '@/features/dashboard/types';
-import type { Transaction, TransactionType, Wallet } from '@/types';
+import { Link } from '@/i18n/navigation';
+import type { FinanceGoal } from '@/types';
 
 import { useWallets } from '../hooks/useWallets';
 import { useFinanceCategories } from '../hooks/useFinanceCategories';
-import { useTransactions } from '../hooks/useTransactions';
-import { useCountUp } from '../hooks/useCountUp';
-import { formatCurrency } from '../utils';
-import { WalletStrip } from './WalletStrip';
-import { FinanceFilters } from './FinanceFilters';
-import { TransactionList } from './TransactionList';
-import { WalletFormModal } from './WalletFormModal';
+import { useBudgets } from '../hooks/useBudgets';
+import { useFinanceOverview } from '../hooks/useFinanceOverview';
+import { useGoals } from '../hooks/useGoals';
+import { useForecast } from '../hooks/useForecast';
+import type { QuickEntryDraft } from '../quick-entry';
+import { currentMonthKey } from '../utils';
+import { MonthStepper } from './MonthStepper';
 import { TransactionFormModal } from './TransactionFormModal';
-import { SepayConnectModal } from './SepayConnectModal';
+import { GoalContributionModal } from './GoalContributionModal';
+import { AllocationBanner } from './overview/AllocationBanner';
+import { BalanceCard } from './overview/BalanceCard';
+import { BalanceForecastCard } from './overview/BalanceForecastCard';
+import { BudgetProgressCard } from './overview/BudgetProgressCard';
+import { LeftToSpendCard } from './overview/LeftToSpendCard';
+import { MonthSummaryCard } from './overview/MonthSummaryCard';
+import { RecentTransactionsCard } from './overview/RecentTransactionsCard';
+import { SavingsGoalsCard } from './overview/SavingsGoalsCard';
+import { TopSpendingCard } from './overview/TopSpendingCard';
 
 const EASE_OUT = [0.16, 1, 0.3, 1] as const;
 
+/**
+ * Finance overview — what's in the accounts, how the month is going, how much is still safe to
+ * spend, whether the savings goals are on pace, and where the balance is heading. Managing
+ * wallets, budgets, goals and the full ledger each live in their own tab.
+ */
 export function FinancePage() {
-  // ── Character for the topbar ────────────────────────────────────────────────
-  const { data: profileData } = useProfile();
-  const charInitialized = useRef(false);
-  const [char, setChar] = useState<Character>(() => buildEmptyChar());
-  useEffect(() => {
-    const profile = profileData?.profile;
-    if (!profile || charInitialized.current) return;
-    setChar(profileToCharacter(profile));
-    charInitialized.current = true;
-  }, [profileData]);
+  const t = useTranslations('finance');
+  const reduceMotion = useReducedMotion();
 
-  const dateStr = new Date().toLocaleDateString('en-US', {
-    weekday: 'long',
-    month: 'long',
-    day: 'numeric',
-  });
+  const [month, setMonth] = useState(currentMonthKey());
+  const [showAddTx, setShowAddTx] = useState(false);
+  const [quickDraft, setQuickDraft] = useState<QuickEntryDraft | null>(null);
+  const [contributingGoal, setContributingGoal] = useState<FinanceGoal | null>(null);
 
-  // ── Data ─────────────────────────────────────────────────────────────────────
   const { data: wallets = [], isLoading: walletsLoading } = useWallets();
   const { data: categories = [] } = useFinanceCategories();
+  const { data: budgets = [], isLoading: budgetsLoading } = useBudgets(month);
+  const { data: overview = null, isLoading: overviewLoading } = useFinanceOverview(month);
+  const { data: goals = [], isLoading: goalsLoading } = useGoals(month);
+  const { data: forecast = null, isLoading: forecastLoading } = useForecast();
 
-  const [selectedWalletId, setSelectedWalletId] = useState<string | null>(null);
-  const [search, setSearch] = useState('');
-  const [type, setType] = useState<TransactionType | 'all'>('all');
-  const [categoryId, setCategoryId] = useState('');
+  const overallBudget = budgets.find((b) => b.categoryId === null) ?? null;
+  const hasWallets = wallets.length > 0;
 
-  const { data: transactions = [], isLoading: txLoading } = useTransactions({
-    walletId: selectedWalletId ?? undefined,
-    type: type === 'all' ? undefined : type,
-    categoryId: categoryId || undefined,
-    search: search || undefined,
-  });
+  // Nag about the goal that's furthest from its monthly share — one decision, not a list.
+  const goalToAllocate =
+    goals
+      .filter((g) => g.status === 'active' && g.unallocatedThisMonth > 0)
+      .sort((a, b) => b.unallocatedThisMonth - a.unallocatedThisMonth)[0] ?? null;
 
-  const totalBalance = useMemo(() => wallets.reduce((sum, w) => sum + w.balance, 0), [wallets]);
-  const animatedBalance = useCountUp(totalBalance);
+  function handleQuickAdd(draft: QuickEntryDraft) {
+    setQuickDraft(draft);
+    setShowAddTx(true);
+  }
 
-  // ── Modals ───────────────────────────────────────────────────────────────────
-  const [showAddWallet, setShowAddWallet] = useState(false);
-  const [editingTx, setEditingTx] = useState<Transaction | null>(null);
-  const [showAddTx, setShowAddTx] = useState(false);
-  const [sepayWallet, setSepayWallet] = useState<Wallet | null>(null);
+  function closeTxModal() {
+    setShowAddTx(false);
+    setQuickDraft(null);
+  }
 
   return (
-    <div className="flex h-screen flex-col overflow-hidden bg-[var(--bg)]">
-      <DashboardTopbar char={char} dateStr={dateStr} />
-
+    <>
       <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-hidden p-4">
-        {/* ── Header ─────────────────────────────────────────────────────────── */}
-        <motion.div
-          initial={{ opacity: 0, y: 8 }}
+        <motion.header
+          initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, ease: EASE_OUT }}
+          transition={{ duration: reduceMotion ? 0.15 : 0.35, ease: EASE_OUT }}
           className="shrink-0"
         >
-          <GoldPanel className="flex flex-wrap items-end justify-between gap-3 p-4">
+          <GoldPanel className="flex flex-wrap items-center justify-between gap-3 p-4">
             <div>
-              <div className="text-[9px] tracking-[0.3em] text-[var(--gold)] [font-family:var(--f-title)]">
-                CASH FLOW
-              </div>
+              <p className="text-[9px] tracking-[0.3em] text-[var(--gold)] [font-family:var(--f-title)]">
+                {t('eyebrow')}
+              </p>
               <h1 className="text-[22px] font-bold tracking-[0.03em] text-[var(--text-hi)] [font-family:var(--f-title)]">
-                Finance
+                {t('overview.title')}
               </h1>
-              <div className="mt-1 text-[24px] font-bold tabular-nums text-[var(--gold)] [font-family:var(--f-title)]">
-                {formatCurrency(animatedBalance)}
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2">
+              <MonthStepper month={month} onChange={setMonth} />
+              <Button variant="primary" onClick={() => setShowAddTx(true)} disabled={!hasWallets}>
+                ＋ {t('overview.addTransaction')}
+              </Button>
+            </div>
+          </GoldPanel>
+        </motion.header>
+
+        <div className="min-h-0 flex-1 overflow-y-auto">
+          {!hasWallets && !walletsLoading ? (
+            <GoldPanel
+              background={false}
+              className="flex flex-col items-center gap-3 p-10 text-center"
+            >
+              <span className="text-[34px] opacity-70">🏦</span>
+              <p className="text-[14px] font-bold text-[var(--text-hi)]">
+                {t('overview.noWallets')}
+              </p>
+              <p className="max-w-[42ch] text-[12px] text-[var(--text-mid)]">
+                {t('overview.noWalletsHint')}
+              </p>
+              <Link
+                href="/finance/wallets"
+                className={buttonVariants({ variant: 'primary', size: 'sm' })}
+              >
+                ＋ {t('overview.addWallet')}
+              </Link>
+            </GoldPanel>
+          ) : (
+            <div className="flex flex-col gap-4">
+              <AllocationBanner
+                goal={goalToAllocate}
+                month={month}
+                onAllocate={setContributingGoal}
+              />
+
+              <div className="grid gap-4 lg:grid-cols-12">
+                <div className="flex flex-col gap-4 lg:col-span-7">
+                  <BalanceCard wallets={wallets} isLoading={walletsLoading} />
+                  <MonthSummaryCard overview={overview} month={month} isLoading={overviewLoading} />
+                  <BudgetProgressCard
+                    budgets={budgets}
+                    categories={categories}
+                    isLoading={budgetsLoading}
+                  />
+                  <TopSpendingCard overview={overview} isLoading={overviewLoading} />
+                </div>
+
+                <div className="flex flex-col gap-4 lg:col-span-5">
+                  <LeftToSpendCard
+                    overallBudget={overallBudget}
+                    overview={overview}
+                    isLoading={budgetsLoading || overviewLoading}
+                  />
+                  <SavingsGoalsCard
+                    goals={goals}
+                    isLoading={goalsLoading}
+                    onContribute={setContributingGoal}
+                  />
+                  <BalanceForecastCard forecast={forecast} isLoading={forecastLoading} />
+                  <RecentTransactionsCard
+                    overview={overview}
+                    categories={categories}
+                    wallets={wallets}
+                    isLoading={overviewLoading}
+                    onQuickAdd={handleQuickAdd}
+                  />
+                </div>
               </div>
             </div>
-
-            <Button
-              variant="primary"
-              onClick={() => setShowAddTx(true)}
-              disabled={wallets.length === 0}
-            >
-              ＋ Add Transaction
-            </Button>
-          </GoldPanel>
-        </motion.div>
-
-        {/* ── Ledger panel ───────────────────────────────────────────────────── */}
-        <motion.div
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, delay: 0.05, ease: EASE_OUT }}
-          className="flex min-h-0 flex-1 flex-col"
-        >
-          <GoldPanel background={false} className="flex min-h-0 flex-1 flex-col">
-            <div className={panelHeader}>
-              <span className={panelHeaderTitle}>Ledger</span>
-              <span className={panelHeaderOrnament}>◆ ◆ ◆</span>
-            </div>
-
-            <div className="flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto p-4">
-              {/* Wallets */}
-              {!walletsLoading && (
-                <WalletStrip
-                  wallets={wallets}
-                  selectedId={selectedWalletId}
-                  onSelect={setSelectedWalletId}
-                  onAddWallet={() => setShowAddWallet(true)}
-                  onManageSepay={setSepayWallet}
-                />
-              )}
-
-              {wallets.length === 0 && !walletsLoading && (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  className="flex flex-col items-center gap-3 rounded-[var(--r-lg)] border border-dashed border-[var(--border)] py-10 text-center"
-                >
-                  <div className="text-[32px] opacity-60">🏦</div>
-                  <div className="text-[13px] font-bold text-[var(--text-mid)]">No wallets yet</div>
-                  <div className="text-[11px] text-[var(--text-lo)]">
-                    Add a wallet to start tracking your cash flow.
-                  </div>
-                </motion.div>
-              )}
-
-              {/* Filters */}
-              <FinanceFilters
-                search={search}
-                onSearchChange={setSearch}
-                type={type}
-                onTypeChange={setType}
-                categoryId={categoryId}
-                onCategoryChange={setCategoryId}
-                categories={categories}
-              />
-
-              {/* Transactions */}
-              <TransactionList
-                transactions={transactions}
-                categories={categories}
-                wallets={wallets}
-                isLoading={txLoading}
-                onEdit={setEditingTx}
-              />
-            </div>
-          </GoldPanel>
-        </motion.div>
+          )}
+        </div>
       </div>
-
-      <WalletFormModal open={showAddWallet} onClose={() => setShowAddWallet(false)} />
-
-      <SepayConnectModal wallet={sepayWallet} onClose={() => setSepayWallet(null)} />
 
       <TransactionFormModal
         open={showAddTx}
-        onClose={() => setShowAddTx(false)}
+        onClose={closeTxModal}
         wallets={wallets}
         categories={categories}
-        defaultWalletId={selectedWalletId}
+        draft={quickDraft}
       />
 
-      <TransactionFormModal
-        open={!!editingTx}
-        onClose={() => setEditingTx(null)}
-        wallets={wallets}
-        categories={categories}
-        transaction={editingTx}
-      />
-    </div>
+      <GoalContributionModal goal={contributingGoal} onClose={() => setContributingGoal(null)} />
+    </>
   );
 }
-
-// ── Panel header (GoldPanel provides the frame; this is just the title row) ────
-
-const panelHeader =
-  'flex items-center gap-2 px-[14px] pt-[10px] pb-[8px] border-b border-[var(--border)]';
-const panelHeaderTitle =
-  'font-[var(--font-title)] text-[10px] font-bold tracking-[0.15em] text-[var(--gold)] uppercase flex-1';
-const panelHeaderOrnament = 'text-[var(--gold-dim)] text-[8px] tracking-[3px] opacity-60';
