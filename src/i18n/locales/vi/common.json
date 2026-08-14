@@ -799,7 +799,8 @@
       "accounts": "Tài khoản",
       "budget": "Ngân sách",
       "transactions": "Giao dịch",
-      "goals": "Mục tiêu"
+      "goals": "Mục tiêu",
+      "categories": "Danh mục"
     },
     "common": {
       "edit": "Sửa",
@@ -999,6 +1000,31 @@
       "empty": "Chưa có mục tiêu nào",
       "emptyHint": "Đặt số tiền và hạn hoàn thành, hệ thống sẽ theo dõi giúp bạn có kịp tiến độ không.",
       "byDate": "hạn {date}"
+    },
+    "categories": {
+      "title": "Danh mục",
+      "subtitle": "Tách riêng với danh mục của task và habit.",
+      "panel": "Danh mục thu chi",
+      "expense": "Chi",
+      "income": "Thu",
+      "addExpense": "Thêm danh mục chi",
+      "addIncome": "Thêm danh mục thu",
+      "empty": "Chưa có danh mục {type} nào",
+      "newTag": "DANH MỤC MỚI",
+      "newTitle": "Thêm danh mục",
+      "editTag": "SỬA DANH MỤC",
+      "editTitle": "Sửa danh mục",
+      "name": "Tên danh mục",
+      "namePlaceholder": "VD: Ăn uống, Lương",
+      "type": "Loại",
+      "typeLocked": "Không đổi được loại thu/chi sau khi tạo",
+      "icon": "Biểu tượng",
+      "color": "Màu",
+      "created": "Đã tạo danh mục",
+      "updated": "Đã cập nhật danh mục",
+      "deleted": "Đã xoá danh mục",
+      "confirmDelete": "Xoá danh mục “{name}”?",
+      "deleteBlocked": "Không xoá được danh mục"
     }
   }
 }

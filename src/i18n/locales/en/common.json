@@ -799,7 +799,8 @@
       "accounts": "Accounts",
       "budget": "Budget",
       "transactions": "Transactions",
-      "goals": "Goals"
+      "goals": "Goals",
+      "categories": "Categories"
     },
     "common": {
       "edit": "Edit",
@@ -999,6 +1000,31 @@
       "empty": "No savings goals yet",
       "emptyHint": "Set a target and a date, and this tracks whether you are on pace.",
       "byDate": "by {date}"
+    },
+    "categories": {
+      "title": "Categories",
+      "subtitle": "Separate from your task and habit categories.",
+      "panel": "Finance categories",
+      "expense": "Expense",
+      "income": "Income",
+      "addExpense": "Add expense category",
+      "addIncome": "Add income category",
+      "empty": "No {type} categories yet",
+      "newTag": "NEW CATEGORY",
+      "newTitle": "Add category",
+      "editTag": "EDIT CATEGORY",
+      "editTitle": "Edit category",
+      "name": "Name",
+      "namePlaceholder": "e.g. Groceries, Salary",
+      "type": "Type",
+      "typeLocked": "The income/expense type cannot be changed after creation",
+      "icon": "Icon",
+      "color": "Color",
+      "created": "Category created",
+      "updated": "Category updated",
+      "deleted": "Category deleted",
+      "confirmDelete": "Delete the category “{name}”?",
+      "deleteBlocked": "Could not delete the category"
     }
   }
 }

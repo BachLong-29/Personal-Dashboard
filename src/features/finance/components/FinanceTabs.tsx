@@ -27,6 +27,11 @@ const TABS = [
     key: 'transactions',
     match: (p: string) => p.startsWith('/finance/transactions'),
   },
+  {
+    href: '/finance/categories',
+    key: 'categories',
+    match: (p: string) => p.startsWith('/finance/categories'),
+  },
 ] as const;
 
 export function FinanceTabs() {

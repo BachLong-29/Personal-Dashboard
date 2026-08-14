@@ -6,6 +6,7 @@ import type {
   UpdateWalletPayload,
   FinanceCategory,
   CreateFinanceCategoryPayload,
+  UpdateFinanceCategoryPayload,
   Transaction,
   CreateTransactionPayload,
   UpdateTransactionPayload,
@@ -61,6 +62,9 @@ export const financeEndpoints = {
 
   createCategory: (payload: CreateFinanceCategoryPayload) =>
     apiClient.post<ApiResponse<FinanceCategory>>('/finance/categories', payload),
+
+  updateCategory: (id: string, payload: UpdateFinanceCategoryPayload) =>
+    apiClient.patch<ApiResponse<FinanceCategory>>(`/finance/categories/${id}`, payload),
 
   removeCategory: (id: string) => apiClient.delete<ApiResponse<null>>(`/finance/categories/${id}`),
 

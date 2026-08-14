@@ -244,3 +244,9 @@ export interface BalanceForecast {
   basedOnMonths: number;
   points: ForecastPoint[];
 }
+
+export interface UpdateFinanceCategoryPayload {
+  name?: string;
+  icon?: string;
+  color?: TaskColor;
+}
