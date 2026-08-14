@@ -90,6 +90,15 @@ export default function MainDashboard() {
   );
   const onToast = useCallback((reward: { xp: number; coins: number }) => setToast(reward), []);
 
+  // Ticking an item done in the schedule day view pays out exactly like the quest panel does.
+  const handleScheduleReward = useCallback(
+    (reward: { xp: number; coins: number }) => {
+      awardProgress(reward);
+      onToast(reward);
+    },
+    [awardProgress, onToast],
+  );
+
   // Quest / habit / task orchestration
   const { quests, pendingQuest, handleConfirmQuest, handleAddQuest, handleCancelQuest } =
     useQuestOrchestration({
@@ -241,6 +250,7 @@ export default function MainDashboard() {
             tab={centerTab}
             onTabChange={handleTabChange}
             onAddQuest={handleAddQuest}
+            onReward={handleScheduleReward}
             todayDateStr={todayDateStr}
             scheduleSubTabRequest={scheduleSubTabRequest}
           />
@@ -268,6 +278,7 @@ export default function MainDashboard() {
                 tab={centerTab}
                 onTabChange={handleTabChange}
                 onAddQuest={handleAddQuest}
+                onReward={handleScheduleReward}
                 todayDateStr={todayDateStr}
                 scheduleSubTabRequest={scheduleSubTabRequest}
               />

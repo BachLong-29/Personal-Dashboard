@@ -23,12 +23,18 @@ interface ScheduleViewProps {
   onAddQuest?: (quest: Quest) => void;
   onNavigateTab?: (tab: CenterTab) => void;
   subTabRequest?: ScheduleSubTabRequest | null;
+  onReward?: (reward: { xp: number; coins: number }) => void;
 }
 
 const CURRENT_YEAR = new Date().getFullYear();
 const YEARS = Array.from({ length: 5 }, (_, i) => CURRENT_YEAR - 2 + i);
 
-export function ScheduleView({ onAddQuest, onNavigateTab, subTabRequest }: ScheduleViewProps) {
+export function ScheduleView({
+  onAddQuest,
+  onNavigateTab,
+  subTabRequest,
+  onReward,
+}: ScheduleViewProps) {
   const tDash = useTranslations('dashboard');
   const {
     tab,
@@ -144,6 +150,7 @@ export function ScheduleView({ onAddQuest, onNavigateTab, subTabRequest }: Sched
             }}
             showQuests={display.showQuests}
             showHabits={display.showHabits}
+            onReward={onReward}
             onAddQuest={onAddQuest}
           />
         )}

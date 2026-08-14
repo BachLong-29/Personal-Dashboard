@@ -17,6 +17,8 @@ import { type UITask } from '@/features/tasks/data/mock';
 import { offsetToISO, toLocalDate } from '@/features/tasks/utils/date.utils';
 import type { ScheduleBlock, TaskColor, UpdateTaskPayload } from '@/types';
 
+import { HABIT_COINS, HABIT_XP, TASK_COINS, TASK_XP } from '../constants';
+
 import { useCreateTask } from './useCreateTask';
 import { useHabitLogs } from './useHabitLogs';
 import { useHabitLogsRange } from './useHabitLogsRange';
@@ -60,6 +62,12 @@ interface UseScheduleDayTasksParams {
   requireBlock?: boolean;
   /** Invoked when {@link onEdit} is called for a habit-sourced item. */
   onEditHabit?: (task: UITask) => void;
+  /**
+   * Called with the reward whenever an item is ticked *done* here, so the host can credit the
+   * character and show the XP toast — the same treatment completing it from the quest panel gets.
+   * Ticking an item back off never takes the reward away.
+   */
+  onReward?: (reward: { xp: number; coins: number }) => void;
 }
 
 interface DayProgress {
@@ -109,6 +117,7 @@ export function useScheduleDayTasks({
   preserveBacklog = false,
   requireBlock = false,
   onEditHabit,
+  onReward,
 }: UseScheduleDayTasksParams): UseScheduleDayTasksResult {
   const todayStr = toLocalDate(new Date());
 
@@ -403,6 +412,7 @@ export function useScheduleDayTasks({
       if (nextLogged && task.status === 'todo') {
         updateTask.mutate({ id: task.sourceId, status: 'in_progress' });
       }
+      if (nextLogged) onReward?.({ xp: TASK_XP, coins: TASK_COINS });
       return;
     }
 
@@ -415,11 +425,14 @@ export function useScheduleDayTasks({
 
     if (task.source === 'quest' && task.sourceId) {
       updateQuestStatus.mutate({ id: task.sourceId, done: nextDone });
+      if (nextDone) onReward?.({ xp: task.xp, coins: task.coins });
     } else if (task.source === 'task' && task.sourceId) {
       updateTask.mutate({ id: task.sourceId, status: nextDone ? 'done' : 'todo' });
+      if (nextDone) onReward?.({ xp: TASK_XP, coins: TASK_COINS });
     } else if (task.source === 'habit' && task.sourceId) {
       const habitDate = offsetToISO(task.day);
       toggleHabitLog.mutate({ habitId: task.sourceId, date: habitDate, done: nextDone });
+      if (nextDone) onReward?.({ xp: HABIT_XP, coins: HABIT_COINS });
     }
   }
 
@@ -430,6 +443,7 @@ export function useScheduleDayTasks({
       ts.map((t) => (t.id === id ? { ...t, done: true, progress: 1, status: 'done' } : t)),
     );
     updateTask.mutate({ id: task.sourceId, status: 'done' });
+    if (!task.done) onReward?.({ xp: TASK_XP, coins: TASK_COINS });
   }
 
   function onMoveToSlot(id: string, slot: UITask['slot'], day = 0) {
