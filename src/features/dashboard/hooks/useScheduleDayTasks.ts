@@ -142,7 +142,9 @@ export function useScheduleDayTasks({
 
   // ── API data ───────────────────────────────────────────────────────────────
   const { data: apiTasks = [] } = useTasks();
-  const { data: apiQuestsRaw = [] } = useQuests();
+  // Quests are due-dated, so fetch the selected day's — the default (no args) only ever
+  // returns today's, which left other days quest-less.
+  const { data: apiQuestsRaw = [] } = useQuests(selectedDateStr, selectedDateStr);
   const { data: apiProjects = [] } = useProjects(projectScope === 'all' ? undefined : projectScope);
   const { data: apiHabits = [] } = useHabits();
   const { data: apiTaskLogs = [] } = useTaskLogs(todayStr);

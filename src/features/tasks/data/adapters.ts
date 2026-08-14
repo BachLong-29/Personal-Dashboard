@@ -27,7 +27,10 @@ export interface QuestLike {
  *  avoiding the ISO-string UTC-parse shift that causes off-by-one in UTC+ zones. */
 export function dayOffset(dateStr?: string): number {
   if (!dateStr) return 0;
-  const parts = dateStr.split('-');
+  // Accepts both a plain "YYYY-MM-DD" (tasks) and a full ISO timestamp (quests serialise
+  // `dueDate` with `toISOString()`). Without the trim the day part parses as NaN, which makes
+  // every `day === offset` comparison downstream fail silently.
+  const parts = dateStr.substring(0, 10).split('-');
   const d = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
   const today = new Date();
   today.setHours(0, 0, 0, 0);
