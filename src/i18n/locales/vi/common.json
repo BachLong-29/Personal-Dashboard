@@ -1025,6 +1025,17 @@
       "deleted": "Đã xoá danh mục",
       "confirmDelete": "Xoá danh mục “{name}”?",
       "deleteBlocked": "Không xoá được danh mục"
+    },
+    "sepayCard": {
+      "title": "Đồng bộ ngân hàng (SePay)",
+      "urlLabel": "Webhook URL",
+      "copy": "Sao chép",
+      "copied": "Đã chép",
+      "connected": "Đang nhận giao dịch",
+      "notConnected": "Chưa nhận được giao dịch nào",
+      "notConfigured": "Chưa thiết lập",
+      "setUp": "Thiết lập",
+      "hint": "Dán URL này vào phần webhook của SePay, kèm API key lấy từ ví."
     }
   }
 }

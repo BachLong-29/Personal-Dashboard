@@ -27,6 +27,7 @@ import { BudgetProgressCard } from './overview/BudgetProgressCard';
 import { LeftToSpendCard } from './overview/LeftToSpendCard';
 import { MonthSummaryCard } from './overview/MonthSummaryCard';
 import { RecentTransactionsCard } from './overview/RecentTransactionsCard';
+import { SepayCard } from './overview/SepayCard';
 import { SavingsGoalsCard } from './overview/SavingsGoalsCard';
 import { TopSpendingCard } from './overview/TopSpendingCard';
 
@@ -159,6 +160,7 @@ export function FinancePage() {
                     isLoading={overviewLoading}
                     onQuickAdd={handleQuickAdd}
                   />
+                  <SepayCard wallets={wallets} />
                 </div>
               </div>
             </div>

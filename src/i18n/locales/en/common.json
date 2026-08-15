@@ -1025,6 +1025,17 @@
       "deleted": "Category deleted",
       "confirmDelete": "Delete the category “{name}”?",
       "deleteBlocked": "Could not delete the category"
+    },
+    "sepayCard": {
+      "title": "Bank sync (SePay)",
+      "urlLabel": "Webhook URL",
+      "copy": "Copy",
+      "copied": "Copied",
+      "connected": "Receiving transactions",
+      "notConnected": "No transactions received yet",
+      "notConfigured": "Not set up yet",
+      "setUp": "Set up",
+      "hint": "Paste this into your SePay webhook settings, with the API key from the wallet."
     }
   }
 }

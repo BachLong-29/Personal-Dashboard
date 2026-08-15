@@ -1025,6 +1025,17 @@
       "deleted": "ลบหมวดหมู่แล้ว",
       "confirmDelete": "ลบหมวดหมู่ “{name}”?",
       "deleteBlocked": "ลบหมวดหมู่ไม่สำเร็จ"
+    },
+    "sepayCard": {
+      "title": "ซิงก์ธนาคาร (SePay)",
+      "urlLabel": "Webhook URL",
+      "copy": "คัดลอก",
+      "copied": "คัดลอกแล้ว",
+      "connected": "กำลังรับรายการ",
+      "notConnected": "ยังไม่ได้รับรายการ",
+      "notConfigured": "ยังไม่ได้ตั้งค่า",
+      "setUp": "ตั้งค่า",
+      "hint": "วาง URL นี้ในการตั้งค่า webhook ของ SePay พร้อม API key จากกระเป๋าเงิน"
     }
   }
 }
