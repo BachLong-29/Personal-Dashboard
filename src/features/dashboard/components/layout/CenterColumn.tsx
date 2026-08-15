@@ -16,6 +16,7 @@ interface Props {
   onAddQuest: (quest: Quest) => void;
   todayDateStr: string;
   scheduleSubTabRequest?: ScheduleSubTabRequest | null;
+  onReward?: (reward: { xp: number; coins: number }) => void;
 }
 
 export const CenterColumn = memo(function CenterColumn({
@@ -24,6 +25,7 @@ export const CenterColumn = memo(function CenterColumn({
   onAddQuest,
   todayDateStr,
   scheduleSubTabRequest,
+  onReward,
 }: Props) {
   const t = useTranslations('dashboard');
 
@@ -67,6 +69,7 @@ export const CenterColumn = memo(function CenterColumn({
             onAddQuest={onAddQuest}
             onNavigateTab={onTabChange}
             subTabRequest={scheduleSubTabRequest}
+            onReward={onReward}
           />
         </div>
       )}

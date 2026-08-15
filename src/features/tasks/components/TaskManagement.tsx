@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 
 import { useProfile } from '@/features/profile/hooks/useProfile';
@@ -8,6 +8,8 @@ import { buildEmptyChar, profileToCharacter } from '@/features/dashboard/utils/c
 import { toLocalDate } from '../utils/date.utils';
 import { useScheduleDayTasks } from '@/features/dashboard/hooks/useScheduleDayTasks';
 import { useCategories } from '@/features/dashboard/hooks/useCategories';
+import { useCharacterProgress } from '@/features/dashboard/hooks/useCharacterProgress';
+import { XPToast } from '@/features/dashboard/components/feedback/XPToast';
 import type { Character } from '@/features/dashboard/types';
 import type { TaskColor } from '@/types';
 import DashboardTopbar from '@/features/dashboard/components/layout/DashboardTopbar';
@@ -44,6 +46,18 @@ export function TaskManagement() {
     charInitialized.current = true;
   }, [profileData]);
 
+  const { awardProgress } = useCharacterProgress(char, setChar);
+
+  // Reward feedback for items ticked done on this page — same payout as the dashboard.
+  const [reward, setReward] = useState<{ xp: number; coins: number } | null>(null);
+  const handleReward = useCallback(
+    (next: { xp: number; coins: number }) => {
+      awardProgress(next);
+      setReward(next);
+    },
+    [awardProgress],
+  );
+
   const dateStr = new Date().toLocaleDateString('en-US', {
     weekday: 'long',
     month: 'long',
@@ -78,6 +92,7 @@ export function TaskManagement() {
     // Only surface tasks that have a planned session (schedule block) on the day —
     // tasks with a start/end date but no session plan are hidden from the grid.
     requireBlock: true,
+    onReward: handleReward,
     onEditHabit: () => {
       const locale = params?.locale ?? 'en';
       router.push(`/${locale}/dashboard?tab=habits`);
@@ -226,6 +241,8 @@ export function TaskManagement() {
         onSave={onSaveEdit}
         saving={isSavingEdit}
       />
+
+      {reward && <XPToast xp={reward.xp} coins={reward.coins} onDone={() => setReward(null)} />}
     </div>
   );
 }
