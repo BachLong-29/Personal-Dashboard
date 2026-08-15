@@ -17,7 +17,10 @@ import {
 } from '@/server';
 
 const CONNECTED_WINDOW_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
-const WEBHOOK_URL = `${clientEnv.NEXT_PUBLIC_APP_URL}/api/v1/webhooks/sepay`;
+// The app URL is operator-configured and often ends with a slash (Vercel writes it that way).
+// Left as-is it hands SePay a `//api/...` URL, which Next.js answers with a 308 redirect — a
+// webhook sender that doesn't follow redirects then delivers nothing, with no error to see.
+const WEBHOOK_URL = `${clientEnv.NEXT_PUBLIC_APP_URL.replace(/\/+$/, '')}/api/v1/webhooks/sepay`;
 
 // GET /api/v1/finance/wallets/:id/sepay — connection status for the "Kết nối SePay" panel
 export const GET = asyncHandler(async (req: NextRequest, ctx) => {
