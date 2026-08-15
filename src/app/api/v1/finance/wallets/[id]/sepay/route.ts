@@ -17,10 +17,32 @@ import {
 } from '@/server';
 
 const CONNECTED_WINDOW_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
-// The app URL is operator-configured and often ends with a slash (Vercel writes it that way).
-// Left as-is it hands SePay a `//api/...` URL, which Next.js answers with a 308 redirect — a
-// webhook sender that doesn't follow redirects then delivers nothing, with no error to see.
-const WEBHOOK_URL = `${clientEnv.NEXT_PUBLIC_APP_URL.replace(/\/+$/, '')}/api/v1/webhooks/sepay`;
+
+/**
+ * The URL to hand SePay. SePay calls it from its own servers, so it has to be the public
+ * origin — `localhost` is rejected outright.
+ *
+ * Resolved in order:
+ *  1. `SEPAY_WEBHOOK_BASE_URL` — set this while developing locally to read back the deployed
+ *     origin instead of localhost.
+ *  2. The origin this request actually arrived on. On Vercel that is the deployment's own
+ *     domain, so nothing needs configuring for it to be right.
+ *  3. `NEXT_PUBLIC_APP_URL`, as a last resort.
+ *
+ * Trailing slashes are stripped: Vercel stores the app URL with one, and `//api/...` makes
+ * Next.js answer with a 308 redirect instead of running the route — a webhook sender that
+ * doesn't follow redirects would then deliver nothing, with no error anywhere to notice.
+ */
+function resolveWebhookUrl(req: NextRequest): string {
+  const forwardedHost = req.headers.get('x-forwarded-host') ?? req.headers.get('host');
+  const forwardedProto = req.headers.get('x-forwarded-proto') ?? 'https';
+
+  const origin =
+    process.env.SEPAY_WEBHOOK_BASE_URL ||
+    (forwardedHost ? `${forwardedProto}://${forwardedHost}` : clientEnv.NEXT_PUBLIC_APP_URL);
+
+  return `${origin.replace(/\/+$/, '')}/api/v1/webhooks/sepay`;
+}
 
 // GET /api/v1/finance/wallets/:id/sepay — connection status for the "Kết nối SePay" panel
 export const GET = asyncHandler(async (req: NextRequest, ctx) => {
@@ -43,7 +65,7 @@ export const GET = asyncHandler(async (req: NextRequest, ctx) => {
   return successResponse({
     configured: !!wallet.sepayWebhookSecret,
     connected: !!connected,
-    webhookUrl: WEBHOOK_URL,
+    webhookUrl: resolveWebhookUrl(req),
   });
 });
 
@@ -68,5 +90,5 @@ export const PATCH = asyncHandler(async (req: NextRequest, ctx) => {
   wallet.sepayWebhookSecret = await hashSecret(apiKey);
   await wallet.save();
 
-  return successResponse({ apiKey, webhookUrl: WEBHOOK_URL }, 'SePay API key generated');
+  return successResponse({ apiKey, webhookUrl: resolveWebhookUrl(req) }, 'SePay API key generated');
 });
