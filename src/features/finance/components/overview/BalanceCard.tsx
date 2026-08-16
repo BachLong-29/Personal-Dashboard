@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { useTranslations } from 'next-intl';
 
 import { Icon } from '@/components/common/Icon';
@@ -8,10 +8,9 @@ import type { Wallet } from '@/types';
 
 import { COLOR_CSS } from '../../constants';
 import { useCountUp } from '../../hooks/useCountUp';
-import { formatCurrency } from '../../utils';
+import { AMOUNT_MASK, formatCurrency } from '../../utils';
+import { useFinanceUIStore } from '../../stores/finance-ui.store';
 import { SectionCard } from './SectionCard';
-
-const MASK = '••••••';
 
 interface BalanceCardProps {
   wallets: Wallet[];
@@ -21,7 +20,8 @@ interface BalanceCardProps {
 /** Total balance across active wallets, with a per-wallet breakdown and a privacy toggle. */
 export function BalanceCard({ wallets, isLoading }: BalanceCardProps) {
   const t = useTranslations('finance');
-  const [hidden, setHidden] = useState(false);
+  const hidden = useFinanceUIStore((s) => s.amountsHidden);
+  const toggleHidden = useFinanceUIStore((s) => s.toggleAmountsHidden);
 
   const total = useMemo(() => wallets.reduce((sum, w) => sum + w.balance, 0), [wallets]);
   const animatedTotal = useCountUp(total);
@@ -38,11 +38,11 @@ export function BalanceCard({ wallets, isLoading }: BalanceCardProps) {
         <>
           <div className="flex items-center gap-3">
             <span className="text-[32px] font-bold leading-none tabular-nums text-[var(--gold)] [font-family:var(--f-title)] sm:text-[38px]">
-              {hidden ? MASK : formatCurrency(animatedTotal)}
+              {hidden ? AMOUNT_MASK : formatCurrency(animatedTotal)}
             </span>
             <button
               type="button"
-              onClick={() => setHidden((v) => !v)}
+              onClick={toggleHidden}
               aria-label={hidden ? t('overview.showAmounts') : t('overview.hideAmounts')}
               aria-pressed={hidden}
               className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[var(--r-sm)] border border-[var(--border)] text-[13px] text-[var(--text-mid)] transition-colors duration-200 hover:border-[var(--gold)] hover:text-[var(--gold)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--gold)]"
@@ -70,7 +70,7 @@ export function BalanceCard({ wallets, isLoading }: BalanceCardProps) {
                     className="truncate text-[13px] font-bold tabular-nums"
                     style={{ color: COLOR_CSS[w.color] }}
                   >
-                    {hidden ? MASK : formatCurrency(w.balance, w.currency)}
+                    {hidden ? AMOUNT_MASK : formatCurrency(w.balance, w.currency)}
                   </span>
                 </li>
               ))}

@@ -14,7 +14,8 @@ import type { Wallet } from '@/types';
 import { useWallets } from '../hooks/useWallets';
 import { useDeleteWallet } from '../hooks/useDeleteWallet';
 import { useCountUp } from '../hooks/useCountUp';
-import { formatCurrency } from '../utils';
+import { AMOUNT_MASK, formatCurrency } from '../utils';
+import { useFinanceUIStore } from '../stores/finance-ui.store';
 import { WalletList } from './WalletList';
 import { WalletFormModal } from './WalletFormModal';
 import { SepayConnectModal } from './SepayConnectModal';
@@ -30,6 +31,8 @@ export function WalletsPage() {
 
   const totalBalance = useMemo(() => wallets.reduce((sum, w) => sum + w.balance, 0), [wallets]);
   const animatedBalance = useCountUp(totalBalance);
+  const amountsHidden = useFinanceUIStore((s) => s.amountsHidden);
+  const toggleAmountsHidden = useFinanceUIStore((s) => s.toggleAmountsHidden);
 
   // ── Modals ───────────────────────────────────────────────────────────────────
   const [showAddWallet, setShowAddWallet] = useState(false);
@@ -72,8 +75,19 @@ export function WalletsPage() {
               <h1 className="text-[22px] font-bold tracking-[0.03em] text-[var(--text-hi)] [font-family:var(--f-title)]">
                 {t('accounts.title')}
               </h1>
-              <div className="mt-1 text-[24px] font-bold tabular-nums text-[var(--gold)] [font-family:var(--f-title)]">
-                {formatCurrency(animatedBalance)}
+              <div className="mt-1 flex items-center gap-2">
+                <span className="text-[24px] font-bold tabular-nums text-[var(--gold)] [font-family:var(--f-title)]">
+                  {amountsHidden ? AMOUNT_MASK : formatCurrency(animatedBalance)}
+                </span>
+                <button
+                  type="button"
+                  onClick={toggleAmountsHidden}
+                  aria-label={amountsHidden ? t('overview.showAmounts') : t('overview.hideAmounts')}
+                  aria-pressed={amountsHidden}
+                  className="flex h-7 w-7 shrink-0 items-center justify-center rounded-[var(--r-sm)] border border-[var(--border)] text-[12px] text-[var(--text-mid)] transition-colors duration-200 hover:border-[var(--gold)] hover:text-[var(--gold)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--gold)]"
+                >
+                  {amountsHidden ? '🙈' : '👁'}
+                </button>
               </div>
               <div className="mt-0.5 text-[10px] uppercase tracking-[0.1em] text-[var(--text-lo)]">
                 {t('accounts.subtitle', { count: wallets.length })}
@@ -121,10 +135,10 @@ export function WalletsPage() {
                   ) : (
                     <WalletList
                       wallets={wallets}
+                      amountsHidden={amountsHidden}
                       onEdit={setEditingWallet}
                       onDelete={setDeletingWallet}
                       onManageSepay={setSepayWallet}
-                      onAddWallet={() => setShowAddWallet(true)}
                     />
                   )}
                 </div>

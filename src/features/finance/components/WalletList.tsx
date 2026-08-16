@@ -9,19 +9,27 @@ import type { Wallet } from '@/types';
 
 import { COLOR_CSS, WALLET_TYPE_OPTIONS } from '../constants';
 import { useCountUp } from '../hooks/useCountUp';
-import { formatCurrency } from '../utils';
+import { AMOUNT_MASK, formatCurrency } from '../utils';
 
 const EASE_OUT = [0.16, 1, 0.3, 1] as const;
 
 interface WalletCardProps {
   wallet: Wallet;
+  amountsHidden: boolean;
   onEdit: () => void;
   onDelete: () => void;
   onManageSepay: () => void;
   delay: number;
 }
 
-function WalletCard({ wallet, onEdit, onDelete, onManageSepay, delay }: WalletCardProps) {
+function WalletCard({
+  wallet,
+  amountsHidden,
+  onEdit,
+  onDelete,
+  onManageSepay,
+  delay,
+}: WalletCardProps) {
   const t = useTranslations('finance');
   const accent = COLOR_CSS[wallet.color];
   const balance = useCountUp(wallet.balance);
@@ -65,7 +73,7 @@ function WalletCard({ wallet, onEdit, onDelete, onManageSepay, delay }: WalletCa
         className="truncate text-[20px] font-bold tabular-nums [font-family:var(--f-title)]"
         style={{ color: accent }}
       >
-        {formatCurrency(balance, wallet.currency)}
+        {amountsHidden ? AMOUNT_MASK : formatCurrency(balance, wallet.currency)}
       </div>
 
       <div className="flex flex-wrap gap-1.5 border-t border-[var(--border)] pt-3">
@@ -94,48 +102,32 @@ function WalletCard({ wallet, onEdit, onDelete, onManageSepay, delay }: WalletCa
 
 interface WalletListProps {
   wallets: Wallet[];
+  amountsHidden: boolean;
   onEdit: (wallet: Wallet) => void;
   onDelete: (wallet: Wallet) => void;
   onManageSepay: (wallet: Wallet) => void;
-  onAddWallet: () => void;
 }
 
 export function WalletList({
   wallets,
+  amountsHidden,
   onEdit,
   onDelete,
   onManageSepay,
-  onAddWallet,
 }: WalletListProps) {
-  const t = useTranslations('finance');
   return (
     <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
       {wallets.map((w, i) => (
         <WalletCard
           key={w.id}
           wallet={w}
+          amountsHidden={amountsHidden}
           onEdit={() => onEdit(w)}
           onDelete={() => onDelete(w)}
           onManageSepay={() => onManageSepay(w)}
           delay={i * 0.04}
         />
       ))}
-
-      <motion.button
-        type="button"
-        onClick={onAddWallet}
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.35, delay: wallets.length * 0.04, ease: EASE_OUT }}
-        whileHover={{ y: -3 }}
-        whileTap={{ scale: 0.98 }}
-        className="flex min-h-[132px] flex-col items-center justify-center gap-1.5 rounded-[var(--r-lg)] border border-dashed border-[var(--border)] p-4 text-[var(--text-lo)] transition-colors hover:border-[var(--gold)] hover:text-[var(--gold)]"
-      >
-        <span className="text-[22px] leading-none">＋</span>
-        <span className="text-[10px] font-bold uppercase tracking-[0.1em] [font-family:var(--f-title)]">
-          {t('accounts.addWallet')}
-        </span>
-      </motion.button>
     </div>
   );
 }
