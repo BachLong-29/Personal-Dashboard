@@ -14,6 +14,7 @@ const updateSchema = z.object({
   name: z.string().min(1).max(50).trim().optional(),
   icon: z.string().min(1).optional(),
   color: z.enum(WALLET_COLORS).optional(),
+  balance: z.number().finite().optional(),
   bankCode: z.string().trim().optional().nullable(),
   bankAccountNumber: z.string().trim().optional().nullable(),
 });
