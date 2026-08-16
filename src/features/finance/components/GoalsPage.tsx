@@ -6,6 +6,7 @@ import { useLocale, useTranslations } from 'next-intl';
 
 import { Icon } from '@/components/common/Icon';
 import { Button } from '@/components/ui/Button';
+import { Modal, ModalHead, ModalBody, ModalFoot } from '@/components/ui/Modal';
 import { SkelBlock } from '@/components/ui/Skeleton';
 import { GoldPanel } from '@/components/common/GoldPanel';
 import { useUIStore } from '@/stores/ui.store';
@@ -33,6 +34,7 @@ export function GoalsPage() {
   const [showForm, setShowForm] = useState(false);
   const [editingGoal, setEditingGoal] = useState<FinanceGoal | null>(null);
   const [contributingGoal, setContributingGoal] = useState<FinanceGoal | null>(null);
+  const [deletingGoal, setDeletingGoal] = useState<FinanceGoal | null>(null);
 
   function handleEdit(goal: FinanceGoal) {
     setEditingGoal(goal);
@@ -44,11 +46,17 @@ export function GoalsPage() {
     setShowForm(true);
   }
 
-  function handleDelete(goal: FinanceGoal) {
-    if (!confirm(t('goals.confirmDelete', { name: goal.name }))) return;
-    deleteGoal.mutate(goal.id, {
-      onSuccess: () => addToast({ type: 'success', message: t('goals.deleted') }),
-      onError: () => addToast({ type: 'error', message: t('goals.deleteFailed') }),
+  function handleDeleteConfirm() {
+    if (!deletingGoal) return;
+    deleteGoal.mutate(deletingGoal.id, {
+      onSuccess: () => {
+        addToast({ type: 'success', message: t('goals.deleted') });
+        setDeletingGoal(null);
+      },
+      onError: () => {
+        addToast({ type: 'error', message: t('goals.deleteFailed') });
+        setDeletingGoal(null);
+      },
     });
   }
 
@@ -193,7 +201,7 @@ export function GoalsPage() {
                           </button>
                           <button
                             type="button"
-                            onClick={() => handleDelete(g)}
+                            onClick={() => setDeletingGoal(g)}
                             className={`${actionBtn} ml-auto hover:border-[var(--crimson)] hover:text-[var(--crimson)]`}
                           >
                             🗑 {t('common.delete')}
@@ -212,6 +220,32 @@ export function GoalsPage() {
       <GoalFormModal open={showForm} onClose={() => setShowForm(false)} goal={editingGoal} />
 
       <GoalContributionModal goal={contributingGoal} onClose={() => setContributingGoal(null)} />
+
+      <Modal open={!!deletingGoal} onClose={() => setDeletingGoal(null)} maxWidth="380px">
+        <ModalHead tag={t('goals.deleteTag')} title={`🗑 ${t('goals.deleteTitle')}`} />
+        <ModalBody>
+          <p className="text-[13px] leading-relaxed text-[var(--text-mid)]">
+            {t('goals.confirmDelete', { name: deletingGoal?.name ?? '' })}
+          </p>
+        </ModalBody>
+        <ModalFoot>
+          <Button
+            variant="ghost"
+            onClick={() => setDeletingGoal(null)}
+            disabled={deleteGoal.isPending}
+          >
+            {t('common.cancel')}
+          </Button>
+          <Button
+            variant="danger"
+            onClick={handleDeleteConfirm}
+            isLoading={deleteGoal.isPending}
+            disabled={deleteGoal.isPending}
+          >
+            {t('common.delete')}
+          </Button>
+        </ModalFoot>
+      </Modal>
     </>
   );
 }
