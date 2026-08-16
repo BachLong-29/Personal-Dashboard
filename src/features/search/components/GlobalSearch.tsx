@@ -22,6 +22,9 @@ export function GlobalSearch() {
   const closeSearch = useUIStore((s) => s.closeSearch);
   const router = useRouter();
   const t = useTranslations('search');
+  const tNav = useTranslations('nav');
+  const tDash = useTranslations('dashboard');
+  const tFinance = useTranslations('finance');
 
   const [query, setQuery] = useState('');
   const debounced = useDebounce(query, 300);
@@ -79,8 +82,51 @@ export function GlobalSearch() {
     );
   };
 
+  // Static app routes — searched/filtered client-side, matched on label or keywords.
+  const pages = useMemo<{ href: string; icon: string; label: string; keywords?: string[] }[]>(
+    () => [
+      { href: '/dashboard', icon: '🏠', label: tNav('dashboard') },
+      { href: '/tasks', icon: '📋', label: tDash('questLog'), keywords: ['tasks', 'todo'] },
+      { href: '/projects', icon: '🚀', label: tNav('projects') },
+      { href: '/marketplace', icon: '🛍', label: tNav('marketplace'), keywords: ['shop', 'store'] },
+      { href: '/achievements', icon: '🏆', label: t('pageNames.achievements') },
+      { href: '/manage/rewards', icon: '🎁', label: t('pageNames.rewards') },
+      { href: '/profile', icon: '✦', label: tNav('profile') },
+      { href: '/finance', icon: '💰', label: tNav('finance') },
+      {
+        href: '/finance/wallets',
+        icon: '🏦',
+        label: `${tNav('finance')} · ${tFinance('tabs.accounts')}`,
+        keywords: ['wallet', 'wallets', 'bank', 'account'],
+      },
+      {
+        href: '/finance/budget',
+        icon: '🧾',
+        label: `${tNav('finance')} · ${tFinance('tabs.budget')}`,
+      },
+      {
+        href: '/finance/goals',
+        icon: '🎯',
+        label: `${tNav('finance')} · ${tFinance('tabs.goals')}`,
+        keywords: ['savings'],
+      },
+      {
+        href: '/finance/transactions',
+        icon: '📄',
+        label: `${tNav('finance')} · ${tFinance('tabs.transactions')}`,
+        keywords: ['ledger', 'history'],
+      },
+      {
+        href: '/finance/categories',
+        icon: '🏷',
+        label: `${tNav('finance')} · ${tFinance('tabs.categories')}`,
+      },
+    ],
+    [t, tNav, tDash, tFinance],
+  );
+
   const groups: CommandGroup[] = useMemo(() => {
-    return GROUP_KEYS.map((key) => ({
+    const apiGroups = GROUP_KEYS.map((key) => ({
       label: t(key),
       items: result[key].map((hit) => ({
         key: `${hit.type}:${hit.id}`,
@@ -89,9 +135,32 @@ export function GlobalSearch() {
         onSelect: () => select(hit),
       })),
     })).filter((g) => g.items.length > 0);
-    // select/router are stable enough; recompute only when results change.
+
+    const q = debounced.trim().toLowerCase();
+    const pageItems = q
+      ? pages
+          .filter(
+            (p) =>
+              p.label.toLowerCase().includes(q) ||
+              p.keywords?.some((k) => k.toLowerCase().includes(q)),
+          )
+          .map((p) => ({
+            key: `page:${p.href}`,
+            icon: p.icon,
+            label: p.label,
+            onSelect: () => {
+              handleClose();
+              router.push(p.href);
+            },
+          }))
+      : [];
+
+    return pageItems.length > 0
+      ? [...apiGroups, { label: t('pagesLabel'), items: pageItems }]
+      : apiGroups;
+    // select/router/handleClose are stable enough; recompute only when results/pages/query change.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [result, t]);
+  }, [result, t, pages, debounced]);
 
   const emptyLabel = debounced.trim() ? t('empty', { query: debounced.trim() }) : t('hint');
 
