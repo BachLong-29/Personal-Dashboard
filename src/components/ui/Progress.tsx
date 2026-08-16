@@ -8,6 +8,8 @@ export interface ProgressProps {
   variant?: ProgressVariant;
   tall?: boolean;
   xp?: boolean;
+  /** Sweep a highlight across the filled part — for bars still in progress. */
+  shimmer?: boolean;
   label?: string;
   className?: string;
 }
@@ -30,6 +32,7 @@ export function Progress({
   xp,
   label,
   className,
+  shimmer,
 }: ProgressProps) {
   const pct = Math.min(100, Math.max(0, (value / max) * 100));
 
@@ -74,9 +77,20 @@ export function Progress({
         className={cn(
           'h-full rounded-[inherit] transition-[width] duration-500',
           barStyles[variant],
+          shimmer && SHIMMER_CLASSES,
         )}
         style={{ width: `${pct}%` }}
       />
     </div>
   );
 }
+
+/**
+ * The sweeping highlight used on the hero XP bar, as a pseudo-element on the filled part.
+ * Held still for users who asked for reduced motion.
+ */
+const SHIMMER_CLASSES = [
+  "relative overflow-hidden after:content-[''] after:absolute after:inset-y-0 after:left-[-100%]",
+  'after:w-[60%] after:bg-[linear-gradient(90deg,transparent,oklch(1_0_0_/_0.35),transparent)]',
+  'after:animate-[shimmer_2.5s_infinite] motion-reduce:after:animate-none',
+].join(' ');

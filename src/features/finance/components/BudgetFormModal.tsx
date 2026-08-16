@@ -13,6 +13,7 @@ import type { Budget, FinanceCategory } from '@/types';
 import { formatAmountInput, formatMonthLabel, toAmountDigits } from '../utils';
 import { useCreateBudget } from '../hooks/useCreateBudget';
 import { useUpdateBudget } from '../hooks/useUpdateBudget';
+import { FinanceCategoryFormModal } from './FinanceCategoryFormModal';
 
 const OVERALL_VALUE = '__overall__';
 
@@ -47,6 +48,7 @@ export function BudgetFormModal({
   const [categoryValue, setCategoryValue] = useState(OVERALL_VALUE);
   const [limit, setLimit] = useState('');
   const [recurring, setRecurring] = useState(false);
+  const [showNewCategory, setShowNewCategory] = useState(false);
 
   // Re-seed form fields whenever the modal opens for a different context.
   // Adjusted during render (not an effect) to avoid an extra render pass on open.
@@ -96,92 +98,123 @@ export function BudgetFormModal({
   }
 
   return (
-    <Modal open={open} onClose={onClose} maxWidth="440px" className="overflow-visible">
-      <ModalHead
-        tag={isEdit ? t('budget.editTag') : t('budget.newTag')}
-        title={isEdit ? '✎ ' + t('budget.editTitle') : '＋ ' + t('budget.newTitle')}
-      />
-      <ModalBody className="flex flex-col gap-4">
-        <Field label={t('budget.forMonthLabel')}>
-          <div className="text-[13px] text-[var(--text-hi)]">
-            {formatMonthLabel(isEdit ? budget.month : month, locale)}
-          </div>
-        </Field>
-
-        <Field label={t('budget.category')}>
-          {isEdit ? (
+    <>
+      <Modal open={open} onClose={onClose} maxWidth="440px" className="overflow-visible">
+        <ModalHead
+          tag={isEdit ? t('budget.editTag') : t('budget.newTag')}
+          title={isEdit ? '✎ ' + t('budget.editTitle') : '＋ ' + t('budget.newTitle')}
+        />
+        <ModalBody className="flex flex-col gap-4">
+          <Field label={t('budget.forMonthLabel')}>
             <div className="text-[13px] text-[var(--text-hi)]">
-              {budget.categoryId ? budget.categoryName : t('budget.overall')}
-            </div>
-          ) : (
-            <Select
-              options={categoryOptions}
-              value={categoryValue}
-              onValueChange={setCategoryValue}
-            />
-          )}
-        </Field>
-
-        <Field label={t('budget.limit')}>
-          <input
-            type="text"
-            inputMode="numeric"
-            className="w-full rounded-[var(--r-sm)] border border-[var(--border)] bg-[var(--surface-2)] px-3 py-2 text-[18px] font-bold tabular-nums text-[var(--text-hi)] focus:border-[var(--gold)] focus:outline-none"
-            value={formatAmountInput(limit)}
-            onChange={(e) => setLimit(toAmountDigits(e.target.value))}
-            placeholder="0"
-            autoFocus
-          />
-        </Field>
-
-        {isEdit ? (
-          budget.recurring && (
-            <p className="text-[11px] text-[var(--text-lo)]">
-              ↻ Recurring — editing the limit also updates every later month that inherits it.
-            </p>
-          )
-        ) : (
-          <Field label="Applies to">
-            <div className="flex gap-2">
-              <button
-                type="button"
-                onClick={() => setRecurring(false)}
-                className={cn(
-                  'flex-1 rounded-[var(--r-sm)] border px-3 py-2 text-left text-[12px] transition-all',
-                  !recurring
-                    ? 'border-[var(--gold)] bg-[oklch(0.74_0.17_85_/_0.1)] text-[var(--gold)]'
-                    : 'border-[var(--border)] text-[var(--text-mid)] hover:text-[var(--text-hi)]',
-                )}
-              >
-                <div className="font-bold">{formatMonthLabel(month, locale)} only</div>
-                <div className="text-[10px] text-[var(--text-lo)]">One-off, this month only</div>
-              </button>
-              <button
-                type="button"
-                onClick={() => setRecurring(true)}
-                className={cn(
-                  'flex-1 rounded-[var(--r-sm)] border px-3 py-2 text-left text-[12px] transition-all',
-                  recurring
-                    ? 'border-[var(--gold)] bg-[oklch(0.74_0.17_85_/_0.1)] text-[var(--gold)]'
-                    : 'border-[var(--border)] text-[var(--text-mid)] hover:text-[var(--text-hi)]',
-                )}
-              >
-                <div className="font-bold">↻ This &amp; future months</div>
-                <div className="text-[10px] text-[var(--text-lo)]">Until you change it</div>
-              </button>
+              {formatMonthLabel(isEdit ? budget.month : month, locale)}
             </div>
           </Field>
-        )}
-      </ModalBody>
-      <ModalFoot>
-        <Button variant="ghost" onClick={onClose} disabled={isPending}>
-          {t('common.cancel')}
-        </Button>
-        <Button variant="primary" onClick={handleSubmit} disabled={!canSave} isLoading={isPending}>
-          ✦ {isEdit ? t('common.save') : t('common.create')}
-        </Button>
-      </ModalFoot>
-    </Modal>
+
+          <div className="flex flex-col gap-1.5">
+            <div className="flex items-center justify-between">
+              <span className="text-[9px] font-bold tracking-[0.12em] uppercase text-[var(--text-lo)] [font-family:var(--f-title)]">
+                {t('budget.category')}
+              </span>
+              {!isEdit && (
+                <button
+                  type="button"
+                  onClick={() => setShowNewCategory(true)}
+                  className="text-[10px] font-bold uppercase tracking-[0.06em] text-[var(--gold)] hover:underline"
+                >
+                  ＋ {t('budget.newCategory')}
+                </button>
+              )}
+            </div>
+            {isEdit ? (
+              <div className="text-[13px] text-[var(--text-hi)]">
+                {budget.categoryId ? budget.categoryName : t('budget.overall')}
+              </div>
+            ) : (
+              <Select
+                options={categoryOptions}
+                value={categoryValue}
+                onValueChange={setCategoryValue}
+              />
+            )}
+          </div>
+
+          <Field label={t('budget.limit')}>
+            <input
+              type="text"
+              inputMode="numeric"
+              className="w-full rounded-[var(--r-sm)] border border-[var(--border)] bg-[var(--surface-2)] px-3 py-2 text-[18px] font-bold tabular-nums text-[var(--text-hi)] focus:border-[var(--gold)] focus:outline-none"
+              value={formatAmountInput(limit)}
+              onChange={(e) => setLimit(toAmountDigits(e.target.value))}
+              placeholder="0"
+              autoFocus
+            />
+          </Field>
+
+          {isEdit ? (
+            budget.recurring && (
+              <p className="text-[11px] text-[var(--text-lo)]">
+                ↻ Recurring — editing the limit also updates every later month that inherits it.
+              </p>
+            )
+          ) : (
+            <Field label="Applies to">
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setRecurring(false)}
+                  className={cn(
+                    'flex-1 rounded-[var(--r-sm)] border px-3 py-2 text-left text-[12px] transition-all',
+                    !recurring
+                      ? 'border-[var(--gold)] bg-[oklch(0.74_0.17_85_/_0.1)] text-[var(--gold)]'
+                      : 'border-[var(--border)] text-[var(--text-mid)] hover:text-[var(--text-hi)]',
+                  )}
+                >
+                  <div className="font-bold">{formatMonthLabel(month, locale)} only</div>
+                  <div className="text-[10px] text-[var(--text-lo)]">One-off, this month only</div>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setRecurring(true)}
+                  className={cn(
+                    'flex-1 rounded-[var(--r-sm)] border px-3 py-2 text-left text-[12px] transition-all',
+                    recurring
+                      ? 'border-[var(--gold)] bg-[oklch(0.74_0.17_85_/_0.1)] text-[var(--gold)]'
+                      : 'border-[var(--border)] text-[var(--text-mid)] hover:text-[var(--text-hi)]',
+                  )}
+                >
+                  <div className="font-bold">↻ This &amp; future months</div>
+                  <div className="text-[10px] text-[var(--text-lo)]">Until you change it</div>
+                </button>
+              </div>
+            </Field>
+          )}
+        </ModalBody>
+        <ModalFoot>
+          <Button variant="ghost" onClick={onClose} disabled={isPending}>
+            {t('common.cancel')}
+          </Button>
+          <Button
+            variant="primary"
+            onClick={handleSubmit}
+            disabled={!canSave}
+            isLoading={isPending}
+          >
+            ✦ {isEdit ? t('common.save') : t('common.create')}
+          </Button>
+        </ModalFoot>
+      </Modal>
+
+      <FinanceCategoryFormModal
+        open={showNewCategory}
+        onClose={() => setShowNewCategory(false)}
+        defaultType="expense"
+        lockType
+        onSaved={(mode, created) => {
+          if (mode === 'created') setCategoryValue(created.id);
+        }}
+      />
+    </>
   );
 }
 

@@ -30,23 +30,4 @@ export const WALLET_TYPE_OPTIONS: { value: WalletType; label: string; icon: stri
 
 export const WALLET_ICONS = ['🏦', '💵', '📱', '💳', '🪙', '🐷', '💰', '🏧'];
 
-export const CATEGORY_ICONS = [
-  '🍜',
-  '🚗',
-  '🛍',
-  '🧾',
-  '🎮',
-  '💊',
-  '📦',
-  '💼',
-  '🎁',
-  '📥',
-  '🏠',
-  '✈️',
-  '📚',
-  '🎓',
-  '🐾',
-  '☕',
-];
-
 export const GOAL_ICONS = ['🎯', '🎓', '🏠', '🚗', '✈️', '💻', '🛟', '💍', '🏝', '🎁'];

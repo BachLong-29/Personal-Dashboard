@@ -260,7 +260,7 @@ export function Select({
             role="listbox"
             aria-labelledby={selectId}
             className={cn(
-              'absolute top-[calc(100%+6px)] left-0 right-0 z-50 max-h-60 overflow-y-auto rounded-[var(--r-md)]',
+              'absolute top-[calc(100%+6px)] left-0 right-0 z-50 flex max-h-60 flex-col gap-0.5 overflow-y-auto rounded-[var(--r-md)]',
               'border border-[var(--gold)] bg-[var(--bg-2)] p-1 shadow-[var(--sh-3),var(--sh-glow-gold)]',
               menuClassName,
             )}

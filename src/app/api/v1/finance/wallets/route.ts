@@ -18,6 +18,7 @@ const createSchema = z.object({
   icon: z.string().min(1),
   color: z.enum(WALLET_COLORS),
   currency: z.string().trim().optional(),
+  balance: z.number().finite().optional(),
   bankCode: z.string().trim().optional(),
   bankAccountNumber: z.string().trim().optional(),
 });
@@ -71,6 +72,7 @@ export const POST = asyncHandler(async (req: NextRequest) => {
     icon: data.icon,
     color: data.color,
     currency: data.currency || 'VND',
+    balance: data.balance ?? 0,
     bankCode: data.type === 'bank' ? data.bankCode : undefined,
     bankAccountNumber: data.type === 'bank' ? data.bankAccountNumber : undefined,
   });

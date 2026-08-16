@@ -61,6 +61,7 @@ export function CommandPalette({
   // User's explicit arrow/hover choice; null = follow the first result.
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const itemRefs = useRef<Map<string, HTMLButtonElement | null>>(new Map());
 
   const allItems = groups.flatMap((g) => g.items);
 
@@ -99,6 +100,12 @@ export function CommandPalette({
     document.addEventListener('keydown', handle);
     return () => document.removeEventListener('keydown', handle);
   }, [open, handleClose]);
+
+  // Keep the highlighted item in view when arrow keys move past the visible scroll area.
+  useEffect(() => {
+    if (!open || !focusedKey) return;
+    itemRefs.current.get(focusedKey)?.scrollIntoView({ block: 'nearest' });
+  }, [open, focusedKey]);
 
   const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
     if (filtered.length === 0) return;
@@ -171,6 +178,9 @@ export function CommandPalette({
                     <button
                       key={item.key}
                       type="button"
+                      ref={(node) => {
+                        itemRefs.current.set(item.key, node);
+                      }}
                       onMouseEnter={() => setSelectedKey(item.key)}
                       onClick={() => {
                         item.onSelect();

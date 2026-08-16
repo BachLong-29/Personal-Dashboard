@@ -1,3 +1,6 @@
+/** Placeholder shown instead of an amount when the user has toggled amounts hidden. */
+export const AMOUNT_MASK = '••••••';
+
 export function formatCurrency(amount: number, currency = 'VND'): string {
   if (currency === 'VND') {
     return `${Math.round(amount).toLocaleString('vi-VN')}₫`;
@@ -14,6 +17,23 @@ export function formatAmountInput(digits: string): string {
 /** Strips everything but digits — use on amount-input onChange before storing state. */
 export function toAmountDigits(raw: string): string {
   return raw.replace(/[^\d]/g, '');
+}
+
+/** Signed digits string (e.g. "-10000") → "-10,000" for display in a balance input. */
+export function formatSignedAmountInput(value: string): string {
+  if (!value || value === '-') return value;
+  const negative = value.startsWith('-');
+  const digits = value.replace(/[^\d]/g, '');
+  if (!digits) return negative ? '-' : '';
+  const formatted = Number(digits).toLocaleString('en-US');
+  return negative ? `-${formatted}` : formatted;
+}
+
+/** Strips everything but digits and a leading minus — use on signed amount-input onChange. */
+export function toSignedAmountDigits(raw: string): string {
+  const negative = raw.trim().startsWith('-');
+  const digits = raw.replace(/[^\d]/g, '');
+  return negative ? `-${digits}` : digits;
 }
 
 /**

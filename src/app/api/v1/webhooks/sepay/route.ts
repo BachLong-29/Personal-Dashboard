@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { NextResponse, type NextRequest } from 'next/server';
+import type { Types } from 'mongoose';
 
 import { connectDB } from '@/libs/mongodb';
 import { compareSecret } from '@/server/libs/hash';
@@ -24,10 +25,25 @@ const payloadSchema = z
   })
   .passthrough();
 
-const DEFAULT_CATEGORY: Record<TransactionType, { icon: string; color: string }> = {
-  income: { icon: '📥', color: 'cyan' },
-  expense: { icon: '📦', color: 'gold' },
-};
+const UNCATEGORIZED_NAME = 'Chưa phân loại';
+const UNCATEGORIZED_DEFAULTS = { icon: '❔', color: 'violet' };
+
+/** Picks the category whose keyword match in `haystack` is longest (most specific wins). */
+function matchCategoryByKeyword(
+  categories: { _id: Types.ObjectId; keywords?: string[] }[],
+  haystack: string,
+): Types.ObjectId | null {
+  let best: { id: Types.ObjectId; len: number } | null = null;
+  for (const cat of categories) {
+    for (const raw of cat.keywords ?? []) {
+      const needle = raw.trim().toLowerCase();
+      if (needle && haystack.includes(needle) && (!best || needle.length > best.len)) {
+        best = { id: cat._id, len: needle.length };
+      }
+    }
+  }
+  return best?.id ?? null;
+}
 
 const ack = (status = 200) => NextResponse.json({ success: true }, { status });
 const unauthorized = () =>
@@ -72,11 +88,24 @@ export async function POST(req: NextRequest) {
     if (alreadyProcessed) return ack();
 
     const type: TransactionType = payload.transferType === 'in' ? 'income' : 'expense';
-    const category = await FinanceCategoryModel.findOneAndUpdate(
-      { userId: wallet.userId, name: 'Khác', type },
-      { $setOnInsert: { ...DEFAULT_CATEGORY[type] } },
-      { upsert: true, new: true },
-    );
+
+    const haystack = `${payload.content ?? ''} ${payload.description ?? ''}`.toLowerCase();
+    const ruledCategories = await FinanceCategoryModel.find({
+      userId: wallet.userId,
+      type,
+      keywords: { $exists: true, $not: { $size: 0 } },
+    })
+      .select('_id keywords')
+      .lean();
+    const matchedCategoryId = matchCategoryByKeyword(ruledCategories, haystack);
+
+    const category = matchedCategoryId
+      ? { _id: matchedCategoryId }
+      : await FinanceCategoryModel.findOneAndUpdate(
+          { userId: wallet.userId, name: UNCATEGORIZED_NAME, type },
+          { $setOnInsert: { ...UNCATEGORIZED_DEFAULTS } },
+          { upsert: true, new: true },
+        );
 
     await TransactionModel.create({
       userId: wallet.userId,

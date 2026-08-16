@@ -221,12 +221,15 @@ export function PageHeader({
 // ─── View switch ──────────────────────────────────────────────────────────────
 
 const VIEW_META: Array<{ id: ViewMode; glyph: string; label: string }> = [
-  { id: 'day', glyph: '◐', label: 'day' },
+  // 'day' temporarily hidden — 'all' is the only view for now.
+  // { id: 'day', glyph: '◐', label: 'day' },
   { id: 'all', glyph: '≡', label: 'all' },
 ];
 
 function ViewSwitch({ view, onChange }: { view: ViewMode; onChange: (v: ViewMode) => void }) {
   const t = useTranslations('tasks');
+
+  if (VIEW_META.length <= 1) return null;
 
   return (
     <div className="flex bg-[var(--panel2)] border border-[var(--border)] rounded-[var(--r-sm)] overflow-hidden">

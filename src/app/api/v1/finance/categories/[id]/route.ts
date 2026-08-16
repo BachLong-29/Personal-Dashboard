@@ -23,6 +23,7 @@ const updateSchema = z.object({
   name: z.string().min(1).max(50).trim().optional(),
   icon: z.string().min(1).optional(),
   color: z.enum(['gold', 'mint', 'violet', 'cyan', 'rose', 'amber', 'blue']).optional(),
+  keywords: z.array(z.string().trim().min(1)).optional(),
 });
 
 // PATCH /api/v1/finance/categories/:id

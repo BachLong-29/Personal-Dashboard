@@ -27,6 +27,7 @@ export interface CreateWalletPayload {
   icon: string;
   color: TaskColor;
   currency?: string;
+  balance?: number;
   bankCode?: string;
   bankAccountNumber?: string;
 }
@@ -35,6 +36,7 @@ export interface UpdateWalletPayload {
   name?: string;
   icon?: string;
   color?: TaskColor;
+  balance?: number;
   bankCode?: string | null;
   bankAccountNumber?: string | null;
 }
@@ -57,6 +59,7 @@ export interface FinanceCategory {
   type: FinanceCategoryType;
   icon: string;
   color: TaskColor;
+  keywords: string[];
   createdAt: string;
   updatedAt: string;
 }
@@ -66,6 +69,7 @@ export interface CreateFinanceCategoryPayload {
   type: FinanceCategoryType;
   icon: string;
   color: TaskColor;
+  keywords?: string[];
 }
 
 export interface Transaction {
@@ -249,4 +253,5 @@ export interface UpdateFinanceCategoryPayload {
   name?: string;
   icon?: string;
   color?: TaskColor;
+  keywords?: string[];
 }

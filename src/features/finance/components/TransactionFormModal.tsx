@@ -82,7 +82,6 @@ export function TransactionFormModal({
     }
   }
 
-  const filteredCategories = categories.filter((c) => c.type === type);
   const amountNum = parseFloat(amount);
   const canSave =
     walletId && categoryId && amountNum > 0 && !saving && (!isEdit || !deleteTx.isPending);
@@ -187,32 +186,50 @@ export function TransactionFormModal({
           />
         </Field>
 
-        {/* Category grid */}
+        {/* Category grid — both type's chip sets are stacked in the same CSS grid cell, so the
+            container's height is always the taller of the two and never jumps on toggle. */}
         <Field label={t('transactions.category')}>
-          <div className="flex flex-wrap gap-1.5">
-            {filteredCategories.map((c) => {
-              const accent = COLOR_CSS[c.color];
-              const selected = categoryId === c.id;
+          <div className="grid">
+            {(['expense', 'income'] as TransactionType[]).map((section) => {
+              const active = type === section;
               return (
-                <button
-                  key={c.id}
-                  type="button"
-                  onClick={() => setCategoryId(c.id)}
+                <div
+                  key={section}
+                  aria-hidden={!active}
                   className={cn(
-                    'flex items-center gap-1.5 rounded-[var(--r-sm)] border px-2.5 py-1.5 text-[11px] font-semibold transition-all',
-                    selected ? 'scale-[1.03]' : 'opacity-70 hover:opacity-100',
+                    'col-start-1 row-start-1 flex flex-wrap content-start gap-1.5 transition-opacity duration-150',
+                    active ? 'opacity-100' : 'pointer-events-none opacity-0',
                   )}
-                  style={{
-                    borderColor: selected ? accent : 'var(--border)',
-                    background: selected
-                      ? `color-mix(in oklch, ${accent} 14%, transparent)`
-                      : 'transparent',
-                    color: selected ? accent : 'var(--text-mid)',
-                  }}
                 >
-                  <span>{c.icon}</span>
-                  {c.name}
-                </button>
+                  {categories
+                    .filter((c) => c.type === section)
+                    .map((c) => {
+                      const accent = COLOR_CSS[c.color];
+                      const selected = categoryId === c.id;
+                      return (
+                        <button
+                          key={c.id}
+                          type="button"
+                          tabIndex={active ? 0 : -1}
+                          onClick={() => setCategoryId(c.id)}
+                          className={cn(
+                            'flex items-center gap-1.5 rounded-[var(--r-sm)] border px-2.5 py-1.5 text-[11px] font-semibold transition-all',
+                            selected ? 'scale-[1.03]' : 'opacity-70 hover:opacity-100',
+                          )}
+                          style={{
+                            borderColor: selected ? accent : 'var(--border)',
+                            background: selected
+                              ? `color-mix(in oklch, ${accent} 14%, transparent)`
+                              : 'transparent',
+                            color: selected ? accent : 'var(--text-mid)',
+                          }}
+                        >
+                          <span>{c.icon}</span>
+                          {c.name}
+                        </button>
+                      );
+                    })}
+                </div>
               );
             })}
           </div>

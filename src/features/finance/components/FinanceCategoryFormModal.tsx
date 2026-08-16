@@ -2,13 +2,15 @@
 
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
+import data from '@emoji-mart/data';
+import Picker from '@emoji-mart/react';
 
 import { Button } from '@/components/ui/Button';
 import { Modal, ModalHead, ModalBody, ModalFoot } from '@/components/ui/Modal';
 import { cn } from '@/libs/utils';
 import type { FinanceCategory, FinanceCategoryType, TaskColor } from '@/types';
 
-import { CATEGORY_ICONS, COLOR_CSS, COLOR_OPTIONS } from '../constants';
+import { COLOR_CSS, COLOR_OPTIONS } from '../constants';
 import { useCreateFinanceCategory } from '../hooks/useCreateFinanceCategory';
 import { useUpdateFinanceCategory } from '../hooks/useUpdateFinanceCategory';
 
@@ -19,7 +21,9 @@ interface Props {
   category?: FinanceCategory | null;
   /** Type for a new category — locked once it exists. */
   defaultType?: FinanceCategoryType;
-  onSaved?: (mode: 'created' | 'updated') => void;
+  /** Force `defaultType` even for a new category — e.g. quick-create from an expense-only picker. */
+  lockType?: boolean;
+  onSaved?: (mode: 'created' | 'updated', category: FinanceCategory) => void;
 }
 
 export function FinanceCategoryFormModal({
@@ -27,6 +31,7 @@ export function FinanceCategoryFormModal({
   onClose,
   category,
   defaultType = 'expense',
+  lockType = false,
   onSaved,
 }: Props) {
   const t = useTranslations('finance');
@@ -37,8 +42,11 @@ export function FinanceCategoryFormModal({
 
   const [name, setName] = useState('');
   const [type, setType] = useState<FinanceCategoryType>(defaultType);
-  const [icon, setIcon] = useState(CATEGORY_ICONS[0] ?? '📦');
+  const [icon, setIcon] = useState('📦');
   const [color, setColor] = useState<TaskColor>('gold');
+  const [keywords, setKeywords] = useState<string[]>([]);
+  const [keywordDraft, setKeywordDraft] = useState('');
+  const [showPicker, setShowPicker] = useState(false);
 
   // Re-seed on open (adjusted during render, not an effect — same as the other finance forms).
   const [prevOpen, setPrevOpen] = useState(open);
@@ -47,22 +55,36 @@ export function FinanceCategoryFormModal({
     if (open) {
       setName(category?.name ?? '');
       setType(category?.type ?? defaultType);
-      setIcon(category?.icon ?? CATEGORY_ICONS[0] ?? '📦');
+      setIcon(category?.icon ?? '📦');
       setColor(category?.color ?? 'gold');
+      setKeywords(category?.keywords ?? []);
+      setKeywordDraft('');
+      setShowPicker(false);
     }
   }
 
   const canSave = name.trim().length > 0 && !isPending;
+
+  function addKeyword() {
+    const value = keywordDraft.trim().toLowerCase();
+    setKeywordDraft('');
+    if (!value || keywords.includes(value)) return;
+    setKeywords((prev) => [...prev, value]);
+  }
+
+  function removeKeyword(value: string) {
+    setKeywords((prev) => prev.filter((k) => k !== value));
+  }
 
   function handleSubmit() {
     if (!canSave) return;
 
     if (category) {
       updateCategory.mutate(
-        { id: category.id, name: name.trim(), icon, color },
+        { id: category.id, name: name.trim(), icon, color, keywords },
         {
-          onSuccess: () => {
-            onSaved?.('updated');
+          onSuccess: (updated) => {
+            if (updated) onSaved?.('updated', updated);
             onClose();
           },
         },
@@ -71,10 +93,10 @@ export function FinanceCategoryFormModal({
     }
 
     createCategory.mutate(
-      { name: name.trim(), type, icon, color },
+      { name: name.trim(), type, icon, color, keywords },
       {
-        onSuccess: () => {
-          onSaved?.('created');
+        onSuccess: (created) => {
+          if (created) onSaved?.('created', created);
           onClose();
         },
       },
@@ -87,14 +109,14 @@ export function FinanceCategoryFormModal({
   ];
 
   return (
-    <Modal open={open} onClose={onClose} maxWidth="440px">
+    <Modal open={open} onClose={onClose} maxWidth="440px" scrollable>
       <ModalHead
         tag={isEdit ? t('categories.editTag') : t('categories.newTag')}
         title={
           (isEdit ? '✎ ' : '＋ ') + (isEdit ? t('categories.editTitle') : t('categories.newTitle'))
         }
       />
-      <ModalBody className="flex flex-col gap-4">
+      <ModalBody className="flex flex-col gap-4" scrollable>
         <label className="flex flex-col gap-1.5">
           <span className={fieldLabel}>{t('categories.name')}</span>
           <input
@@ -107,49 +129,63 @@ export function FinanceCategoryFormModal({
           />
         </label>
 
-        <div className="flex flex-col gap-1.5">
-          <span className={fieldLabel}>{t('categories.type')}</span>
-          <div className="flex gap-2">
-            {typeOptions.map((option) => (
-              <button
-                key={option.value}
-                type="button"
-                onClick={() => setType(option.value)}
-                disabled={isEdit}
-                title={isEdit ? t('categories.typeLocked') : undefined}
-                className={cn(
-                  'flex flex-1 items-center justify-center rounded-[var(--r-sm)] border px-2 py-2 text-[11px] font-bold uppercase tracking-[0.04em] transition-all',
-                  type === option.value
-                    ? 'border-[var(--gold)] bg-[oklch(0.74_0.17_85_/_0.1)] text-[var(--gold)]'
-                    : 'border-[var(--border)] text-[var(--text-mid)] hover:text-[var(--text-hi)]',
-                  isEdit && 'cursor-not-allowed opacity-50 hover:text-[var(--text-mid)]',
-                )}
-              >
-                {option.label}
-              </button>
-            ))}
+        {!lockType && (
+          <div className="flex flex-col gap-1.5">
+            <span className={fieldLabel}>{t('categories.type')}</span>
+            <div className="flex gap-2">
+              {typeOptions.map((option) => (
+                <button
+                  key={option.value}
+                  type="button"
+                  onClick={() => setType(option.value)}
+                  disabled={isEdit}
+                  title={isEdit ? t('categories.typeLocked') : undefined}
+                  className={cn(
+                    'flex flex-1 items-center justify-center rounded-[var(--r-sm)] border px-2 py-2 text-[11px] font-bold uppercase tracking-[0.04em] transition-all',
+                    type === option.value
+                      ? 'border-[var(--gold)] bg-[oklch(0.74_0.17_85_/_0.1)] text-[var(--gold)]'
+                      : 'border-[var(--border)] text-[var(--text-mid)] hover:text-[var(--text-hi)]',
+                    isEdit && 'cursor-not-allowed opacity-50 hover:text-[var(--text-mid)]',
+                  )}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
 
         <div className="flex flex-col gap-1.5">
           <span className={fieldLabel}>{t('categories.icon')}</span>
-          <div className="flex flex-wrap gap-1.5">
-            {CATEGORY_ICONS.map((ic) => (
-              <button
-                key={ic}
-                type="button"
-                onClick={() => setIcon(ic)}
-                className={cn(
-                  'flex h-9 w-9 items-center justify-center rounded-[var(--r-sm)] border text-[18px] transition-all',
-                  icon === ic
-                    ? 'border-[var(--gold)] bg-[oklch(0.74_0.17_85_/_0.12)]'
-                    : 'border-[var(--border)] hover:border-[var(--border-hi)]',
-                )}
-              >
-                {ic}
-              </button>
-            ))}
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => setShowPicker((v) => !v)}
+              className={cn(
+                'flex h-11 w-11 items-center justify-center rounded-[var(--r-sm)] border text-[22px] transition-all',
+                showPicker
+                  ? 'border-[var(--gold)] shadow-[0_0_10px_oklch(0.74_0.17_85_/_0.3)]'
+                  : 'border-[var(--border)] hover:border-[var(--border-hi)]',
+              )}
+            >
+              {icon}
+            </button>
           </div>
+          {showPicker && (
+            <div className="relative z-50 mt-1">
+              <Picker
+                data={data}
+                theme="dark"
+                previewPosition="none"
+                skinTonePosition="none"
+                perLine={9}
+                onEmojiSelect={(emoji: { native: string }) => {
+                  setIcon(emoji.native);
+                  setShowPicker(false);
+                }}
+              />
+            </div>
+          )}
         </div>
 
         <div className="flex flex-col gap-1.5">
@@ -172,6 +208,47 @@ export function FinanceCategoryFormModal({
               />
             ))}
           </div>
+        </div>
+        <div className="flex flex-col gap-1.5">
+          <span className={fieldLabel}>{t('categories.keywords')}</span>
+          <div className="flex gap-2">
+            <input
+              className={input}
+              value={keywordDraft}
+              onChange={(e) => setKeywordDraft(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ',') {
+                  e.preventDefault();
+                  addKeyword();
+                }
+              }}
+              placeholder={t('categories.keywordsPlaceholder')}
+            />
+            <Button type="button" variant="ghost" size="sm" onClick={addKeyword}>
+              ＋
+            </Button>
+          </div>
+          {keywords.length > 0 && (
+            <div className="flex flex-wrap gap-1.5">
+              {keywords.map((k) => (
+                <span
+                  key={k}
+                  className="inline-flex items-center gap-1 rounded-full border border-[var(--border)] bg-[var(--surface-2)] px-2 py-0.5 text-[11px] text-[var(--text-hi)]"
+                >
+                  {k}
+                  <button
+                    type="button"
+                    onClick={() => removeKeyword(k)}
+                    className="text-[var(--text-lo)] hover:text-[var(--crimson)]"
+                    aria-label={`${t('common.delete')} ${k}`}
+                  >
+                    ✕
+                  </button>
+                </span>
+              ))}
+            </div>
+          )}
+          <span className="text-[11px] text-[var(--text-lo)]">{t('categories.keywordsHint')}</span>
         </div>
       </ModalBody>
       <ModalFoot>

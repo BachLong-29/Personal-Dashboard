@@ -13,6 +13,7 @@ import type { WalletType } from '@/types/finance';
 import { COLOR_CSS, COLOR_OPTIONS, WALLET_ICONS, WALLET_TYPE_OPTIONS } from '../constants';
 import { useCreateWallet } from '../hooks/useCreateWallet';
 import { useUpdateWallet } from '../hooks/useUpdateWallet';
+import { formatSignedAmountInput, toSignedAmountDigits } from '../utils';
 
 interface Props {
   open: boolean;
@@ -34,6 +35,7 @@ export function WalletFormModal({ open, onClose, wallet }: Props) {
   const [color, setColor] = useState<TaskColor>('gold');
   const [bankCode, setBankCode] = useState('');
   const [bankAccountNumber, setBankAccountNumber] = useState('');
+  const [balance, setBalance] = useState('0');
 
   // Re-seed form fields whenever the modal opens, so edit prefills and create starts blank.
   // Adjusted during render (not an effect) to avoid an extra render pass on open.
@@ -47,6 +49,7 @@ export function WalletFormModal({ open, onClose, wallet }: Props) {
       setColor(wallet?.color ?? 'gold');
       setBankCode(wallet?.bankCode ?? '');
       setBankAccountNumber(wallet?.bankAccountNumber ?? '');
+      setBalance(String(wallet?.balance ?? 0));
     }
   }
 
@@ -56,7 +59,8 @@ export function WalletFormModal({ open, onClose, wallet }: Props) {
     ewallet: t('wallet.typeEwallet'),
   };
 
-  const canSave = name.trim().length > 0 && !isPending;
+  const balanceValue = Number(balance);
+  const canSave = name.trim().length > 0 && Number.isFinite(balanceValue) && !isPending;
 
   function handleSubmit() {
     if (!canSave) return;
@@ -68,14 +72,14 @@ export function WalletFormModal({ open, onClose, wallet }: Props) {
 
     if (wallet) {
       updateWallet.mutate(
-        { id: wallet.id, name: name.trim(), icon, color, ...bankFields },
+        { id: wallet.id, name: name.trim(), icon, color, balance: balanceValue, ...bankFields },
         { onSuccess: onClose },
       );
       return;
     }
 
     createWallet.mutate(
-      { name: name.trim(), type, icon, color, ...bankFields },
+      { name: name.trim(), type, icon, color, balance: balanceValue, ...bankFields },
       { onSuccess: onClose },
     );
   }
@@ -96,6 +100,18 @@ export function WalletFormModal({ open, onClose, wallet }: Props) {
             placeholder={t('wallet.namePlaceholder')}
             autoFocus
           />
+        </Field>
+
+        <Field label={t('wallet.balance')}>
+          <input
+            className={input}
+            type="text"
+            inputMode="numeric"
+            value={formatSignedAmountInput(balance)}
+            onChange={(e) => setBalance(toSignedAmountDigits(e.target.value))}
+            placeholder="0"
+          />
+          <span className="text-[11px] text-[var(--text-lo)]">{t('wallet.balanceHint')}</span>
         </Field>
 
         <Field label={t('wallet.type')}>

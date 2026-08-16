@@ -5,6 +5,7 @@ import { motion } from 'framer-motion';
 import { useLocale, useTranslations } from 'next-intl';
 
 import { Button } from '@/components/ui/Button';
+import { Modal, ModalHead, ModalBody, ModalFoot } from '@/components/ui/Modal';
 import { SkelBlock } from '@/components/ui/Skeleton';
 import { GoldPanel } from '@/components/common/GoldPanel';
 import { useUIStore } from '@/stores/ui.store';
@@ -31,6 +32,7 @@ export function BudgetPage() {
 
   const [showForm, setShowForm] = useState(false);
   const [editingBudget, setEditingBudget] = useState<Budget | null>(null);
+  const [deletingBudget, setDeletingBudget] = useState<Budget | null>(null);
 
   const canCreate = month >= currentMonthKey();
   const existingCategoryIds = budgets.map((b) => b.categoryId);
@@ -45,14 +47,17 @@ export function BudgetPage() {
     setShowForm(true);
   }
 
-  function handleDelete(budget: Budget) {
-    const name = budget.categoryId ? budget.categoryName : t('budget.overall');
-    if (!confirm(t('budget.confirmDelete', { name, month: formatMonthLabel(month, locale) }))) {
-      return;
-    }
-    deleteBudget.mutate(budget.id, {
-      onSuccess: () => addToast({ type: 'success', message: t('budget.deleted') }),
-      onError: () => addToast({ type: 'error', message: t('budget.deleteFailed') }),
+  function handleDeleteConfirm() {
+    if (!deletingBudget) return;
+    deleteBudget.mutate(deletingBudget.id, {
+      onSuccess: () => {
+        addToast({ type: 'success', message: t('budget.deleted') });
+        setDeletingBudget(null);
+      },
+      onError: () => {
+        addToast({ type: 'error', message: t('budget.deleteFailed') });
+        setDeletingBudget(null);
+      },
     });
   }
 
@@ -123,7 +128,7 @@ export function BudgetPage() {
                 budgets={budgets}
                 categories={expenseCategories}
                 onEdit={handleEdit}
-                onDelete={handleDelete}
+                onDelete={setDeletingBudget}
               />
             )}
           </div>
@@ -138,6 +143,35 @@ export function BudgetPage() {
         existingCategoryIds={existingCategoryIds}
         budget={editingBudget}
       />
+
+      <Modal open={!!deletingBudget} onClose={() => setDeletingBudget(null)} maxWidth="380px">
+        <ModalHead tag={t('budget.deleteTag')} title={`🗑 ${t('budget.deleteTitle')}`} />
+        <ModalBody>
+          <p className="text-[13px] leading-relaxed text-[var(--text-mid)]">
+            {t('budget.confirmDelete', {
+              name: deletingBudget?.categoryId ? deletingBudget.categoryName : t('budget.overall'),
+              month: formatMonthLabel(month, locale),
+            })}
+          </p>
+        </ModalBody>
+        <ModalFoot>
+          <Button
+            variant="ghost"
+            onClick={() => setDeletingBudget(null)}
+            disabled={deleteBudget.isPending}
+          >
+            {t('common.cancel')}
+          </Button>
+          <Button
+            variant="danger"
+            onClick={handleDeleteConfirm}
+            isLoading={deleteBudget.isPending}
+            disabled={deleteBudget.isPending}
+          >
+            {t('common.delete')}
+          </Button>
+        </ModalFoot>
+      </Modal>
     </div>
   );
 }

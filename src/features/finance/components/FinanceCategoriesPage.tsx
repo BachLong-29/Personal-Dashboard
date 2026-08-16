@@ -7,6 +7,7 @@ import { useTranslations } from 'next-intl';
 
 import { Icon } from '@/components/common/Icon';
 import { Button } from '@/components/ui/Button';
+import { Modal, ModalHead, ModalBody, ModalFoot } from '@/components/ui/Modal';
 import { SkelBlock } from '@/components/ui/Skeleton';
 import { GoldPanel } from '@/components/common/GoldPanel';
 import { useUIStore } from '@/stores/ui.store';
@@ -18,6 +19,26 @@ import { useDeleteFinanceCategory } from '../hooks/useDeleteFinanceCategory';
 import { FinanceCategoryFormModal } from './FinanceCategoryFormModal';
 
 const EASE_OUT = [0.16, 1, 0.3, 1] as const;
+
+/** Drawn instead of the 🗑 emoji, which some UI fonts render as an unrelated glyph. */
+function TrashIcon() {
+  return (
+    <svg
+      viewBox="0 0 20 20"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="h-[13px] w-[13px]"
+      aria-hidden
+    >
+      <path d="M4.5 6h11M8 6V4.5A1.5 1.5 0 0 1 9.5 3h1A1.5 1.5 0 0 1 12 4.5V6" />
+      <path d="M5.5 6l.6 9.4A1.5 1.5 0 0 0 7.6 17h4.8a1.5 1.5 0 0 0 1.5-1.6L14.5 6" />
+      <path d="M8.3 9v5M11.7 9v5" />
+    </svg>
+  );
+}
 
 /**
  * Finance categories — the income/expense labels transactions and budgets are filed under.
@@ -34,6 +55,7 @@ export function FinanceCategoriesPage() {
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState<FinanceCategory | null>(null);
   const [formType, setFormType] = useState<FinanceCategoryType>('expense');
+  const [deleting, setDeleting] = useState<FinanceCategory | null>(null);
 
   const expense = categories.filter((c) => c.type === 'expense');
   const income = categories.filter((c) => c.type === 'income');
@@ -49,10 +71,13 @@ export function FinanceCategoriesPage() {
     setShowForm(true);
   }
 
-  function handleDelete(category: FinanceCategory) {
-    if (!confirm(t('categories.confirmDelete', { name: category.name }))) return;
-    deleteCategory.mutate(category.id, {
-      onSuccess: () => addToast({ type: 'success', message: t('categories.deleted') }),
+  function handleDeleteConfirm() {
+    if (!deleting) return;
+    deleteCategory.mutate(deleting.id, {
+      onSuccess: () => {
+        addToast({ type: 'success', message: t('categories.deleted') });
+        setDeleting(null);
+      },
       onError: (err) => {
         // The API refuses to delete a category that transactions or a live budget still point at,
         // and explains why — surface that instead of a generic failure.
@@ -60,6 +85,7 @@ export function FinanceCategoriesPage() {
           (err as AxiosError<{ message?: string }>).response?.data?.message ??
           t('categories.deleteBlocked');
         addToast({ type: 'error', message });
+        setDeleting(null);
       },
     });
   }
@@ -125,7 +151,7 @@ export function FinanceCategoriesPage() {
                     categories={expense}
                     onAdd={() => handleAdd('expense')}
                     onEdit={handleEdit}
-                    onDelete={handleDelete}
+                    onDelete={setDeleting}
                     editLabel={t('common.edit')}
                     deleteLabel={t('common.delete')}
                   />
@@ -138,7 +164,7 @@ export function FinanceCategoriesPage() {
                     categories={income}
                     onAdd={() => handleAdd('income')}
                     onEdit={handleEdit}
-                    onDelete={handleDelete}
+                    onDelete={setDeleting}
                     editLabel={t('common.edit')}
                     deleteLabel={t('common.delete')}
                   />
@@ -161,6 +187,32 @@ export function FinanceCategoriesPage() {
           })
         }
       />
+
+      <Modal open={!!deleting} onClose={() => setDeleting(null)} maxWidth="380px">
+        <ModalHead tag={t('categories.deleteTag')} title={`🗑 ${t('categories.deleteTitle')}`} />
+        <ModalBody>
+          <p className="text-[13px] leading-relaxed text-[var(--text-mid)]">
+            {t('categories.confirmDelete', { name: deleting?.name ?? '' })}
+          </p>
+        </ModalBody>
+        <ModalFoot>
+          <Button
+            variant="ghost"
+            onClick={() => setDeleting(null)}
+            disabled={deleteCategory.isPending}
+          >
+            {t('common.cancel')}
+          </Button>
+          <Button
+            variant="danger"
+            onClick={handleDeleteConfirm}
+            isLoading={deleteCategory.isPending}
+            disabled={deleteCategory.isPending}
+          >
+            {t('common.delete')}
+          </Button>
+        </ModalFoot>
+      </Modal>
     </>
   );
 }
@@ -248,7 +300,7 @@ function CategoryGroup({
                     title={deleteLabel}
                     aria-label={`${deleteLabel} ${c.name}`}
                   >
-                    🗑
+                    <TrashIcon />
                   </button>
                 </span>
               </li>
