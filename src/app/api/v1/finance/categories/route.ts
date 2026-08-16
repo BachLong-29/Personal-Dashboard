@@ -33,9 +33,11 @@ const DEFAULT_CATEGORIES: {
   { name: 'Giải trí', type: 'expense', icon: '🎮', color: 'blue' },
   { name: 'Sức khoẻ', type: 'expense', icon: '💊', color: 'mint' },
   { name: 'Khác', type: 'expense', icon: '📦', color: 'gold' },
+  { name: 'Chưa phân loại', type: 'expense', icon: '❔', color: 'violet' },
   { name: 'Lương', type: 'income', icon: '💼', color: 'mint' },
   { name: 'Thưởng', type: 'income', icon: '🎁', color: 'gold' },
   { name: 'Khác', type: 'income', icon: '📥', color: 'cyan' },
+  { name: 'Chưa phân loại', type: 'income', icon: '❔', color: 'violet' },
 ];
 
 const createSchema = z.object({
@@ -43,6 +45,7 @@ const createSchema = z.object({
   type: z.enum(FINANCE_CATEGORY_TYPES),
   icon: z.string().min(1),
   color: z.enum(FINANCE_CATEGORY_COLORS),
+  keywords: z.array(z.string().trim().min(1)).optional(),
 });
 
 export function serialize(c: IFinanceCategory): FinanceCategory {
@@ -53,6 +56,7 @@ export function serialize(c: IFinanceCategory): FinanceCategory {
     type: c.type,
     icon: c.icon,
     color: c.color,
+    keywords: c.keywords ?? [],
     createdAt: c.createdAt.toISOString(),
     updatedAt: c.updatedAt.toISOString(),
   };
@@ -99,6 +103,7 @@ export const POST = asyncHandler(async (req: NextRequest) => {
     type: data.type,
     icon: data.icon,
     color: data.color,
+    keywords: data.keywords ?? [],
   });
 
   return createdResponse(serialize(category), 'Category created');

@@ -23,6 +23,9 @@ export interface IFinanceCategory extends Document {
   type: FinanceCategoryType;
   icon: string;
   color: TaskColor;
+  /** Keywords matched (case-insensitive, substring) against incoming bank-sync transaction
+   * content to auto-assign this category — see the SePay webhook handler. */
+  keywords: string[];
   createdAt: Date;
   updatedAt: Date;
 }
@@ -55,6 +58,10 @@ const financeCategorySchema = new Schema<IFinanceCategory>(
       type: String,
       enum: FINANCE_CATEGORY_COLORS,
       required: true,
+    },
+    keywords: {
+      type: [String],
+      default: [],
     },
   },
   { timestamps: true },
