@@ -127,7 +127,8 @@ export function TaskManagement() {
   }
 
   // ── View / filter state ─────────────────────────────────────────────────────
-  const [view, setView] = useState<ViewMode>('day');
+  // 'day' view temporarily hidden (see PageHeader's VIEW_META) — default to 'all'.
+  const [view, setView] = useState<ViewMode>('all');
   const { data: categories = [] } = useCategories();
   const [filterCat, setFilterCat] = useState<string>('all');
   const [filterDiff, setFilterDiff] = useState<TaskDiff | 'all'>('all');
