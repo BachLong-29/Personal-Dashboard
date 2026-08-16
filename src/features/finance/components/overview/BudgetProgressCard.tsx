@@ -93,6 +93,8 @@ export function BudgetProgressCard({ budgets, categories, isLoading }: BudgetPro
                   max={b.limit}
                   variant={variantFor(b.percentage)}
                   className="mt-2"
+                  // Only the budgets still running catch the light; a spent one is done moving.
+                  shimmer={b.percentage < 100}
                 />
 
                 <div className="mt-1 flex items-baseline justify-between gap-3 text-[10px]">
