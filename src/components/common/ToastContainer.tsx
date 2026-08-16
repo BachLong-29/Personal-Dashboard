@@ -14,11 +14,15 @@ const TYPE_ICON: Record<Toast['type'], string> = {
   info: 'ℹ',
 };
 
+/** Border + glow + accent color per variant — same gold-pill language as the XP/level-up toasts. */
 const TYPE_STYLE: Record<Toast['type'], string> = {
-  success: 'border-[oklch(0.76_0.14_162_/_0.4)] text-[oklch(0.85_0.14_162)]',
-  error: 'border-[oklch(0.62_0.24_22_/_0.5)] text-[oklch(0.85_0.18_22)]',
-  warning: 'border-[oklch(0.74_0.17_85_/_0.45)] text-[var(--gold)]',
-  info: 'border-[oklch(0.66_0.22_295_/_0.4)] text-[oklch(0.82_0.14_295)]',
+  success:
+    'border-[var(--mint)] shadow-[0_0_30px_var(--mint-glow),0_8px_32px_oklch(0_0_0_/_0.5)] text-[var(--mint)]',
+  error:
+    'border-[var(--crimson)] shadow-[0_0_30px_var(--crimson-glow),0_8px_32px_oklch(0_0_0_/_0.5)] text-[oklch(0.78_0.18_20)]',
+  warning:
+    'border-[var(--gold)] shadow-[0_0_30px_var(--gold-glow),0_8px_32px_oklch(0_0_0_/_0.5)] text-[var(--gold)]',
+  info: 'border-[var(--violet)] shadow-[0_0_30px_var(--violet-glow),0_8px_32px_oklch(0_0_0_/_0.5)] text-[var(--violet)]',
 };
 
 function ToastItem({ toast }: { toast: Toast }) {
@@ -63,12 +67,16 @@ export function ToastContainer() {
 // ── Styles ────────────────────────────────────────────────────────────────────
 
 const container =
-  'fixed bottom-4 right-4 z-[1200] flex flex-col gap-2 w-[min(320px,calc(100vw-2rem))] pointer-events-none';
+  'fixed bottom-[30px] left-1/2 -translate-x-1/2 z-[1200] flex flex-col items-center gap-2 pointer-events-none';
 
-const toastItem =
-  'pointer-events-auto flex items-start gap-2 px-3 py-2.5 rounded-[var(--r-sm)] border bg-[var(--panel)] shadow-[0_8px_24px_oklch(0_0_0_/_0.45)] text-[12px] leading-snug animate-[modal-in_0.2s_ease-out]';
+const toastItem = cn(
+  'pointer-events-auto flex w-max max-w-[min(90vw,420px)] items-center gap-2.5 rounded-full border px-6 py-2.5',
+  'bg-[linear-gradient(135deg,var(--panel2),var(--panel3))]',
+  '[font-family:var(--f-title)] text-[13px] font-bold tracking-[0.06em]',
+  'animate-[modal-in_0.3s_cubic-bezier(0.34,1.56,0.64,1)]',
+);
 
-const toastIcon = 'text-[14px] leading-none shrink-0 mt-[1px]';
-const toastMessage = 'flex-1 text-[var(--text-hi)]';
+const toastIcon = 'shrink-0 text-[14px] leading-none';
+const toastMessage = 'truncate text-[var(--text-hi)]';
 const toastClose =
-  'text-[14px] leading-none shrink-0 text-[var(--text-lo)] hover:text-[var(--text-hi)] transition-colors cursor-pointer';
+  'text-[14px] leading-none shrink-0 text-[var(--text-lo)] hover:text-[var(--text-hi)] transition-colors cursor-pointer normal-case tracking-normal font-normal';
