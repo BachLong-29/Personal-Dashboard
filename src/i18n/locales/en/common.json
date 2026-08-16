@@ -14,12 +14,17 @@
     "search": "Search"
   },
   "search": {
-    "placeholder": "Search tasks, habits, quests, projects…",
+    "placeholder": "Search tasks, habits, quests, projects, pages…",
     "tasks": "Tasks",
     "habits": "Habits",
     "quests": "Quests",
     "projects": "Projects",
-    "hint": "Type to search tasks, habits, quests, projects…",
+    "pagesLabel": "Pages",
+    "pageNames": {
+      "achievements": "Achievements",
+      "rewards": "Rewards"
+    },
+    "hint": "Type to search tasks, habits, quests, projects, pages…",
     "empty": "No results for \"{query}\""
   },
   "auth": {
@@ -893,6 +898,8 @@
       "editTitle": "Edit wallet",
       "name": "Name",
       "namePlaceholder": "e.g. Vietcombank, Cash",
+      "balance": "Initial balance",
+      "balanceHint": "Editing this corrects the current balance — it doesn't add a transaction.",
       "type": "Type",
       "typeLocked": "Wallet type cannot be changed after creation",
       "icon": "Icon",
@@ -914,6 +921,8 @@
       "left": "{amount} left",
       "over": "{amount} over",
       "confirmDelete": "Remove the “{name}” budget for {month}?",
+      "deleteTag": "CONFIRM",
+      "deleteTitle": "Delete budget",
       "deleted": "Budget removed",
       "deleteFailed": "Could not remove the budget",
       "newTag": "NEW BUDGET",
@@ -921,6 +930,7 @@
       "editTag": "EDIT BUDGET",
       "editTitle": "Edit budget",
       "category": "Category",
+      "newCategory": "New category",
       "limit": "Monthly limit",
       "forMonth": "For {month}",
       "forMonthLabel": "Month"
@@ -994,6 +1004,8 @@
       "contributed": "Added {amount} to “{goal}”",
       "contributeFailed": "Could not save the contribution",
       "completed": "Completed",
+      "deleteTag": "CONFIRM",
+      "deleteTitle": "Delete goal",
       "confirmDelete": "Delete the goal “{name}” and its contribution history?",
       "deleted": "Goal deleted",
       "deleteFailed": "Could not delete the goal",
@@ -1020,9 +1032,14 @@
       "typeLocked": "The income/expense type cannot be changed after creation",
       "icon": "Icon",
       "color": "Color",
+      "keywords": "Auto-assign keywords",
+      "keywordsPlaceholder": "e.g. highlands, grab food",
+      "keywordsHint": "A synced SePay transaction whose content contains any of these keywords is auto-filed under this category.",
       "created": "Category created",
       "updated": "Category updated",
       "deleted": "Category deleted",
+      "deleteTag": "CONFIRM",
+      "deleteTitle": "Delete category",
       "confirmDelete": "Delete the category “{name}”?",
       "deleteBlocked": "Could not delete the category"
     },
