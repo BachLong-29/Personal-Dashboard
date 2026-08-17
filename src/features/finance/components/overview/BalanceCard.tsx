@@ -37,7 +37,7 @@ export function BalanceCard({ wallets, isLoading }: BalanceCardProps) {
       ) : (
         <>
           <div className="flex items-center gap-3">
-            <span className="text-[32px] font-bold leading-none tabular-nums text-[var(--gold)] [font-family:var(--f-title)] sm:text-[38px]">
+            <span className="text-[24px] font-bold leading-none tabular-nums text-[var(--gold)] [font-family:var(--f-title)] sm:text-[32px] lg:text-[38px]">
               {hidden ? AMOUNT_MASK : formatCurrency(animatedTotal)}
             </span>
             <button
@@ -51,16 +51,16 @@ export function BalanceCard({ wallets, isLoading }: BalanceCardProps) {
             </button>
           </div>
 
-          <p className="mt-1 text-[11px] text-[var(--text-mid)]">
+          <p className="mt-0.5 text-[11px] text-[var(--text-mid)] sm:mt-1">
             {t('overview.accountCount', { count: wallets.length })}
           </p>
 
           {wallets.length > 0 && (
-            <ul className="mt-4 flex flex-wrap gap-2">
+            <ul className="mt-2 flex flex-wrap gap-1.5 sm:mt-4 sm:gap-2">
               {wallets.map((w) => (
                 <li
                   key={w.id}
-                  className="flex min-w-[104px] flex-1 flex-col gap-1 rounded-[var(--r-sm)] border border-[var(--border)] bg-[var(--panel2)] px-3 py-2 sm:flex-none"
+                  className="flex min-w-[104px] flex-1 flex-col gap-0.5 rounded-[var(--r-sm)] border border-[var(--border)] bg-[var(--panel2)] px-2.5 py-1.5 sm:flex-none sm:gap-1 sm:px-3 sm:py-2"
                 >
                   <span className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.06em] text-[var(--text-mid)]">
                     <Icon icon={w.icon} />

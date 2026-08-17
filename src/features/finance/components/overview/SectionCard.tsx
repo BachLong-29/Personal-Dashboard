@@ -43,7 +43,7 @@ export function SectionCard({
       className={className}
     >
       <GoldPanel background={false} className="flex h-full flex-col">
-        <header className="flex items-center gap-3 border-b border-[var(--border)] px-[14px] py-[9px]">
+        <header className="flex items-center gap-3 border-b border-[var(--border)] px-2.5 py-[7px] sm:px-[14px] sm:py-[9px]">
           <h2 className="flex-1 text-[10px] font-bold uppercase tracking-[0.15em] text-[var(--gold)] [font-family:var(--f-title)]">
             {title}
           </h2>
@@ -57,7 +57,7 @@ export function SectionCard({
           )}
         </header>
 
-        <div className={cn('flex-1 p-4', bodyClassName)}>{children}</div>
+        <div className={cn('flex-1 p-2.5 sm:p-4', bodyClassName)}>{children}</div>
       </GoldPanel>
     </motion.section>
   );

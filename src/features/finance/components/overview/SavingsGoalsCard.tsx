@@ -55,7 +55,7 @@ export function SavingsGoalsCard({ goals, isLoading, onContribute }: SavingsGoal
           </Link>
         </div>
       ) : (
-        <ul className="flex flex-col gap-4">
+        <ul className="flex flex-col gap-2 sm:gap-4">
           {active.slice(0, MAX_ROWS).map((g) => {
             const accent = COLOR_CSS[(g.color as TaskColor) ?? 'gold'] ?? 'var(--gold)';
             const done = g.status === 'completed';
@@ -85,14 +85,14 @@ export function SavingsGoalsCard({ goals, isLoading, onContribute }: SavingsGoal
                   )}
                 </div>
 
-                <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-[var(--bg-3)]">
+                <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-[var(--bg-3)] sm:mt-2">
                   <div
                     className="h-full rounded-full transition-[width] duration-500 motion-reduce:transition-none"
                     style={{ width: `${g.progress}%`, background: accent }}
                   />
                 </div>
 
-                <div className="mt-1.5 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 text-[11px]">
+                <div className="mt-1 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 text-[11px] sm:mt-1.5">
                   <span className="tabular-nums text-[var(--text-hi)]">
                     {t('goals.saved', {
                       current: formatCurrency(g.currentAmount),

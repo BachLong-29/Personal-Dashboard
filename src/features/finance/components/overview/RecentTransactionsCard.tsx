@@ -60,7 +60,7 @@ export function RecentTransactionsCard({
       index={2}
     >
       {wallets.length > 0 && (
-        <div className="mb-4 border-b border-[var(--border)] pb-4">
+        <div className="mb-2 border-b border-[var(--border)] pb-2 sm:mb-4 sm:pb-4">
           <div className="flex gap-2">
             <input
               value={quickText}
@@ -120,7 +120,7 @@ export function RecentTransactionsCard({
             return (
               <li
                 key={tx.id}
-                className={`flex items-center gap-3 py-2.5 ${i > 0 ? 'border-t border-[var(--border-lo)]' : ''}`}
+                className={`flex items-center gap-3 py-1.5 sm:py-2.5 ${i > 0 ? 'border-t border-[var(--border-lo)]' : ''}`}
               >
                 <span
                   className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[var(--r-sm)] border text-[14px]"

@@ -31,7 +31,7 @@ export function AllocationBanner({ goal, month, onAllocate }: AllocationBannerPr
       initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: -6 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: reduceMotion ? 0.15 : 0.3, ease: [0.16, 1, 0.3, 1] }}
-      className="flex flex-wrap items-center gap-3 rounded-[var(--r-lg)] border border-[var(--gold-border)] bg-[oklch(0.74_0.17_85_/_0.07)] px-4 py-3"
+      className="flex flex-wrap items-center gap-2 rounded-[var(--r-lg)] border border-[var(--gold-border)] bg-[oklch(0.74_0.17_85_/_0.07)] px-3 py-2 sm:gap-3 sm:px-4 sm:py-3"
     >
       <span aria-hidden className="text-[13px] text-[var(--gold)]">
         ◆
