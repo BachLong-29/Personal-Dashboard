@@ -47,12 +47,12 @@ export function BalanceForecastCard({ forecast, isLoading }: BalanceForecastCard
   return (
     <SectionCard title={t('overview.forecast')} index={2}>
       {isLoading ? (
-        <div className="h-[180px] animate-pulse rounded-[var(--r-md)] bg-[var(--panel2)]" />
+        <div className="h-[130px] animate-pulse rounded-[var(--r-md)] bg-[var(--panel2)] sm:h-[180px]" />
       ) : data.length === 0 ? (
         <p className="text-[12px] text-[var(--text-mid)]">{t('overview.forecastNoData')}</p>
       ) : (
         <>
-          <div className="h-[180px] w-full">
+          <div className="h-[130px] w-full sm:h-[180px]">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={data} margin={{ top: 8, right: 8, bottom: 0, left: 0 }}>
                 <defs>
@@ -100,7 +100,7 @@ export function BalanceForecastCard({ forecast, isLoading }: BalanceForecastCard
             </ResponsiveContainer>
           </div>
 
-          <p className="mt-2 text-[11px] text-[var(--text-mid)]">
+          <p className="mt-1 text-[11px] text-[var(--text-mid)] sm:mt-2">
             {hasProjection
               ? t('overview.forecastHint', { months: forecast?.basedOnMonths ?? 0 })
               : t('overview.forecastNoData')}

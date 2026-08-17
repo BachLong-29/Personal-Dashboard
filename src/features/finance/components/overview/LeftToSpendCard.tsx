@@ -63,7 +63,7 @@ export function LeftToSpendCard({ overallBudget, overview, isLoading }: LeftToSp
     <SectionCard title={t('overview.leftToSpend')} index={0}>
       <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
         <span
-          className="text-[30px] font-bold leading-none tabular-nums [font-family:var(--f-title)]"
+          className="text-[22px] font-bold leading-none tabular-nums [font-family:var(--f-title)] sm:text-[30px]"
           style={{ color: overspent ? 'var(--crimson)' : 'var(--mint)' }}
         >
           {formatCurrency(Math.abs(remaining))}
@@ -91,17 +91,17 @@ export function LeftToSpendCard({ overallBudget, overview, isLoading }: LeftToSp
               ? 'gold'
               : 'mint'
         }
-        className="mt-3"
+        className="mt-2 sm:mt-3"
         tall
       />
-      <p className="mt-1.5 text-[11px] tabular-nums text-[var(--text-mid)]">
+      <p className="mt-1 text-[11px] tabular-nums text-[var(--text-mid)] sm:mt-1.5">
         {formatCurrency(overallBudget.spent)} / {formatCurrency(overallBudget.limit)} ·{' '}
         {t('overview.used', { percent: overallBudget.percentage })}
       </p>
 
       {perDay !== null && (
-        <div className="mt-4 border-t border-[var(--border)] pt-3">
-          <div className="text-[17px] font-bold tabular-nums text-[var(--gold)] [font-family:var(--f-title)]">
+        <div className="mt-2 border-t border-[var(--border)] pt-2 sm:mt-4 sm:pt-3">
+          <div className="text-[15px] font-bold tabular-nums text-[var(--gold)] [font-family:var(--f-title)] sm:text-[17px]">
             {t('overview.perDay', { amount: formatCurrency(perDay) })}
           </div>
 
@@ -131,7 +131,7 @@ export function LeftToSpendCard({ overallBudget, overview, isLoading }: LeftToSp
         </div>
       )}
 
-      <dl className="mt-4 flex gap-6 border-t border-[var(--border)] pt-3">
+      <dl className="mt-2 flex gap-6 border-t border-[var(--border)] pt-2 sm:mt-4 sm:pt-3">
         <div>
           <dt className="text-[10px] font-bold uppercase tracking-[0.08em] text-[var(--text-mid)]">
             {t('overview.spentToday')}

@@ -7,6 +7,7 @@ import { useProfile } from '@/features/profile/hooks/useProfile';
 import { buildEmptyChar, profileToCharacter } from '@/features/dashboard/utils/character.utils';
 import { toLocalDate } from '../utils/date.utils';
 import { useScheduleDayTasks } from '@/features/dashboard/hooks/useScheduleDayTasks';
+import { useTasksPaged } from '@/features/dashboard/hooks/useTasksPaged';
 import { useCategories } from '@/features/dashboard/hooks/useCategories';
 import { useCharacterProgress } from '@/features/dashboard/hooks/useCharacterProgress';
 import { XPToast } from '@/features/dashboard/components/feedback/XPToast';
@@ -19,7 +20,7 @@ import { EditTaskModal } from './shared/EditTaskModal';
 import type { TaskFormValues } from './shared/TaskForm';
 
 import { type TaskDiff, type UITask } from '../data/mock';
-import { questToUITask, parseDateLocal, type QuestLike } from '../data/adapters';
+import { questToUITask, parseDateLocal, taskToUITask, type QuestLike } from '../data/adapters';
 import { PageHeader, type ViewMode } from './PageHeader';
 import { TaskDayView } from './day/TaskDayView';
 import { TaskAllView } from './all/TaskAllView';
@@ -156,6 +157,30 @@ export function TaskManagement() {
     [visibleTasks, filterCat, filterDiff, search],
   );
 
+  // ── "All" view — server-paginated, independent of the day-grid's in-memory ledger ──
+  const ALL_VIEW_PAGE_SIZE = 20;
+  const [allViewOffset, setAllViewOffset] = useState(0);
+  const allViewTagId = filterCat !== 'all' ? filterCat : undefined;
+  const allViewSearch = search.trim() || undefined;
+
+  // Filters changed — jump back to page 1 (render-phase reset, no extra effect pass).
+  const [prevAllViewFilters, setPrevAllViewFilters] = useState([allViewTagId, allViewSearch]);
+  if (prevAllViewFilters[0] !== allViewTagId || prevAllViewFilters[1] !== allViewSearch) {
+    setPrevAllViewFilters([allViewTagId, allViewSearch]);
+    if (allViewOffset !== 0) setAllViewOffset(0);
+  }
+
+  const { data: allViewPage, isFetching: isFetchingAllView } = useTasksPaged({
+    offset: allViewOffset,
+    limit: ALL_VIEW_PAGE_SIZE,
+    q: allViewSearch,
+    tagId: allViewTagId,
+  });
+  const allViewTasks = useMemo(
+    () => (allViewPage?.tasks ?? []).map((t) => taskToUITask(t)),
+    [allViewPage],
+  );
+
   // ── Header counts ────────────────────────────────────────────────────────────
   const todayDone = visible.filter((t) => t.day === 0 && t.done).length;
   const todayTotal = visible.filter((t) => t.day === 0).length;
@@ -211,7 +236,20 @@ export function TaskManagement() {
               splitMode={splitMode}
             />
           )}
-          {view === 'all' && <TaskAllView tasks={visible} onEdit={onEdit} />}
+          {view === 'all' && (
+            <TaskAllView
+              tasks={allViewTasks}
+              onEdit={onEdit}
+              pagination={{
+                offset: allViewOffset,
+                limit: ALL_VIEW_PAGE_SIZE,
+                meta: allViewPage?.meta,
+                isFetching: isFetchingAllView,
+                onPrev: () => setAllViewOffset((o) => Math.max(0, o - ALL_VIEW_PAGE_SIZE)),
+                onNext: () => setAllViewOffset((o) => o + ALL_VIEW_PAGE_SIZE),
+              }}
+            />
+          )}
         </div>
       </div>
 

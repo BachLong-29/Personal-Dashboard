@@ -34,7 +34,7 @@ export function TopSpendingCard({ overview, isLoading }: TopSpendingCardProps) {
       ) : categories.length === 0 ? (
         <p className="text-[12px] text-[var(--text-mid)]">{t('overview.noSpending')}</p>
       ) : (
-        <ul className="flex flex-col gap-3">
+        <ul className="flex flex-col gap-1.5 sm:gap-3">
           {categories.map((c) => {
             const accent = COLOR_CSS[c.color as TaskColor] ?? 'var(--gold)';
             const width = max > 0 ? Math.max(4, Math.round((c.amount / max) * 100)) : 0;
@@ -51,7 +51,7 @@ export function TopSpendingCard({ overview, isLoading }: TopSpendingCardProps) {
                   </span>
                 </div>
 
-                <div className="mt-1.5 flex items-center gap-2">
+                <div className="mt-1 flex items-center gap-2 sm:mt-1.5">
                   <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-[var(--bg-3)]">
                     <div
                       className="h-full rounded-full transition-[width] duration-500 motion-reduce:transition-none"

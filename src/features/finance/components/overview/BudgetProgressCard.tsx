@@ -65,7 +65,7 @@ export function BudgetProgressCard({ budgets, categories, isLoading }: BudgetPro
           </Link>
         </div>
       ) : (
-        <ul className="flex flex-col gap-4">
+        <ul className="flex flex-col gap-2 sm:gap-4">
           {rows.slice(0, MAX_ROWS).map((b) => {
             const remaining = b.limit - b.spent;
             const categoryId = b.categoryId;
@@ -92,12 +92,12 @@ export function BudgetProgressCard({ budgets, categories, isLoading }: BudgetPro
                   value={b.spent}
                   max={b.limit}
                   variant={variantFor(b.percentage)}
-                  className="mt-2"
+                  className="mt-1 sm:mt-2"
                   // Only the budgets still running catch the light; a spent one is done moving.
                   shimmer={b.percentage < 100}
                 />
 
-                <div className="mt-1 flex items-baseline justify-between gap-3 text-[10px]">
+                <div className="mt-0.5 flex items-baseline justify-between gap-3 text-[10px] sm:mt-1">
                   <span
                     className={remaining < 0 ? 'text-[var(--crimson)]' : 'text-[var(--text-mid)]'}
                   >

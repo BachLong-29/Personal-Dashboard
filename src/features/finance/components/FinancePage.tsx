@@ -1,10 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useSyncExternalStore } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
 import { useTranslations } from 'next-intl';
 
 import { Button, buttonVariants } from '@/components/ui/Button';
+import { Tabs } from '@/components/ui/Tabs';
 import { GoldPanel } from '@/components/common/GoldPanel';
 import { Link } from '@/i18n/navigation';
 import type { FinanceGoal } from '@/types';
@@ -31,6 +32,38 @@ import { SavingsGoalsCard } from './overview/SavingsGoalsCard';
 import { TopSpendingCard } from './overview/TopSpendingCard';
 
 const EASE_OUT = [0.16, 1, 0.3, 1] as const;
+const DESKTOP_QUERY = '(min-width: 1024px)';
+
+type MobileGroup = 'budget' | 'spending' | 'goals';
+
+function subscribeToDesktopQuery(callback: () => void) {
+  const mql = window.matchMedia(DESKTOP_QUERY);
+  mql.addEventListener('change', callback);
+  return () => mql.removeEventListener('change', callback);
+}
+
+function getIsDesktopSnapshot() {
+  return window.matchMedia(DESKTOP_QUERY).matches;
+}
+
+/** Server/first-paint default — corrected synchronously on the client before it's visible. */
+function getIsDesktopServerSnapshot() {
+  return false;
+}
+
+/**
+ * Below `lg`, the six secondary cards are split into tabs instead of stacked — otherwise the
+ * overview never fits a phone screen without scrolling. Resolved via JS (not just `lg:hidden`)
+ * so the charts inside only ever mount once, sized against a real box instead of a
+ * `display:none` one.
+ */
+function useIsDesktop(): boolean {
+  return useSyncExternalStore(
+    subscribeToDesktopQuery,
+    getIsDesktopSnapshot,
+    getIsDesktopServerSnapshot,
+  );
+}
 
 /**
  * Finance overview — what's in the accounts, how the month is going, how much is still safe to
@@ -45,6 +78,8 @@ export function FinancePage() {
   const [showAddTx, setShowAddTx] = useState(false);
   const [quickDraft, setQuickDraft] = useState<QuickEntryDraft | null>(null);
   const [contributingGoal, setContributingGoal] = useState<FinanceGoal | null>(null);
+  const [mobileGroup, setMobileGroup] = useState<MobileGroup>('budget');
+  const isDesktop = useIsDesktop();
 
   const { data: wallets = [], isLoading: walletsLoading } = useWallets();
   const { data: categories = [] } = useFinanceCategories();
@@ -74,19 +109,19 @@ export function FinancePage() {
 
   return (
     <>
-      <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-hidden p-4">
+      <div className="flex min-h-0 flex-1 flex-col gap-2 overflow-hidden p-2 sm:gap-4 sm:p-4">
         <motion.header
           initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: reduceMotion ? 0.15 : 0.35, ease: EASE_OUT }}
           className="shrink-0"
         >
-          <GoldPanel className="flex flex-wrap items-center justify-between gap-3 p-4">
+          <GoldPanel className="flex flex-wrap items-center justify-between gap-2 p-2.5 sm:gap-3 sm:p-4">
             <div>
               <p className="text-[9px] tracking-[0.3em] text-[var(--gold)] [font-family:var(--f-title)]">
                 {t('eyebrow')}
               </p>
-              <h1 className="text-[22px] font-bold tracking-[0.03em] text-[var(--text-hi)] [font-family:var(--f-title)]">
+              <h1 className="text-[17px] font-bold tracking-[0.03em] text-[var(--text-hi)] [font-family:var(--f-title)] sm:text-[22px]">
                 {t('overview.title')}
               </h1>
             </div>
@@ -121,46 +156,103 @@ export function FinancePage() {
               </Link>
             </GoldPanel>
           ) : (
-            <div className="flex flex-col gap-4">
+            <div className="flex flex-col gap-2 sm:gap-4">
               <AllocationBanner
                 goal={goalToAllocate}
                 month={month}
                 onAllocate={setContributingGoal}
               />
 
-              <div className="grid gap-4 lg:grid-cols-12">
-                <div className="flex flex-col gap-4 lg:col-span-7">
-                  <BalanceCard wallets={wallets} isLoading={walletsLoading} />
-                  <MonthSummaryCard overview={overview} month={month} isLoading={overviewLoading} />
-                  <BudgetProgressCard
-                    budgets={budgets}
-                    categories={categories}
-                    isLoading={budgetsLoading}
-                  />
-                  <TopSpendingCard overview={overview} isLoading={overviewLoading} />
-                </div>
+              {/* Always visible — the two cards worth seeing without tapping anything. */}
+              <BalanceCard wallets={wallets} isLoading={walletsLoading} />
+              <MonthSummaryCard overview={overview} month={month} isLoading={overviewLoading} />
 
-                <div className="flex flex-col gap-4 lg:col-span-5">
-                  <LeftToSpendCard
-                    overallBudget={overallBudget}
-                    overview={overview}
-                    isLoading={budgetsLoading || overviewLoading}
-                  />
-                  <SavingsGoalsCard
-                    goals={goals}
-                    isLoading={goalsLoading}
-                    onContribute={setContributingGoal}
-                  />
-                  <BalanceForecastCard forecast={forecast} isLoading={forecastLoading} />
-                  <RecentTransactionsCard
-                    overview={overview}
-                    categories={categories}
-                    wallets={wallets}
-                    isLoading={overviewLoading}
-                    onQuickAdd={handleQuickAdd}
-                  />
+              {isDesktop ? (
+                <div className="grid gap-4 lg:grid-cols-12">
+                  <div className="flex flex-col gap-4 lg:col-span-7">
+                    <BudgetProgressCard
+                      budgets={budgets}
+                      categories={categories}
+                      isLoading={budgetsLoading}
+                    />
+                    <TopSpendingCard overview={overview} isLoading={overviewLoading} />
+                  </div>
+
+                  <div className="flex flex-col gap-4 lg:col-span-5">
+                    <LeftToSpendCard
+                      overallBudget={overallBudget}
+                      overview={overview}
+                      isLoading={budgetsLoading || overviewLoading}
+                    />
+                    <SavingsGoalsCard
+                      goals={goals}
+                      isLoading={goalsLoading}
+                      onContribute={setContributingGoal}
+                    />
+                    <BalanceForecastCard forecast={forecast} isLoading={forecastLoading} />
+                    <RecentTransactionsCard
+                      overview={overview}
+                      categories={categories}
+                      wallets={wallets}
+                      isLoading={overviewLoading}
+                      onQuickAdd={handleQuickAdd}
+                    />
+                  </div>
                 </div>
-              </div>
+              ) : (
+                <div className="flex min-h-0 flex-1 flex-col gap-2">
+                  <Tabs
+                    variant="pill"
+                    className="self-start"
+                    activeKey={mobileGroup}
+                    onChange={(key) => setMobileGroup(key as MobileGroup)}
+                    tabs={[
+                      { key: 'budget', label: t('overview.groupBudget') },
+                      { key: 'spending', label: t('overview.groupSpending') },
+                      { key: 'goals', label: t('overview.groupGoals') },
+                    ]}
+                  />
+
+                  {mobileGroup === 'budget' && (
+                    <div className="flex flex-col gap-2">
+                      <BudgetProgressCard
+                        budgets={budgets}
+                        categories={categories}
+                        isLoading={budgetsLoading}
+                      />
+                      <LeftToSpendCard
+                        overallBudget={overallBudget}
+                        overview={overview}
+                        isLoading={budgetsLoading || overviewLoading}
+                      />
+                    </div>
+                  )}
+
+                  {mobileGroup === 'spending' && (
+                    <div className="flex flex-col gap-2">
+                      <TopSpendingCard overview={overview} isLoading={overviewLoading} />
+                      <RecentTransactionsCard
+                        overview={overview}
+                        categories={categories}
+                        wallets={wallets}
+                        isLoading={overviewLoading}
+                        onQuickAdd={handleQuickAdd}
+                      />
+                    </div>
+                  )}
+
+                  {mobileGroup === 'goals' && (
+                    <div className="flex flex-col gap-2">
+                      <SavingsGoalsCard
+                        goals={goals}
+                        isLoading={goalsLoading}
+                        onContribute={setContributingGoal}
+                      />
+                      <BalanceForecastCard forecast={forecast} isLoading={forecastLoading} />
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           )}
         </div>

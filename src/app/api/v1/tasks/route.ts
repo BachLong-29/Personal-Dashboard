@@ -9,6 +9,7 @@ import { TaskModel } from '@/server/models/task.model';
 import { asyncHandler, createdResponse, successResponse, unauthorizedResponse } from '@/server';
 import { validateBody, validateSearchParams } from '@/server/validate';
 import type { Task } from '@/types/task';
+import type { PaginationMeta } from '@/types/api';
 import type { ITask } from '@/server/models/task.model';
 
 const TASK_COLORS = ['gold', 'mint', 'violet', 'cyan', 'rose', 'amber', 'blue'] as const;
@@ -40,11 +41,46 @@ const querySchema = z.object({
   end: z.string().optional(),
   /** Filter to a single project's tasks (skips date filter). */
   projectId: z.string().optional(),
+  /** Filter to a single category. Combinable with pagination. */
+  tagId: z.string().optional(),
   /** Search by name (case-insensitive). Skips date filter, sorts by createdAt desc. */
   q: z.string().optional(),
   /** Max number of results. Applied when q is set or no date range is given. */
-  limit: z.coerce.number().int().min(1).max(50).optional(),
+  limit: z.coerce.number().int().min(1).max(100).optional(),
+  /**
+   * Number of results to skip. Presence of this param (even `0`) opts into
+   * paginated mode: skip/limit applied and `total`/page meta returned.
+   * Omit entirely for the legacy "everything matching the filter" behavior.
+   */
+  offset: z.coerce.number().int().min(0).optional(),
 });
+
+/** Overlap filter for tasks whose [startDate, endDate] range intersects [start, end]. */
+function buildDateOrFilter(start?: string, end?: string): Record<string, unknown>[] | null {
+  if (!start && !end) return null;
+
+  // All dates are stored as UTC midnight (new Date("YYYY-MM-DD")).
+  // Add 1 day to the end bound so the query-end day is included ($lt exclusive).
+  const qStart = start ? new Date(start) : null;
+  const qEndExclusive = end ? new Date(new Date(end).getTime() + 86_400_000) : null;
+
+  // ── Single-day tasks (no endDate) — startDate within [qStart, qEnd] ─────────
+  const singleDayFilter: Record<string, unknown> = { endDate: { $exists: false } };
+  const startRange: Record<string, Date> = {};
+  if (qStart) startRange.$gte = qStart;
+  if (qEndExclusive) startRange.$lt = qEndExclusive;
+  if (Object.keys(startRange).length > 0) singleDayFilter.startDate = startRange;
+
+  // ── Multi-day tasks (has endDate) — range overlaps [qStart, qEnd] ───────────
+  //   startDate < qEndExclusive  AND  endDate >= qStart
+  const endDateFilter: Record<string, unknown> = { $exists: true };
+  if (qStart) endDateFilter.$gte = qStart;
+
+  const multiDayFilter: Record<string, unknown> = { endDate: endDateFilter };
+  if (qEndExclusive) multiDayFilter.startDate = { $lt: qEndExclusive };
+
+  return [singleDayFilter, multiDayFilter];
+}
 
 function serialize(t: ITask): Task {
   return {
@@ -102,6 +138,35 @@ export const GET = asyncHandler(async (req: NextRequest) => {
     return successResponse(await serializeWithProgress(user.sub, tasks));
   }
 
+  // ── Paginated list mode — explicit `offset` opts into skip/limit + total count.
+  // Combinable with q/tagId/start/end. Legacy callers that never send `offset`
+  // fall through to the unpaginated modes below, completely unaffected.
+  if (query?.offset !== undefined) {
+    if (query?.q) filter.name = { $regex: query.q, $options: 'i' };
+    if (query?.tagId) filter.tagId = query.tagId;
+    const dateOr = buildDateOrFilter(query?.start, query?.end);
+    if (dateOr) filter.$or = dateOr;
+
+    const limit = query?.limit ?? 20;
+    const offset = query.offset;
+
+    const [tasks, total] = await Promise.all([
+      TaskModel.find(filter).sort({ startDate: 1 }).skip(offset).limit(limit),
+      TaskModel.countDocuments(filter),
+    ]);
+
+    const meta: PaginationMeta = {
+      total,
+      page: Math.floor(offset / limit) + 1,
+      limit,
+      totalPages: Math.max(1, Math.ceil(total / limit)),
+      hasNextPage: offset + tasks.length < total,
+      hasPrevPage: offset > 0,
+    };
+
+    return successResponse(await serializeWithProgress(user.sub, tasks), 'Success', meta);
+  }
+
   // ── Search / recent-list mode (q or limit without date range) ────────────────
   const isSearchMode = query?.q || (query?.limit && !query?.start && !query?.end);
 
@@ -116,31 +181,8 @@ export const GET = asyncHandler(async (req: NextRequest) => {
   }
 
   // ── Date-range mode ───────────────────────────────────────────────────────────
-  if (query?.start || query?.end) {
-    // All dates are stored as UTC midnight (new Date("YYYY-MM-DD")).
-    // Add 1 day to the end bound so the query-end day is included ($lt exclusive).
-    const qStart = query.start ? new Date(query.start) : null;
-    const qEndExclusive = query.end ? new Date(new Date(query.end).getTime() + 86_400_000) : null;
-
-    // ── Single-day tasks (no endDate) ────────────────────────────────────────
-    // Must have startDate within [qStart, qEnd].
-    const singleDayFilter: Record<string, unknown> = { endDate: { $exists: false } };
-    const startRange: Record<string, Date> = {};
-    if (qStart) startRange.$gte = qStart;
-    if (qEndExclusive) startRange.$lt = qEndExclusive;
-    if (Object.keys(startRange).length > 0) singleDayFilter.startDate = startRange;
-
-    // ── Multi-day tasks (has endDate) ─────────────────────────────────────────
-    // Date range must OVERLAP [qStart, qEnd]:
-    //   startDate < qEndExclusive  AND  endDate >= qStart
-    const endDateFilter: Record<string, unknown> = { $exists: true };
-    if (qStart) endDateFilter.$gte = qStart;
-
-    const multiDayFilter: Record<string, unknown> = { endDate: endDateFilter };
-    if (qEndExclusive) multiDayFilter.startDate = { $lt: qEndExclusive };
-
-    filter.$or = [singleDayFilter, multiDayFilter];
-  }
+  const dateOr = buildDateOrFilter(query?.start, query?.end);
+  if (dateOr) filter.$or = dateOr;
 
   const tasks = await TaskModel.find(filter).sort({ startDate: 1 });
 

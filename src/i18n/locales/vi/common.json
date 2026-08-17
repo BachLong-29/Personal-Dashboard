@@ -656,6 +656,12 @@
       "deleteModal": {
         "title": "Xóa task",
         "description": "Task này sẽ bị xóa vĩnh viễn. Hành động này không thể hoàn tác."
+      },
+      "pagination": {
+        "range": "{from}–{to} / {total}",
+        "loading": "Đang tải…",
+        "prev": "Trước",
+        "next": "Sau"
       }
     },
     "taskForm": {
@@ -856,6 +862,9 @@
       "addWallet": "Thêm ví",
       "unallocated": "Chưa phân bổ {amount} cho “{goal}” trong tháng {month}.",
       "allocateNow": "Phân bổ ngay",
+      "groupBudget": "Ngân sách",
+      "groupSpending": "Chi tiêu",
+      "groupGoals": "Mục tiêu",
       "savingsGoals": "Mục tiêu tiết kiệm",
       "behindSchedule": "Chậm kế hoạch",
       "onTrack": "Đúng tiến độ",
@@ -900,6 +909,7 @@
       "namePlaceholder": "VD: Vietcombank, Tiền mặt",
       "balance": "Số tiền ban đầu",
       "balanceHint": "Sửa số này để hiệu chỉnh số dư hiện tại, không tạo giao dịch mới.",
+      "balanceHintUnedited": "Số dư hiện tại, được tự động cập nhật theo giao dịch. Chỉ sửa khi cần hiệu chỉnh sai lệch.",
       "type": "Loại",
       "typeLocked": "Không đổi được loại ví sau khi tạo",
       "icon": "Biểu tượng",

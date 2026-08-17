@@ -26,7 +26,7 @@ export function MonthSummaryCard({ overview, month, isLoading }: MonthSummaryCar
       {isLoading ? (
         <div className="h-[72px] animate-pulse rounded-[var(--r-md)] bg-[var(--panel2)]" />
       ) : (
-        <dl className="grid grid-cols-2 gap-x-4 gap-y-4 sm:grid-cols-4">
+        <dl className="grid grid-cols-2 gap-x-3 gap-y-2 sm:grid-cols-4 sm:gap-x-4 sm:gap-y-4">
           <Stat
             label={t('overview.income')}
             value={formatCurrency(overview?.income ?? 0)}
@@ -67,7 +67,7 @@ function Stat({ label, value, tone }: { label: string; value: string; tone: keyo
         {label}
       </dt>
       <dd
-        className="mt-1 truncate text-[17px] font-bold tabular-nums [font-family:var(--f-title)]"
+        className="mt-0.5 truncate text-[14px] font-bold tabular-nums [font-family:var(--f-title)] sm:mt-1 sm:text-[17px]"
         style={{ color: TONE[tone] }}
       >
         {value}

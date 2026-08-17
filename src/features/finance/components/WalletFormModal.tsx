@@ -36,6 +36,11 @@ export function WalletFormModal({ open, onClose, wallet }: Props) {
   const [bankCode, setBankCode] = useState('');
   const [bankAccountNumber, setBankAccountNumber] = useState('');
   const [balance, setBalance] = useState('0');
+  // Only true once the user actually edits the balance field — an edit save must never
+  // resubmit the value it was pre-filled with, since transactions/webhooks may have
+  // moved the real balance forward while the modal was open, and re-sending the stale
+  // snapshot would silently overwrite that.
+  const [balanceTouched, setBalanceTouched] = useState(false);
 
   // Re-seed form fields whenever the modal opens, so edit prefills and create starts blank.
   // Adjusted during render (not an effect) to avoid an extra render pass on open.
@@ -50,6 +55,7 @@ export function WalletFormModal({ open, onClose, wallet }: Props) {
       setBankCode(wallet?.bankCode ?? '');
       setBankAccountNumber(wallet?.bankAccountNumber ?? '');
       setBalance(String(wallet?.balance ?? 0));
+      setBalanceTouched(false);
     }
   }
 
@@ -72,7 +78,14 @@ export function WalletFormModal({ open, onClose, wallet }: Props) {
 
     if (wallet) {
       updateWallet.mutate(
-        { id: wallet.id, name: name.trim(), icon, color, balance: balanceValue, ...bankFields },
+        {
+          id: wallet.id,
+          name: name.trim(),
+          icon,
+          color,
+          ...(balanceTouched ? { balance: balanceValue } : {}),
+          ...bankFields,
+        },
         { onSuccess: onClose },
       );
       return;
@@ -108,10 +121,15 @@ export function WalletFormModal({ open, onClose, wallet }: Props) {
             type="text"
             inputMode="numeric"
             value={formatSignedAmountInput(balance)}
-            onChange={(e) => setBalance(toSignedAmountDigits(e.target.value))}
+            onChange={(e) => {
+              setBalance(toSignedAmountDigits(e.target.value));
+              setBalanceTouched(true);
+            }}
             placeholder="0"
           />
-          <span className="text-[11px] text-[var(--text-lo)]">{t('wallet.balanceHint')}</span>
+          <span className="text-[11px] text-[var(--text-lo)]">
+            {isEdit && !balanceTouched ? t('wallet.balanceHintUnedited') : t('wallet.balanceHint')}
+          </span>
         </Field>
 
         <Field label={t('wallet.type')}>
