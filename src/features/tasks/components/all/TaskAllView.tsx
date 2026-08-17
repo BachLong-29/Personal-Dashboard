@@ -7,6 +7,7 @@ import { cn } from '@/libs/utils';
 import { Modal, ModalBody, ModalFoot, ModalHead } from '@/components/ui/Modal';
 import { useCategories } from '@/features/dashboard/hooks/useCategories';
 import { useDeleteTask } from '@/features/dashboard/hooks/useDeleteTask';
+import type { PaginationMeta } from '@/types';
 
 import { type UITask } from '../../data/mock';
 import { TaskAllTable, COL_DEFS, DEFAULT_VISIBLE_COLS, type ColDef } from './TaskAllTable';
@@ -26,14 +27,25 @@ const PRIORITY_ORDER: Record<string, number> = {
 
 // ─── Props ────────────────────────────────────────────────────────────────────
 
+interface TaskAllViewPagination {
+  offset: number;
+  limit: number;
+  meta: PaginationMeta | undefined;
+  isFetching: boolean;
+  onPrev: () => void;
+  onNext: () => void;
+}
+
 interface TaskAllViewProps {
   tasks: UITask[];
   onEdit?: (task: UITask) => void;
+  /** Server-side pagination for `tasks` — omit to render everything with no footer. */
+  pagination?: TaskAllViewPagination;
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-export function TaskAllView({ tasks, onEdit }: TaskAllViewProps) {
+export function TaskAllView({ tasks, onEdit, pagination }: TaskAllViewProps) {
   const t = useTranslations('tasks');
   const tCommon = useTranslations('common');
   const [sortBy, setSortBy] = useState<SortByLocal>('deadline');
@@ -253,6 +265,39 @@ export function TaskAllView({ tasks, onEdit }: TaskAllViewProps) {
         onDelete={setDeletingTask}
       />
 
+      {/* ── Pagination footer ───────────────────────────────────────────── */}
+      {pagination && (
+        <div className={paginationBar}>
+          <span className="text-[9px] text-[var(--text-lo)]">
+            {pagination.meta
+              ? t('taskAllView.pagination.range', {
+                  from: pagination.meta.total === 0 ? 0 : pagination.offset + 1,
+                  to: Math.min(pagination.offset + pagination.limit, pagination.meta.total),
+                  total: pagination.meta.total,
+                })
+              : t('taskAllView.pagination.loading')}
+          </span>
+          <div className="flex items-center gap-1.5">
+            <button
+              type="button"
+              className={segBtn}
+              disabled={pagination.offset === 0 || pagination.isFetching}
+              onClick={pagination.onPrev}
+            >
+              ← {t('taskAllView.pagination.prev')}
+            </button>
+            <button
+              type="button"
+              className={segBtn}
+              disabled={!pagination.meta?.hasNextPage || pagination.isFetching}
+              onClick={pagination.onNext}
+            >
+              {t('taskAllView.pagination.next')} →
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* ── Delete confirm modal ─────────────────────────────────────────── */}
       <Modal open={!!deletingTask} onClose={() => setDeletingTask(null)} maxWidth="380px">
         <ModalHead
@@ -343,6 +388,9 @@ function SummaryPill({
 const toolbar =
   'flex items-center gap-2 px-3 sm:px-4 py-2.5 border-b border-[var(--border)] shrink-0 bg-[var(--panel)]';
 
+const paginationBar =
+  'flex items-center justify-between gap-2 px-3 sm:px-4 py-2 border-t border-[var(--border)] shrink-0 bg-[var(--panel)]';
+
 // overflow-x-auto so chips scroll horizontally on mobile instead of wrapping
 const statusBar =
   'flex items-center gap-1.5 px-3 sm:px-4 py-2 border-b border-[var(--border)] shrink-0 bg-[var(--panel)] overflow-x-auto overscroll-x-contain';
@@ -358,7 +406,7 @@ const controlLabel =
   'text-[7px] font-bold tracking-[0.12em] text-[var(--text-lo)] font-[var(--font-title)] uppercase mr-0.5';
 
 const segBtn =
-  'text-[8px] font-bold px-1.5 py-0.5 rounded border border-[var(--border)] text-[var(--text-lo)] font-[var(--font-title)] tracking-[0.06em] transition-all hover:text-[var(--text-mid)] cursor-pointer';
+  'text-[8px] font-bold px-1.5 py-0.5 rounded border border-[var(--border)] text-[var(--text-lo)] font-[var(--font-title)] tracking-[0.06em] transition-all hover:text-[var(--text-mid)] cursor-pointer disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:text-[var(--text-lo)]';
 const segBtnActive =
   'text-[var(--gold)] border-[oklch(0.74_0.17_85_/_0.4)] bg-[oklch(0.74_0.17_85_/_0.08)]';
 
