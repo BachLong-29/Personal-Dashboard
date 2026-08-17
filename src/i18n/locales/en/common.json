@@ -656,6 +656,12 @@
       "deleteModal": {
         "title": "Delete Task",
         "description": "This task will be permanently deleted. This action cannot be undone."
+      },
+      "pagination": {
+        "range": "{from}–{to} of {total}",
+        "loading": "Loading…",
+        "prev": "Prev",
+        "next": "Next"
       }
     },
     "taskForm": {
@@ -855,6 +861,9 @@
       "noWalletsHint": "Add a wallet to start tracking your cash flow.",
       "addWallet": "Add wallet",
       "unallocated": "Nothing set aside yet for “{goal}” in {month} — {amount} to go.",
+      "groupBudget": "Budget",
+      "groupSpending": "Spending",
+      "groupGoals": "Goals",
       "allocateNow": "Allocate now",
       "savingsGoals": "Savings goals",
       "behindSchedule": "Behind schedule",
@@ -900,6 +909,7 @@
       "namePlaceholder": "e.g. Vietcombank, Cash",
       "balance": "Initial balance",
       "balanceHint": "Editing this corrects the current balance — it doesn't add a transaction.",
+      "balanceHintUnedited": "Current balance, kept in sync by transactions. Only edit it to correct a mistake.",
       "type": "Type",
       "typeLocked": "Wallet type cannot be changed after creation",
       "icon": "Icon",
