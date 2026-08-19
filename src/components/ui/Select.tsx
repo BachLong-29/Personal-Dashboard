@@ -3,12 +3,14 @@
 import {
   useEffect,
   useId,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
   type KeyboardEvent,
   type ReactNode,
 } from 'react';
+import { createPortal } from 'react-dom';
 import { useTranslations } from 'next-intl';
 
 import { cn } from '@/libs/utils';
@@ -75,7 +77,12 @@ export function Select({
   const [internalValue, setInternalValue] = useState(defaultValue);
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
   const optionRefs = useRef<(HTMLButtonElement | null)[]>([]);
+  const [menuRect, setMenuRect] = useState<{ top: number; left: number; width: number } | null>(
+    null,
+  );
 
   const currentValue = isControlled ? value : internalValue;
   const selectedOption = options.find((option) => option.value === currentValue);
@@ -115,7 +122,8 @@ export function Select({
     if (!open) return;
 
     const handlePointerDown = (event: MouseEvent) => {
-      if (!rootRef.current?.contains(event.target as Node)) {
+      const target = event.target as Node;
+      if (!rootRef.current?.contains(target) && !menuRef.current?.contains(target)) {
         setOpen(false);
       }
     };
@@ -123,6 +131,27 @@ export function Select({
     document.addEventListener('mousedown', handlePointerDown);
 
     return () => document.removeEventListener('mousedown', handlePointerDown);
+  }, [open]);
+
+  // Menu renders in a portal (so it escapes any clipped/overflow-hidden ancestor
+  // like GoldPanel) — track the trigger's viewport rect to anchor it there.
+  useLayoutEffect(() => {
+    if (!open) return;
+
+    const updateRect = () => {
+      const rect = triggerRef.current?.getBoundingClientRect();
+      if (!rect) return;
+      setMenuRect({ top: rect.bottom + 6, left: rect.left, width: rect.width });
+    };
+
+    updateRect();
+    window.addEventListener('scroll', updateRect, true);
+    window.addEventListener('resize', updateRect);
+
+    return () => {
+      window.removeEventListener('scroll', updateRect, true);
+      window.removeEventListener('resize', updateRect);
+    };
   }, [open]);
 
   useEffect(() => {
@@ -207,6 +236,7 @@ export function Select({
         {name && <input type="hidden" name={name} value={currentValue ?? ''} />}
 
         <button
+          ref={triggerRef}
           id={selectId}
           type="button"
           role="combobox"
@@ -254,61 +284,66 @@ export function Select({
           </span>
         </button>
 
-        {open && (
-          <div
-            id={listboxId}
-            role="listbox"
-            aria-labelledby={selectId}
-            className={cn(
-              'absolute top-[calc(100%+6px)] left-0 right-0 z-50 flex max-h-60 flex-col gap-0.5 overflow-y-auto rounded-[var(--r-md)]',
-              'border border-[var(--gold)] bg-[var(--bg-2)] p-1 shadow-[var(--sh-3),var(--sh-glow-gold)]',
-              menuClassName,
-            )}
-          >
-            {options.map((option, index) => {
-              const selected = option.value === currentValue;
-              const focused = option.value === focusedValue;
+        {open &&
+          menuRect &&
+          createPortal(
+            <div
+              ref={menuRef}
+              id={listboxId}
+              role="listbox"
+              aria-labelledby={selectId}
+              style={{ top: menuRect.top, left: menuRect.left, width: menuRect.width }}
+              className={cn(
+                'fixed z-50 flex max-h-60 flex-col gap-0.5 overflow-y-auto rounded-[var(--r-md)]',
+                'border border-[var(--gold)] bg-[var(--bg-2)] p-1 shadow-[var(--sh-3),var(--sh-glow-gold)]',
+                menuClassName,
+              )}
+            >
+              {options.map((option, index) => {
+                const selected = option.value === currentValue;
+                const focused = option.value === focusedValue;
 
-              return (
-                <button
-                  key={option.value}
-                  ref={(node) => {
-                    optionRefs.current[index] = node;
-                  }}
-                  type="button"
-                  role="option"
-                  aria-selected={selected}
-                  disabled={option.disabled}
-                  onMouseEnter={() => !option.disabled && setFocusedValue(option.value)}
-                  onClick={() => !option.disabled && setValue(option.value)}
-                  className={cn(
-                    'flex w-full items-center gap-2 rounded-[var(--r-sm)] px-3 py-2 text-left text-[var(--t-3)]',
-                    'transition-colors duration-[150ms] text-[var(--text-md)]',
-                    (focused || selected) && 'bg-[var(--surface-3)]',
-                    focused && 'text-[var(--text-hi)]',
-                    selected && 'text-[var(--gold)]',
-                    option.disabled && 'cursor-not-allowed opacity-40',
-                    optionClassName,
-                  )}
-                >
-                  <span className="min-w-0 flex-1 truncate">
-                    {renderOption ? renderOption(option, { selected, focused }) : option.label}
-                  </span>
+                return (
+                  <button
+                    key={option.value}
+                    ref={(node) => {
+                      optionRefs.current[index] = node;
+                    }}
+                    type="button"
+                    role="option"
+                    aria-selected={selected}
+                    disabled={option.disabled}
+                    onMouseEnter={() => !option.disabled && setFocusedValue(option.value)}
+                    onClick={() => !option.disabled && setValue(option.value)}
+                    className={cn(
+                      'flex w-full items-center gap-2 rounded-[var(--r-sm)] px-3 py-2 text-left text-[var(--t-3)]',
+                      'transition-colors duration-[150ms] text-[var(--text-md)]',
+                      (focused || selected) && 'bg-[var(--surface-3)]',
+                      focused && 'text-[var(--text-hi)]',
+                      selected && 'text-[var(--gold)]',
+                      option.disabled && 'cursor-not-allowed opacity-40',
+                      optionClassName,
+                    )}
+                  >
+                    <span className="min-w-0 flex-1 truncate">
+                      {renderOption ? renderOption(option, { selected, focused }) : option.label}
+                    </span>
 
-                  {selected && (
-                    <svg
-                      viewBox="0 0 16 16"
-                      className="h-3.5 w-3.5 shrink-0 fill-none stroke-current stroke-[1.8]"
-                      aria-hidden="true"
-                    >
-                      <path d="m3 8 3 3 7-7" />
-                    </svg>
-                  )}
-                </button>
-              );
-            })}
-          </div>
-        )}
+                    {selected && (
+                      <svg
+                        viewBox="0 0 16 16"
+                        className="h-3.5 w-3.5 shrink-0 fill-none stroke-current stroke-[1.8]"
+                        aria-hidden="true"
+                      >
+                        <path d="m3 8 3 3 7-7" />
+                      </svg>
+                    )}
+                  </button>
+                );
+              })}
+            </div>,
+            document.body,
+          )}
       </div>
 
       {error && (
