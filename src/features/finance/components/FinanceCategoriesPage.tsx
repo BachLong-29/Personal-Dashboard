@@ -17,6 +17,7 @@ import { COLOR_CSS } from '../constants';
 import { useFinanceCategories } from '../hooks/useFinanceCategories';
 import { useDeleteFinanceCategory } from '../hooks/useDeleteFinanceCategory';
 import { FinanceCategoryFormModal } from './FinanceCategoryFormModal';
+import { FinancePageHeader } from './FinancePageHeader';
 
 const EASE_OUT = [0.16, 1, 0.3, 1] as const;
 
@@ -92,30 +93,18 @@ export function FinanceCategoriesPage() {
 
   return (
     <>
-      <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-hidden p-4">
+      <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden p-3 sm:gap-4 sm:p-4">
         <motion.header
           initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: reduceMotion ? 0.15 : 0.35, ease: EASE_OUT }}
           className="shrink-0"
         >
-          <GoldPanel className="flex flex-wrap items-center justify-between gap-3 p-4">
-            <div>
-              <p className="text-[9px] tracking-[0.3em] text-[var(--gold)] [font-family:var(--f-title)]">
-                {t('eyebrow')}
-              </p>
-              <h1 className="text-[22px] font-bold tracking-[0.03em] text-[var(--text-hi)] [font-family:var(--f-title)]">
-                {t('categories.title')}
-              </h1>
-              <p className="mt-0.5 text-[11px] text-[var(--text-mid)]">
-                {t('categories.subtitle')}
-              </p>
-            </div>
-
-            <Button variant="primary" onClick={() => handleAdd('expense')}>
-              ＋ {t('categories.addExpense')}
-            </Button>
-          </GoldPanel>
+          <FinancePageHeader
+            title={t('categories.title')}
+            subtitle={t('categories.subtitle')}
+            action={{ label: t('categories.addExpense'), onClick: () => handleAdd('expense') }}
+          />
         </motion.header>
 
         <motion.div

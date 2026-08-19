@@ -590,6 +590,13 @@
       "nextDay": "Ngày sau",
       "today": "HÔM NAY"
     },
+    "questCard": {
+      "moreActions": "Thao tác khác",
+      "moveToNextDay": "Dời sang ngày mai",
+      "cloneTask": "Nhân bản task",
+      "edit": "Sửa",
+      "goToHabits": "Đến tab Habits"
+    },
     "pageHeader": {
       "title": "Nhật ký nhiệm vụ",
       "todayProgress": " trên {total} đã hoàn thành hôm nay · ",
@@ -804,7 +811,6 @@
     }
   },
   "finance": {
-    "eyebrow": "DÒNG TIỀN",
     "tabs": {
       "overview": "Tổng quan",
       "accounts": "Tài khoản",

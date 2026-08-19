@@ -17,6 +17,7 @@ import { useDeleteBudget } from '../hooks/useDeleteBudget';
 import { currentMonthKey, formatMonthLabel } from '../utils';
 import { BudgetFormModal } from './BudgetFormModal';
 import { BudgetList } from './BudgetList';
+import { FinancePageHeader } from './FinancePageHeader';
 import { MonthStepper } from './MonthStepper';
 
 const EASE_OUT = [0.16, 1, 0.3, 1] as const;
@@ -62,7 +63,7 @@ export function BudgetPage() {
   }
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-hidden p-4">
+    <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden p-3 sm:gap-4 sm:p-4">
       {/* ── Header ─────────────────────────────────────────────────────────── */}
       <motion.div
         initial={{ opacity: 0, y: 8 }}
@@ -70,29 +71,23 @@ export function BudgetPage() {
         transition={{ duration: 0.4, ease: EASE_OUT }}
         className="shrink-0"
       >
-        <GoldPanel className="flex flex-wrap items-end justify-between gap-3 p-4">
-          <div>
-            <div className="text-[9px] tracking-[0.3em] text-[var(--gold)] [font-family:var(--f-title)]">
-              {t('eyebrow')}
-            </div>
-            <h1 className="text-[22px] font-bold tracking-[0.03em] text-[var(--text-hi)] [font-family:var(--f-title)]">
-              {t('budget.title')}
-            </h1>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-2">
-            <MonthStepper month={month} onChange={setMonth} />
-
-            <Button
-              variant="primary"
-              onClick={handleAdd}
-              disabled={!canCreate}
-              title={canCreate ? undefined : t('budget.pastMonth')}
-            >
-              ＋ {t('budget.setBudget')}
-            </Button>
-          </div>
-        </GoldPanel>
+        <FinancePageHeader
+          title={t('budget.title')}
+          hideTitleOnMobile
+          controls={
+            <MonthStepper
+              month={month}
+              onChange={setMonth}
+              className="h-9 w-full justify-between sm:h-auto sm:w-auto sm:justify-start"
+            />
+          }
+          action={{
+            label: t('budget.setBudget'),
+            onClick: handleAdd,
+            disabled: !canCreate,
+            title: canCreate ? undefined : t('budget.pastMonth'),
+          }}
+        />
       </motion.div>
 
       {/* ── Budgets panel ──────────────────────────────────────────────────── */}

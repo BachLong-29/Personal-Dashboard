@@ -590,6 +590,13 @@
       "nextDay": "วันถัดไป",
       "today": "วันนี้"
     },
+    "questCard": {
+      "moreActions": "การกระทำเพิ่มเติม",
+      "moveToNextDay": "ย้ายไปวันถัดไป",
+      "cloneTask": "โคลนงาน",
+      "edit": "แก้ไข",
+      "goToHabits": "ไปที่แท็บ Habits"
+    },
     "pageHeader": {
       "title": "บันทึกภารกิจ",
       "todayProgress": " จาก {total} ที่เคลียร์แล้ววันนี้ · ",
@@ -804,7 +811,6 @@
     }
   },
   "finance": {
-    "eyebrow": "กระแสเงินสด",
     "tabs": {
       "overview": "ภาพรวม",
       "accounts": "บัญชี",

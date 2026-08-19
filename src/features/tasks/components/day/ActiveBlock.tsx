@@ -246,14 +246,15 @@ function ActiveState({ task, slotMeta, remainingMs, isTimed, now }: ActiveStateP
           {slotMeta.glyph} {slotMeta.label.toUpperCase()} · {fmtClock(now)}
         </div>
 
-        {/* Show exact scheduled window for timed tasks */}
+        {/* Started/slot-ends time — hidden on mobile, the countdown below already says how
+            long is left, which is the part worth the space on a narrow screen. */}
         {isTimed && task.startTime ? (
-          <div className="text-[9px] text-[var(--text-lo)]">
+          <div className="hidden text-[9px] text-[var(--text-lo)] sm:block">
             started&nbsp;
             <span className="font-semibold text-[var(--text-mid)]">{task.startTime}</span>
           </div>
         ) : (
-          <div className="text-[9px] text-[var(--text-lo)]">
+          <div className="hidden text-[9px] text-[var(--text-lo)] sm:block">
             slot ends&nbsp;
             <span className="font-semibold text-[var(--text-mid)]">
               {slotMeta.time.split('–')[1]}:00
@@ -284,18 +285,22 @@ function ActiveState({ task, slotMeta, remainingMs, isTimed, now }: ActiveStateP
         </div>
         <div className="text-[9px] text-[var(--text-mid)] mt-[3px]">
           {task.streak > 0 && (
-            <span className="text-[var(--gold)]">✦ Streak {task.streak}d &nbsp;</span>
+            <span className="hidden text-[var(--gold)] sm:inline">
+              ✦ Streak {task.streak}d &nbsp;
+            </span>
           )}
           {task.combo > 0 && (
-            <span className="text-[var(--violet)]">×{task.combo} combo &nbsp;</span>
+            <span className="hidden text-[var(--violet)] sm:inline">
+              ×{task.combo} combo &nbsp;
+            </span>
           )}
           <span>+{task.xp} XP on completion</span>
         </div>
       </div>
 
       {/* Right: progress ring */}
-      <div className="relative shrink-0 w-[56px] h-[56px]">
-        <svg width="56" height="56" viewBox="0 0 64 64" className="rotate-[-90deg]">
+      <div className="relative w-[44px] h-[44px] shrink-0 sm:w-[56px] sm:h-[56px]">
+        <svg viewBox="0 0 64 64" className="w-full h-full rotate-[-90deg]">
           <circle
             cx="32"
             cy="32"
@@ -322,7 +327,7 @@ function ActiveState({ task, slotMeta, remainingMs, isTimed, now }: ActiveStateP
             </linearGradient>
           </defs>
         </svg>
-        <div className="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-[var(--text-hi)]">
+        <div className="absolute inset-0 flex items-center justify-center text-[9px] font-bold text-[var(--text-hi)] sm:text-[10px]">
           {Math.round(progress * 100)}%
         </div>
       </div>
@@ -346,12 +351,16 @@ function IdleState({ now }: { now: Date }) {
         <div className="text-[12px] font-semibold text-[var(--text-mid)]">
           {t('activeBlock.idleSubtitle')}
         </div>
-        <div className="text-[9px] text-[var(--text-lo)] mt-[2px]">
+        {/* Hidden on mobile — reclaims vertical space for the task list, the
+            title above already says the same thing in fewer words. */}
+        <div className="hidden sm:block text-[9px] text-[var(--text-lo)] mt-[2px]">
           {t('activeBlock.idleDescription')}
         </div>
       </div>
 
-      <div className="text-[28px] opacity-15 shrink-0 font-[var(--font-title)]">◈</div>
+      <div className="hidden sm:block text-[28px] opacity-15 shrink-0 font-[var(--font-title)]">
+        ◈
+      </div>
     </div>
   );
 }
@@ -359,12 +368,12 @@ function IdleState({ now }: { now: Date }) {
 // ─── Style constants ──────────────────────────────────────────────────────────
 
 const activeWrap =
-  'relative flex items-center gap-3 overflow-hidden mx-3 my-2 px-4 py-3 shrink-0 rounded-[var(--r-sm)]';
+  'relative flex items-center gap-2 overflow-hidden mx-2 my-1.5 px-3 py-2 sm:gap-3 sm:mx-3 sm:my-2 sm:px-4 sm:py-3 shrink-0 rounded-[var(--r-sm)]';
 
 const pulse =
   'w-2 h-2 rounded-full bg-[var(--violet)] shadow-[0_0_8px_var(--violet-glow)] animate-pulse shrink-0';
 
 const idleWrap =
-  'flex items-center gap-3 mx-3 my-2 px-4 py-3 bg-[var(--panel2)] border border-[var(--border)] rounded-[var(--r-sm)] shrink-0 opacity-60';
+  'flex items-center gap-3 mx-2 my-1.5 px-3 py-2 sm:mx-3 sm:my-2 sm:px-4 sm:py-3 bg-[var(--panel2)] border border-[var(--border)] rounded-[var(--r-sm)] shrink-0 opacity-60';
 
 const idlePulse = 'w-2 h-2 rounded-full border border-[var(--border)] shrink-0 opacity-50';

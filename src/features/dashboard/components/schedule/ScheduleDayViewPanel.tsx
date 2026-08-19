@@ -113,6 +113,7 @@ export function ScheduleDayViewPanel({
           splitMode="week"
           hideSidePanel
           roundedTop={!showQuests}
+          hideProgress={showQuests}
         />
       </div>
 
@@ -152,11 +153,12 @@ export function ScheduleDayViewPanel({
 // ── Quest header styles ────────────────────────────────────────────────────────
 
 const questHeaderWrap = 'shrink-0 border-b border-[var(--border)] bg-[oklch(0.74_0.17_85_/_0.03)]';
-const questTitleRow = 'flex items-center gap-2 px-[14px] pt-[8px] pb-[6px]';
+const questTitleRow =
+  'flex items-center gap-2 px-2.5 pt-1.5 pb-1 sm:px-[14px] sm:pt-[8px] sm:pb-[6px]';
 const questSparkle = 'text-[14px] animate-[spin_4s_linear_infinite]';
 const questTitleText =
   'flex-1 [font-family:var(--f-title)] text-[13px] font-bold tracking-[0.08em] text-[var(--text-hi)]';
-const questProgressRow = 'flex items-center gap-2.5 px-[14px] pb-[8px]';
+const questProgressRow = 'flex items-center gap-2.5 px-2.5 pb-1.5 sm:px-[14px] sm:pb-[8px]';
 const progBarWrap = 'flex-1 flex flex-col gap-[3px]';
 const progLabel = 'flex justify-between text-[9px] text-[var(--text-mid)] tracking-[0.06em]';
 const progLabelValue = 'text-[var(--mint)] font-bold';

@@ -109,7 +109,7 @@ export function ScheduleView({
             onClick={() => setDisplay({ showQuests: !display.showQuests })}
             title="Toggle quests"
           >
-            ⚡ Quests
+            ⚡ <span className="hidden sm:inline">Quests</span>
           </button>
           <button
             type="button"
@@ -117,7 +117,7 @@ export function ScheduleView({
             onClick={() => setDisplay({ showHabits: !display.showHabits })}
             title="Toggle habits"
           >
-            ✦ Habits
+            ✦ <span className="hidden sm:inline">Habits</span>
           </button>
 
           <select
@@ -132,8 +132,13 @@ export function ScheduleView({
             ))}
           </select>
 
-          <Link href="/tasks" className={taskLogBtn} title={tDash('scheduleView.openQuestLog')}>
-            ❖ {tDash('questLog')}
+          <Link
+            href="/tasks"
+            className={taskLogBtn}
+            title={tDash('scheduleView.openQuestLog')}
+            aria-label={tDash('scheduleView.openQuestLog')}
+          >
+            ❖ <span className="hidden sm:inline">{tDash('questLog')}</span>
           </Link>
         </div>
       </div>
@@ -188,7 +193,7 @@ export function ScheduleView({
 const outerWrap = 'flex flex-col flex-1 min-h-0 overflow-hidden';
 
 const controlBar =
-  'flex items-center gap-2 px-3 py-2 border-b border-[var(--border)] shrink-0 flex-wrap';
+  'flex items-center gap-1.5 sm:gap-2 px-2 py-1.5 sm:px-3 sm:py-2 border-b border-[var(--border)] shrink-0 flex-wrap';
 
 const subTabGroup = 'flex gap-1';
 const subTab =

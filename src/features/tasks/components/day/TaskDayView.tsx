@@ -53,6 +53,8 @@ interface TaskDayViewProps {
   hideSidePanel?: boolean;
   /** False when embedded flush under another panel (e.g. the dashboard schedule widget) — skips the top corner rounding. */
   roundedTop?: boolean;
+  /** True when a parent already renders its own daily progress (e.g. the dashboard schedule widget's quest header) — skips this panel's duplicate progress row. */
+  hideProgress?: boolean;
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -86,6 +88,7 @@ export function TaskDayView({
   splitMode,
   hideSidePanel = false,
   roundedTop = true,
+  hideProgress = false,
 }: TaskDayViewProps) {
   const t = useTranslations('tasks');
 
@@ -144,8 +147,9 @@ export function TaskDayView({
           )}
         >
           {/* Panel head with date navigation */}
-          <div className="flex flex-wrap items-center gap-2 px-4 py-2 border-b border-[var(--border)] shrink-0">
-            <span className="text-[8px] tracking-[0.18em] text-[var(--text-lo)] font-[var(--font-title)] font-bold shrink-0">
+          <div className="flex flex-wrap items-center gap-2 px-3 py-1.5 sm:px-4 sm:py-2 border-b border-[var(--border)] shrink-0">
+            {/* Decorative chapter label — dropped on mobile, low value vs. the space it costs */}
+            <span className="hidden sm:inline text-[8px] tracking-[0.18em] text-[var(--text-lo)] font-[var(--font-title)] font-bold shrink-0">
               {t('taskDayView.chapterOne')}
             </span>
 
@@ -188,9 +192,11 @@ export function TaskDayView({
               )}
             </div>
 
-            <div className="basis-full sm:basis-auto flex justify-end sm:justify-start">
-              <DayProgress done={done} total={selectedTasks.length} pct={pct} />
-            </div>
+            {!hideProgress && (
+              <div className="basis-full sm:basis-auto flex justify-end sm:justify-start">
+                <DayProgress done={done} total={selectedTasks.length} pct={pct} />
+              </div>
+            )}
           </div>
 
           {/* Active session indicator */}

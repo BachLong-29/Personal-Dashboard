@@ -4,7 +4,6 @@ import { useMemo, useState } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
 import { useLocale, useTranslations } from 'next-intl';
 
-import { Button } from '@/components/ui/Button';
 import { Select } from '@/components/ui/Select';
 import { GoldPanel } from '@/components/common/GoldPanel';
 import type { Transaction, TransactionType } from '@/types';
@@ -14,6 +13,7 @@ import { useFinanceCategories } from '../hooks/useFinanceCategories';
 import { useTransactions } from '../hooks/useTransactions';
 import { getMonthOptions, getMonthRange } from '../utils';
 import { FinanceFilters } from './FinanceFilters';
+import { FinancePageHeader } from './FinancePageHeader';
 import { TransactionList } from './TransactionList';
 import { TransactionFormModal } from './TransactionFormModal';
 
@@ -61,35 +61,24 @@ export function TransactionsPage() {
           transition={{ duration: reduceMotion ? 0.15 : 0.35, ease: EASE_OUT }}
           className="shrink-0"
         >
-          <GoldPanel className="flex flex-wrap items-center justify-between gap-3 p-3 sm:p-4">
-            <div>
-              <p className="text-[9px] tracking-[0.3em] text-[var(--gold)] [font-family:var(--f-title)]">
-                {t('eyebrow')}
-              </p>
-              <h1 className="text-[18px] font-bold tracking-[0.03em] text-[var(--text-hi)] [font-family:var(--f-title)] sm:text-[22px]">
-                {t('transactions.title')}
-              </h1>
-            </div>
-
-            <div className="flex flex-nowrap items-center gap-2">
+          <FinancePageHeader
+            hideTitleOnMobile
+            title={t('transactions.title')}
+            controls={
               <Select
                 options={monthOptions}
                 value={month}
                 onValueChange={setMonth}
                 placeholder={t('filters.allMonths')}
-                containerClassName="w-[130px] shrink-0 sm:w-auto sm:min-w-[150px]"
+                containerClassName="w-full sm:w-auto sm:min-w-[150px]"
               />
-              <Button
-                variant="primary"
-                size="sm"
-                className="shrink-0 sm:px-4 sm:py-[9px] sm:text-[13px]"
-                onClick={() => setShowAddTx(true)}
-                disabled={wallets.length === 0}
-              >
-                ＋ {t('transactions.addTransaction')}
-              </Button>
-            </div>
-          </GoldPanel>
+            }
+            action={{
+              label: t('transactions.addTransaction'),
+              onClick: () => setShowAddTx(true),
+              disabled: wallets.length === 0,
+            }}
+          />
         </motion.header>
 
         <motion.div

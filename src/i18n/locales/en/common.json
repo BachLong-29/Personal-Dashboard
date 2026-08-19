@@ -590,6 +590,13 @@
       "nextDay": "Next day",
       "today": "TODAY"
     },
+    "questCard": {
+      "moreActions": "More actions",
+      "moveToNextDay": "Move to next day",
+      "cloneTask": "Clone task",
+      "edit": "Edit",
+      "goToHabits": "Go to Habits"
+    },
     "pageHeader": {
       "title": "Quest Log",
       "todayProgress": " of {total} cleared today · ",
@@ -804,7 +811,6 @@
     }
   },
   "finance": {
-    "eyebrow": "CASH FLOW",
     "tabs": {
       "overview": "Overview",
       "accounts": "Accounts",

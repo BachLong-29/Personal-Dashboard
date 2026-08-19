@@ -1,12 +1,15 @@
 'use client';
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import Image from 'next/image';
+
+import { useTranslations } from 'next-intl';
 
 import { cn } from '@/libs/utils';
 
 import { ProjectBadge } from '@/components/common/ProjectBadge';
 import { useTaskBlocks } from '@/features/schedule/hooks/useScheduleBlocks';
+import { useOnClickOutside } from '@/hooks';
 
 import { catOf, fmtEst, COLOR_VAR, type UITask } from '../../data/mock';
 import { diffColors, qcxBtnGhost, qcxBtnPrimary } from './styles';
@@ -66,6 +69,7 @@ export function QuestCard({
   isOverlay,
   compact,
 }: QuestCardProps) {
+  const t = useTranslations('tasks');
   const c = catOf(task.cat);
   const catColor = COLOR_VAR[c.color] ?? 'var(--text-lo)';
 
@@ -75,6 +79,14 @@ export function QuestCard({
     task.icon && task.title.startsWith(task.icon)
       ? task.title.slice(task.icon.length).trim()
       : task.title;
+
+  // Quick actions shared between the desktop hover row and the mobile "⋯" menu
+  // (hover never fires on touch, so mobile needs a tappable equivalent).
+  const canMoveToNextDay =
+    !!onMoveToNextDay && !task.done && !task.cancelled && task.source !== 'habit';
+  const canClone = !!onClone && task.source === 'task';
+  const canEdit = !!onEdit && (task.source === 'task' || task.source === 'habit');
+  const hasQuickActions = canMoveToNextDay || canClone || canEdit;
 
   return (
     <article
@@ -152,7 +164,7 @@ export function QuestCard({
           </div>
 
           {/* Row 2: rank + overdue + note */}
-          <div className="flex items-center gap-1.5 mt-[3px] pl-[26px] min-w-0">
+          <div className="flex items-center gap-1.5 mt-[3px] pl-[28px] sm:pl-[26px] min-w-0">
             <span className="text-[7px] font-bold tracking-[0.12em] uppercase text-[var(--text-lo)] font-[var(--font-title)] shrink-0">
               Rank
             </span>
@@ -180,50 +192,66 @@ export function QuestCard({
           </div>
         </div>
 
-        {/* Right: hover actions + chevron */}
+        {/* Right: quick actions + chevron */}
         {!isOverlay && (
           <div className="flex items-center gap-0.5 shrink-0 self-center ml-auto">
-            <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity duration-150">
-              {onMoveToNextDay && !task.done && !task.cancelled && task.source !== 'habit' && (
+            {/* Desktop: hover-reveal quick actions (hover doesn't exist on touch) */}
+            <div className="hidden sm:flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity duration-150">
+              {canMoveToNextDay && (
                 <button
                   type="button"
                   title="Move to next day"
                   className={actionBtn}
                   onClick={(e) => {
                     e.stopPropagation();
-                    onMoveToNextDay(task);
+                    onMoveToNextDay?.(task);
                   }}
                 >
                   →
                 </button>
               )}
-              {onClone && task.source === 'task' && (
+              {canClone && (
                 <button
                   type="button"
                   title="Clone task"
                   className={actionBtn}
                   onClick={(e) => {
                     e.stopPropagation();
-                    onClone(task);
+                    onClone?.(task);
                   }}
                 >
                   ⧉
                 </button>
               )}
-              {onEdit && (task.source === 'task' || task.source === 'habit') && (
+              {canEdit && (
                 <button
                   type="button"
                   title={task.source === 'habit' ? 'Go to Habits' : 'Edit'}
                   className={actionBtn}
                   onClick={(e) => {
                     e.stopPropagation();
-                    onEdit(task);
+                    onEdit?.(task);
                   }}
                 >
                   {task.source === 'habit' ? '↗' : '✎'}
                 </button>
               )}
             </div>
+
+            {/* Mobile: always-visible "more actions" menu */}
+            {hasQuickActions && (
+              <QuestCardActionsMenu
+                t={t}
+                task={task}
+                canMoveToNextDay={canMoveToNextDay}
+                canClone={canClone}
+                canEdit={canEdit}
+                onMoveToNextDay={onMoveToNextDay}
+                onClone={onClone}
+                onEdit={onEdit}
+              />
+            )}
+
             <span className={cn(chevron, expanded && chevronOpen)}>›</span>
           </div>
         )}
@@ -588,17 +616,108 @@ function ExpandedPanel({
   );
 }
 
+// ─── Mobile "more actions" menu ───────────────────────────────────────────────
+// Desktop reveals quick actions on hover, but hover never fires on touch — this
+// gives mobile a tappable, always-visible equivalent instead.
+
+interface QuestCardActionsMenuProps {
+  t: ReturnType<typeof useTranslations>;
+  task: UITask;
+  canMoveToNextDay: boolean;
+  canClone: boolean;
+  canEdit: boolean;
+  onMoveToNextDay?: (task: UITask) => void;
+  onClone?: (task: UITask) => void;
+  onEdit?: (task: UITask) => void;
+}
+
+function QuestCardActionsMenu({
+  t,
+  task,
+  canMoveToNextDay,
+  canClone,
+  canEdit,
+  onMoveToNextDay,
+  onClone,
+  onEdit,
+}: QuestCardActionsMenuProps) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useOnClickOutside(ref, () => setOpen(false));
+
+  function select(action?: () => void) {
+    setOpen(false);
+    action?.();
+  }
+
+  return (
+    <div ref={ref} className="relative flex sm:hidden">
+      <button
+        type="button"
+        title={t('questCard.moreActions')}
+        aria-label={t('questCard.moreActions')}
+        aria-haspopup="menu"
+        aria-expanded={open}
+        className={moreActionsBtn}
+        onClick={(e) => {
+          e.stopPropagation();
+          setOpen((o) => !o);
+        }}
+      >
+        ⋯
+      </button>
+
+      {open && (
+        <div className={moreActionsMenu} role="menu" onClick={(e) => e.stopPropagation()}>
+          {canMoveToNextDay && (
+            <button
+              type="button"
+              role="menuitem"
+              className={moreActionsItem}
+              onClick={() => select(() => onMoveToNextDay?.(task))}
+            >
+              <span>→</span> {t('questCard.moveToNextDay')}
+            </button>
+          )}
+          {canClone && (
+            <button
+              type="button"
+              role="menuitem"
+              className={moreActionsItem}
+              onClick={() => select(() => onClone?.(task))}
+            >
+              <span>⧉</span> {t('questCard.cloneTask')}
+            </button>
+          )}
+          {canEdit && (
+            <button
+              type="button"
+              role="menuitem"
+              className={moreActionsItem}
+              onClick={() => select(() => onEdit?.(task))}
+            >
+              <span>{task.source === 'habit' ? '↗' : '✎'}</span>{' '}
+              {task.source === 'habit' ? t('questCard.goToHabits') : t('questCard.edit')}
+            </button>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── Style constants ──────────────────────────────────────────────────────────
 
 const cardBase =
-  'flex flex-col gap-0 px-2.5 py-2 bg-[var(--panel2)] border border-[var(--border)] rounded-[var(--r-sm)] mb-1.5 cursor-grab hover:border-[oklch(0.74_0.17_85_/_0.3)] hover:bg-[oklch(0.74_0.17_85_/_0.03)] transition-all duration-150 active:cursor-grabbing';
+  'flex flex-col gap-0 px-2.5 py-2.5 sm:py-2 bg-[var(--panel2)] border border-[var(--border)] rounded-[var(--r-sm)] mb-2 sm:mb-1.5 cursor-grab hover:border-[oklch(0.74_0.17_85_/_0.3)] hover:bg-[oklch(0.74_0.17_85_/_0.03)] transition-all duration-150 active:cursor-grabbing';
 const cardDone = 'opacity-50';
 const cardSaga = 'border-[oklch(0.74_0.17_85_/_0.35)] bg-[oklch(0.74_0.17_85_/_0.04)]';
 const cardCancelled =
   'opacity-40 border-dashed border-[oklch(0.72_0.18_5_/_0.35)] bg-[oklch(0.72_0.18_5_/_0.03)]';
 
 const checkBtn =
-  'w-[18px] h-[18px] rounded-full border border-[var(--border)] flex items-center justify-center text-[9px] font-bold transition-all hover:border-[var(--mint)] shrink-0';
+  'w-[22px] h-[22px] sm:w-[18px] sm:h-[18px] rounded-full border border-[var(--border)] flex items-center justify-center text-[10px] sm:text-[9px] font-bold transition-all hover:border-[var(--mint)] shrink-0';
 const checkBtnDone = 'bg-[var(--mint)] border-[var(--mint)] text-[oklch(0.1_0_0)]';
 const checkBtnLogged = 'bg-[var(--cyan)] border-[var(--cyan)] text-[oklch(0.1_0_0)]';
 
@@ -606,7 +725,15 @@ const diffBadge =
   'min-w-[17px] h-[17px] px-1 rounded-sm flex items-center justify-center text-[9px] font-black font-[var(--font-title)] border border-[var(--border)] shrink-0';
 const diffBadgeFallback = 'bg-[var(--panel3)] text-[var(--text-mid)]';
 
-const titleText = 'text-[11px] font-semibold text-[var(--text-hi)] leading-[1.3] truncate flex-1';
+const titleText =
+  'text-[12px] sm:text-[11px] font-semibold text-[var(--text-hi)] leading-[1.3] truncate flex-1';
+
+const moreActionsBtn =
+  'w-[26px] h-[26px] flex items-center justify-center text-[15px] leading-none text-[var(--text-lo)] rounded hover:text-[var(--text-hi)] hover:bg-[var(--panel3)] transition-colors cursor-pointer';
+const moreActionsMenu =
+  'absolute right-0 top-[calc(100%+4px)] z-30 min-w-[152px] flex flex-col gap-0.5 p-1 rounded-[var(--r-sm)] border border-[oklch(0.74_0.17_85_/_0.35)] bg-[var(--panel)] shadow-[0_8px_24px_oklch(0_0_0_/_0.45)]';
+const moreActionsItem =
+  'flex items-center gap-2 px-2.5 py-2 rounded-[var(--r-sm)] text-left text-[11px] whitespace-nowrap font-[var(--font-body)] text-[var(--text-mid)] border border-transparent cursor-pointer transition-all duration-150 hover:text-[var(--text-hi)] hover:bg-[oklch(0.74_0.17_85_/_0.08)] hover:border-[oklch(0.74_0.17_85_/_0.3)]';
 
 const inlineBadge =
   'text-[7px] font-bold shrink-0 px-1 py-px rounded border tracking-[0.08em] font-[var(--font-title)]';

@@ -4,7 +4,7 @@ import { useState, useSyncExternalStore } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
 import { useTranslations } from 'next-intl';
 
-import { Button, buttonVariants } from '@/components/ui/Button';
+import { buttonVariants } from '@/components/ui/Button';
 import { Tabs } from '@/components/ui/Tabs';
 import { GoldPanel } from '@/components/common/GoldPanel';
 import { Link } from '@/i18n/navigation';
@@ -18,6 +18,7 @@ import { useGoals } from '../hooks/useGoals';
 import { useForecast } from '../hooks/useForecast';
 import type { QuickEntryDraft } from '../quick-entry';
 import { currentMonthKey } from '../utils';
+import { FinancePageHeader } from './FinancePageHeader';
 import { MonthStepper } from './MonthStepper';
 import { TransactionFormModal } from './TransactionFormModal';
 import { GoalContributionModal } from './GoalContributionModal';
@@ -116,23 +117,22 @@ export function FinancePage() {
           transition={{ duration: reduceMotion ? 0.15 : 0.35, ease: EASE_OUT }}
           className="shrink-0"
         >
-          <GoldPanel className="flex flex-wrap items-center justify-between gap-2 p-2.5 sm:gap-3 sm:p-4">
-            <div>
-              <p className="text-[9px] tracking-[0.3em] text-[var(--gold)] [font-family:var(--f-title)]">
-                {t('eyebrow')}
-              </p>
-              <h1 className="text-[17px] font-bold tracking-[0.03em] text-[var(--text-hi)] [font-family:var(--f-title)] sm:text-[22px]">
-                {t('overview.title')}
-              </h1>
-            </div>
-
-            <div className="flex flex-wrap items-center gap-2">
-              <MonthStepper month={month} onChange={setMonth} />
-              <Button variant="primary" onClick={() => setShowAddTx(true)} disabled={!hasWallets}>
-                ＋ {t('overview.addTransaction')}
-              </Button>
-            </div>
-          </GoldPanel>
+          <FinancePageHeader
+            title={t('overview.title')}
+            hideTitleOnMobile
+            controls={
+              <MonthStepper
+                month={month}
+                onChange={setMonth}
+                className="h-9 w-full justify-between sm:h-auto sm:w-auto sm:justify-start"
+              />
+            }
+            action={{
+              label: t('overview.addTransaction'),
+              onClick: () => setShowAddTx(true),
+              disabled: !hasWallets,
+            }}
+          />
         </motion.header>
 
         <div className="min-h-0 flex-1 overflow-y-auto">

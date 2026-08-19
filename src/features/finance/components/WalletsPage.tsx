@@ -16,6 +16,7 @@ import { useDeleteWallet } from '../hooks/useDeleteWallet';
 import { useCountUp } from '../hooks/useCountUp';
 import { AMOUNT_MASK, formatCurrency } from '../utils';
 import { useFinanceUIStore } from '../stores/finance-ui.store';
+import { FinancePageHeader } from './FinancePageHeader';
 import { WalletList } from './WalletList';
 import { WalletFormModal } from './WalletFormModal';
 import { SepayConnectModal } from './SepayConnectModal';
@@ -59,7 +60,7 @@ export function WalletsPage() {
 
   return (
     <>
-      <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-hidden p-4">
+      <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden p-3 sm:gap-4 sm:p-4">
         {/* ── Header ─────────────────────────────────────────────────────────── */}
         <motion.div
           initial={{ opacity: 0, y: 8 }}
@@ -67,16 +68,12 @@ export function WalletsPage() {
           transition={{ duration: 0.4, ease: EASE_OUT }}
           className="shrink-0"
         >
-          <GoldPanel className="flex flex-wrap items-end justify-between gap-3 p-4">
-            <div>
-              <div className="text-[9px] tracking-[0.3em] text-[var(--gold)] [font-family:var(--f-title)]">
-                {t('eyebrow')}
-              </div>
-              <h1 className="text-[22px] font-bold tracking-[0.03em] text-[var(--text-hi)] [font-family:var(--f-title)]">
-                {t('accounts.title')}
-              </h1>
-              <div className="mt-1 flex items-center gap-2">
-                <span className="text-[24px] font-bold tabular-nums text-[var(--gold)] [font-family:var(--f-title)]">
+          <FinancePageHeader
+            title={t('accounts.title')}
+            hideTitleOnMobile
+            controls={
+              <div className="flex items-center gap-2">
+                <span className="text-[20px] font-bold tabular-nums text-[var(--gold)] [font-family:var(--f-title)] sm:text-[24px]">
                   {amountsHidden ? AMOUNT_MASK : formatCurrency(animatedBalance)}
                 </span>
                 <button
@@ -84,20 +81,15 @@ export function WalletsPage() {
                   onClick={toggleAmountsHidden}
                   aria-label={amountsHidden ? t('overview.showAmounts') : t('overview.hideAmounts')}
                   aria-pressed={amountsHidden}
-                  className="flex h-7 w-7 shrink-0 items-center justify-center rounded-[var(--r-sm)] border border-[var(--border)] text-[12px] text-[var(--text-mid)] transition-colors duration-200 hover:border-[var(--gold)] hover:text-[var(--gold)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--gold)]"
+                  className="flex h-6 w-6 shrink-0 items-center justify-center rounded-[var(--r-sm)] border border-[var(--border)] text-[11px] text-[var(--text-mid)] transition-colors duration-200 hover:border-[var(--gold)] hover:text-[var(--gold)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--gold)]"
                 >
                   {amountsHidden ? '🙈' : '👁'}
                 </button>
               </div>
-              <div className="mt-0.5 text-[10px] uppercase tracking-[0.1em] text-[var(--text-lo)]">
-                {t('accounts.subtitle', { count: wallets.length })}
-              </div>
-            </div>
-
-            <Button variant="primary" onClick={() => setShowAddWallet(true)}>
-              ＋ {t('accounts.addWallet')}
-            </Button>
-          </GoldPanel>
+            }
+            subtitle={t('accounts.subtitle', { count: wallets.length })}
+            action={{ label: t('accounts.addWallet'), onClick: () => setShowAddWallet(true) }}
+          />
         </motion.div>
 
         {/* ── Accounts panel ─────────────────────────────────────────────────── */}

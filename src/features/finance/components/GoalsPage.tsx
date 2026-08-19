@@ -16,6 +16,7 @@ import { COLOR_CSS } from '../constants';
 import { useGoals } from '../hooks/useGoals';
 import { useDeleteGoal } from '../hooks/useDeleteGoal';
 import { currentMonthKey, formatCurrency } from '../utils';
+import { FinancePageHeader } from './FinancePageHeader';
 import { GoalContributionModal } from './GoalContributionModal';
 import { GoalFormModal } from './GoalFormModal';
 
@@ -62,27 +63,17 @@ export function GoalsPage() {
 
   return (
     <>
-      <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-hidden p-4">
+      <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden p-3 sm:gap-4 sm:p-4">
         <motion.header
           initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: reduceMotion ? 0.15 : 0.35, ease: EASE_OUT }}
           className="shrink-0"
         >
-          <GoldPanel className="flex flex-wrap items-center justify-between gap-3 p-4">
-            <div>
-              <p className="text-[9px] tracking-[0.3em] text-[var(--gold)] [font-family:var(--f-title)]">
-                {t('eyebrow')}
-              </p>
-              <h1 className="text-[22px] font-bold tracking-[0.03em] text-[var(--text-hi)] [font-family:var(--f-title)]">
-                {t('goals.title')}
-              </h1>
-            </div>
-
-            <Button variant="primary" onClick={handleAdd}>
-              ＋ {t('goals.addGoal')}
-            </Button>
-          </GoldPanel>
+          <FinancePageHeader
+            title={t('goals.title')}
+            action={{ label: t('goals.addGoal'), onClick: handleAdd }}
+          />
         </motion.header>
 
         <motion.div
