@@ -853,6 +853,7 @@
       "over": "{amount} over",
       "noBudget": "No budget for this month",
       "noBudgetHint": "Set a limit to see how much is still safe to spend.",
+      "allBudgetsFull": "All of this month's budgets are fully used",
       "setBudget": "Set a budget",
       "noSpending": "Nothing spent this month yet",
       "noTransactions": "No transactions this month",

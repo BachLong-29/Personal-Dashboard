@@ -14,7 +14,6 @@ import { SectionCard } from './SectionCard';
 const MAX_ROWS = 5;
 
 function variantFor(pct: number): ProgressVariant {
-  if (pct >= 100) return 'danger';
   if (pct >= 80) return 'gold';
   return 'mint';
 }
@@ -30,11 +29,14 @@ export function BudgetProgressCard({ budgets, categories, isLoading }: BudgetPro
   const t = useTranslations('finance');
   const iconByCategoryId = new Map(categories.map((c) => [c.id, c.icon]));
 
-  const rows = [...budgets].sort((a, b) => {
-    if (!a.categoryId) return -1;
-    if (!b.categoryId) return 1;
-    return b.percentage - a.percentage;
-  });
+  const rows = budgets
+    .filter((b) => b.percentage < 100)
+    .sort((a, b) => {
+      if (!a.categoryId) return -1;
+      if (!b.categoryId) return 1;
+      return b.percentage - a.percentage;
+    });
+  const allFull = budgets.length > 0 && rows.length === 0;
 
   return (
     <SectionCard
@@ -53,6 +55,10 @@ export function BudgetProgressCard({ budgets, categories, isLoading }: BudgetPro
             />
           ))}
         </div>
+      ) : allFull ? (
+        <p className="text-[13px] font-bold text-[var(--text-hi)]">
+          {t('overview.allBudgetsFull')}
+        </p>
       ) : rows.length === 0 ? (
         <div className="flex flex-col items-start gap-2">
           <p className="text-[13px] font-bold text-[var(--text-hi)]">{t('overview.noBudget')}</p>
@@ -93,8 +99,7 @@ export function BudgetProgressCard({ budgets, categories, isLoading }: BudgetPro
                   max={b.limit}
                   variant={variantFor(b.percentage)}
                   className="mt-1 sm:mt-2"
-                  // Only the budgets still running catch the light; a spent one is done moving.
-                  shimmer={b.percentage < 100}
+                  shimmer
                 />
 
                 <div className="mt-0.5 flex items-baseline justify-between gap-3 text-[10px] sm:mt-1">

@@ -853,6 +853,7 @@
       "over": "vượt {amount}",
       "noBudget": "Chưa đặt ngân sách tháng này",
       "noBudgetHint": "Đặt hạn mức để biết còn được tiêu bao nhiêu.",
+      "allBudgetsFull": "Tất cả ngân sách tháng này đều đã dùng hết",
       "setBudget": "Đặt ngân sách",
       "noSpending": "Tháng này chưa chi khoản nào",
       "noTransactions": "Tháng này chưa có giao dịch",
