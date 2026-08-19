@@ -13,6 +13,7 @@ import {
 import { useTranslations } from 'next-intl';
 
 import { Icon } from '@/components/common/Icon';
+import { cn } from '@/libs/utils';
 import type { ScheduleBlock } from '@/types';
 
 import { DatePicker } from '@/components/ui/DatePicker';
@@ -50,6 +51,8 @@ interface TaskDayViewProps {
   rescheduleLoading?: boolean;
   splitMode: 'week' | 'month';
   hideSidePanel?: boolean;
+  /** False when embedded flush under another panel (e.g. the dashboard schedule widget) — skips the top corner rounding. */
+  roundedTop?: boolean;
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -82,6 +85,7 @@ export function TaskDayView({
   rescheduleLoading,
   splitMode,
   hideSidePanel = false,
+  roundedTop = true,
 }: TaskDayViewProps) {
   const t = useTranslations('tasks');
 
@@ -133,15 +137,20 @@ export function TaskDayView({
     >
       <div className="flex flex-col md:flex-row gap-3 flex-1 min-h-0 overflow-hidden">
         {/* ── Left: daily ledger ────────────────────────────────────────── */}
-        <section className="flex-1 min-w-0 min-h-0 bg-[var(--panel)] border border-[var(--border)] rounded-[var(--r)] flex flex-col overflow-hidden">
+        <section
+          className={cn(
+            'flex-1 min-w-0 min-h-0 bg-[var(--panel)] border border-[var(--border)] flex flex-col overflow-hidden',
+            roundedTop ? 'rounded-[var(--r)]' : 'rounded-b-[var(--r)]',
+          )}
+        >
           {/* Panel head with date navigation */}
-          <div className="flex items-center gap-2 px-4 py-2 border-b border-[var(--border)] shrink-0">
+          <div className="flex flex-wrap items-center gap-2 px-4 py-2 border-b border-[var(--border)] shrink-0">
             <span className="text-[8px] tracking-[0.18em] text-[var(--text-lo)] font-[var(--font-title)] font-bold shrink-0">
               {t('taskDayView.chapterOne')}
             </span>
 
             {/* Date navigation */}
-            <div className="flex items-center gap-1.5 flex-1">
+            <div className="flex items-center gap-1.5 flex-1 min-w-0">
               {/* Prev day */}
               <button
                 type="button"
@@ -179,7 +188,9 @@ export function TaskDayView({
               )}
             </div>
 
-            <DayProgress done={done} total={selectedTasks.length} pct={pct} />
+            <div className="basis-full sm:basis-auto flex justify-end sm:justify-start">
+              <DayProgress done={done} total={selectedTasks.length} pct={pct} />
+            </div>
           </div>
 
           {/* Active session indicator */}

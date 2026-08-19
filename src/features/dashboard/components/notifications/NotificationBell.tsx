@@ -24,7 +24,7 @@ export function NotificationBell() {
         onClick={() => setOpen((v) => !v)}
         aria-label="Notifications"
       >
-        🔔
+        <span className="text-[13px] leading-none">🔔</span>
         {unreadCount > 0 && <span className={badge}>{unreadCount > 9 ? '9+' : unreadCount}</span>}
       </button>
 
@@ -36,7 +36,7 @@ export function NotificationBell() {
 // ── Styles ────────────────────────────────────────────────────────────────────
 
 const bellBtn =
-  'relative w-8 h-8 flex items-center justify-center rounded-[var(--r-sm)] border border-[var(--border)] text-[16px] text-[var(--text-mid)] hover:text-[var(--text-hi)] hover:bg-[var(--panel2)] transition-colors shrink-0 cursor-pointer';
+  'relative w-8 h-8 flex items-center justify-center rounded-[var(--r-sm)] border border-[var(--border)] text-[var(--text-mid)] hover:text-[var(--text-hi)] hover:bg-[var(--panel2)] transition-colors shrink-0 cursor-pointer';
 
 const bellBtnActive = 'text-[var(--text-hi)] bg-[var(--panel2)] border-[oklch(0.74_0.17_85_/_0.4)]';
 

@@ -112,6 +112,7 @@ export function ScheduleDayViewPanel({
           rescheduleLoading={isRescheduling}
           splitMode="week"
           hideSidePanel
+          roundedTop={!showQuests}
         />
       </div>
 
