@@ -52,12 +52,12 @@ export function FinanceFilters({
   ];
 
   return (
-    <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-stretch">
+    <div className="flex items-stretch gap-2 overflow-x-auto pb-1 sm:flex-wrap sm:overflow-visible sm:pb-0">
       <InputSearch
         value={search}
         onChange={onSearchChange}
         placeholder={t('search')}
-        className="h-[42px] sm:max-w-[220px]"
+        className="h-[42px] w-[180px] shrink-0 sm:w-auto sm:max-w-[220px] sm:shrink"
       />
 
       <div className="relative flex h-[42px] shrink-0 items-stretch gap-0.5 rounded-[var(--r-md)] border border-[var(--border)] bg-[var(--panel)] p-1">
@@ -93,7 +93,7 @@ export function FinanceFilters({
         value={categoryId}
         onValueChange={onCategoryChange}
         placeholder={t('allCategories')}
-        containerClassName="sm:max-w-[180px]"
+        containerClassName="w-[150px] shrink-0 sm:w-auto sm:max-w-[180px] sm:shrink"
       />
 
       <Select
@@ -101,7 +101,7 @@ export function FinanceFilters({
         value={walletId}
         onValueChange={onWalletChange}
         placeholder={t('allWallets')}
-        containerClassName="sm:max-w-[180px]"
+        containerClassName="w-[150px] shrink-0 sm:w-auto sm:max-w-[180px] sm:shrink"
       />
     </div>
   );

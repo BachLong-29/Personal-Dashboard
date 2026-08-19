@@ -54,33 +54,35 @@ export function TransactionsPage() {
 
   return (
     <>
-      <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-hidden p-4">
+      <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden p-3 sm:gap-4 sm:p-4">
         <motion.header
           initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: reduceMotion ? 0.15 : 0.35, ease: EASE_OUT }}
           className="shrink-0"
         >
-          <GoldPanel className="flex flex-wrap items-center justify-between gap-3 p-4">
+          <GoldPanel className="flex flex-wrap items-center justify-between gap-3 p-3 sm:p-4">
             <div>
               <p className="text-[9px] tracking-[0.3em] text-[var(--gold)] [font-family:var(--f-title)]">
                 {t('eyebrow')}
               </p>
-              <h1 className="text-[22px] font-bold tracking-[0.03em] text-[var(--text-hi)] [font-family:var(--f-title)]">
+              <h1 className="text-[18px] font-bold tracking-[0.03em] text-[var(--text-hi)] [font-family:var(--f-title)] sm:text-[22px]">
                 {t('transactions.title')}
               </h1>
             </div>
 
-            <div className="flex flex-wrap items-center gap-2">
+            <div className="flex flex-nowrap items-center gap-2">
               <Select
                 options={monthOptions}
                 value={month}
                 onValueChange={setMonth}
                 placeholder={t('filters.allMonths')}
-                containerClassName="min-w-[150px]"
+                containerClassName="w-[130px] shrink-0 sm:w-auto sm:min-w-[150px]"
               />
               <Button
                 variant="primary"
+                size="sm"
+                className="shrink-0 sm:px-4 sm:py-[9px] sm:text-[13px]"
                 onClick={() => setShowAddTx(true)}
                 disabled={wallets.length === 0}
               >
@@ -106,7 +108,7 @@ export function TransactionsPage() {
               </span>
             </div>
 
-            <div className="shrink-0 border-b border-[var(--border)] p-4">
+            <div className="shrink-0 border-b border-[var(--border)] p-3 sm:p-4">
               <FinanceFilters
                 search={search}
                 onSearchChange={setSearch}
@@ -121,7 +123,7 @@ export function TransactionsPage() {
               />
             </div>
 
-            <div className="min-h-0 flex-1 overflow-y-auto p-4">
+            <div className="min-h-0 flex-1 overflow-y-auto p-3 sm:p-4">
               <TransactionList
                 transactions={transactions}
                 categories={categories}
