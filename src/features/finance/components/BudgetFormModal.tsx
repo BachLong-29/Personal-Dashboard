@@ -65,6 +65,8 @@ export function BudgetFormModal({
   const limitNum = parseFloat(limit);
   const canSave = limitNum > 0 && !isPending;
 
+  // Already-budgeted categories are disabled — sink them below the still-selectable ones
+  // so the dropdown doesn't force scrolling past options the user can't pick.
   const categoryOptions = [
     {
       value: OVERALL_VALUE,
@@ -76,7 +78,7 @@ export function BudgetFormModal({
       label: `${c.icon} ${c.name}`,
       disabled: !isEdit && existingCategoryIds.includes(c.id),
     })),
-  ];
+  ].sort((a, b) => Number(a.disabled) - Number(b.disabled));
 
   function handleSubmit() {
     if (!canSave) return;
