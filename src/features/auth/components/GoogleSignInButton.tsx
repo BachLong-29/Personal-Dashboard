@@ -43,33 +43,44 @@ interface GoogleSignInButtonProps {
 export function GoogleSignInButton({ onError }: GoogleSignInButtonProps) {
   const overlayRef = useRef<HTMLDivElement>(null);
   const [scriptReady, setScriptReady] = useState(false);
+  // Whether Google's real iframe button ever got rendered into the overlay —
+  // if not, the visible stone underneath is just decoration with nothing to click.
+  // A ref (not state) because it's only read inside the click handler, never rendered.
+  const buttonReady = useRef(false);
   const googleLogin = useGoogleLogin();
   const clientId = clientEnv.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
 
   useEffect(() => {
     if (!scriptReady || !clientId || !overlayRef.current || !window.google) return;
-    window.google.accounts.id.initialize({
-      client_id: clientId,
-      use_fedcm_for_button: true,
-      callback: (response) => {
-        googleLogin.mutate(response.credential, {
-          onError: (err) => {
-            console.error('Google login failed:', err);
-            onError?.();
-          },
-        });
-      },
-      error_callback: (error) => {
-        console.error('Google Identity Services error:', error);
-        onError?.();
-      },
-    });
-    window.google.accounts.id.renderButton(overlayRef.current, {
-      type: 'icon',
-      shape: 'circle',
-      theme: 'outline',
-      size: 'large',
-    });
+    try {
+      window.google.accounts.id.initialize({
+        client_id: clientId,
+        use_fedcm_for_button: true,
+        callback: (response) => {
+          googleLogin.mutate(response.credential, {
+            onError: (err) => {
+              console.error('Google login failed:', err);
+              onError?.();
+            },
+          });
+        },
+        error_callback: (error) => {
+          console.error('Google Identity Services error:', error);
+          onError?.();
+        },
+      });
+      window.google.accounts.id.renderButton(overlayRef.current, {
+        type: 'icon',
+        shape: 'circle',
+        theme: 'outline',
+        size: 'large',
+      });
+      buttonReady.current = true;
+    } catch (err) {
+      // Most commonly: this origin isn't in the client ID's "Authorized JavaScript
+      // origins" list — GIS throws synchronously instead of calling error_callback.
+      console.error('Google Identity Services failed to initialize:', err);
+    }
     // googleLogin is a fresh useMutation object every render — only re-init on script load
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [scriptReady, clientId]);
@@ -77,11 +88,30 @@ export function GoogleSignInButton({ onError }: GoogleSignInButtonProps) {
   if (!clientId) return null;
 
   return (
-    <div className="auth-stone stone-gold relative" aria-label="Continue with Google">
+    <div
+      className="auth-stone stone-gold relative"
+      aria-label="Continue with Google"
+      onClick={() => {
+        // The real click target is Google's invisible iframe overlay. If it never
+        // rendered (script blocked by an ad-blocker/extension, network failure, or
+        // this origin not authorized for the client ID), that overlay is empty and
+        // clicks on the visible stone would otherwise do nothing at all.
+        if (!buttonReady.current) {
+          console.error(
+            "Google sign-in button never became interactive — the accounts.google.com script may be blocked (ad-blocker/privacy extension) or this origin is not in the client ID's Authorized JavaScript origins.",
+          );
+          onError?.();
+        }
+      }}
+    >
       <Script
         src="https://accounts.google.com/gsi/client"
         strategy="afterInteractive"
         onLoad={() => setScriptReady(true)}
+        onError={() => {
+          console.error('Failed to load https://accounts.google.com/gsi/client');
+          onError?.();
+        }}
       />
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
         <path
