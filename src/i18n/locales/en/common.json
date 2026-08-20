@@ -39,6 +39,7 @@
     "rememberMe": "Remember me",
     "entering": "Entering...",
     "loginError": "Invalid email or password. Please try again.",
+    "googleLoginError": "Google sign-in failed. Please try again.",
     "footer": {
       "privacy": "Privacy",
       "terms": "Terms",

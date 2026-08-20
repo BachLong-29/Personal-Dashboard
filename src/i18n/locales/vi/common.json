@@ -39,6 +39,7 @@
     "rememberMe": "Ghi nhớ đăng nhập",
     "entering": "Đang vào...",
     "loginError": "Email hoặc mật khẩu không đúng. Vui lòng thử lại.",
+    "googleLoginError": "Đăng nhập Google thất bại. Vui lòng thử lại.",
     "footer": {
       "privacy": "Bảo mật",
       "terms": "Điều khoản",

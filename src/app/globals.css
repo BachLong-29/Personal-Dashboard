@@ -641,7 +641,6 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  flex-wrap: wrap;
   gap: 8px;
   max-width: calc(100vw - 24px);
   box-sizing: border-box;
@@ -660,13 +659,29 @@ body {
   pointer-events: none;
 }
 
+.xp-toast-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.xp-toast-label {
+  margin-left: 4px;
+}
+
 @media (max-width: 480px) {
   .xp-toast {
+    flex-direction: column;
+    gap: 4px;
     bottom: 76px;
-    padding: 8px 16px;
-    gap: 6px;
+    padding: 8px 20px;
+    border-radius: 16px;
     font-size: 12px;
     letter-spacing: 0.04em;
+  }
+
+  .xp-toast-label {
+    margin-left: 0;
   }
 }
 

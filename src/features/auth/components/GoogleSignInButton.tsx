@@ -15,12 +15,22 @@ declare global {
           initialize: (config: {
             client_id: string;
             callback: (response: { credential: string }) => void;
+            error_callback?: (error: { type: string }) => void;
+            // Chrome is phasing out the third-party cookies the legacy postMessage
+            // flow relies on to relay the credential back to this page; FedCM is the
+            // browser-mediated replacement and works even when those cookies are blocked.
+            use_fedcm_for_button?: boolean;
           }) => void;
           renderButton: (parent: HTMLElement, options: Record<string, unknown>) => void;
         };
       };
     };
   }
+}
+
+interface GoogleSignInButtonProps {
+  /** Called when the credential exchange fails — lets the parent surface an alert. */
+  onError?: () => void;
 }
 
 /**
@@ -30,7 +40,7 @@ declare global {
  * forbid recoloring the real button), so the credential flow still works.
  * Hidden entirely when `NEXT_PUBLIC_GOOGLE_CLIENT_ID` isn't configured.
  */
-export function GoogleSignInButton() {
+export function GoogleSignInButton({ onError }: GoogleSignInButtonProps) {
   const overlayRef = useRef<HTMLDivElement>(null);
   const [scriptReady, setScriptReady] = useState(false);
   const googleLogin = useGoogleLogin();
@@ -40,7 +50,19 @@ export function GoogleSignInButton() {
     if (!scriptReady || !clientId || !overlayRef.current || !window.google) return;
     window.google.accounts.id.initialize({
       client_id: clientId,
-      callback: (response) => googleLogin.mutate(response.credential),
+      use_fedcm_for_button: true,
+      callback: (response) => {
+        googleLogin.mutate(response.credential, {
+          onError: (err) => {
+            console.error('Google login failed:', err);
+            onError?.();
+          },
+        });
+      },
+      error_callback: (error) => {
+        console.error('Google Identity Services error:', error);
+        onError?.();
+      },
     });
     window.google.accounts.id.renderButton(overlayRef.current, {
       type: 'icon',
