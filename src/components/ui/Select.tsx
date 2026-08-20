@@ -294,7 +294,7 @@ export function Select({
               aria-labelledby={selectId}
               style={{ top: menuRect.top, left: menuRect.left, width: menuRect.width }}
               className={cn(
-                'fixed z-50 flex max-h-60 flex-col gap-0.5 overflow-y-auto rounded-[var(--r-md)]',
+                'fixed z-[1050] flex max-h-60 flex-col gap-0.5 overflow-y-auto rounded-[var(--r-md)]',
                 'border border-[var(--gold)] bg-[var(--bg-2)] p-1 shadow-[var(--sh-3),var(--sh-glow-gold)]',
                 menuClassName,
               )}
