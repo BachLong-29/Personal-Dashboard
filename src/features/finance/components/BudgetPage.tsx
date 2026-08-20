@@ -1,11 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useLocale, useTranslations } from 'next-intl';
 
 import { Button } from '@/components/ui/Button';
 import { Modal, ModalHead, ModalBody, ModalFoot } from '@/components/ui/Modal';
+import { Progress, type ProgressVariant } from '@/components/ui/Progress';
 import { SkelBlock } from '@/components/ui/Skeleton';
 import { GoldPanel } from '@/components/common/GoldPanel';
 import { useUIStore } from '@/stores/ui.store';
@@ -14,7 +15,7 @@ import type { Budget } from '@/types';
 import { useBudgets } from '../hooks/useBudgets';
 import { useFinanceCategories } from '../hooks/useFinanceCategories';
 import { useDeleteBudget } from '../hooks/useDeleteBudget';
-import { currentMonthKey, formatMonthLabel } from '../utils';
+import { currentMonthKey, formatCurrency, formatMonthLabel } from '../utils';
 import { BudgetFormModal } from './BudgetFormModal';
 import { BudgetList } from './BudgetList';
 import { FinancePageHeader } from './FinancePageHeader';
@@ -37,6 +38,13 @@ export function BudgetPage() {
 
   const canCreate = month >= currentMonthKey();
   const existingCategoryIds = budgets.map((b) => b.categoryId);
+
+  const totals = useMemo(() => {
+    const limit = budgets.reduce((sum, b) => sum + b.limit, 0);
+    const spent = budgets.reduce((sum, b) => sum + b.spent, 0);
+    const percent = limit > 0 ? Math.min(999, Math.round((spent / limit) * 100)) : 0;
+    return { limit, spent, percent };
+  }, [budgets]);
 
   function handleEdit(budget: Budget) {
     setEditingBudget(budget);
@@ -65,6 +73,7 @@ export function BudgetPage() {
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden p-3 sm:gap-4 sm:p-4">
       {/* ── Header ─────────────────────────────────────────────────────────── */}
+
       <motion.div
         initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
@@ -80,6 +89,45 @@ export function BudgetPage() {
               onChange={setMonth}
               className="h-9 w-full justify-between sm:h-auto sm:w-auto sm:justify-start"
             />
+          }
+          stat={
+            budgets.length > 0 ? (
+              <div className="flex flex-col gap-1.5">
+                <div className="flex items-baseline justify-between gap-3">
+                  <span className="text-[20px] font-bold tabular-nums text-[var(--gold)] [font-family:var(--f-title)] sm:text-[24px]">
+                    {formatCurrency(totals.spent)}{' '}
+                    <span className="text-[12px] font-normal text-[var(--text-lo)] sm:text-[13px]">
+                      / {formatCurrency(totals.limit)}
+                    </span>
+                  </span>
+                  <span
+                    className="shrink-0 text-[12px] font-bold tabular-nums"
+                    style={{
+                      color:
+                        totals.percent >= 100
+                          ? 'var(--crimson)'
+                          : totals.percent >= 80
+                            ? 'var(--gold)'
+                            : 'var(--text-mid)',
+                    }}
+                  >
+                    {totals.percent}%
+                  </span>
+                </div>
+                <Progress
+                  value={totals.spent}
+                  max={totals.limit}
+                  variant={totalsVariant(totals.percent)}
+                  tall
+                  shimmer={totals.percent < 100}
+                />
+              </div>
+            ) : undefined
+          }
+          subtitle={
+            budgets.length > 0
+              ? t('budget.summarySubtitle', { count: budgets.length, percent: totals.percent })
+              : undefined
           }
           action={{
             label: t('budget.setBudget'),
@@ -169,6 +217,12 @@ export function BudgetPage() {
       </Modal>
     </div>
   );
+}
+
+function totalsVariant(pct: number): ProgressVariant {
+  if (pct >= 100) return 'danger';
+  if (pct >= 80) return 'gold';
+  return 'mint';
 }
 
 // ── Panel header (GoldPanel provides the frame; this is just the title row) ────

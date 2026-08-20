@@ -954,7 +954,8 @@
       "newCategory": "New category",
       "limit": "Monthly limit",
       "forMonth": "For {month}",
-      "forMonthLabel": "Month"
+      "forMonthLabel": "Month",
+      "summarySubtitle": "{count, plural, =1 {# budget} other {# budgets}} · {percent}% used"
     },
     "transactions": {
       "title": "Transactions",
