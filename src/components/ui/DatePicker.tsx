@@ -138,15 +138,20 @@ export function DatePicker({
         onMouseEnter={() => setHovered(true)}
         onMouseLeave={() => setHovered(false)}
         className={cn(
-          'h-[42px] w-full flex items-center justify-between gap-3 px-4',
+          'h-[42px] w-full flex items-center justify-between gap-2 sm:gap-3 px-3 sm:px-4',
           'bg-[var(--bg-2)] border border-[var(--border)] rounded-[var(--r-md)]',
-          'text-[13px] text-left transition-all duration-[180ms] [transition-timing-function:var(--ease-out)]',
+          'text-[11px] sm:text-[13px] text-left transition-all duration-[180ms] [transition-timing-function:var(--ease-out)]',
           'hover:border-[var(--border-hi)] hover:bg-[var(--bg-3)] focus:outline-none',
           open && 'border-[var(--gold)] shadow-[var(--sh-3),var(--sh-glow-gold)]',
           disabled && 'opacity-40 cursor-not-allowed',
         )}
       >
-        <span className={cn(value ? 'text-[var(--text-hi)]' : 'text-[var(--text-dim)]')}>
+        <span
+          className={cn(
+            'min-w-0 flex-1 truncate whitespace-nowrap',
+            value ? 'text-[var(--text-hi)]' : 'text-[var(--text-dim)]',
+          )}
+        >
           {value ? formatDate(value, months) : (placeholder ?? t('datePicker.placeholder'))}
         </span>
         <span
