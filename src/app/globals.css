@@ -640,7 +640,11 @@ body {
   padding: 10px 24px;
   display: flex;
   align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
   gap: 8px;
+  max-width: calc(100vw - 24px);
+  box-sizing: border-box;
   font-family: var(--font-title);
   font-size: 14px;
   font-weight: 700;
@@ -654,6 +658,16 @@ body {
   z-index: 1000;
   letter-spacing: 0.08em;
   pointer-events: none;
+}
+
+@media (max-width: 480px) {
+  .xp-toast {
+    bottom: 76px;
+    padding: 8px 16px;
+    gap: 6px;
+    font-size: 12px;
+    letter-spacing: 0.04em;
+  }
 }
 
 @keyframes toast-in {
