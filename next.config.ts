@@ -10,6 +10,11 @@ const nextConfig: NextConfig = {
         protocol: 'https',
         hostname: 'res.cloudinary.com',
       },
+      {
+        protocol: 'https',
+        // Google profile picture (payload.picture) saved as the avatar on Google sign-up.
+        hostname: '*.googleusercontent.com',
+      },
     ],
   },
 };
