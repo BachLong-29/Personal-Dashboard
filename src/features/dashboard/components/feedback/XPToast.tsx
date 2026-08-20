@@ -18,12 +18,16 @@ export function XPToast({ xp, coins, onDone }: XPToastProps) {
 
   return (
     <div className="xp-toast">
-      <span>⚡</span>
-      <span>+{xp} XP</span>
-      <span style={{ color: 'var(--gold)', fontSize: 11 }}>
-        +{coins} <CoinIcon />
+      <span className="xp-toast-row">
+        <span>⚡</span>
+        <span>+{xp} XP</span>
+        <span style={{ color: 'var(--gold)', fontSize: 11 }}>
+          +{coins} <CoinIcon />
+        </span>
       </span>
-      <span style={{ color: 'var(--text-mid)', fontSize: 10, marginLeft: 4 }}>Quest Complete!</span>
+      <span className="xp-toast-label" style={{ color: 'var(--text-mid)', fontSize: 10 }}>
+        Quest Complete!
+      </span>
     </div>
   );
 }
