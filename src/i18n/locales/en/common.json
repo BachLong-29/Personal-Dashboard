@@ -964,6 +964,7 @@
       "editTitle": "Edit transaction",
       "wallet": "Wallet",
       "category": "Category",
+      "newCategory": "New category",
       "amount": "Amount",
       "note": "Note",
       "notePlaceholder": "What was it for?",
