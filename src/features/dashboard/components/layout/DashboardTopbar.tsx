@@ -34,6 +34,7 @@ const DashboardTopbar = (props: DashboardTopbarProps) => {
   const pathname = usePathname();
   const logout = useLogout();
   const openSearch = useUIStore((s) => s.openSearch);
+  const openQuickAddTask = useUIStore((s) => s.openQuickAddTask);
 
   const { data: profileData } = useProfile();
   const profile = profileData?.profile;
@@ -78,6 +79,14 @@ const DashboardTopbar = (props: DashboardTopbarProps) => {
           </Link>
           <button type="button" className={tabletMenuBtn} onClick={openSearch} aria-label="Search">
             <span className="text-[15px] leading-none text-[var(--gold)]">⌕</span>
+          </button>
+          <button
+            type="button"
+            className={tabletMenuBtn}
+            onClick={openQuickAddTask}
+            aria-label={tDash('quickAddTask.button')}
+          >
+            <span className="text-[15px] leading-none text-[var(--gold)]">＋</span>
           </button>
           <NotificationBell />
         </div>

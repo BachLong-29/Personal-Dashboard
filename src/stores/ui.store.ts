@@ -27,6 +27,7 @@ interface UIState {
   /** Kanban board: hide status columns that have no tasks */
   hideEmptyKanbanColumns: boolean;
   searchOpen: boolean;
+  quickAddTaskOpen: boolean;
   /** Task ID to restore + edit after a "Quest Failed" notification click */
   pendingRestoreTaskId: string | null;
   pendingScheduleNav: PendingScheduleNav | null;
@@ -39,6 +40,9 @@ interface UIState {
   openSearch: () => void;
   closeSearch: () => void;
   toggleSearch: () => void;
+  openQuickAddTask: () => void;
+  closeQuickAddTask: () => void;
+  toggleQuickAddTask: () => void;
   setPendingRestoreTaskId: (id: string | null) => void;
   setPendingScheduleNav: (nav: PendingScheduleNav | null) => void;
 }
@@ -51,6 +55,7 @@ export const useUIStore = create<UIState>()(
       projectViewMode: 'kanban',
       hideEmptyKanbanColumns: false,
       searchOpen: false,
+      quickAddTaskOpen: false,
       pendingRestoreTaskId: null,
       pendingScheduleNav: null,
       setProjectViewMode: (mode) => set({ projectViewMode: mode }),
@@ -59,6 +64,9 @@ export const useUIStore = create<UIState>()(
       openSearch: () => set({ searchOpen: true }),
       closeSearch: () => set({ searchOpen: false }),
       toggleSearch: () => set((state) => ({ searchOpen: !state.searchOpen })),
+      openQuickAddTask: () => set({ quickAddTaskOpen: true }),
+      closeQuickAddTask: () => set({ quickAddTaskOpen: false }),
+      toggleQuickAddTask: () => set((state) => ({ quickAddTaskOpen: !state.quickAddTaskOpen })),
       setPendingRestoreTaskId: (id) => set({ pendingRestoreTaskId: id }),
       setPendingScheduleNav: (nav) => set({ pendingScheduleNav: nav }),
       addToast: (toast) =>

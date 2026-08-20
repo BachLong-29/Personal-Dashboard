@@ -145,6 +145,9 @@
     "streakDays": "🔥 {count} วันติดต่อกัน",
     "achievements": "ความสำเร็จ",
     "questLog": "บันทึกภารกิจ",
+    "quickAddTask": {
+      "button": "เพิ่มงานด่วน"
+    },
     "tabs": {
       "quests": "ภารกิจ",
       "habits": "นิสัย",

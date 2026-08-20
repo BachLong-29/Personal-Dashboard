@@ -6,6 +6,7 @@ import { TOKEN_KEYS } from '@/constants/auth';
 import { defaultLocale } from '@/i18n/config';
 import { ToastContainer } from '@/components/common/ToastContainer';
 import { GlobalSearch } from '@/features/search/components/GlobalSearch';
+import { QuickAddTask } from '@/features/tasks/components/shared/QuickAddTask';
 
 async function getSession() {
   const cookieStore = await cookies();
@@ -37,6 +38,7 @@ export default async function ProtectedLayout({
     <>
       {children}
       <GlobalSearch />
+      <QuickAddTask />
       <ToastContainer />
     </>
   );
