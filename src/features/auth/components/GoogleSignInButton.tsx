@@ -16,10 +16,6 @@ declare global {
             client_id: string;
             callback: (response: { credential: string }) => void;
             error_callback?: (error: { type: string }) => void;
-            // Chrome is phasing out the third-party cookies the legacy postMessage
-            // flow relies on to relay the credential back to this page; FedCM is the
-            // browser-mediated replacement and works even when those cookies are blocked.
-            use_fedcm_for_button?: boolean;
           }) => void;
           renderButton: (parent: HTMLElement, options: Record<string, unknown>) => void;
         };
@@ -55,7 +51,6 @@ export function GoogleSignInButton({ onError }: GoogleSignInButtonProps) {
     try {
       window.google.accounts.id.initialize({
         client_id: clientId,
-        use_fedcm_for_button: true,
         callback: (response) => {
           googleLogin.mutate(response.credential, {
             onError: (err) => {
