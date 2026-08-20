@@ -64,7 +64,13 @@ function BudgetCard({ budget, icon, onEdit, onDelete, delay }: BudgetCardProps) 
         </span>
       </div>
 
-      <Progress value={budget.spent} max={budget.limit} variant={progressVariant(pct)} tall />
+      <Progress
+        value={budget.spent}
+        max={budget.limit}
+        variant={progressVariant(pct)}
+        tall
+        shimmer={pct < 100}
+      />
 
       <div className="flex items-center justify-between text-[11px]">
         <span className="text-[var(--text-hi)] tabular-nums">

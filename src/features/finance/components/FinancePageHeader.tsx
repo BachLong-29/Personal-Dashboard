@@ -54,7 +54,7 @@ export function FinancePageHeader({
     : 'min-w-0 truncate text-[16px] font-bold tracking-[0.02em] text-[var(--text-hi)] [font-family:var(--f-title)] sm:text-[20px]';
 
   const rowClassName = hideTitleOnMobile
-    ? 'flex w-full items-center gap-2 sm:flex-wrap sm:justify-between sm:gap-x-3 sm:gap-y-2'
+    ? 'order-3 flex w-full items-center gap-2 sm:order-1 sm:flex-wrap sm:justify-between sm:gap-x-3 sm:gap-y-2'
     : 'flex flex-wrap items-center justify-between gap-x-3 gap-y-2';
 
   const clusterClassName = hideTitleOnMobile
@@ -64,6 +64,15 @@ export function FinancePageHeader({
   const controlsWrapClassName = hideTitleOnMobile
     ? 'min-w-0 flex-1 sm:w-auto sm:flex-none'
     : undefined;
+
+  // With the title hidden on mobile, `controls` (e.g. a month stepper) reads as secondary next to
+  // the stat — so on mobile it drops to the bottom, below the stat/subtitle; `sm:order-*` restores
+  // the normal row-first layout once the title is visible again.
+  const statClassName = hideTitleOnMobile ? 'order-1 sm:order-2' : undefined;
+  const subtitleClassName = cn(
+    'truncate text-[10px] text-[var(--text-mid)] sm:text-[11px]',
+    hideTitleOnMobile && 'order-2 hidden sm:order-3 sm:block',
+  );
 
   return (
     <GoldPanel className={cn('flex flex-col gap-2 p-3 sm:p-4', className)}>
@@ -87,11 +96,9 @@ export function FinancePageHeader({
         </div>
       </div>
 
-      {stat}
+      {stat && <div className={statClassName}>{stat}</div>}
 
-      {subtitle && (
-        <p className="truncate text-[10px] text-[var(--text-mid)] sm:text-[11px]">{subtitle}</p>
-      )}
+      {subtitle && <p className={subtitleClassName}>{subtitle}</p>}
     </GoldPanel>
   );
 }

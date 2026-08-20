@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/Button';
 import { Modal, ModalHead, ModalBody, ModalFoot } from '@/components/ui/Modal';
 import { SkelBlock } from '@/components/ui/Skeleton';
 import { GoldPanel } from '@/components/common/GoldPanel';
+import { cn } from '@/libs/utils';
 import { useUIStore } from '@/stores/ui.store';
 import type { FinanceCategory, FinanceCategoryType } from '@/types';
 
@@ -231,9 +232,16 @@ function CategoryGroup({
   editLabel,
   deleteLabel,
 }: CategoryGroupProps) {
+  const [isOpen, setIsOpen] = useState(true);
+
   return (
     <section>
-      <div className="mb-2 flex items-center gap-2">
+      <button
+        type="button"
+        onClick={() => setIsOpen((v) => !v)}
+        aria-expanded={isOpen}
+        className="mb-2 flex w-full items-center gap-2 text-left sm:pointer-events-none"
+      >
         <span
           className="h-2 w-2 shrink-0 rounded-full"
           style={{ background: accent }}
@@ -243,68 +251,92 @@ function CategoryGroup({
           {label}
         </h2>
         <span className="text-[10px] tabular-nums text-[var(--text-mid)]">{categories.length}</span>
-      </div>
-
-      {categories.length === 0 ? (
-        <p className="rounded-[var(--r-lg)] border border-dashed border-[var(--border)] px-4 py-6 text-center text-[11px] text-[var(--text-mid)]">
-          {emptyLabel}
-        </p>
-      ) : (
-        <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-3">
-          {categories.map((c) => {
-            const color = COLOR_CSS[c.color];
-            return (
-              <li
-                key={c.id}
-                className="group flex items-center gap-3 rounded-[var(--r-lg)] border border-[var(--border)] bg-[var(--panel)] px-3 py-2.5 transition-colors hover:border-[var(--border-hi)]"
-              >
-                <span
-                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[var(--r-sm)] border text-[17px]"
-                  style={{
-                    background: `color-mix(in oklch, ${color} 14%, transparent)`,
-                    borderColor: `color-mix(in oklch, ${color} 35%, transparent)`,
-                  }}
-                >
-                  <Icon icon={c.icon} />
-                </span>
-
-                <span className="min-w-0 flex-1 truncate text-[13px] font-bold text-[var(--text-hi)]">
-                  {c.name}
-                </span>
-
-                <span className="flex shrink-0 gap-1">
-                  <button
-                    type="button"
-                    onClick={() => onEdit(c)}
-                    className={iconBtn}
-                    title={editLabel}
-                    aria-label={`${editLabel} ${c.name}`}
-                  >
-                    ✎
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => onDelete(c)}
-                    className={`${iconBtn} hover:border-[var(--crimson)] hover:text-[var(--crimson)]`}
-                    title={deleteLabel}
-                    aria-label={`${deleteLabel} ${c.name}`}
-                  >
-                    <TrashIcon />
-                  </button>
-                </span>
-              </li>
-            );
-          })}
-        </ul>
-      )}
-
-      <button
-        type="button"
-        onClick={onAdd}
-        className="mt-2 inline-flex items-center gap-1 rounded-[var(--r-sm)] border border-dashed border-[var(--border)] px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.08em] text-[var(--text-mid)] transition-colors hover:border-[var(--gold)] hover:text-[var(--gold)]"
-      >
-        ＋ {addLabel}
+        <svg
+          viewBox="0 0 20 20"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          className={cn(
+            'h-3.5 w-3.5 shrink-0 text-[var(--text-mid)] transition-transform duration-200 sm:hidden',
+            isOpen && 'rotate-180',
+          )}
+          aria-hidden
+        >
+          <path d="M5 7.5l5 5 5-5" />
+        </svg>
       </button>
+
+      <div
+        className={cn(
+          'grid transition-[grid-template-rows] duration-300 ease-out sm:!grid-rows-[1fr]',
+          isOpen ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]',
+        )}
+      >
+        <div className="overflow-hidden">
+          {categories.length === 0 ? (
+            <p className="rounded-[var(--r-lg)] border border-dashed border-[var(--border)] px-4 py-6 text-center text-[11px] text-[var(--text-mid)]">
+              {emptyLabel}
+            </p>
+          ) : (
+            <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-3">
+              {categories.map((c) => {
+                const color = COLOR_CSS[c.color];
+                return (
+                  <li
+                    key={c.id}
+                    className="group flex items-center gap-3 rounded-[var(--r-lg)] border border-[var(--border)] bg-[var(--panel)] px-3 py-2.5 transition-colors hover:border-[var(--border-hi)]"
+                  >
+                    <span
+                      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[var(--r-sm)] border text-[17px]"
+                      style={{
+                        background: `color-mix(in oklch, ${color} 14%, transparent)`,
+                        borderColor: `color-mix(in oklch, ${color} 35%, transparent)`,
+                      }}
+                    >
+                      <Icon icon={c.icon} />
+                    </span>
+
+                    <span className="min-w-0 flex-1 truncate text-[13px] font-bold text-[var(--text-hi)]">
+                      {c.name}
+                    </span>
+
+                    <span className="flex shrink-0 gap-1">
+                      <button
+                        type="button"
+                        onClick={() => onEdit(c)}
+                        className={iconBtn}
+                        title={editLabel}
+                        aria-label={`${editLabel} ${c.name}`}
+                      >
+                        ✎
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => onDelete(c)}
+                        className={`${iconBtn} hover:border-[var(--crimson)] hover:text-[var(--crimson)]`}
+                        title={deleteLabel}
+                        aria-label={`${deleteLabel} ${c.name}`}
+                      >
+                        <TrashIcon />
+                      </button>
+                    </span>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+
+          <button
+            type="button"
+            onClick={onAdd}
+            className="mt-2 inline-flex items-center gap-1 rounded-[var(--r-sm)] border border-dashed border-[var(--border)] px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.08em] text-[var(--text-mid)] transition-colors hover:border-[var(--gold)] hover:text-[var(--gold)]"
+          >
+            ＋ {addLabel}
+          </button>
+        </div>
+      </div>
     </section>
   );
 }

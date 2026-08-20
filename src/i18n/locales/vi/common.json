@@ -954,7 +954,8 @@
       "newCategory": "Danh mục mới",
       "limit": "Hạn mức tháng",
       "forMonth": "Cho {month}",
-      "forMonthLabel": "Tháng"
+      "forMonthLabel": "Tháng",
+      "summarySubtitle": "{count, plural, other {# ngân sách}} · đã dùng {percent}%"
     },
     "transactions": {
       "title": "Giao dịch",

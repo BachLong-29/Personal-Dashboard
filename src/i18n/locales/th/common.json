@@ -954,7 +954,8 @@
       "newCategory": "หมวดใหม่",
       "limit": "วงเงินต่อเดือน",
       "forMonth": "สำหรับ {month}",
-      "forMonthLabel": "เดือน"
+      "forMonthLabel": "เดือน",
+      "summarySubtitle": "{count, plural, other {# งบประมาณ}} · ใช้ไปแล้ว {percent}%"
     },
     "transactions": {
       "title": "รายการ",
