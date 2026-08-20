@@ -17,6 +17,7 @@ import { formatAmountInput, toAmountDigits } from '../utils';
 import { useCreateTransaction } from '../hooks/useCreateTransaction';
 import { useUpdateTransaction } from '../hooks/useUpdateTransaction';
 import { useDeleteTransaction } from '../hooks/useDeleteTransaction';
+import { FinanceCategoryFormModal } from './FinanceCategoryFormModal';
 
 function today(): string {
   return new Date().toISOString().substring(0, 10);
@@ -57,6 +58,7 @@ export function TransactionFormModal({
   const [amount, setAmount] = useState('');
   const [note, setNote] = useState('');
   const [date, setDate] = useState(today());
+  const [showNewCategory, setShowNewCategory] = useState(false);
 
   // Re-seed form fields whenever the modal opens for a different transaction/context.
   // Adjusted during render (not an effect) to avoid an extra render pass on open.
@@ -115,163 +117,192 @@ export function TransactionFormModal({
   }
 
   return (
-    <Modal open={open} onClose={onClose} maxWidth="480px">
-      <ModalHead
-        tag={isEdit ? t('transactions.editTag') : t('transactions.newTag')}
-        title={`${isEdit ? '✎' : '＋'} ${
-          isEdit ? t('transactions.editTitle') : t('transactions.newTitle')
-        }`}
-      />
-      <ModalBody className="max-h-[calc(80vh-130px)] overflow-y-auto flex flex-col gap-4">
-        {/* Type toggle */}
-        <div className="relative flex gap-1 rounded-[var(--r-sm)] border border-[var(--border)] bg-[var(--panel)] p-1">
-          {(['expense', 'income'] as TransactionType[]).map((option) => (
-            <button
-              key={option}
-              type="button"
-              onClick={() => handleTypeChange(option)}
-              className="relative flex-1 py-2 text-[12px] font-bold uppercase tracking-[0.06em] [font-family:var(--f-title)]"
-            >
-              {type === option && (
-                <motion.span
-                  layoutId="tx-type-pill"
-                  transition={{ type: 'spring', stiffness: 400, damping: 32 }}
-                  className={cn(
-                    'absolute inset-0 rounded-[var(--r-sm)]',
-                    option === 'income'
-                      ? 'bg-[oklch(0.76_0.14_162_/_0.14)]'
-                      : 'bg-[oklch(0.72_0.18_5_/_0.14)]',
-                  )}
-                />
-              )}
-              <span
-                className="relative"
-                style={{
-                  color:
-                    type === option
-                      ? option === 'income'
-                        ? 'var(--mint)'
-                        : 'var(--rose)'
-                      : 'var(--text-mid)',
-                }}
+    <>
+      <Modal open={open} onClose={onClose} maxWidth="480px">
+        <ModalHead
+          tag={isEdit ? t('transactions.editTag') : t('transactions.newTag')}
+          title={`${isEdit ? '✎' : '＋'} ${
+            isEdit ? t('transactions.editTitle') : t('transactions.newTitle')
+          }`}
+        />
+        <ModalBody className="max-h-[calc(80vh-130px)] overflow-y-auto flex flex-col gap-4">
+          {/* Type toggle */}
+          <div className="relative flex gap-1 rounded-[var(--r-sm)] border border-[var(--border)] bg-[var(--panel)] p-1">
+            {(['expense', 'income'] as TransactionType[]).map((option) => (
+              <button
+                key={option}
+                type="button"
+                onClick={() => handleTypeChange(option)}
+                className="relative flex-1 py-2 text-[12px] font-bold uppercase tracking-[0.06em] [font-family:var(--f-title)]"
               >
-                {option === 'income'
-                  ? `↓ ${t('transactions.income')}`
-                  : `↑ ${t('transactions.expense')}`}
-              </span>
-            </button>
-          ))}
-        </div>
-
-        {/* Amount */}
-        <Field label={t('transactions.amount')}>
-          <input
-            type="text"
-            inputMode="numeric"
-            className={cn(input, 'text-[18px] font-bold tabular-nums')}
-            value={formatAmountInput(amount)}
-            onChange={(e) => setAmount(toAmountDigits(e.target.value))}
-            placeholder="0"
-            autoFocus
-          />
-        </Field>
-
-        {/* Wallet */}
-        <Field label={t('transactions.wallet')}>
-          <Select
-            options={wallets.map((w) => ({ value: w.id, label: `${w.icon} ${w.name}` }))}
-            value={walletId}
-            onValueChange={setWalletId}
-            placeholder={t('transactions.wallet')}
-          />
-        </Field>
-
-        {/* Category grid — both type's chip sets are stacked in the same CSS grid cell, so the
-            container's height is always the taller of the two and never jumps on toggle. */}
-        <Field label={t('transactions.category')}>
-          <div className="grid">
-            {(['expense', 'income'] as TransactionType[]).map((section) => {
-              const active = type === section;
-              return (
-                <div
-                  key={section}
-                  aria-hidden={!active}
-                  className={cn(
-                    'col-start-1 row-start-1 flex flex-wrap content-start gap-1.5 transition-opacity duration-150',
-                    active ? 'opacity-100' : 'pointer-events-none opacity-0',
-                  )}
+                {type === option && (
+                  <motion.span
+                    layoutId="tx-type-pill"
+                    transition={{ type: 'spring', stiffness: 400, damping: 32 }}
+                    className={cn(
+                      'absolute inset-0 rounded-[var(--r-sm)]',
+                      option === 'income'
+                        ? 'bg-[oklch(0.76_0.14_162_/_0.14)]'
+                        : 'bg-[oklch(0.72_0.18_5_/_0.14)]',
+                    )}
+                  />
+                )}
+                <span
+                  className="relative"
+                  style={{
+                    color:
+                      type === option
+                        ? option === 'income'
+                          ? 'var(--mint)'
+                          : 'var(--rose)'
+                        : 'var(--text-mid)',
+                  }}
                 >
-                  {categories
-                    .filter((c) => c.type === section)
-                    .map((c) => {
-                      const accent = COLOR_CSS[c.color];
-                      const selected = categoryId === c.id;
-                      return (
-                        <button
-                          key={c.id}
-                          type="button"
-                          tabIndex={active ? 0 : -1}
-                          onClick={() => setCategoryId(c.id)}
-                          className={cn(
-                            'flex items-center gap-1.5 rounded-[var(--r-sm)] border px-2.5 py-1.5 text-[11px] font-semibold transition-all',
-                            selected ? 'scale-[1.03]' : 'opacity-70 hover:opacity-100',
-                          )}
-                          style={{
-                            borderColor: selected ? accent : 'var(--border)',
-                            background: selected
-                              ? `color-mix(in oklch, ${accent} 14%, transparent)`
-                              : 'transparent',
-                            color: selected ? accent : 'var(--text-mid)',
-                          }}
-                        >
-                          <span>{c.icon}</span>
-                          {c.name}
-                        </button>
-                      );
-                    })}
-                </div>
-              );
-            })}
+                  {option === 'income'
+                    ? `↓ ${t('transactions.income')}`
+                    : `↑ ${t('transactions.expense')}`}
+                </span>
+              </button>
+            ))}
           </div>
-        </Field>
 
-        {/* Note */}
-        <Field label={t('transactions.note')}>
-          <input
-            className={input}
-            value={note}
-            onChange={(e) => setNote(e.target.value)}
-            maxLength={200}
-            placeholder={t('transactions.notePlaceholder')}
-          />
-        </Field>
+          {/* Amount */}
+          <Field label={t('transactions.amount')}>
+            <input
+              type="text"
+              inputMode="numeric"
+              className={cn(input, 'text-[18px] font-bold tabular-nums')}
+              value={formatAmountInput(amount)}
+              onChange={(e) => setAmount(toAmountDigits(e.target.value))}
+              placeholder="0"
+              autoFocus
+            />
+          </Field>
 
-        {/* Date */}
-        <Field label={t('transactions.date')}>
-          <input
-            type="date"
-            className={input}
-            value={date}
-            onChange={(e) => setDate(e.target.value)}
-          />
-        </Field>
-      </ModalBody>
-      <ModalFoot className={isEdit ? 'justify-between' : undefined}>
-        {isEdit && (
-          <Button variant="danger" size="sm" onClick={handleDelete} isLoading={deleteTx.isPending}>
-            {t('common.delete')}
-          </Button>
-        )}
-        <div className="flex gap-2">
-          <Button variant="ghost" onClick={onClose} disabled={saving}>
-            {t('common.cancel')}
-          </Button>
-          <Button variant="primary" onClick={handleSubmit} disabled={!canSave} isLoading={saving}>
-            ✦ {isEdit ? t('common.save') : t('common.create')}
-          </Button>
-        </div>
-      </ModalFoot>
-    </Modal>
+          {/* Wallet */}
+          <Field label={t('transactions.wallet')}>
+            <Select
+              options={wallets.map((w) => ({ value: w.id, label: `${w.icon} ${w.name}` }))}
+              value={walletId}
+              onValueChange={setWalletId}
+              placeholder={t('transactions.wallet')}
+            />
+          </Field>
+
+          {/* Category grid — both type's chip sets are stacked in the same CSS grid cell, so the
+            container's height is always the taller of the two and never jumps on toggle. */}
+          <div className="flex flex-col gap-1.5">
+            <div className="flex items-center justify-between">
+              <span className="text-[9px] font-bold tracking-[0.12em] uppercase text-[var(--text-lo)] [font-family:var(--f-title)]">
+                {t('transactions.category')}
+              </span>
+              <button
+                type="button"
+                onClick={() => setShowNewCategory(true)}
+                className="text-[10px] font-bold uppercase tracking-[0.06em] text-[var(--gold)] hover:underline"
+              >
+                ＋ {t('transactions.newCategory')}
+              </button>
+            </div>
+            <div className="grid">
+              {(['expense', 'income'] as TransactionType[]).map((section) => {
+                const active = type === section;
+                return (
+                  <div
+                    key={section}
+                    aria-hidden={!active}
+                    className={cn(
+                      'col-start-1 row-start-1 flex flex-wrap content-start gap-1.5 transition-opacity duration-150',
+                      active ? 'opacity-100' : 'pointer-events-none opacity-0',
+                    )}
+                  >
+                    {categories
+                      .filter((c) => c.type === section)
+                      .map((c) => {
+                        const accent = COLOR_CSS[c.color];
+                        const selected = categoryId === c.id;
+                        return (
+                          <button
+                            key={c.id}
+                            type="button"
+                            tabIndex={active ? 0 : -1}
+                            onClick={() => setCategoryId(c.id)}
+                            className={cn(
+                              'flex items-center gap-1.5 rounded-[var(--r-sm)] border px-2.5 py-1.5 text-[11px] font-semibold transition-all',
+                              selected ? 'scale-[1.03]' : 'opacity-70 hover:opacity-100',
+                            )}
+                            style={{
+                              borderColor: selected ? accent : 'var(--border)',
+                              background: selected
+                                ? `color-mix(in oklch, ${accent} 14%, transparent)`
+                                : 'transparent',
+                              color: selected ? accent : 'var(--text-mid)',
+                            }}
+                          >
+                            <span>{c.icon}</span>
+                            {c.name}
+                          </button>
+                        );
+                      })}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Note */}
+          <Field label={t('transactions.note')}>
+            <input
+              className={input}
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              maxLength={200}
+              placeholder={t('transactions.notePlaceholder')}
+            />
+          </Field>
+
+          {/* Date */}
+          <Field label={t('transactions.date')}>
+            <input
+              type="date"
+              className={input}
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
+            />
+          </Field>
+        </ModalBody>
+        <ModalFoot className={isEdit ? 'justify-between' : undefined}>
+          {isEdit && (
+            <Button
+              variant="danger"
+              size="sm"
+              onClick={handleDelete}
+              isLoading={deleteTx.isPending}
+            >
+              {t('common.delete')}
+            </Button>
+          )}
+          <div className="flex gap-2">
+            <Button variant="ghost" onClick={onClose} disabled={saving}>
+              {t('common.cancel')}
+            </Button>
+            <Button variant="primary" onClick={handleSubmit} disabled={!canSave} isLoading={saving}>
+              ✦ {isEdit ? t('common.save') : t('common.create')}
+            </Button>
+          </div>
+        </ModalFoot>
+      </Modal>
+
+      <FinanceCategoryFormModal
+        open={showNewCategory}
+        onClose={() => setShowNewCategory(false)}
+        defaultType={type}
+        lockType
+        onSaved={(mode, created) => {
+          if (mode === 'created') setCategoryId(created.id);
+        }}
+      />
+    </>
   );
 }
 

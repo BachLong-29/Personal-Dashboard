@@ -145,6 +145,9 @@
     "streakDays": "🔥 {count} ngày liên tiếp",
     "achievements": "Thành tích",
     "questLog": "Nhật ký nhiệm vụ",
+    "quickAddTask": {
+      "button": "Tạo task nhanh"
+    },
     "tabs": {
       "quests": "Nhiệm vụ",
       "habits": "Thói quen",
@@ -964,6 +967,7 @@
       "editTitle": "Sửa giao dịch",
       "wallet": "Ví",
       "category": "Danh mục",
+      "newCategory": "Danh mục mới",
       "amount": "Số tiền",
       "note": "Ghi chú",
       "notePlaceholder": "Chi cho việc gì?",

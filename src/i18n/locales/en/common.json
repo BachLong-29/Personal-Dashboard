@@ -145,6 +145,9 @@
     "streakDays": "🔥 {count} Day Streak",
     "achievements": "Achievements",
     "questLog": "Quest Log",
+    "quickAddTask": {
+      "button": "Quick add task"
+    },
     "tabs": {
       "quests": "Quests",
       "habits": "Habits",
@@ -964,6 +967,7 @@
       "editTitle": "Edit transaction",
       "wallet": "Wallet",
       "category": "Category",
+      "newCategory": "New category",
       "amount": "Amount",
       "note": "Note",
       "notePlaceholder": "What was it for?",
