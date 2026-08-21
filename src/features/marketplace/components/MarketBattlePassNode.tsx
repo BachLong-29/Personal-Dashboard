@@ -26,7 +26,7 @@ export function MarketBattlePassNode({ node }: MarketBattlePassNodeProps) {
 }
 
 const bpNode =
-  'shrink-0 w-[110px] bg-[var(--panel2)] border-[1.5px] border-[var(--border)] rounded-[10px] px-2 py-3 text-center cursor-pointer transition-all duration-200 relative hover:-translate-y-[3px] hover:border-[var(--gold)]';
+  'shrink-0 w-[92px] sm:w-[110px] bg-[var(--panel2)] border-[1.5px] border-[var(--border)] rounded-[10px] px-2 py-3 text-center cursor-pointer transition-all duration-200 relative hover:-translate-y-[3px] hover:border-[var(--gold)]';
 const bpNodeClaimed =
   'bg-[linear-gradient(180deg,oklch(0.4_0.15_145_/_0.15),var(--panel2))] border-[oklch(0.6_0.18_145_/_0.4)] after:content-[\"✓\"] after:absolute after:top-[6px] after:right-[6px] after:w-[18px] after:h-[18px] after:rounded-full after:bg-[oklch(0.6_0.18_145)] after:text-white after:text-[10px] after:flex after:items-center after:justify-center after:font-bold';
 const bpNodeCurrent =

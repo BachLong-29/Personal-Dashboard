@@ -81,18 +81,18 @@ export function MarketFeaturedBanner({ featured, onClaim }: MarketFeaturedBanner
 }
 
 const featuredWrap =
-  'relative grid grid-cols-[1fr_320px] gap-6 bg-[radial-gradient(circle_at_80%_50%,oklch(0.55_0.22_320_/_0.3),transparent_60%),radial-gradient(circle_at_20%_50%,oklch(0.55_0.22_280_/_0.25),transparent_60%),linear-gradient(135deg,oklch(0.18_0.15_295)_0%,oklch(0.12_0.08_280)_100%)] border border-transparent [border-image:linear-gradient(135deg,var(--gold),var(--violet),var(--rose),var(--gold))_1] rounded-[14px] px-8 py-7 overflow-hidden mb-8 before:content-[\"\"] before:absolute before:inset-0 before:pointer-events-none before:bg-[repeating-linear-gradient(45deg,transparent_0,transparent_60px,oklch(1_0_0_/_0.015)_60px,oklch(1_0_0_/_0.015)_62px)] after:content-[\"\"] after:absolute after:top-[-50%] after:right-[-20%] after:w-[60%] after:h-[200%] after:bg-[radial-gradient(ellipse,oklch(0.85_0.15_320_/_0.15),transparent_60%)] after:blur-[40px] after:animate-[marketplace-aurora-drift_8s_ease-in-out_infinite] after:pointer-events-none';
+  'relative grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-5 lg:gap-6 bg-[radial-gradient(circle_at_80%_50%,oklch(0.55_0.22_320_/_0.3),transparent_60%),radial-gradient(circle_at_20%_50%,oklch(0.55_0.22_280_/_0.25),transparent_60%),linear-gradient(135deg,oklch(0.18_0.15_295)_0%,oklch(0.12_0.08_280)_100%)] border border-transparent [border-image:linear-gradient(135deg,var(--gold),var(--violet),var(--rose),var(--gold))_1] rounded-[14px] px-4 py-5 sm:px-6 sm:py-6 lg:px-8 lg:py-7 overflow-hidden mb-6 sm:mb-8 before:content-[\"\"] before:absolute before:inset-0 before:pointer-events-none before:bg-[repeating-linear-gradient(45deg,transparent_0,transparent_60px,oklch(1_0_0_/_0.015)_60px,oklch(1_0_0_/_0.015)_62px)] after:content-[\"\"] after:absolute after:top-[-50%] after:right-[-20%] after:w-[60%] after:h-[200%] after:bg-[radial-gradient(ellipse,oklch(0.85_0.15_320_/_0.15),transparent_60%)] after:blur-[40px] after:animate-[marketplace-aurora-drift_8s_ease-in-out_infinite] after:pointer-events-none';
 const featuredContent = 'relative z-[2]';
 const featuredTag =
-  'inline-flex items-center gap-1.5 font-[var(--font-title)] text-[10px] tracking-[0.3em] font-bold mb-2';
+  'inline-flex items-center gap-1.5 font-[var(--font-title)] text-[9px] sm:text-[10px] tracking-[0.3em] font-bold mb-2';
 const featuredTagDiamond = 'text-[oklch(0.7_0.2_320)]';
 const featuredTagText =
   'bg-[linear-gradient(90deg,oklch(0.65_0.22_320),oklch(0.7_0.2_280))] bg-clip-text text-transparent';
 const featuredTitle =
-  'font-[var(--font-title)] text-[32px] font-bold tracking-[0.04em] mb-2 [text-shadow:0_0_40px_oklch(0.65_0.22_320_/_0.4)]';
-const featuredDesc = 'text-[13px] text-[var(--text-mid)] leading-[1.6] mb-3';
+  'font-[var(--font-title)] text-[22px] sm:text-[26px] lg:text-[32px] font-bold tracking-[0.04em] mb-2 [text-shadow:0_0_40px_oklch(0.65_0.22_320_/_0.4)]';
+const featuredDesc = 'text-[12px] sm:text-[13px] text-[var(--text-mid)] leading-[1.6] mb-3';
 const featuredLore = 'text-[11px] italic text-[oklch(0.85_0.1_60)] leading-[1.5] mb-4';
-const featuredMeta = 'flex items-center justify-between gap-4 mb-4';
+const featuredMeta = 'flex flex-wrap items-center justify-between gap-3 sm:gap-4 mb-4';
 const featuredPrice = 'flex items-center gap-2';
 const featuredPriceCurrent =
   'font-[var(--font-title)] font-bold text-[var(--gold)] tracking-[0.05em]';
@@ -103,11 +103,11 @@ const featuredDiscount =
 const featuredCountdown =
   'font-[var(--font-title)] text-[10px] tracking-[0.15em] text-[var(--text-mid)]';
 const featuredBtn =
-  'font-[var(--font-title)] text-[11px] tracking-[0.18em] font-bold uppercase bg-[linear-gradient(135deg,var(--gold),var(--violet))] text-[#0a0400] px-5 py-3 rounded-[10px] shadow-[0_0_24px_var(--gold-glow)] transition-all duration-200 hover:-translate-y-px hover:shadow-[0_0_36px_var(--gold-glow)]';
+  'w-full sm:w-auto justify-center font-[var(--font-title)] text-[11px] tracking-[0.18em] font-bold uppercase bg-[linear-gradient(135deg,var(--gold),var(--violet))] text-[#0a0400] px-5 py-3 rounded-[10px] shadow-[0_0_24px_var(--gold-glow)] transition-all duration-200 hover:-translate-y-px hover:shadow-[0_0_36px_var(--gold-glow)]';
 
-const featuredArtWrap = 'relative z-[2] flex items-center justify-center';
+const featuredArtWrap = 'relative z-[2] flex items-center justify-center mt-2 lg:mt-0';
 const featuredRarityBadge =
   'absolute top-4 right-4 font-[var(--font-title)] text-[11px] font-bold tracking-[0.2em] px-3 py-1 bg-[linear-gradient(90deg,oklch(0.65_0.22_320),oklch(0.7_0.2_280))] text-white rounded-[4px] uppercase shadow-[0_0_16px_oklch(0.65_0.22_320_/_0.5)]';
 const featuredArt =
-  'relative w-[220px] h-[220px] rounded-full bg-[radial-gradient(circle_at_center,oklch(0.75_0.22_320_/_0.35),transparent_60%)] flex items-center justify-center animate-[marketplace-featured-float_4s_ease-in-out_infinite] shadow-[0_0_60px_oklch(0.7_0.2_320_/_0.35),inset_0_0_40px_oklch(0.7_0.2_320_/_0.2)] before:content-[\"\"] before:absolute before:inset-[-20px] before:rounded-full before:border before:border-dashed before:border-[oklch(0.7_0.2_320_/_0.4)] before:animate-[spin_20s_linear_infinite] after:content-[\"\"] after:absolute after:inset-[-40px] after:rounded-full after:border after:border-dashed after:border-[oklch(0.7_0.2_320_/_0.2)] after:animate-[marketplace-spin-rev_30s_linear_infinite]';
-const featuredArtIcon = 'text-[96px]';
+  'relative w-[140px] h-[140px] sm:w-[180px] sm:h-[180px] lg:w-[220px] lg:h-[220px] rounded-full bg-[radial-gradient(circle_at_center,oklch(0.75_0.22_320_/_0.35),transparent_60%)] flex items-center justify-center animate-[marketplace-featured-float_4s_ease-in-out_infinite] shadow-[0_0_60px_oklch(0.7_0.2_320_/_0.35),inset_0_0_40px_oklch(0.7_0.2_320_/_0.2)] before:content-[\"\"] before:absolute before:inset-[-20px] before:rounded-full before:border before:border-dashed before:border-[oklch(0.7_0.2_320_/_0.4)] before:animate-[spin_20s_linear_infinite] after:content-[\"\"] after:absolute after:inset-[-40px] after:rounded-full after:border after:border-dashed after:border-[oklch(0.7_0.2_320_/_0.2)] after:animate-[marketplace-spin-rev_30s_linear_infinite]';
+const featuredArtIcon = 'text-[60px] sm:text-[76px] lg:text-[96px]';
