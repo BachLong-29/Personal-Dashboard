@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Modal';
 import { cn } from '@/libs/utils';
 
-import { RARITY_COLOR, RARITY_LABEL, CURRENCY_ICON, MARKET_CATEGORIES } from '../constants';
+import { RARITY_COLOR, RARITY_LABEL, CURRENCY_ICON, MARKET_CATEGORY_LABELS } from '../constants';
 import type { MarketPlayerState, MarketReward, MarketRewardDetailCondition } from '../types';
 
 interface MarketRewardDetailModalProps {
@@ -95,9 +95,7 @@ export function MarketRewardDetailModal({
         </div>
 
         <div className={detailBody}>
-          <div className={detailCat}>
-            {MARKET_CATEGORIES.find((c) => c.key === reward.cat)?.label || reward.cat}
-          </div>
+          <div className={detailCat}>{MARKET_CATEGORY_LABELS[reward.cat] || reward.cat}</div>
           <div className={detailTitle}>{reward.title}</div>
           <div className={detailDesc}>{reward.desc}</div>
           <div className={detailLore}>&quot;{lore}&quot;</div>
