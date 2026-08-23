@@ -255,3 +255,44 @@ export interface UpdateFinanceCategoryPayload {
   color?: TaskColor;
   keywords?: string[];
 }
+
+export type GoldType = 'sjc' | 'doji' | 'pnj' | '24k' | 'vngsjc';
+
+/** VND-per-"chỉ" price quote for one gold type — see rules/docs/requirements/finance-gold.md. */
+export interface GoldPriceEntry {
+  goldType: GoldType;
+  name: string;
+  buyPrice: number;
+  sellPrice: number;
+  fetchedAt: string;
+  /** True when this is a cached quote older than the 15-min refresh window (source fetch failed). */
+  stale: boolean;
+}
+
+export interface GoldPriceResponse {
+  prices: GoldPriceEntry[];
+  /** True only when there is no usable price at all, not even a stale one. */
+  unavailable: boolean;
+}
+
+/**
+ * The user's single gold holding — "X cây Y chỉ" kept as two separate counts, priced off the
+ * VNGSJC quote only. `value`/`pricePerChi` are null when no price is available at all.
+ */
+export interface GoldAccount {
+  quantityChi: number;
+  quantityCay: number;
+  /** quantityCay * 10 + quantityChi */
+  totalChi: number;
+  pricePerChi: number | null;
+  value: number | null;
+  priceStale: boolean;
+  priceUnavailable: boolean;
+  priceUpdatedAt: string | null;
+  updatedAt: string;
+}
+
+export interface UpdateGoldAccountPayload {
+  quantityChi?: number;
+  quantityCay?: number;
+}

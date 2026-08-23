@@ -841,6 +841,16 @@
       "accountCount": "{count} บัญชี",
       "hideAmounts": "ซ่อนจำนวนเงิน",
       "showAmounts": "แสดงจำนวนเงิน",
+      "goldPrice": "ราคาทอง",
+      "goldBuy": "รับซื้อ",
+      "goldSell": "ขายออก",
+      "goldUpdatedAt": "อัปเดตเมื่อ {time}",
+      "goldStale": "ราคาเก่า",
+      "goldPriceUnavailable": "ไม่สามารถดึงราคาทองได้ในขณะนี้ ลองใหม่ภายหลัง",
+      "myGold": "ทองของฉัน",
+      "goldCay": "บาท (10 ชี้)",
+      "goldChi": "ชี้",
+      "goldChipLabel": "ทอง",
       "thisMonth": "เดือนนี้",
       "income": "รายรับ",
       "expense": "รายจ่าย",
@@ -909,7 +919,10 @@
       "deleteTag": "ยืนยัน",
       "deleteBody": "ลบ {name} ออกจากรายการ? รายการเดิมยังคงอยู่ในสมุดบัญชี",
       "deleted": "ลบกระเป๋าเงิน “{name}” แล้ว",
-      "deleteFailed": "ลบกระเป๋าเงินไม่สำเร็จ"
+      "deleteFailed": "ลบกระเป๋าเงินไม่สำเร็จ",
+      "goldEditTag": "แก้ไขทอง",
+      "goldEditTitle": "แก้ไขทอง",
+      "goldPreviewValue": "มูลค่า"
     },
     "wallet": {
       "newTag": "กระเป๋าเงินใหม่",

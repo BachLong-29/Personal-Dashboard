@@ -23,6 +23,9 @@ import type {
   CreateContributionPayload,
   GoalContribution,
   BalanceForecast,
+  GoldPriceResponse,
+  GoldAccount,
+  UpdateGoldAccountPayload,
 } from '@/types';
 
 function toQueryString(filters?: TransactionFilters): string {
@@ -113,4 +116,11 @@ export const financeEndpoints = {
 
   getOverview: (month: string, today: string) =>
     apiClient.get<ApiResponse<FinanceOverview>>(`/finance/overview?month=${month}&today=${today}`),
+
+  getGoldPrice: () => apiClient.get<ApiResponse<GoldPriceResponse>>('/finance/gold/price'),
+
+  getGoldAccount: () => apiClient.get<ApiResponse<GoldAccount>>('/finance/gold/account'),
+
+  updateGoldAccount: (payload: UpdateGoldAccountPayload) =>
+    apiClient.patch<ApiResponse<GoldAccount>>('/finance/gold/account', payload),
 };
