@@ -136,12 +136,13 @@ Tab chuyển route qua Next.js App Router (client-side, không reload) — khôn
 
 ## Tài liệu con
 
-| #   | Doc                                            | Phạm vi                                  |
-| --- | ---------------------------------------------- | ---------------------------------------- |
-| 1   | [finance-sepay.md](./finance-sepay.md)         | Webhook SePay tự động tạo transaction    |
-| 2   | [finance-budget.md](./finance-budget.md)       | Ngân sách theo tháng/category + cảnh báo |
-| 3   | [finance-recurring.md](./finance-recurring.md) | Giao dịch định kỳ (lazy-generate)        |
-| 4   | [finance-stats.md](./finance-stats.md)         | Biểu đồ thu/chi theo tháng/category      |
+| #   | Doc                                            | Phạm vi                                   |
+| --- | ---------------------------------------------- | ----------------------------------------- |
+| 1   | [finance-sepay.md](./finance-sepay.md)         | Webhook SePay tự động tạo transaction     |
+| 2   | [finance-budget.md](./finance-budget.md)       | Ngân sách theo tháng/category + cảnh báo  |
+| 3   | [finance-recurring.md](./finance-recurring.md) | Giao dịch định kỳ (lazy-generate)         |
+| 4   | [finance-stats.md](./finance-stats.md)         | Biểu đồ thu/chi theo tháng/category       |
+| 5   | [finance-gold.md](./finance-gold.md)           | Theo dõi tài sản vàng theo giá thị trường |
 
 **Thứ tự triển khai đề xuất:** Wallet + FinanceCategory + Transaction → SePay → Stats → Budget → Recurring.
 

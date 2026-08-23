@@ -5,7 +5,7 @@ import { useTranslations } from 'next-intl';
 
 import { Icon } from '@/components/common/Icon';
 import { cn } from '@/libs/utils';
-import type { Wallet } from '@/types';
+import type { GoldAccount, Wallet } from '@/types';
 
 import { COLOR_CSS, WALLET_TYPE_OPTIONS } from '../constants';
 import { useCountUp } from '../hooks/useCountUp';
@@ -100,12 +100,79 @@ function WalletCard({
   );
 }
 
+interface GoldCardProps {
+  account: GoldAccount | null | undefined;
+  amountsHidden: boolean;
+  onEdit: () => void;
+  delay: number;
+}
+
+/** Same card shell as `WalletCard`, but for the single gold holding — click through to edit. */
+function GoldCard({ account, amountsHidden, onEdit, delay }: GoldCardProps) {
+  const t = useTranslations('finance');
+  const value = useCountUp(account?.value ?? 0);
+  const cay = account?.quantityCay ?? 0;
+  const chi = account?.quantityChi ?? 0;
+
+  return (
+    <motion.button
+      type="button"
+      onClick={onEdit}
+      initial={{ opacity: 0, y: 10, scale: 0.97 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      transition={{ duration: 0.35, delay, ease: EASE_OUT }}
+      className="flex flex-col gap-3 rounded-[var(--r-lg)] border border-[var(--border)] bg-[var(--panel)] p-4 text-left transition-colors hover:border-[var(--gold)]"
+    >
+      <div className="flex items-start gap-3">
+        <span
+          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[var(--r-sm)] border text-[19px]"
+          style={{
+            background: 'color-mix(in oklch, var(--gold) 14%, transparent)',
+            borderColor: 'color-mix(in oklch, var(--gold) 35%, transparent)',
+          }}
+        >
+          🪙
+        </span>
+
+        <div className="min-w-0 flex-1">
+          <div className="truncate text-[14px] font-bold tracking-[0.02em] text-[var(--text-hi)] [font-family:var(--f-title)]">
+            {t('overview.goldChipLabel')}
+          </div>
+          <div className="mt-0.5 flex flex-wrap items-center gap-1.5 text-[10px] text-[var(--text-lo)]">
+            <span>
+              {cay} {t('overview.goldCay')}
+            </span>
+            <span>·</span>
+            <span>
+              {chi} {t('overview.goldChi')}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div
+        className="truncate text-[20px] font-bold tabular-nums [font-family:var(--f-title)]"
+        style={{ color: 'var(--gold)' }}
+      >
+        {amountsHidden ? AMOUNT_MASK : formatCurrency(value)}
+      </div>
+
+      <div className="flex flex-wrap gap-1.5 border-t border-[var(--border)] pt-3">
+        <span className={actionBtn}>✎ {t('common.edit')}</span>
+      </div>
+    </motion.button>
+  );
+}
+
 interface WalletListProps {
   wallets: Wallet[];
   amountsHidden: boolean;
   onEdit: (wallet: Wallet) => void;
   onDelete: (wallet: Wallet) => void;
   onManageSepay: (wallet: Wallet) => void;
+  /** Rendered as the first card in the grid when provided. */
+  goldAccount?: GoldAccount | null;
+  onEditGold?: () => void;
 }
 
 export function WalletList({
@@ -114,9 +181,19 @@ export function WalletList({
   onEdit,
   onDelete,
   onManageSepay,
+  goldAccount,
+  onEditGold,
 }: WalletListProps) {
   return (
     <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+      {onEditGold && (
+        <GoldCard
+          account={goldAccount}
+          amountsHidden={amountsHidden}
+          onEdit={onEditGold}
+          delay={0}
+        />
+      )}
       {wallets.map((w, i) => (
         <WalletCard
           key={w.id}
@@ -125,7 +202,7 @@ export function WalletList({
           onEdit={() => onEdit(w)}
           onDelete={() => onDelete(w)}
           onManageSepay={() => onManageSepay(w)}
-          delay={i * 0.04}
+          delay={(onEditGold ? i + 1 : i) * 0.04}
         />
       ))}
     </div>

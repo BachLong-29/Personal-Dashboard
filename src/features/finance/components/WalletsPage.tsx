@@ -14,9 +14,11 @@ import type { Wallet } from '@/types';
 import { useWallets } from '../hooks/useWallets';
 import { useDeleteWallet } from '../hooks/useDeleteWallet';
 import { useCountUp } from '../hooks/useCountUp';
+import { useGoldAccount } from '../hooks/useGoldAccount';
 import { AMOUNT_MASK, formatCurrency } from '../utils';
 import { useFinanceUIStore } from '../stores/finance-ui.store';
 import { FinancePageHeader } from './FinancePageHeader';
+import { GoldAccountFormModal } from './GoldAccountFormModal';
 import { WalletList } from './WalletList';
 import { WalletFormModal } from './WalletFormModal';
 import { SepayConnectModal } from './SepayConnectModal';
@@ -27,10 +29,14 @@ export function WalletsPage() {
   const t = useTranslations('finance');
   // ── Data ─────────────────────────────────────────────────────────────────────
   const { data: wallets = [], isLoading } = useWallets();
+  const { data: goldAccount } = useGoldAccount();
   const deleteWallet = useDeleteWallet();
   const addToast = useUIStore((s) => s.addToast);
 
-  const totalBalance = useMemo(() => wallets.reduce((sum, w) => sum + w.balance, 0), [wallets]);
+  const totalBalance = useMemo(
+    () => wallets.reduce((sum, w) => sum + w.balance, 0) + (goldAccount?.value ?? 0),
+    [wallets, goldAccount],
+  );
   const animatedBalance = useCountUp(totalBalance);
   const amountsHidden = useFinanceUIStore((s) => s.amountsHidden);
   const toggleAmountsHidden = useFinanceUIStore((s) => s.toggleAmountsHidden);
@@ -40,6 +46,7 @@ export function WalletsPage() {
   const [editingWallet, setEditingWallet] = useState<Wallet | null>(null);
   const [sepayWallet, setSepayWallet] = useState<Wallet | null>(null);
   const [deletingWallet, setDeletingWallet] = useState<Wallet | null>(null);
+  const [editingGold, setEditingGold] = useState(false);
 
   function handleDeleteConfirm() {
     if (!deletingWallet) return;
@@ -114,7 +121,17 @@ export function WalletsPage() {
                 </div>
               ) : (
                 <div className="flex flex-col gap-4">
-                  {wallets.length === 0 ? (
+                  <WalletList
+                    wallets={wallets}
+                    amountsHidden={amountsHidden}
+                    onEdit={setEditingWallet}
+                    onDelete={setDeletingWallet}
+                    onManageSepay={setSepayWallet}
+                    goldAccount={goldAccount}
+                    onEditGold={() => setEditingGold(true)}
+                  />
+
+                  {wallets.length === 0 && (
                     <div className="flex flex-col items-center gap-2 rounded-[var(--r-lg)] border border-dashed border-[var(--border)] py-8 text-center">
                       <div className="text-[32px] opacity-60">🏦</div>
                       <div className="text-[13px] font-bold text-[var(--text-mid)]">
@@ -124,14 +141,6 @@ export function WalletsPage() {
                         {t('accounts.emptyHint')}
                       </div>
                     </div>
-                  ) : (
-                    <WalletList
-                      wallets={wallets}
-                      amountsHidden={amountsHidden}
-                      onEdit={setEditingWallet}
-                      onDelete={setDeletingWallet}
-                      onManageSepay={setSepayWallet}
-                    />
                   )}
                 </div>
               )}
@@ -149,6 +158,12 @@ export function WalletsPage() {
       />
 
       <SepayConnectModal wallet={sepayWallet} onClose={() => setSepayWallet(null)} />
+
+      <GoldAccountFormModal
+        open={editingGold}
+        onClose={() => setEditingGold(false)}
+        account={goldAccount}
+      />
 
       <Modal open={!!deletingWallet} onClose={() => setDeletingWallet(null)} maxWidth="380px">
         <ModalHead tag={t('accounts.deleteTag')} title={`🗑 ${t('accounts.deleteTitle')}`} />

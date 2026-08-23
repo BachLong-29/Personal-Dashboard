@@ -841,6 +841,16 @@
       "accountCount": "{count, plural, =1 {# account} other {# accounts}}",
       "hideAmounts": "Hide amounts",
       "showAmounts": "Show amounts",
+      "goldPrice": "Gold price",
+      "goldBuy": "Buy",
+      "goldSell": "Sell",
+      "goldUpdatedAt": "Updated at {time}",
+      "goldStale": "Stale",
+      "goldPriceUnavailable": "Could not fetch gold price right now — try again later.",
+      "myGold": "My gold",
+      "goldCay": "Gold bar",
+      "goldChi": "Tael",
+      "goldChipLabel": "Gold",
       "thisMonth": "This month",
       "income": "Income",
       "expense": "Expense",
@@ -909,7 +919,10 @@
       "deleteTag": "CONFIRM",
       "deleteBody": "Remove {name} from your wallets? Its past transactions stay in the ledger.",
       "deleted": "Wallet “{name}” removed",
-      "deleteFailed": "Could not remove the wallet"
+      "deleteFailed": "Could not remove the wallet",
+      "goldEditTag": "EDIT GOLD",
+      "goldEditTitle": "Edit gold",
+      "goldPreviewValue": "Value"
     },
     "wallet": {
       "newTag": "NEW WALLET",

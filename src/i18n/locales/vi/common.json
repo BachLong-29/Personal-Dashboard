@@ -841,6 +841,16 @@
       "accountCount": "{count} tài khoản",
       "hideAmounts": "Ẩn số tiền",
       "showAmounts": "Hiện số tiền",
+      "goldPrice": "Giá vàng",
+      "goldBuy": "Mua vào",
+      "goldSell": "Bán ra",
+      "goldUpdatedAt": "Cập nhật lúc {time}",
+      "goldStale": "Giá cũ",
+      "goldPriceUnavailable": "Không lấy được giá vàng lúc này, thử lại sau.",
+      "myGold": "Vàng của tôi",
+      "goldCay": "Cây (lượng)",
+      "goldChi": "Chỉ",
+      "goldChipLabel": "Vàng",
       "thisMonth": "Tháng này",
       "income": "Thu nhập",
       "expense": "Chi tiêu",
@@ -909,7 +919,10 @@
       "deleteTag": "XÁC NHẬN",
       "deleteBody": "Xoá {name} khỏi danh sách ví? Các giao dịch cũ vẫn được giữ lại.",
       "deleted": "Đã xoá ví “{name}”",
-      "deleteFailed": "Không xoá được ví"
+      "deleteFailed": "Không xoá được ví",
+      "goldEditTag": "SỬA VÀNG",
+      "goldEditTitle": "Sửa vàng",
+      "goldPreviewValue": "Giá trị"
     },
     "wallet": {
       "newTag": "VÍ MỚI",

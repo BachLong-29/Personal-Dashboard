@@ -26,6 +26,7 @@ import { AllocationBanner } from './overview/AllocationBanner';
 import { BalanceCard } from './overview/BalanceCard';
 import { BalanceForecastCard } from './overview/BalanceForecastCard';
 import { BudgetProgressCard } from './overview/BudgetProgressCard';
+import { GoldPriceCard } from './overview/GoldPriceCard';
 import { LeftToSpendCard } from './overview/LeftToSpendCard';
 import { MonthSummaryCard } from './overview/MonthSummaryCard';
 import { RecentTransactionsCard } from './overview/RecentTransactionsCard';
@@ -163,9 +164,10 @@ export function FinancePage() {
                 onAllocate={setContributingGoal}
               />
 
-              {/* Always visible — the two cards worth seeing without tapping anything. */}
+              {/* Always visible — the cards worth seeing without tapping anything. */}
               <BalanceCard wallets={wallets} isLoading={walletsLoading} />
               <MonthSummaryCard overview={overview} month={month} isLoading={overviewLoading} />
+              <GoldPriceCard />
 
               {isDesktop ? (
                 <div className="grid gap-4 lg:grid-cols-12">
