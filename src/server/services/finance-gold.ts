@@ -22,12 +22,9 @@ const STALE_CUTOFF_MS = 24 * 60 * 60 * 1000;
 const SOURCE_NAME = 'vang.today';
 const SOURCE_URL = 'https://www.vang.today/api/prices';
 
-/** Internal gold type -> vang.today `type_code`, one representative per type (see finance-gold.md). */
+/** Internal gold type -> vang.today `type_code` (see finance-gold.md). */
 const TYPE_CODE_BY_GOLD_TYPE: Record<GoldType, string> = {
   sjc: 'SJL1L10',
-  doji: 'DOHNL',
-  pnj: 'PQHNVM',
-  '24k': 'PQHN24NTT',
   vngsjc: 'VNGSJC',
 };
 
@@ -101,7 +98,7 @@ async function fetchAndCache(): Promise<GoldPriceEntry[]> {
 }
 
 /**
- * Current gold prices (VND/chỉ) for sjc/doji/pnj/24k, cached 15 minutes to avoid hammering the
+ * Current gold prices (VND/chỉ) for sjc/vngsjc, cached 15 minutes to avoid hammering the
  * free upstream API on every request. Falls back to a snapshot up to 24h old (flagged `stale`)
  * if a refetch fails; only reports `unavailable` when there is nothing usable left at all.
  */

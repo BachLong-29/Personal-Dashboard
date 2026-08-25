@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo } from 'react';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 
 import { Icon } from '@/components/common/Icon';
 import type { Wallet } from '@/types';
@@ -9,9 +9,14 @@ import type { Wallet } from '@/types';
 import { COLOR_CSS } from '../../constants';
 import { useCountUp } from '../../hooks/useCountUp';
 import { useGoldAccount } from '../../hooks/useGoldAccount';
+import { useGoldPrice } from '../../hooks/useGoldPrice';
 import { AMOUNT_MASK, formatCurrency } from '../../utils';
 import { useFinanceUIStore } from '../../stores/finance-ui.store';
 import { SectionCard } from './SectionCard';
+
+function formatUpdatedAt(iso: string, locale: string): string {
+  return new Date(iso).toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' });
+}
 
 interface BalanceCardProps {
   wallets: Wallet[];
@@ -24,9 +29,12 @@ interface BalanceCardProps {
  */
 export function BalanceCard({ wallets, isLoading }: BalanceCardProps) {
   const t = useTranslations('finance');
+  const locale = useLocale();
   const hidden = useFinanceUIStore((s) => s.amountsHidden);
   const toggleHidden = useFinanceUIStore((s) => s.toggleAmountsHidden);
   const { data: goldAccount } = useGoldAccount();
+  const { data: goldPriceData } = useGoldPrice();
+  const sjcPrice = goldPriceData?.prices.find((p) => p.goldType === 'sjc');
 
   // Only surface the gold entry once the user actually holds some — a fresh 0/0 account
   // shouldn't clutter the breakdown for people who don't use this.
@@ -99,6 +107,20 @@ export function BalanceCard({ wallets, isLoading }: BalanceCardProps) {
                 </li>
               )}
             </ul>
+          )}
+
+          {sjcPrice && (
+            <p className="mt-2 flex flex-wrap items-baseline gap-x-2 gap-y-0.5 border-t border-[var(--border)] pt-2 text-[10px] text-[var(--text-lo)] sm:mt-3">
+              <span>
+                🪙 {sjcPrice.name} {formatCurrency(sjcPrice.buyPrice)}{' '}
+                <span className="text-[var(--mint)]">{t('overview.goldBuy')}</span> ·{' '}
+                {formatCurrency(sjcPrice.sellPrice)}{' '}
+                <span className="text-[var(--rose)]">{t('overview.goldSell')}</span>
+              </span>
+              <span className="ml-auto">
+                {t('overview.goldUpdatedAt', { time: formatUpdatedAt(sjcPrice.fetchedAt, locale) })}
+              </span>
+            </p>
           )}
         </>
       )}

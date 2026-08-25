@@ -256,7 +256,7 @@ export interface UpdateFinanceCategoryPayload {
   keywords?: string[];
 }
 
-export type GoldType = 'sjc' | 'doji' | 'pnj' | '24k' | 'vngsjc';
+export type GoldType = 'sjc' | 'vngsjc';
 
 /** VND-per-"chỉ" price quote for one gold type — see rules/docs/requirements/finance-gold.md. */
 export interface GoldPriceEntry {
