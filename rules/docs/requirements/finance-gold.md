@@ -182,18 +182,26 @@ nhập chứ không phải giá auto — theo mục "Trạng thái hiện tại"
 
 ## Trạng thái hiện tại
 
-✅ Giá vàng (ticker 4 loại sjc/doji/pnj/24k) đã implement — `GoldPriceSnapshot` model,
-`finance-gold.ts` service (cache 15 phút, fallback stale), `GET /api/v1/finance/gold/price`,
-`GoldPriceCard.tsx` trong Overview.
+✅ Giá vàng đã implement — `GoldPriceSnapshot` model, `finance-gold.ts` service (cache 15 phút,
+fallback stale), `GET /api/v1/finance/gold/price`. **Chỉ còn 2 `goldType`: `sjc` + `vngsjc`**
+(đã bỏ `doji`/`pnj`/`24k` — không dùng ở đâu nữa, đơn giản hoá theo yêu cầu sau của user).
+`sjc` (SJC 9999) là giá duy nhất hiển thị cho user; `vngsjc` fetch cùng lúc (chung 1 request,
+không tốn thêm) nhưng chỉ dùng để định giá `GoldAccount`, không hiển thị.
+
+**Không còn `GoldPriceCard.tsx`/section riêng ở Overview** — đã xoá, vì chiếm hẳn 1 hàng
+section chỉ để hiện 1 dòng giá (feedback UX từ user). Giá SJC giờ là 1 dòng nhỏ (10px, viền
+trên) ở cuối `BalanceCard.tsx` (card "Total balance"), lấy qua `useGoldPrice()` ngay trong đó —
+không có component riêng cho việc này nữa.
 
 ⚠️ **`GoldHolding` (mục "Model: GoldHolding" ở trên) chưa implement theo đúng thiết kế này.**
 Thay vào đó, theo yêu cầu sau của user, đã build một model đơn giản hơn hẳn — `GoldAccount`
 (1 account duy nhất/user, không phải list nhiều holding): 2 field `quantityCay` + `quantityChi`
-(mặc định 0, không gộp sẵn thành 1 số), định giá theo **1 loại giá duy nhất — VNGSJC** (không
-theo `goldType` chọn được như doc này mô tả). Xem `GET/PATCH /api/v1/finance/gold/account`,
-`GoldAccountCard.tsx`. Coi mục "Model: GoldHolding" + "goldValue/netWorth trong Overview" ở trên
-là **chưa làm / có thể không còn đúng hướng** — nếu cần nhiều holding có tên riêng như doc mô
-tả ban đầu, đó là việc mới, không phải sửa nhỏ trên `GoldAccount`.
+(mặc định 0, không gộp sẵn thành 1 số), định giá theo **1 loại giá duy nhất — VNGSJC**. Xem
+`GET/PATCH /api/v1/finance/gold/account`, hiện là 1 card trong danh sách Accounts
+(`WalletList.tsx`) + `GoldAccountFormModal.tsx` để sửa. Coi mục "Model: GoldHolding" +
+"goldValue/netWorth trong Overview" ở trên là **chưa làm / có thể không còn đúng hướng** — nếu
+cần nhiều holding có tên riêng như doc mô tả ban đầu, đó là việc mới, không phải sửa nhỏ trên
+`GoldAccount`.
 
 </requirement>
 

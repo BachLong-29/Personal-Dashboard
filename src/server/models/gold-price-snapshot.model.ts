@@ -1,9 +1,9 @@
 import type { Document } from 'mongoose';
 import mongoose, { Schema } from 'mongoose';
 
-export type GoldType = 'sjc' | 'doji' | 'pnj' | '24k' | 'vngsjc';
+export type GoldType = 'sjc' | 'vngsjc';
 
-const GOLD_TYPES: GoldType[] = ['sjc', 'doji', 'pnj', '24k', 'vngsjc'];
+const GOLD_TYPES: GoldType[] = ['sjc', 'vngsjc'];
 
 export interface IGoldPriceSnapshot extends Document {
   _id: mongoose.Types.ObjectId;
