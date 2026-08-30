@@ -171,18 +171,25 @@ function OverdueRow({ item, onRemove, onNeedsScheduleUpdate }: OverdueRowProps) 
 
       {/* Action buttons */}
       {!showReschedule && (
-        <div className="flex items-center gap-2 pl-[26px]">
+        <div className="pl-0 sm:pl-[26px]">
           {!confirmAbandon ? (
-            <>
+            <div className="grid grid-cols-3 gap-1.5">
               <Button
                 size="sm"
                 variant="ghost"
                 onClick={() => setShowReschedule(true)}
                 disabled={isPending}
+                className="w-full justify-center whitespace-nowrap px-1.5 text-[9px] tracking-[0.04em]"
               >
                 {t('editModal.reschedule')}
               </Button>
-              <Button size="sm" variant="primary" onClick={handleDone} disabled={isPending}>
+              <Button
+                size="sm"
+                variant="primary"
+                onClick={handleDone}
+                disabled={isPending}
+                className="w-full justify-center whitespace-nowrap px-1.5 text-[9px] tracking-[0.04em]"
+              >
                 {isPending ? '…' : t('overdueReview.doneAction')}
               </Button>
               <Button
@@ -190,28 +197,37 @@ function OverdueRow({ item, onRemove, onNeedsScheduleUpdate }: OverdueRowProps) 
                 variant="ghost"
                 onClick={() => setConfirmAbandon(true)}
                 disabled={isPending}
-                className="text-[var(--rose)] hover:border-[oklch(0.72_0.18_5_/_0.4)]"
+                className="w-full justify-center whitespace-nowrap px-1.5 text-[9px] tracking-[0.04em] text-[var(--rose)] hover:border-[oklch(0.72_0.18_5_/_0.4)]"
               >
                 {t('overdueReview.abandon')}
               </Button>
-            </>
+            </div>
           ) : (
-            <>
+            <div className="flex flex-col gap-1.5">
               <span className="text-[10px] text-[var(--rose)]">
                 {t('overdueReview.confirmAbandon')}
               </span>
-              <Button size="sm" variant="ghost" onClick={handleAbandon} disabled={isPending}>
-                {isPending ? '…' : t('overdueReview.yesAbandon')}
-              </Button>
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={() => setConfirmAbandon(false)}
-                disabled={isPending}
-              >
-                {tCommon('cancel')}
-              </Button>
-            </>
+              <div className="grid grid-cols-2 gap-1.5">
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={handleAbandon}
+                  disabled={isPending}
+                  className="w-full justify-center whitespace-nowrap px-1.5 text-[9px] tracking-[0.04em]"
+                >
+                  {isPending ? '…' : t('overdueReview.yesAbandon')}
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => setConfirmAbandon(false)}
+                  disabled={isPending}
+                  className="w-full justify-center whitespace-nowrap px-1.5 text-[9px] tracking-[0.04em]"
+                >
+                  {tCommon('cancel')}
+                </Button>
+              </div>
+            </div>
           )}
         </div>
       )}
@@ -242,9 +258,9 @@ export function OverdueReviewModal({ open, items, onRemoveItem, onDismiss }: Pro
             allDone ? (
               t('overdueReview.allCaughtUp')
             ) : (
-              <span>
-                ⚠ {t('overdueReview.title')}{' '}
-                <span className="text-[var(--text-lo)] font-normal text-[14px]">
+              <span className="flex flex-col gap-0.5">
+                <span>⚠ {t('overdueReview.title')}</span>
+                <span className="text-[var(--text-lo)] font-normal text-[11px] tracking-[0.08em]">
                   {t('overdueReview.missedCount', { count: items.length })}
                 </span>
               </span>
@@ -274,11 +290,11 @@ export function OverdueReviewModal({ open, items, onRemoveItem, onDismiss }: Pro
         </ModalBody>
 
         <ModalFoot>
-          <div className="flex items-center justify-between w-full">
-            <p className="text-[10px] text-[var(--text-lo)]">
-              {allDone ? '' : t('overdueReview.reviewHint')}
-            </p>
-            <Button variant="ghost" onClick={onDismiss}>
+          <div className="flex flex-col items-stretch gap-2 w-full sm:flex-row sm:items-center sm:justify-between">
+            {!allDone && (
+              <p className="text-[10px] text-[var(--text-lo)]">{t('overdueReview.reviewHint')}</p>
+            )}
+            <Button variant="ghost" onClick={onDismiss} className="self-end sm:self-auto">
               {t('overdueReview.dismiss')}
             </Button>
           </div>
