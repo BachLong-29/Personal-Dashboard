@@ -31,6 +31,15 @@ import { useToggleTaskLog } from './useToggleTaskLog';
 import { useUpdateQuestStatus } from './useUpdateQuestStatus';
 import { useUpdateTask } from './useUpdateTask';
 
+// A stable reference for "no data yet" — the `= []` destructuring default below
+// creates a brand-new array on every render while `data` is undefined (query
+// loading/disabled/erroring), which makes every useMemo/useEffect keyed off it
+// think its dependency changed on every render. Combined with the setTasks
+// effect below (which has no other change-guard), that was enough to hit
+// React's "Maximum update depth exceeded" whenever any one of these queries
+// stayed unresolved. `never[]` is a safe stand-in for any `T[]` default.
+const EMPTY_ARRAY: never[] = [];
+
 interface UseScheduleDayTasksParams {
   /** Selected day, "YYYY-MM-DD". */
   date: string;
@@ -150,21 +159,25 @@ export function useScheduleDayTasks({
   }, [currentWeekStart]);
 
   // ── API data ───────────────────────────────────────────────────────────────
-  const { data: apiTasks = [] } = useTasks();
+  const { data: apiTasks = EMPTY_ARRAY } = useTasks();
   // Quests are due-dated, so fetch the selected day's — the default (no args) only ever
   // returns today's, which left other days quest-less.
-  const { data: apiQuestsRaw = [] } = useQuests(selectedDateStr, selectedDateStr);
-  const { data: apiProjects = [] } = useProjects(projectScope === 'all' ? undefined : projectScope);
-  const { data: apiHabits = [] } = useHabits();
-  const { data: apiTaskLogs = [] } = useTaskLogs(todayStr);
-  const { data: weekHabitLogs = [] } = useHabitLogsRange(logRangeFrom, logRangeTo);
+  const { data: apiQuestsRaw = EMPTY_ARRAY } = useQuests(selectedDateStr, selectedDateStr);
+  const { data: apiProjects = EMPTY_ARRAY } = useProjects(
+    projectScope === 'all' ? undefined : projectScope,
+  );
+  const { data: apiHabits = EMPTY_ARRAY } = useHabits();
+  const { data: apiTaskLogs = EMPTY_ARRAY } = useTaskLogs(todayStr);
+  const { data: weekHabitLogs = EMPTY_ARRAY } = useHabitLogsRange(logRangeFrom, logRangeTo);
 
   // Selected-day task list. In 'api' mode a dedicated query fetches it; in
   // 'client' mode we derive it from the already-loaded baseline (no extra call).
   const useApiDay = dayTasksSource === 'api';
-  const { data: apiDayTasks = [], isFetching } = useTasks(selectedDateStr, selectedDateStr, {
-    enabled: useApiDay,
-  });
+  const { data: apiDayTasks = EMPTY_ARRAY, isFetching } = useTasks(
+    selectedDateStr,
+    selectedDateStr,
+    { enabled: useApiDay },
+  );
   const clientDayTasks = useMemo(
     () =>
       apiTasks.filter((t) => {
@@ -178,15 +191,15 @@ export function useScheduleDayTasks({
   const apiTasksForDay = useApiDay ? apiDayTasks : clientDayTasks;
   const isFetchingDayTasks = useApiDay ? isFetching : false;
 
-  const { data: apiTaskLogsForDay = [] } = useTaskLogs(selectedDateStr);
-  const { data: apiHabitLogsForDay = [] } = useHabitLogs(selectedDateStr);
+  const { data: apiTaskLogsForDay = EMPTY_ARRAY } = useTaskLogs(selectedDateStr);
+  const { data: apiHabitLogsForDay = EMPTY_ARRAY } = useHabitLogs(selectedDateStr);
 
-  const { data: weekTaskBlocks = [] } = useScheduleBlocks({
+  const { data: weekTaskBlocks = EMPTY_ARRAY } = useScheduleBlocks({
     from: logRangeFrom,
     to: logRangeTo,
     sourceType: 'task',
   });
-  const { data: dayTaskBlocks = [] } = useScheduleBlocks({
+  const { data: dayTaskBlocks = EMPTY_ARRAY } = useScheduleBlocks({
     from: selectedDateStr,
     to: selectedDateStr,
     sourceType: 'task',

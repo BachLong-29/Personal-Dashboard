@@ -24,6 +24,13 @@ import { useToggleHabitLog } from './useToggleHabitLog';
 import { useToggleTaskLog } from './useToggleTaskLog';
 import { useUpdateTask } from './useUpdateTask';
 
+// Stable "no data yet" reference — see the identical fix/comment in
+// useScheduleDayTasks.ts. Without it, `habitDoneMap`'s effect below (keyed on
+// `habitLogs`) re-fires and calls setState on every render while the habit-logs
+// query is unresolved, which is enough to trip React's "Maximum update depth
+// exceeded" the moment that query stays pending/erroring across renders.
+const EMPTY_ARRAY: never[] = [];
+
 function loadSkipConfirm(): boolean {
   if (typeof window === 'undefined') return false;
   try {
@@ -54,11 +61,11 @@ export function useQuestOrchestration({
   onToast,
 }: Params) {
   const { data: serverQuests, isLoading: questsLoading } = useQuests();
-  const { data: allTasks = [] } = useTasks();
-  const { data: projects = [] } = useProjects('active');
-  const { data: habits = [] } = useHabits();
-  const { data: habitLogs = [] } = useHabitLogs(todayDateStr);
-  const { data: apiTaskLogs = [] } = useTaskLogs(todayDateStr);
+  const { data: allTasks = EMPTY_ARRAY } = useTasks();
+  const { data: projects = EMPTY_ARRAY } = useProjects('active');
+  const { data: habits = EMPTY_ARRAY } = useHabits();
+  const { data: habitLogs = EMPTY_ARRAY } = useHabitLogs(todayDateStr);
+  const { data: apiTaskLogs = EMPTY_ARRAY } = useTaskLogs(todayDateStr);
   const { mutate: toggleHabitLog } = useToggleHabitLog();
   const { mutate: toggleTaskLog } = useToggleTaskLog();
   const { mutate: updateTask } = useUpdateTask();
