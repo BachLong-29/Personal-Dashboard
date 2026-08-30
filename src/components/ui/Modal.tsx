@@ -119,7 +119,7 @@ export function Modal({
           'border border-[var(--gold)] shadow-[var(--sh-4),var(--sh-glow-gold)]',
           bottomSheet
             ? 'rounded-t-[20px] sm:rounded-[var(--r-lg)] animate-sheet-in sm:animate-[modal-in_0.3s_cubic-bezier(0.34,1.56,0.64,1)]'
-            : 'rounded-t-[20px] sm:rounded-[var(--r-lg)] animate-[modal-in_0.3s_cubic-bezier(0.34,1.56,0.64,1)]',
+            : 'rounded-[20px] sm:rounded-[var(--r-lg)] animate-[modal-in_0.3s_cubic-bezier(0.34,1.56,0.64,1)]',
           scrollable && 'flex flex-col max-h-[90dvh] sm:max-h-[85vh]',
           className,
         )}
