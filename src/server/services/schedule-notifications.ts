@@ -1,5 +1,7 @@
+import { after } from 'next/server';
 import mongoose from 'mongoose';
 
+import { NotificationGenStateModel } from '@/server/models/notification-gen-state.model';
 import { NotificationModel } from '@/server/models/notification.model';
 import { DEFAULT_SCHEDULE_SETTINGS, UserSettingModel } from '@/server/models/user-setting.model';
 import { buildCalendar } from '@/server/services/schedule-engine';
@@ -15,12 +17,37 @@ interface PendingNotification {
   entityId?: string;
 }
 
-// In-process throttle: this rebuilds the whole calendar + writes upserts, so
-// skip it if we already ran for this user within the window — every
-// notification-list read (including ones triggered by mark-read/dismiss
-// invalidation) would otherwise redo this on every request.
+// Persistent (DB-backed) throttle: this rebuilds the whole calendar + writes
+// upserts, so skip it if we already ran for this user within the window —
+// every notification-list read (including ones triggered by mark-read/dismiss
+// invalidation) would otherwise redo this on every request. An in-memory Map
+// doesn't work here because Vercel serverless invocations don't share
+// process state, so the throttle is claimed atomically in Mongo instead.
 const REGEN_THROTTLE_MS = 5 * 60 * 1000;
-const lastGeneratedAt = new Map<string, number>();
+
+/**
+ * Atomically claims the right to (re)generate this user's schedule
+ * notifications, returning `false` if another request already claimed a
+ * still-fresh slot. Relies on the unique index on `userId`: when no fresh
+ * doc matches the filter, the upsert either creates the first-ever doc
+ * (success) or collides with an existing-but-fresh one (duplicate key ->
+ * someone else holds the claim -> not our turn).
+ */
+async function claimGenerationSlot(userId: string): Promise<boolean> {
+  const uid = new mongoose.Types.ObjectId(userId);
+  const cutoff = new Date(Date.now() - REGEN_THROTTLE_MS);
+  try {
+    await NotificationGenStateModel.findOneAndUpdate(
+      { userId: uid, lastGeneratedAt: { $lt: cutoff } },
+      { $set: { userId: uid, lastGeneratedAt: new Date() } },
+      { upsert: true },
+    );
+    return true;
+  } catch (err) {
+    if ((err as { code?: number }).code === 11000) return false;
+    throw err;
+  }
+}
 
 function toKey(d: Date): string {
   return [
@@ -41,14 +68,23 @@ function timeToMinutes(time: string): number {
 }
 
 /**
- * Lazily upsert schedule-derived notifications for the current day window.
- * Idempotent via dedupeKey — safe to call on every notifications read.
+ * Claims the generation slot (fast, indexed) and, if claimed, schedules the
+ * actual calendar rebuild + notification upserts to run via `after()` —
+ * after the response has already been sent, instead of blocking the
+ * notifications-list request that triggered it. Idempotent via dedupeKey.
  */
 export async function generateScheduleNotifications(userId: string): Promise<void> {
-  const lastRun = lastGeneratedAt.get(userId);
-  if (lastRun !== undefined && Date.now() - lastRun < REGEN_THROTTLE_MS) return;
-  lastGeneratedAt.set(userId, Date.now());
+  const claimed = await claimGenerationSlot(userId);
+  if (!claimed) return;
 
+  after(() =>
+    runScheduleNotificationGeneration(userId).catch((err) => {
+      console.error('[notifications] background schedule generation failed', err);
+    }),
+  );
+}
+
+async function runScheduleNotificationGeneration(userId: string): Promise<void> {
   const setting = await UserSettingModel.findOne({ userId }).lean();
   const sched = setting?.schedule ?? DEFAULT_SCHEDULE_SETTINGS;
 
