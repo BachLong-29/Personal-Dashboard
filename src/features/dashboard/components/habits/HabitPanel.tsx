@@ -105,7 +105,7 @@ export function HabitPanel({ todayStr }: HabitPanelProps) {
           <span className={sparkle}>✦</span>
           <span className={titleText}>{tDash('habitPanel.title')}</span>
         </div>
-        <div style={{ display: 'flex', gap: 6 }}>
+        <div className="flex gap-1.5 w-full justify-end sm:w-auto">
           <button
             type="button"
             className={manageCatBtn}
@@ -323,7 +323,7 @@ const cornerBR = cn(cornerBase, 'bottom-[5px] right-[5px] border-b-[1.5px] borde
 
 /* ── Header ── */
 const header =
-  'flex items-center justify-between px-[14px] pt-[10px] pb-[8px] border-b border-[var(--border)] shrink-0';
+  'flex flex-col items-stretch gap-2 px-[14px] pt-[10px] pb-[8px] border-b border-[var(--border)] shrink-0 sm:flex-row sm:items-center sm:justify-between sm:gap-0';
 const titleGroup = 'flex items-center gap-2';
 const sparkle = 'text-[16px] animate-[spin_4s_linear_infinite]';
 const titleText =
