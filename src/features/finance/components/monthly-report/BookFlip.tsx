@@ -9,6 +9,8 @@ import {
   type Variants,
 } from 'framer-motion';
 
+import { Icon } from '@/components/common/Icon';
+
 const EASE_OUT = [0.16, 1, 0.3, 1] as const;
 const SWIPE_THRESHOLD = 80;
 
@@ -82,7 +84,7 @@ export function BookFlip({ pages, labels }: BookFlipProps) {
             aria-label={labels.prev}
             className={navBtn}
           >
-            ◆
+            <Icon icon="ArrowLeft" className="text-[16px]" />
           </button>
           <div className="flex items-center gap-1.5">
             {pages.map((_, i) => (
@@ -103,7 +105,7 @@ export function BookFlip({ pages, labels }: BookFlipProps) {
             aria-label={labels.next}
             className={navBtn}
           >
-            ◆
+            <Icon icon="ArrowRight" className="text-[16px]" />
           </button>
         </div>
       )}
@@ -112,6 +114,6 @@ export function BookFlip({ pages, labels }: BookFlipProps) {
 }
 
 const navBtn =
-  'flex h-8 w-8 items-center justify-center rounded-full border border-[var(--border)] text-[14px] text-[var(--text-mid)] transition-colors hover:border-[var(--gold)] hover:text-[var(--gold)] disabled:pointer-events-none disabled:opacity-30 cursor-pointer';
+  'flex h-8 w-8 items-center justify-center text-[var(--text-mid)] transition-colors hover:text-[var(--gold)] disabled:pointer-events-none disabled:opacity-30 cursor-pointer';
 const dot = 'h-1.5 w-1.5 rounded-full bg-[var(--border-hi)] transition-all cursor-pointer';
 const dotActive = 'h-1.5 w-4 rounded-full bg-[var(--gold)] transition-all cursor-pointer';
