@@ -235,6 +235,12 @@
     "motivation": {
       "dailyWisdom": "Daily Wisdom"
     },
+    "goldPrice": {
+      "title": "Gold Price (SJC)",
+      "buy": "Buy",
+      "sell": "Sell",
+      "stale": "Stale"
+    },
     "habitPanel": {
       "title": "Daily Habits",
       "manageCategories": "Manage Categories",
