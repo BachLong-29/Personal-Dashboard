@@ -435,7 +435,7 @@ export const TaskForm = forwardRef<TaskFormHandle, TaskFormProps>(function TaskF
         <textarea
           value={note}
           onChange={(e) => setNote(e.target.value)}
-          rows={2}
+          rows={5}
           maxLength={500}
           placeholder={t('taskForm.placeholders.note')}
           className={textareaClass}
