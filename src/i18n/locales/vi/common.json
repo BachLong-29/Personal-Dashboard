@@ -722,7 +722,10 @@
       },
       "attachmentsField": {
         "remaining": "Còn {count}",
-        "uploadFailed": "Tải lên thất bại"
+        "uploadFailed": "Tải lên thất bại",
+        "preview": "Xem trước ảnh",
+        "remove": "Xóa ảnh",
+        "close": "Đóng"
       }
     },
     "weekPeek": {

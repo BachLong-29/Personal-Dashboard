@@ -722,7 +722,10 @@
       },
       "attachmentsField": {
         "remaining": "{count} remaining",
-        "uploadFailed": "Upload failed"
+        "uploadFailed": "Upload failed",
+        "preview": "Preview image",
+        "remove": "Remove image",
+        "close": "Close"
       }
     },
     "weekPeek": {
