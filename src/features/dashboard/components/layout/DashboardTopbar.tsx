@@ -78,7 +78,7 @@ const DashboardTopbar = (props: DashboardTopbarProps) => {
             <span className="text-[15px] leading-none text-[var(--gold)]">⌂</span>
           </Link>
           <button type="button" className={tabletMenuBtn} onClick={openSearch} aria-label="Search">
-            <span className="text-[15px] leading-none text-[var(--gold)]">⌕</span>
+            <span className="text-[20px] leading-none text-[var(--gold)]">⌕</span>
           </button>
           <button
             type="button"
@@ -353,4 +353,4 @@ const sheetSecondaryBtn =
   'flex items-center justify-center gap-2 py-[10px] px-3 rounded-[var(--r-sm)] border border-[var(--border)] text-[12px] font-bold font-[var(--font-title)] tracking-[0.06em] text-[var(--text-mid)] cursor-pointer transition-colors duration-150 hover:bg-[var(--panel2)] hover:text-[var(--text-hi)]';
 
 const tabletMenuBtn =
-  'w-8 h-8 flex items-center justify-center rounded-[var(--r-sm)] border border-[var(--border)] text-[var(--text-mid)] hover:text-[var(--text-hi)] hover:bg-[var(--panel2)] transition-colors shrink-0';
+  'w-8 h-8 flex items-center justify-center rounded-[var(--r-sm)] border border-[var(--border)] text-[var(--text-mid)] hover:text-[var(--text-hi)] hover:bg-[var(--panel2)] transition-colors shrink-0 cursor-pointer';
