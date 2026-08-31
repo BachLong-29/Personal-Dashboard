@@ -235,6 +235,12 @@
     "motivation": {
       "dailyWisdom": "Lời hay mỗi ngày"
     },
+    "goldPrice": {
+      "title": "Giá vàng SJC",
+      "buy": "Mua vào",
+      "sell": "Bán ra",
+      "stale": "Cũ"
+    },
     "habitPanel": {
       "title": "Thói quen hằng ngày",
       "manageCategories": "Quản lý danh mục",

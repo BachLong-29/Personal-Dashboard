@@ -3,6 +3,7 @@ import { memo } from 'react';
 import { useTranslations } from 'next-intl';
 
 import type { DashboardSettings } from '../../types';
+import { GoldPriceTicker } from '../sidebar/GoldPriceTicker';
 import { ProjectsPanel } from '../sidebar/ProjectsPanel';
 import { WeekPeekPanel } from '../sidebar/WeekPeekPanel';
 
@@ -23,6 +24,7 @@ export const RightColumn = memo(function RightColumn({ settings, quote, onOpenWe
 
   return (
     <>
+      <GoldPriceTicker />
       <ProjectsPanel />
       {settings.showQuoteCard && quote && (
         <div className={motivationCard}>

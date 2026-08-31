@@ -235,6 +235,12 @@
     "motivation": {
       "dailyWisdom": "คติประจำวัน"
     },
+    "goldPrice": {
+      "title": "ราคาทองคำ (SJC)",
+      "buy": "ราคารับซื้อ",
+      "sell": "ราคาขายออก",
+      "stale": "ไม่ล่าสุด"
+    },
     "habitPanel": {
       "title": "นิสัยประจำวัน",
       "manageCategories": "จัดการหมวดหมู่",
