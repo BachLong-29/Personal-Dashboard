@@ -916,6 +916,25 @@
       "carriedOver": "+{amount} dư từ hôm trước",
       "allowanceExplainer": "Định mức là ngân sách tháng chia đều cho {days} ngày. Phần chưa tiêu hết của những ngày trước được cộng vào số còn lại chia cho số ngày còn lại."
     },
+    "monthlyReport": {
+      "pastMonthBanner": "Tháng {month} đã kết thúc — xem báo cáo chi tiêu đầy đủ",
+      "previousMonthNudge": "Tháng {month} đã xong — xem báo cáo chi tiêu của bạn",
+      "viewReport": "Xem báo cáo",
+      "dismiss": "Đóng",
+      "back": "Về trang Tài chính",
+      "noData": "Chưa có dữ liệu cho tháng này.",
+      "page1Eyebrow": "Báo cáo tháng",
+      "netBalance": "Số dư ròng",
+      "savingsBanner": "Bạn đã tiết kiệm được {amount} ({percent}% ngân sách) trong tháng này",
+      "overBudgetTitle": "Vượt ngân sách",
+      "spendingBreakdown": "Phân bổ chi tiêu",
+      "budgetBreakdownTitle": "Chi tiết ngân sách",
+      "noBudgets": "Tháng này chưa đặt ngân sách nào.",
+      "shareOfBudget": "trên tổng ngân sách",
+      "prevPage": "Trang trước",
+      "nextPage": "Trang sau",
+      "pageIndicator": "Trang {n}/{total}"
+    },
     "accounts": {
       "title": "Tài khoản",
       "subtitle": "{count} tài khoản · tổng số dư",
