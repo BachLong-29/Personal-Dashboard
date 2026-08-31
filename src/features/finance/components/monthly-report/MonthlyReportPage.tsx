@@ -58,7 +58,7 @@ export function MonthlyReportPage({ month }: MonthlyReportPageProps) {
         </Link>
       </motion.div>
 
-      <div className="min-h-0 flex-1">
+      <div className="flex min-h-0 flex-1 flex-col">
         {isLoading ? (
           <div className="h-full animate-pulse rounded-[var(--r)] bg-[var(--panel2)]" />
         ) : !overview ? (
