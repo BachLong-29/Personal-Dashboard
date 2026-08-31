@@ -23,6 +23,14 @@ interface Mote {
   isGold: boolean;
 }
 
+// Math.cos/Math.sin can differ in their last bit between server (Node) and
+// client (browser) JS engines, which turns identical floats into different
+// string representations and trips a hydration mismatch. Rounding trig-derived
+// coordinates to a fixed precision keeps server and client output identical.
+function round(n: number) {
+  return Math.round(n * 1000) / 1000;
+}
+
 function RunicGate() {
   const t = useTranslations('auth');
   const cx = 500;
@@ -37,17 +45,17 @@ function RunicGate() {
       <line
         key={i}
         className={`rg-tick${isMajor ? ' rg-tick-major' : ''}`}
-        x1={cx + r2 * Math.cos(angle)}
-        y1={cy + r2 * Math.sin(angle)}
-        x2={cx + r1 * Math.cos(angle)}
-        y2={cy + r1 * Math.sin(angle)}
+        x1={round(cx + r2 * Math.cos(angle))}
+        y1={round(cy + r2 * Math.sin(angle))}
+        x2={round(cx + r1 * Math.cos(angle))}
+        y2={round(cy + r1 * Math.sin(angle))}
       />
     );
   });
 
   const hexPoints = Array.from({ length: 6 }, (_, i) => {
     const angle = (i * 60 - 30) * (Math.PI / 180);
-    return `${cx + 180 * Math.cos(angle)},${cy + 180 * Math.sin(angle)}`;
+    return `${round(cx + 180 * Math.cos(angle))},${round(cy + 180 * Math.sin(angle))}`;
   }).join(' ');
 
   const sigils = ['✦', '⊕', '◈', '⟡', '⊗', '◎'];
@@ -84,8 +92,8 @@ function RunicGate() {
         {sigils.map((sigil, i) => {
           const angle = i * 60 * (Math.PI / 180);
           const r = 380;
-          const x = cx + r * Math.cos(angle);
-          const y = cy + r * Math.sin(angle);
+          const x = round(cx + r * Math.cos(angle));
+          const y = round(cy + r * Math.sin(angle));
           return (
             <g key={i}>
               <circle className="rg-sigil-bg" cx={x} cy={y} r={22} />
