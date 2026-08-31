@@ -1,9 +1,6 @@
 'use client';
 
-import { motion, useReducedMotion } from 'framer-motion';
 import { useLocale, useTranslations } from 'next-intl';
-
-import { Link } from '@/i18n/navigation';
 
 import { useBudgets } from '../../hooks/useBudgets';
 import { useFinanceOverview } from '../../hooks/useFinanceOverview';
@@ -11,8 +8,6 @@ import { formatMonthLabel } from '../../utils';
 import { BookFlip } from './BookFlip';
 import { ReportBudgetPage } from './ReportBudgetPage';
 import { ReportOverviewPage } from './ReportOverviewPage';
-
-const EASE_OUT = [0.16, 1, 0.3, 1] as const;
 
 interface MonthlyReportPageProps {
   /** "YYYY-MM" — already validated (past month) by the server page. */
@@ -22,7 +17,6 @@ interface MonthlyReportPageProps {
 export function MonthlyReportPage({ month }: MonthlyReportPageProps) {
   const t = useTranslations('finance');
   const locale = useLocale();
-  const reduceMotion = useReducedMotion();
 
   const { data: overview, isLoading: overviewLoading } = useFinanceOverview(month);
   const { data: budgets = [], isLoading: budgetsLoading } = useBudgets(month);
@@ -43,21 +37,7 @@ export function MonthlyReportPage({ month }: MonthlyReportPageProps) {
   const overBudget = budgets.filter((b) => b.percentage >= 100);
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col gap-3 p-2 sm:p-4">
-      <motion.div
-        initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: -8 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: reduceMotion ? 0.15 : 0.3, ease: EASE_OUT }}
-        className="shrink-0"
-      >
-        <Link
-          href="/finance"
-          className="text-[11px] font-bold uppercase tracking-[0.08em] text-[var(--text-mid)] no-underline transition-colors hover:text-[var(--gold)]"
-        >
-          ‹ {t('monthlyReport.back')}
-        </Link>
-      </motion.div>
-
+    <div className="flex min-h-0 flex-1 flex-col p-2 sm:p-4">
       <div className="flex min-h-0 flex-1 flex-col">
         {isLoading ? (
           <div className="h-full animate-pulse rounded-[var(--r)] bg-[var(--panel2)]" />
