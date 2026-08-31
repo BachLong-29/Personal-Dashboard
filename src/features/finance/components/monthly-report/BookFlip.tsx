@@ -82,7 +82,7 @@ export function BookFlip({ pages, labels }: BookFlipProps) {
             aria-label={labels.prev}
             className={navBtn}
           >
-            ◂
+            ◆
           </button>
           <div className="flex items-center gap-1.5">
             {pages.map((_, i) => (
@@ -103,7 +103,7 @@ export function BookFlip({ pages, labels }: BookFlipProps) {
             aria-label={labels.next}
             className={navBtn}
           >
-            ▸
+            ◆
           </button>
         </div>
       )}
