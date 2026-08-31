@@ -23,6 +23,7 @@ import { MonthStepper } from './MonthStepper';
 import { TransactionFormModal } from './TransactionFormModal';
 import { GoalContributionModal } from './GoalContributionModal';
 import { AllocationBanner } from './overview/AllocationBanner';
+import { MonthlyReportBanner } from './overview/MonthlyReportBanner';
 import { BalanceCard } from './overview/BalanceCard';
 import { BalanceForecastCard } from './overview/BalanceForecastCard';
 import { BudgetProgressCard } from './overview/BudgetProgressCard';
@@ -157,6 +158,8 @@ export function FinancePage() {
             </GoldPanel>
           ) : (
             <div className="flex flex-col gap-2 sm:gap-4">
+              <MonthlyReportBanner month={month} />
+
               <AllocationBanner
                 goal={goalToAllocate}
                 month={month}

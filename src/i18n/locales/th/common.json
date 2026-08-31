@@ -916,6 +916,25 @@
       "carriedOver": "+{amount} ยกมาจากวันก่อน",
       "allowanceExplainer": "เกณฑ์คืองบประมาณรายเดือนหารเท่าๆ กัน {days} วัน ส่วนที่ใช้ไม่หมดในวันก่อนหน้าจะถูกยกมารวมกับยอดคงเหลือหารด้วยจำนวนวันที่เหลือ"
     },
+    "monthlyReport": {
+      "pastMonthBanner": "{month} สิ้นสุดแล้ว — ดูรายงานการใช้จ่ายฉบับเต็ม",
+      "previousMonthNudge": "{month} จบไปแล้ว — ดูรายงานการใช้จ่ายของคุณ",
+      "viewReport": "ดูรายงาน",
+      "dismiss": "ปิด",
+      "back": "กลับไปที่การเงิน",
+      "noData": "ยังไม่มีข้อมูลสำหรับเดือนนี้",
+      "page1Eyebrow": "รายงานประจำเดือน",
+      "netBalance": "ยอดคงเหลือสุทธิ",
+      "savingsBanner": "คุณประหยัดได้ {amount} ({percent}% ของงบประมาณ) ในเดือนนี้",
+      "overBudgetTitle": "เกินงบประมาณ",
+      "spendingBreakdown": "การกระจายค่าใช้จ่าย",
+      "budgetBreakdownTitle": "รายละเอียดงบประมาณ",
+      "noBudgets": "เดือนนี้ยังไม่ได้ตั้งงบประมาณ",
+      "shareOfBudget": "ของงบประมาณรวม",
+      "prevPage": "หน้าก่อนหน้า",
+      "nextPage": "หน้าถัดไป",
+      "pageIndicator": "หน้า {n}/{total}"
+    },
     "accounts": {
       "title": "กระเป๋าเงิน",
       "subtitle": "{count} บัญชี · ยอดรวม",

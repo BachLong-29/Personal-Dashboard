@@ -916,6 +916,25 @@
       "carriedOver": "+{amount} carried over",
       "allowanceExplainer": "Base is your monthly budget split evenly across {days} days. Anything you underspent on earlier days is carried into what is left for the days remaining."
     },
+    "monthlyReport": {
+      "pastMonthBanner": "{month} has ended — see the full spending report",
+      "previousMonthNudge": "{month} wrapped up — see your spending report",
+      "viewReport": "View report",
+      "dismiss": "Dismiss",
+      "back": "Back to Finance",
+      "noData": "No data for this month.",
+      "page1Eyebrow": "Monthly Report",
+      "netBalance": "Net Balance",
+      "savingsBanner": "You saved {amount} ({percent}% of budget) this month",
+      "overBudgetTitle": "Over Budget",
+      "spendingBreakdown": "Spending Breakdown",
+      "budgetBreakdownTitle": "Budget Breakdown",
+      "noBudgets": "No budgets were set this month.",
+      "shareOfBudget": "of total budget",
+      "prevPage": "Previous page",
+      "nextPage": "Next page",
+      "pageIndicator": "Page {n} of {total}"
+    },
     "accounts": {
       "title": "Wallets",
       "subtitle": "{count, plural, =1 {# account} other {# accounts}} · total balance",
