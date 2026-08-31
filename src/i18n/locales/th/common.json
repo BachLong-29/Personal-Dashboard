@@ -722,7 +722,10 @@
       },
       "attachmentsField": {
         "remaining": "เหลืออีก {count}",
-        "uploadFailed": "อัปโหลดไม่สำเร็จ"
+        "uploadFailed": "อัปโหลดไม่สำเร็จ",
+        "preview": "ดูตัวอย่างรูปภาพ",
+        "remove": "ลบรูปภาพ",
+        "close": "ปิด"
       }
     },
     "weekPeek": {

@@ -68,29 +68,33 @@ export function Upload({
         onDragLeave={() => setDragging(false)}
         onDrop={handleDrop}
         className={cn(
-          'border-[1.5px] border-dashed rounded-[var(--r-lg)] p-8 text-center cursor-pointer',
+          'border-[1.5px] border-dashed rounded-[var(--r-lg)] p-3 sm:p-8 text-center cursor-pointer',
           'bg-[var(--bg-2)] transition-all duration-200 [transition-timing-function:var(--ease-out)]',
           dragging
             ? 'border-[var(--gold)] bg-[oklch(0.78_0.16_82_/_0.05)] shadow-[var(--sh-glow-gold)]'
             : 'border-[var(--border-hi)] hover:border-[var(--gold)] hover:bg-[oklch(0.78_0.16_82_/_0.05)] hover:shadow-[var(--sh-glow-gold)]',
         )}
       >
-        <div
-          className="w-14 h-14 mx-auto mb-3 rounded-full flex items-center justify-center text-[22px] text-[var(--gold)] border-[1.5px] border-[var(--border-hi)]"
-          style={{
-            background:
-              'linear-gradient(135deg, oklch(0.78 0.16 82 / 0.15), oklch(0.68 0.22 295 / 0.15))',
-          }}
-        >
-          ⬆
-        </div>
-        <div className="[font-family:var(--f-title)] text-[15px] tracking-[0.06em] text-[var(--text-hi)] mb-1">
-          {files.length > 0 ? t('upload.addMore') : t('upload.dropArtifactsHere')}
-        </div>
-        <div className="text-[11px] text-[var(--text-lo)]">
-          {t('upload.or')}{' '}
-          <strong className="text-[var(--gold)]">{t('upload.clickToBrowse')}</strong>
-          {hint && ` · ${hint}`}
+        <div className="flex items-center gap-3 text-left sm:flex-col sm:text-center sm:gap-0">
+          <div
+            className="w-9 h-9 sm:w-14 sm:h-14 sm:mx-auto sm:mb-3 rounded-full flex items-center justify-center shrink-0 text-[16px] sm:text-[22px] text-[var(--gold)] border-[1.5px] border-[var(--border-hi)]"
+            style={{
+              background:
+                'linear-gradient(135deg, oklch(0.78 0.16 82 / 0.15), oklch(0.68 0.22 295 / 0.15))',
+            }}
+          >
+            ⬆
+          </div>
+          <div className="min-w-0">
+            <div className="[font-family:var(--f-title)] text-[12px] sm:text-[15px] tracking-[0.06em] text-[var(--text-hi)] sm:mb-1">
+              {files.length > 0 ? t('upload.addMore') : t('upload.dropArtifactsHere')}
+            </div>
+            <div className="text-[10px] sm:text-[11px] text-[var(--text-lo)]">
+              {t('upload.or')}{' '}
+              <strong className="text-[var(--gold)]">{t('upload.clickToBrowse')}</strong>
+              {hint && ` · ${hint}`}
+            </div>
+          </div>
         </div>
       </div>
 

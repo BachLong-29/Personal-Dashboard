@@ -24,6 +24,7 @@ interface TaskAttachmentsFieldProps {
 export function TaskAttachmentsField({ value, onChange }: TaskAttachmentsFieldProps) {
   const t = useTranslations('tasks');
   const [pending, setPending] = useState<PendingItem[]>([]);
+  const [lightbox, setLightbox] = useState<string | null>(null);
 
   const totalCount = value.length + pending.length;
   const canAddMore = totalCount < MAX_ATTACHMENTS;
@@ -96,17 +97,25 @@ export function TaskAttachmentsField({ value, onChange }: TaskAttachmentsFieldPr
       )}
 
       {(value.length > 0 || pending.length > 0) && (
-        <div className="flex flex-wrap gap-2">
+        <div className="grid grid-cols-3 gap-2">
           {value.map((url) => (
             <div
               key={url}
-              className="relative w-[150px] h-[150px] rounded-[var(--r-md)] overflow-hidden border border-[var(--border)] shrink-0 group"
+              className="relative aspect-square w-full rounded-[var(--r-md)] overflow-hidden border border-[var(--border)]"
             >
-              <Image src={url} alt="Attachment" fill sizes="150px" className="object-cover" />
+              <button
+                type="button"
+                onClick={() => setLightbox(url)}
+                className="absolute inset-0 cursor-zoom-in"
+                aria-label={t('taskForm.attachmentsField.preview')}
+              >
+                <Image src={url} alt="Attachment" fill sizes="150px" className="object-cover" />
+              </button>
               <button
                 type="button"
                 onClick={() => removeUploaded(url)}
-                className="absolute top-1.5 right-1.5 w-5 h-5 rounded-full bg-black/60 text-white text-[12px] leading-none flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-[var(--rose)] cursor-pointer"
+                className="absolute top-1.5 right-1.5 w-5 h-5 rounded-full bg-black/60 text-white text-[12px] leading-none flex items-center justify-center hover:bg-[var(--rose)] cursor-pointer"
+                aria-label={t('taskForm.attachmentsField.remove')}
               >
                 ×
               </button>
@@ -116,7 +125,7 @@ export function TaskAttachmentsField({ value, onChange }: TaskAttachmentsFieldPr
           {pending.map((item) => (
             <div
               key={item.id}
-              className="relative w-[150px] h-[150px] rounded-[var(--r-md)] overflow-hidden border border-[var(--border)] shrink-0"
+              className="relative aspect-square w-full rounded-[var(--r-md)] overflow-hidden border border-[var(--border)]"
             >
               <Image
                 src={item.objectUrl}
@@ -139,12 +148,33 @@ export function TaskAttachmentsField({ value, onChange }: TaskAttachmentsFieldPr
                   type="button"
                   onClick={() => removePending(item.id)}
                   className="absolute top-1.5 right-1.5 w-5 h-5 rounded-full bg-black/60 text-white text-[12px] leading-none flex items-center justify-center hover:bg-[var(--rose)] cursor-pointer"
+                  aria-label={t('taskForm.attachmentsField.remove')}
                 >
                   ×
                 </button>
               )}
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Lightbox — full-screen image preview */}
+      {lightbox && (
+        <div
+          className="fixed inset-0 z-[2000] flex items-center justify-center bg-black/85 p-4 cursor-zoom-out"
+          onClick={() => setLightbox(null)}
+        >
+          <div className="relative w-full h-full max-w-[90vw] max-h-[90vh]">
+            <Image src={lightbox} alt="Attachment" fill sizes="90vw" className="object-contain" />
+          </div>
+          <button
+            type="button"
+            onClick={() => setLightbox(null)}
+            className="absolute top-4 right-4 w-9 h-9 rounded-full bg-black/60 text-white text-[18px] leading-none flex items-center justify-center hover:bg-[var(--rose)] transition-colors cursor-pointer"
+            aria-label={t('taskForm.attachmentsField.close')}
+          >
+            ×
+          </button>
         </div>
       )}
     </div>
