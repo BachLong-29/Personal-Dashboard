@@ -1,10 +1,28 @@
 'use client';
 
 import { useState, type ReactNode } from 'react';
-import { AnimatePresence, motion, useReducedMotion, type PanInfo } from 'framer-motion';
+import {
+  AnimatePresence,
+  motion,
+  useReducedMotion,
+  type PanInfo,
+  type Variants,
+} from 'framer-motion';
 
 const EASE_OUT = [0.16, 1, 0.3, 1] as const;
 const SWIPE_THRESHOLD = 80;
+
+// `custom` (the flip direction) must drive the rotateY targets through `variants` functions —
+// AnimatePresence only re-reads `custom` live for the *exiting* page when the animation is
+// defined this way. Baking `direction` straight into inline initial/animate/exit objects (as a
+// first pass here did) freezes the exiting page's target to whatever direction was current the
+// last time it rendered as the *entering* page — correct going forward by coincidence (the
+// initial direction happens to match), wrong on the way back.
+const flipVariants: Variants = {
+  enter: (direction: number) => ({ rotateY: direction > 0 ? 78 : -78, opacity: 0 }),
+  center: { rotateY: 0, opacity: 1 },
+  exit: (direction: number) => ({ rotateY: direction > 0 ? -78 : 78, opacity: 0 }),
+};
 
 interface BookFlipProps {
   pages: ReactNode[];
@@ -42,16 +60,12 @@ export function BookFlip({ pages, labels }: BookFlipProps) {
             dragConstraints={{ left: 0, right: 0 }}
             dragElastic={0.15}
             onDragEnd={handleDragEnd}
-            initial={
-              reduceMotion ? { opacity: 0 } : { rotateY: direction > 0 ? 78 : -78, opacity: 0 }
-            }
-            animate={reduceMotion ? { opacity: 1 } : { rotateY: 0, opacity: 1 }}
-            exit={reduceMotion ? { opacity: 0 } : { rotateY: direction > 0 ? -78 : 78, opacity: 0 }}
+            variants={reduceMotion ? undefined : flipVariants}
+            initial={reduceMotion ? { opacity: 0 } : 'enter'}
+            animate={reduceMotion ? { opacity: 1 } : 'center'}
+            exit={reduceMotion ? { opacity: 0 } : 'exit'}
             transition={{ duration: reduceMotion ? 0.15 : 0.5, ease: EASE_OUT }}
-            style={{
-              transformStyle: 'preserve-3d',
-              transformOrigin: direction > 0 ? 'left center' : 'right center',
-            }}
+            style={{ transformStyle: 'preserve-3d', transformOrigin: 'center' }}
             className="h-full"
           >
             {pages[index]}
