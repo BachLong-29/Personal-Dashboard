@@ -19,7 +19,7 @@ nhập liệu, thay vì tạo overlay mới.
 </context>
 
 <task>
-Phím tắt toàn cục **Ctrl/Cmd + Shift + A**: mở 1 ô nhập liệu kiểu command-palette (dùng lại
+Phím tắt toàn cục **Ctrl/Cmd + Shift + E**: mở 1 ô nhập liệu kiểu command-palette (dùng lại
 `CommandPalette`, không tạo overlay mới) ở bất kỳ trang nào trong `(protected)`. Gõ 1 dòng
 theo đúng cú pháp `parseQuickEntry()` đã có, Enter → đóng palette, mở `TransactionFormModal`
 với draft đã parse để user xác nhận (không tự động lưu).
@@ -73,7 +73,7 @@ hook chung:
 ```ts
 useEffect(() => {
   const handle = (e: KeyboardEvent) => {
-    if (!(e.metaKey || e.ctrlKey) || !e.shiftKey || e.key.toLowerCase() !== 'a') return;
+    if (!(e.metaKey || e.ctrlKey) || !e.shiftKey || e.key.toLowerCase() !== 'e') return;
 
     const target = e.target as HTMLElement;
     const isTyping =
