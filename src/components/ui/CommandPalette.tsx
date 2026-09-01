@@ -120,6 +120,11 @@ export function CommandPalette({
       const prev = filtered[(idx - 1 + filtered.length) % filtered.length];
       if (prev) setSelectedKey(prev.key);
     } else if (e.key === 'Enter') {
+      // Without this, the same Enter keypress that selects an item can be read as an
+      // implicit form-submit by whatever the selection focuses next (e.g. TransactionFormModal's
+      // auto-focused amount field opens inside a <form> right as this event is still resolving),
+      // submitting it before the user ever pressed Enter a second time.
+      e.preventDefault();
       const item = filtered[idx];
       if (item) {
         item.onSelect();
