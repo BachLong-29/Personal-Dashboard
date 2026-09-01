@@ -7,6 +7,7 @@ import { useState } from 'react';
 import { CharacterCard } from '@/components/common/CharacterCard';
 import { CoinIcon } from '@/components/common/CoinIcon';
 import { Icon } from '@/components/common/Icon';
+import { Dropdown } from '@/components/ui/Dropdown';
 import { findClass, findCompanion, findRank } from '@/constants/hero-data';
 import { useLogout } from '@/features/auth/hooks/useLogout';
 import { useAuthStore } from '@/features/auth/stores/auth.store';
@@ -35,6 +36,7 @@ const DashboardTopbar = (props: DashboardTopbarProps) => {
   const logout = useLogout();
   const openSearch = useUIStore((s) => s.openSearch);
   const openQuickAddTask = useUIStore((s) => s.openQuickAddTask);
+  const openQuickAddTransaction = useUIStore((s) => s.openQuickAddTransaction);
 
   const { data: profileData } = useProfile();
   const profile = profileData?.profile;
@@ -80,14 +82,35 @@ const DashboardTopbar = (props: DashboardTopbarProps) => {
           <button type="button" className={tabletMenuBtn} onClick={openSearch} aria-label="Search">
             <span className="text-[20px] leading-none text-[var(--gold)]">⌕</span>
           </button>
-          <button
-            type="button"
-            className={tabletMenuBtn}
-            onClick={openQuickAddTask}
-            aria-label={tDash('quickAddTask.button')}
-          >
-            <span className="text-[15px] leading-none text-[var(--gold)]">＋</span>
-          </button>
+          <Dropdown
+            trigger={
+              <button
+                type="button"
+                className={tabletMenuBtn}
+                aria-label={tDash('quickAddMenu.ariaLabel')}
+              >
+                <span className="text-[15px] leading-none text-[var(--gold)]">＋</span>
+              </button>
+            }
+            groups={[
+              {
+                items: [
+                  {
+                    key: 'task',
+                    icon: '📋',
+                    label: tDash('quickAddMenu.task'),
+                    onClick: openQuickAddTask,
+                  },
+                  {
+                    key: 'transaction',
+                    icon: '💰',
+                    label: tDash('quickAddMenu.transaction'),
+                    onClick: openQuickAddTransaction,
+                  },
+                ],
+              },
+            ]}
+          />
           <NotificationBell />
         </div>
 

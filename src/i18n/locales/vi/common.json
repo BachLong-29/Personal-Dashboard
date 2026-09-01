@@ -146,8 +146,10 @@
     "streakDays": "🔥 {count} ngày liên tiếp",
     "achievements": "Thành tích",
     "questLog": "Nhật ký nhiệm vụ",
-    "quickAddTask": {
-      "button": "Tạo task nhanh"
+    "quickAddMenu": {
+      "ariaLabel": "Thêm nhanh",
+      "task": "Tạo task nhanh",
+      "transaction": "Ghi giao dịch nhanh"
     },
     "tabs": {
       "quests": "Nhiệm vụ",
