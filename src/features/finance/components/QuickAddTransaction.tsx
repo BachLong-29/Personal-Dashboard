@@ -13,7 +13,7 @@ import { formatCurrency } from '../utils';
 import { TransactionFormModal } from './TransactionFormModal';
 
 /**
- * Ctrl/Cmd + Shift + A opens a one-line "quick add transaction" palette from anywhere in
+ * Ctrl/Cmd + Shift + E opens a one-line "quick add transaction" palette from anywhere in
  * the protected app — reuses the same CommandPalette shell as Global Search, and the same
  * parseQuickEntry()/TransactionFormModal draft flow already used on the Finance Overview
  * page, so there's nothing new to learn and no separate code path to keep in sync.
@@ -36,7 +36,7 @@ export function QuickAddTransaction() {
 
   useEffect(() => {
     const handle = (e: KeyboardEvent) => {
-      if (!(e.metaKey || e.ctrlKey) || !e.shiftKey || e.key.toLowerCase() !== 'a') return;
+      if (!(e.metaKey || e.ctrlKey) || !e.shiftKey || e.key.toLowerCase() !== 'e') return;
 
       const target = e.target as HTMLElement;
       const isTyping =
