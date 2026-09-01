@@ -98,10 +98,14 @@ Thêm `<QuickAddTransaction />` vào `src/app/[locale]/(protected)/layout.tsx`, 
 
 ## Mobile
 
-**Không** thêm nút bấm tương đương ở topbar (khác tiền lệ Quick Add Task) — topbar mobile
-đã có nút `＋` cho Quick Add Task, thêm 1 nút `＋` thứ hai làm việc khác sẽ gây nhầm lẫn và
-topbar mobile vốn đã chật (đã fix cramped nhiều lần trước đó). Trên mobile user vẫn dùng ô
-quick-add có sẵn ở Overview hoặc nút "Add transaction" ở `FinancePageHeader`.
+Không có phím tắt vật lý trên mobile. **Cập nhật** (khác quyết định ban đầu "không thêm gì"):
+nút `＋` sẵn có ở topbar mobile (`DashboardTopbar.tsx`) — trước đây bấm là mở thẳng Quick Add
+Task — đổi thành trigger của `Dropdown` (`src/components/ui/Dropdown.tsx`) với 2 lựa chọn:
+"Quick add task" và "Quick add transaction". Không thêm icon mới vào topbar (đã chật, fix
+cramped nhiều lần trước đó) — chỉ thêm 1 bước chọn sau khi bấm nút có sẵn.
+
+i18n: `dashboard.quickAddMenu.{ariaLabel,task,transaction}` — thay thế
+`dashboard.quickAddTask.button` cũ (không còn dùng).
 
 ## Edge cases
 

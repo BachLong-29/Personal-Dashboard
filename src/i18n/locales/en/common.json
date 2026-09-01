@@ -146,8 +146,10 @@
     "streakDays": "🔥 {count} Day Streak",
     "achievements": "Achievements",
     "questLog": "Quest Log",
-    "quickAddTask": {
-      "button": "Quick add task"
+    "quickAddMenu": {
+      "ariaLabel": "Quick add",
+      "task": "Quick add task",
+      "transaction": "Quick add transaction"
     },
     "tabs": {
       "quests": "Quests",

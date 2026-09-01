@@ -146,8 +146,10 @@
     "streakDays": "🔥 {count} วันติดต่อกัน",
     "achievements": "ความสำเร็จ",
     "questLog": "บันทึกภารกิจ",
-    "quickAddTask": {
-      "button": "เพิ่มงานด่วน"
+    "quickAddMenu": {
+      "ariaLabel": "เพิ่มด่วน",
+      "task": "เพิ่มงานด่วน",
+      "transaction": "บันทึกธุรกรรมด่วน"
     },
     "tabs": {
       "quests": "ภารกิจ",
