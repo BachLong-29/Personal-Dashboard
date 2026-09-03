@@ -1,9 +1,9 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 
 import { cn } from '@/libs/utils';
-import { useOnClickOutside } from '@/hooks/useOnClickOutside';
 import { CAT_MAP, RANK_DESC, RANK_STYLE, PRIORITY_STYLE } from '../constants';
 import type { Goal, GoalCategory } from '../types';
 import { ProgressRing } from './ProgressRing';
@@ -18,25 +18,64 @@ interface GoalCardProps {
 }
 
 const catAccent: Record<GoalCategory, string> = {
-  career:   'var(--gold)',
-  health:   'var(--mint)',
+  career: 'var(--gold)',
+  health: 'var(--mint)',
   learning: 'var(--cyan)',
-  finance:  'var(--violet)',
+  finance: 'var(--violet)',
   personal: 'var(--rose)',
 };
 
 const catRingText: Record<GoalCategory, string> = {
-  career:   'text-[var(--gold)]',
-  health:   'text-[var(--mint)]',
+  career: 'text-[var(--gold)]',
+  health: 'text-[var(--mint)]',
   learning: 'text-[var(--cyan)]',
-  finance:  'text-[var(--violet)]',
+  finance: 'text-[var(--violet)]',
   personal: 'text-[var(--rose)]',
 };
 
-export function GoalCard({ goal, index, expanded, onToggleExpand, onToggleMilestone, onAction }: GoalCardProps) {
+export function GoalCard({
+  goal,
+  index,
+  expanded,
+  onToggleExpand,
+  onToggleMilestone,
+  onAction,
+}: GoalCardProps) {
   const [menuOpen, setMenuOpen] = useState(false);
-  const menuRef = useRef<HTMLDivElement>(null);
-  useOnClickOutside(menuRef, () => setMenuOpen(false));
+  const menuWrapRef = useRef<HTMLDivElement>(null);
+  const menuBtnRef = useRef<HTMLButtonElement>(null);
+  const menuPanelRef = useRef<HTMLDivElement>(null);
+  const [menuRect, setMenuRect] = useState<{ top: number; right: number } | null>(null);
+
+  useEffect(() => {
+    if (!menuOpen) return;
+    const handlePointerDown = (event: MouseEvent) => {
+      const target = event.target as Node;
+      if (!menuWrapRef.current?.contains(target) && !menuPanelRef.current?.contains(target)) {
+        setMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handlePointerDown);
+    return () => document.removeEventListener('mousedown', handlePointerDown);
+  }, [menuOpen]);
+
+  // Menu renders in a portal (so it escapes the card's own `overflow-hidden`, needed to
+  // clip the "CONQUERED" ribbon) — track the trigger's viewport rect to anchor it there.
+  useLayoutEffect(() => {
+    if (!menuOpen) return;
+    const updateRect = () => {
+      const rect = menuBtnRef.current?.getBoundingClientRect();
+      if (!rect) return;
+      setMenuRect({ top: rect.bottom + 4, right: window.innerWidth - rect.right });
+    };
+    updateRect();
+    window.addEventListener('scroll', updateRect, true);
+    window.addEventListener('resize', updateRect);
+    return () => {
+      window.removeEventListener('scroll', updateRect, true);
+      window.removeEventListener('resize', updateRect);
+    };
+  }, [menuOpen]);
 
   const cat = CAT_MAP[goal.cat];
   const done = goal.status === 'completed';
@@ -65,8 +104,13 @@ export function GoalCard({ goal, index, expanded, onToggleExpand, onToggleMilest
     >
       {/* Conquered ribbon */}
       {done && (
-        <div className="absolute top-[18px] right-[-28px] w-[110px] text-center text-[7px] font-black tracking-[0.16em] uppercase py-[3px] pointer-events-none rotate-[38deg] z-10"
-          style={{ background: `linear-gradient(90deg, oklch(0.5 0.14 162), var(--mint))`, color: 'var(--panel)' }}>
+        <div
+          className="absolute top-[18px] right-[-28px] w-[110px] text-center text-[7px] font-black tracking-[0.16em] uppercase py-[3px] pointer-events-none rotate-[38deg] z-10"
+          style={{
+            background: `linear-gradient(90deg, oklch(0.5 0.14 162), var(--mint))`,
+            color: 'var(--panel)',
+          }}
+        >
           CONQUERED
         </div>
       )}
@@ -77,7 +121,12 @@ export function GoalCard({ goal, index, expanded, onToggleExpand, onToggleMilest
         <div className={cn('relative shrink-0', ringText)}>
           <ProgressRing value={goal.progress} size={52} stroke={5} />
           <div className="absolute inset-0 flex items-center justify-center">
-            <span className={cn('font-[var(--font-title)] text-[11px] font-black', done ? 'text-[var(--mint)]' : '')}>
+            <span
+              className={cn(
+                'font-[var(--font-title)] text-[11px] font-black',
+                done ? 'text-[var(--mint)]' : '',
+              )}
+            >
               {done ? '✓' : Math.round(goal.progress * 100)}
             </span>
           </div>
@@ -87,16 +136,31 @@ export function GoalCard({ goal, index, expanded, onToggleExpand, onToggleMilest
         <div className="flex-1 min-w-0 pt-0.5">
           <div className="flex items-center gap-1.5 flex-wrap mb-1.5">
             {/* Rank */}
-            <span className={cn('text-[9px] font-black font-[var(--font-title)] px-1.5 py-0.5 rounded-[3px] border tracking-[0.08em]', RANK_STYLE[goal.rank])}>
+            <span
+              className={cn(
+                'text-[9px] font-black font-[var(--font-title)] px-1.5 py-0.5 rounded-[3px] border tracking-[0.08em]',
+                RANK_STYLE[goal.rank],
+              )}
+            >
               {goal.rank}
             </span>
             {/* Category */}
-            <span className={cn('text-[9px] font-semibold tracking-[0.06em] font-[var(--font-title)]', catRingText[goal.cat])}>
+            <span
+              className={cn(
+                'text-[9px] font-semibold tracking-[0.06em] font-[var(--font-title)]',
+                catRingText[goal.cat],
+              )}
+            >
               {cat.ci} {cat.label}
             </span>
             {/* Priority */}
             {!done && !archived && (
-              <span className={cn('text-[8px] font-bold px-1.5 py-0.5 rounded-[3px] border tracking-[0.06em] font-[var(--font-title)] capitalize', PRIORITY_STYLE[goal.priority])}>
+              <span
+                className={cn(
+                  'text-[8px] font-bold px-1.5 py-0.5 rounded-[3px] border tracking-[0.06em] font-[var(--font-title)] capitalize',
+                  PRIORITY_STYLE[goal.priority],
+                )}
+              >
                 {goal.priority}
               </span>
             )}
@@ -107,8 +171,9 @@ export function GoalCard({ goal, index, expanded, onToggleExpand, onToggleMilest
         </div>
 
         {/* Menu */}
-        <div ref={menuRef} className="relative shrink-0 mt-0.5">
+        <div ref={menuWrapRef} className="relative shrink-0 mt-0.5">
           <button
+            ref={menuBtnRef}
             type="button"
             onClick={() => setMenuOpen((o) => !o)}
             className="w-7 h-7 flex items-center justify-center rounded-[var(--r-sm)] text-[var(--text-lo)] hover:text-[var(--text-hi)] hover:bg-[var(--panel2)] transition-colors text-[16px] leading-none"
@@ -116,22 +181,72 @@ export function GoalCard({ goal, index, expanded, onToggleExpand, onToggleMilest
           >
             ⋯
           </button>
-          {menuOpen && (
-            <div className="absolute right-0 top-[calc(100%+4px)] z-50 w-[160px] bg-[var(--panel)] border border-[var(--border)] rounded-[var(--r-sm)] shadow-[0_8px_24px_oklch(0_0_0_/_0.4)] overflow-hidden py-1">
-              <MenuItem onClick={() => { onAction('edit', goal); setMenuOpen(false); }}>✎ Edit ambition</MenuItem>
-              <MenuItem onClick={() => { onToggleExpand(goal.id); setMenuOpen(false); }}>
-                {expanded ? '▲ Collapse' : '▾ Expand details'}
-              </MenuItem>
-              {!done && (
-                <MenuItem onClick={() => { onAction('complete', goal); setMenuOpen(false); }}>✓ Mark complete</MenuItem>
-              )}
-              <div className="h-px bg-[var(--border)] my-1" />
-              {archived
-                ? <MenuItem onClick={() => { onAction('restore', goal); setMenuOpen(false); }}>↺ Restore</MenuItem>
-                : <MenuItem onClick={() => { onAction('archive', goal); setMenuOpen(false); }}>▣ Archive</MenuItem>}
-              <MenuItem danger onClick={() => { onAction('delete', goal); setMenuOpen(false); }}>🗑 Delete</MenuItem>
-            </div>
-          )}
+          {menuOpen &&
+            menuRect &&
+            createPortal(
+              <div
+                ref={menuPanelRef}
+                style={{ top: menuRect.top, right: menuRect.right }}
+                className="fixed z-[1050] w-[160px] bg-[var(--panel)] border border-[var(--border)] rounded-[var(--r-sm)] shadow-[0_8px_24px_oklch(0_0_0_/_0.4)] overflow-hidden py-1"
+              >
+                <MenuItem
+                  onClick={() => {
+                    onAction('edit', goal);
+                    setMenuOpen(false);
+                  }}
+                >
+                  ✎ Edit ambition
+                </MenuItem>
+                <MenuItem
+                  onClick={() => {
+                    onToggleExpand(goal.id);
+                    setMenuOpen(false);
+                  }}
+                >
+                  {expanded ? '▲ Collapse' : '▾ Expand details'}
+                </MenuItem>
+                {!done && (
+                  <MenuItem
+                    onClick={() => {
+                      onAction('complete', goal);
+                      setMenuOpen(false);
+                    }}
+                  >
+                    ✓ Mark complete
+                  </MenuItem>
+                )}
+                <div className="h-px bg-[var(--border)] my-1" />
+                {archived ? (
+                  <MenuItem
+                    onClick={() => {
+                      onAction('restore', goal);
+                      setMenuOpen(false);
+                    }}
+                  >
+                    ↺ Restore
+                  </MenuItem>
+                ) : (
+                  <MenuItem
+                    onClick={() => {
+                      onAction('archive', goal);
+                      setMenuOpen(false);
+                    }}
+                  >
+                    ▣ Archive
+                  </MenuItem>
+                )}
+                <MenuItem
+                  danger
+                  onClick={() => {
+                    onAction('delete', goal);
+                    setMenuOpen(false);
+                  }}
+                >
+                  🗑 Delete
+                </MenuItem>
+              </div>,
+              document.body,
+            )}
         </div>
       </div>
 
@@ -152,7 +267,9 @@ export function GoalCard({ goal, index, expanded, onToggleExpand, onToggleMilest
               style={{ width: `${msTotal ? (msDone / msTotal) * 100 : 0}%`, background: accent }}
             />
           </div>
-          <span className="text-[9px] text-[var(--text-lo)]">{msDone}/{msTotal}</span>
+          <span className="text-[9px] text-[var(--text-lo)]">
+            {msDone}/{msTotal}
+          </span>
         </div>
         <div className="flex flex-col gap-0.5">
           {showMs.map((m) => (
@@ -178,7 +295,12 @@ export function GoalCard({ goal, index, expanded, onToggleExpand, onToggleMilest
               >
                 ✓
               </span>
-              <span className={cn('text-[11px] leading-tight', m.done ? 'text-[var(--text-lo)] line-through' : 'text-[var(--text-hi)]')}>
+              <span
+                className={cn(
+                  'text-[11px] leading-tight',
+                  m.done ? 'text-[var(--text-lo)] line-through' : 'text-[var(--text-hi)]',
+                )}
+              >
                 {m.label}
               </span>
             </div>
@@ -197,20 +319,27 @@ export function GoalCard({ goal, index, expanded, onToggleExpand, onToggleMilest
 
       {/* Footer */}
       <div className="flex items-center gap-2 px-4 py-2.5 border-t border-[var(--border)] bg-[oklch(0_0_0_/_0.06)]">
-        <span className={cn('text-[10px] flex items-center gap-1', done ? 'text-[var(--mint)]' : 'text-[var(--text-lo)]')}>
+        <span
+          className={cn(
+            'text-[10px] flex items-center gap-1',
+            done ? 'text-[var(--mint)]' : 'text-[var(--text-lo)]',
+          )}
+        >
           <span>◷</span>
           {done
             ? `Done ${goal.completedDate}`
             : archived
-            ? 'Archived'
-            : `${goal.targetLabel} · ${goal.daysLeft}d left`}
+              ? 'Archived'
+              : `${goal.targetLabel} · ${goal.daysLeft}d left`}
         </span>
         <div className="flex-1" />
         <span className="text-[10px] font-bold text-[var(--cyan)] font-[var(--font-title)]">
-          {goal.xp}<small className="text-[8px] ml-0.5 opacity-60">XP</small>
+          {goal.xp}
+          <small className="text-[8px] ml-0.5 opacity-60">XP</small>
         </span>
         <span className="text-[10px] font-bold text-[var(--gold)] font-[var(--font-title)]">
-          {goal.coins}<small className="text-[8px] ml-0.5 opacity-60">◉</small>
+          {goal.coins}
+          <small className="text-[8px] ml-0.5 opacity-60">◉</small>
         </span>
       </div>
 
@@ -228,15 +357,32 @@ export function GoalCard({ goal, index, expanded, onToggleExpand, onToggleMilest
           {/* Detail grid */}
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-2.5">
             {[
-              ['Status',   goal.status === 'not-started' ? 'Not Started' : goal.status === 'in-progress' ? 'In Progress' : goal.status === 'completed' ? 'Completed' : 'Archived'],
-              ['Rank',     `${goal.rank} · ${RANK_DESC[goal.rank]}`],
+              [
+                'Status',
+                goal.status === 'not-started'
+                  ? 'Not Started'
+                  : goal.status === 'in-progress'
+                    ? 'In Progress'
+                    : goal.status === 'completed'
+                      ? 'Completed'
+                      : 'Archived',
+              ],
+              ['Rank', `${goal.rank} · ${RANK_DESC[goal.rank]}`],
               ['Priority', goal.priority.charAt(0).toUpperCase() + goal.priority.slice(1)],
-              ['Started',  new Date(goal.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })],
-              ['Target',   goal.targetLabel],
-              ['Reward',   `${goal.xp} XP · ${goal.coins} ◉`],
+              [
+                'Started',
+                new Date(goal.createdAt).toLocaleDateString('en-US', {
+                  month: 'short',
+                  day: 'numeric',
+                }),
+              ],
+              ['Target', goal.targetLabel],
+              ['Reward', `${goal.xp} XP · ${goal.coins} ◉`],
             ].map(([k, v]) => (
               <div key={k}>
-                <div className="text-[8px] text-[var(--text-lo)] uppercase tracking-[0.1em] font-[var(--font-title)] mb-0.5">{k}</div>
+                <div className="text-[8px] text-[var(--text-lo)] uppercase tracking-[0.1em] font-[var(--font-title)] mb-0.5">
+                  {k}
+                </div>
                 <div className="text-[10px] font-semibold text-[var(--text-hi)]">{v}</div>
               </div>
             ))}
@@ -245,7 +391,10 @@ export function GoalCard({ goal, index, expanded, onToggleExpand, onToggleMilest
           {/* Strategy note */}
           {goal.note && (
             <div className="bg-[var(--panel)] border border-[var(--border)] rounded-[var(--r-sm)] p-3">
-              <div className="text-[8px] tracking-[0.1em] uppercase mb-1.5 font-[var(--font-title)]" style={{ color: accent }}>
+              <div
+                className="text-[8px] tracking-[0.1em] uppercase mb-1.5 font-[var(--font-title)]"
+                style={{ color: accent }}
+              >
                 ◆ STRATEGY
               </div>
               <p className="text-[10px] text-[var(--text-mid)] leading-[1.6] italic">{goal.note}</p>
@@ -263,13 +412,19 @@ export function GoalCard({ goal, index, expanded, onToggleExpand, onToggleMilest
           {/* Actions */}
           <div className="flex flex-wrap gap-2 pt-1">
             {!done && (
-              <ActionBtn primary onClick={() => onAction('complete', goal)}>✓ Complete</ActionBtn>
+              <ActionBtn primary onClick={() => onAction('complete', goal)}>
+                ✓ Complete
+              </ActionBtn>
             )}
             <ActionBtn onClick={() => onAction('edit', goal)}>✎ Edit</ActionBtn>
-            {archived
-              ? <ActionBtn onClick={() => onAction('restore', goal)}>↺ Restore</ActionBtn>
-              : <ActionBtn onClick={() => onAction('archive', goal)}>▣ Archive</ActionBtn>}
-            <ActionBtn danger onClick={() => onAction('delete', goal)}>🗑</ActionBtn>
+            {archived ? (
+              <ActionBtn onClick={() => onAction('restore', goal)}>↺ Restore</ActionBtn>
+            ) : (
+              <ActionBtn onClick={() => onAction('archive', goal)}>▣ Archive</ActionBtn>
+            )}
+            <ActionBtn danger onClick={() => onAction('delete', goal)}>
+              🗑
+            </ActionBtn>
           </div>
 
           <button
@@ -285,7 +440,15 @@ export function GoalCard({ goal, index, expanded, onToggleExpand, onToggleMilest
   );
 }
 
-function MenuItem({ children, onClick, danger }: { children: React.ReactNode; onClick: () => void; danger?: boolean }) {
+function MenuItem({
+  children,
+  onClick,
+  danger,
+}: {
+  children: React.ReactNode;
+  onClick: () => void;
+  danger?: boolean;
+}) {
   return (
     <button
       type="button"
@@ -302,16 +465,30 @@ function MenuItem({ children, onClick, danger }: { children: React.ReactNode; on
   );
 }
 
-function ActionBtn({ children, onClick, primary, danger }: { children: React.ReactNode; onClick: () => void; primary?: boolean; danger?: boolean }) {
+function ActionBtn({
+  children,
+  onClick,
+  primary,
+  danger,
+}: {
+  children: React.ReactNode;
+  onClick: () => void;
+  primary?: boolean;
+  danger?: boolean;
+}) {
   return (
     <button
       type="button"
       onClick={onClick}
       className={cn(
         'px-3 py-1.5 rounded-[var(--r-sm)] text-[10px] font-bold font-[var(--font-title)] tracking-[0.06em] transition-colors border',
-        primary && 'bg-[oklch(0.74_0.17_85_/_0.15)] border-[oklch(0.74_0.17_85_/_0.4)] text-[var(--gold)] hover:bg-[oklch(0.74_0.17_85_/_0.25)]',
-        danger  && 'bg-transparent border-[oklch(0.74_0.18_5_/_0.3)] text-[var(--rose)] hover:bg-[oklch(0.74_0.18_5_/_0.08)]',
-        !primary && !danger && 'bg-transparent border-[var(--border)] text-[var(--text-mid)] hover:text-[var(--text-hi)] hover:bg-[var(--panel2)]',
+        primary &&
+          'bg-[oklch(0.74_0.17_85_/_0.15)] border-[oklch(0.74_0.17_85_/_0.4)] text-[var(--gold)] hover:bg-[oklch(0.74_0.17_85_/_0.25)]',
+        danger &&
+          'bg-transparent border-[oklch(0.74_0.18_5_/_0.3)] text-[var(--rose)] hover:bg-[oklch(0.74_0.18_5_/_0.08)]',
+        !primary &&
+          !danger &&
+          'bg-transparent border-[var(--border)] text-[var(--text-mid)] hover:text-[var(--text-hi)] hover:bg-[var(--panel2)]',
       )}
     >
       {children}
