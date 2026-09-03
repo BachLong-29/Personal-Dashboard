@@ -11,8 +11,15 @@ export function ProgressRing({ value, size = 52, stroke = 5 }: ProgressRingProps
   const c = 2 * Math.PI * r;
   const off = c * (1 - Math.max(0, Math.min(1, value)));
   return (
-    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
-      <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="var(--panel2)" strokeWidth={stroke} />
+    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={{ overflow: 'visible' }}>
+      <circle
+        cx={size / 2}
+        cy={size / 2}
+        r={r}
+        fill="none"
+        stroke="var(--panel2)"
+        strokeWidth={stroke}
+      />
       <circle
         cx={size / 2}
         cy={size / 2}
