@@ -345,7 +345,7 @@ export function SessionPlanner({ open, task, onClose }: SessionPlannerProps) {
                     <DatePicker
                       value={eDate ? dateFromStr(eDate) : null}
                       onChange={(d) => setEDate(dateToStr(d))}
-                      className="w-[200px]"
+                      className="w-[200px] shrink-0"
                     />
                   </Field>
                   <Field label={t('sessionPlanner.fields.time')}>
@@ -462,7 +462,7 @@ export function SessionPlanner({ open, task, onClose }: SessionPlannerProps) {
                 value={dateFromStr(date || task.startDate)}
                 onChange={(d) => setDate(dateToStr(d))}
                 minDate={dateFromStr(task.startDate)}
-                className="w-[150px]"
+                className="w-[200px] shrink-0"
               />
             </Field>
             <Field label={t('sessionPlanner.fields.time')}>
