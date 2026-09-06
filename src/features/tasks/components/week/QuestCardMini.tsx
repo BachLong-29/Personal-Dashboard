@@ -93,7 +93,9 @@ function HabitRow({ task, expanded, onExpand, onToggleDone }: QuestCardMiniProps
       {/* Expanded detail */}
       {expanded && (
         <div className="mt-1.5 pt-1.5 border-t border-[var(--border)]">
-          <p className="text-[9px] text-[var(--text-mid)] leading-[1.4] mb-1.5">{task.desc}</p>
+          <p className="text-[9px] text-[var(--text-mid)] leading-[1.4] mb-1.5 whitespace-pre-line">
+            {task.desc}
+          </p>
           <button type="button" className={qcxBtnPrimary}>
             ▶ Start
           </button>
@@ -208,7 +210,9 @@ function TaskRow({ task, expanded, onExpand, onToggleDone }: QuestCardMiniProps)
       {/* Expanded detail */}
       {expanded && (
         <div className="mt-2 pt-2 border-t border-[var(--border)]">
-          <p className="text-[9px] text-[var(--text-mid)] leading-[1.4] mb-2">{task.desc}</p>
+          <p className="text-[9px] text-[var(--text-mid)] leading-[1.4] mb-2 whitespace-pre-line">
+            {task.desc}
+          </p>
           <div className="flex gap-1.5">
             <button type="button" className={qcxBtnPrimary}>
               ▶ Start

@@ -309,13 +309,15 @@ function RowDetail({
       {/* Description + action buttons */}
       <div className="flex gap-4">
         <div className="flex-1 min-w-0">
-          <p className="text-[10px] text-[var(--text-mid)] leading-[1.5] mb-2">{task.desc}</p>
+          <p className="text-[10px] text-[var(--text-mid)] leading-[1.5] mb-2 whitespace-pre-line">
+            {task.desc}
+          </p>
           {task.expandedNote && (
             <div className="p-2 bg-[oklch(0.66_0.22_295_/_0.06)] border border-[oklch(0.66_0.22_295_/_0.2)] rounded-[var(--r-sm)]">
               <div className="text-[7px] tracking-[0.12em] text-[var(--violet)] font-bold mb-1">
                 {t('taskAllView.table.note')}
               </div>
-              <div className="text-[9px] text-[var(--text-mid)] leading-[1.5]">
+              <div className="text-[9px] text-[var(--text-mid)] leading-[1.5] whitespace-pre-line">
                 {task.expandedNote}
               </div>
             </div>
