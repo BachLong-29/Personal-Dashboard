@@ -7,6 +7,7 @@ import { useTranslations } from 'next-intl';
 import { Modal, ModalHead, ModalBody, ModalFoot } from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
 import { Select } from '@/components/ui/Select';
+import { DatePicker } from '@/components/ui/DatePicker';
 import { cn } from '@/libs/utils';
 import type { FinanceCategory, Transaction, TransactionType, Wallet } from '@/types';
 
@@ -21,6 +22,19 @@ import { FinanceCategoryFormModal } from './FinanceCategoryFormModal';
 
 function today(): string {
   return new Date().toISOString().substring(0, 10);
+}
+
+function toDateString(d: Date): string {
+  return [
+    d.getFullYear(),
+    String(d.getMonth() + 1).padStart(2, '0'),
+    String(d.getDate()).padStart(2, '0'),
+  ].join('-');
+}
+
+function parseDateString(s: string): Date {
+  const [y, m, d] = s.split('-').map(Number);
+  return new Date(y ?? 1970, (m ?? 1) - 1, d ?? 1);
 }
 
 interface Props {
@@ -265,11 +279,9 @@ export function TransactionFormModal({
 
             {/* Date */}
             <Field label={t('transactions.date')}>
-              <input
-                type="date"
-                className={input}
-                value={date}
-                onChange={(e) => setDate(e.target.value)}
+              <DatePicker
+                value={parseDateString(date)}
+                onChange={(d) => setDate(toDateString(d))}
               />
             </Field>
           </ModalBody>
