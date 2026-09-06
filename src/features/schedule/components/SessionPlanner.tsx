@@ -5,6 +5,7 @@ import { useLocale, useTranslations } from 'next-intl';
 
 import { Modal, ModalHead, ModalBody, ModalFoot } from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
+import { DatePicker } from '@/components/ui/DatePicker';
 import { cn } from '@/libs/utils';
 import { useProfile } from '@/features/profile/hooks/useProfile';
 
@@ -72,6 +73,19 @@ function fmtDur(min: number): string {
   const h = Math.floor(min / 60);
   const m = min % 60;
   return [h ? `${h}h` : '', m ? `${m}m` : ''].filter(Boolean).join(' ') || '0m';
+}
+
+function dateFromStr(s: string): Date {
+  const [y, m, d] = s.split('-').map(Number);
+  return new Date(y ?? 1970, (m ?? 1) - 1, d ?? 1);
+}
+
+function dateToStr(d: Date): string {
+  return [
+    d.getFullYear(),
+    String(d.getMonth() + 1).padStart(2, '0'),
+    String(d.getDate()).padStart(2, '0'),
+  ].join('-');
 }
 
 function fmtDate(d: string, locale: string): string {
@@ -328,11 +342,10 @@ export function SessionPlanner({ open, task, onClose }: SessionPlannerProps) {
                   className="flex flex-wrap items-end gap-2 px-2.5 py-2 rounded-[var(--r-sm)] border border-[var(--gold)] bg-[var(--panel2)]"
                 >
                   <Field label={t('sessionPlanner.fields.day')}>
-                    <input
-                      type="date"
-                      value={eDate}
-                      onChange={(e) => setEDate(e.target.value)}
-                      className={inputCls}
+                    <DatePicker
+                      value={eDate ? dateFromStr(eDate) : null}
+                      onChange={(d) => setEDate(dateToStr(d))}
+                      className="w-[150px]"
                     />
                   </Field>
                   <Field label={t('sessionPlanner.fields.time')}>
@@ -361,7 +374,7 @@ export function SessionPlanner({ open, task, onClose }: SessionPlannerProps) {
                       type="button"
                       onClick={saveEdit}
                       disabled={busy || !eDur || !!editDurError}
-                      className="px-2.5 py-1.5 text-[10px] font-bold rounded-[var(--r-sm)] border border-[oklch(0.76_0.14_162_/_0.4)] text-[var(--mint)] hover:bg-[oklch(0.76_0.14_162_/_0.1)] transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                      className="h-[42px] px-2.5 text-[10px] font-bold rounded-[var(--r-sm)] border border-[oklch(0.76_0.14_162_/_0.4)] text-[var(--mint)] hover:bg-[oklch(0.76_0.14_162_/_0.1)] transition-all disabled:opacity-40 disabled:cursor-not-allowed"
                       title={t('sessionPlanner.titles.save')}
                     >
                       ✓
@@ -370,7 +383,7 @@ export function SessionPlanner({ open, task, onClose }: SessionPlannerProps) {
                       type="button"
                       onClick={cancelEdit}
                       disabled={busy}
-                      className="px-2.5 py-1.5 text-[10px] font-bold rounded-[var(--r-sm)] border border-[var(--border)] text-[var(--text-lo)] hover:text-[var(--text-hi)] transition-all disabled:opacity-40"
+                      className="h-[42px] px-2.5 text-[10px] font-bold rounded-[var(--r-sm)] border border-[var(--border)] text-[var(--text-lo)] hover:text-[var(--text-hi)] transition-all disabled:opacity-40"
                       title={t('sessionPlanner.titles.cancel')}
                     >
                       ✕
@@ -445,12 +458,11 @@ export function SessionPlanner({ open, task, onClose }: SessionPlannerProps) {
         <div className="flex flex-col gap-1.5 pt-2 border-t border-[var(--border)]">
           <div className="flex flex-wrap items-end gap-2">
             <Field label={t('sessionPlanner.fields.day')}>
-              <input
-                type="date"
-                value={date || task.startDate}
-                min={task.startDate}
-                onChange={(e) => setDate(e.target.value)}
-                className={inputCls}
+              <DatePicker
+                value={dateFromStr(date || task.startDate)}
+                onChange={(d) => setDate(dateToStr(d))}
+                minDate={dateFromStr(task.startDate)}
+                className="w-[150px]"
               />
             </Field>
             <Field label={t('sessionPlanner.fields.time')}>
@@ -477,7 +489,7 @@ export function SessionPlanner({ open, task, onClose }: SessionPlannerProps) {
               type="button"
               onClick={handleFillAll}
               disabled={busy || (remaining <= 0 && estimate <= 0)}
-              className="px-2.5 py-1.5 text-[10px] font-bold rounded-[var(--r-sm)] border border-[oklch(0.76_0.16_205_/_0.4)] text-[var(--cyan)] hover:bg-[oklch(0.76_0.16_205_/_0.1)] transition-all disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
+              className="h-[42px] px-2.5 text-[10px] font-bold rounded-[var(--r-sm)] border border-[oklch(0.76_0.16_205_/_0.4)] text-[var(--cyan)] hover:bg-[oklch(0.76_0.16_205_/_0.1)] transition-all disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
               title={t('sessionPlanner.titles.fillAll')}
             >
               {t('sessionPlanner.actions.all')}
@@ -487,7 +499,7 @@ export function SessionPlanner({ open, task, onClose }: SessionPlannerProps) {
               type="button"
               onClick={handleAdd}
               disabled={busy || !durStr || !!addDurError}
-              className="px-3 py-1.5 text-[10px] font-bold rounded-[var(--r-sm)] border border-[var(--border)] text-[var(--text-mid)] hover:text-[var(--text-hi)] hover:border-[oklch(0.74_0.17_85_/_0.4)] transition-all disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
+              className="h-[42px] px-3 text-[10px] font-bold rounded-[var(--r-sm)] border border-[var(--border)] text-[var(--text-mid)] hover:text-[var(--text-hi)] hover:border-[oklch(0.74_0.17_85_/_0.4)] transition-all disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
             >
               {t('sessionPlanner.actions.add')}
             </button>
@@ -525,4 +537,4 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 }
 
 const inputCls =
-  'px-2 py-1.5 bg-[var(--panel2)] border border-[var(--border)] rounded-[var(--r-sm)] text-[11px] text-[var(--text-hi)] outline-none focus:border-[var(--gold)] transition-colors';
+  'h-[42px] px-2 py-1.5 bg-[var(--panel2)] border border-[var(--border)] rounded-[var(--r-sm)] text-[11px] text-[var(--text-hi)] outline-none focus:border-[var(--gold)] transition-colors';
