@@ -1,4 +1,5 @@
 import { Icon } from '@/components/common/Icon';
+import { firstLine } from '@/libs/utils';
 import { ACTIVITY, catOf, COLOR_VAR, type UITask } from '../../data/mock';
 
 interface SagaPanelProps {
@@ -60,7 +61,9 @@ function SagaCard({ saga }: { saga: UITask }) {
         <div className="text-[11px] font-semibold text-[var(--text-hi)] truncate mb-[2px]">
           {saga.title}
         </div>
-        <div className="text-[9px] text-[var(--text-lo)] truncate mb-1.5">{saga.desc}</div>
+        <div className="text-[9px] text-[var(--text-lo)] truncate mb-1.5" title={saga.desc}>
+          {firstLine(saga.desc)}
+        </div>
         <div className="flex items-center gap-2 text-[8px] text-[var(--text-lo)] mb-1.5">
           <span>
             {saga.subtasksDone}/{saga.subtasks} chapters

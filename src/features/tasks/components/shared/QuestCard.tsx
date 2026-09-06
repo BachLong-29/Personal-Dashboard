@@ -5,7 +5,7 @@ import Image from 'next/image';
 
 import { useTranslations } from 'next-intl';
 
-import { cn } from '@/libs/utils';
+import { cn, firstLine } from '@/libs/utils';
 
 import { ProjectBadge } from '@/components/common/ProjectBadge';
 import { useTaskBlocks } from '@/features/schedule/hooks/useScheduleBlocks';
@@ -187,7 +187,9 @@ export function QuestCard({
               ))}
 
             {task.desc && !task.done && !task.cancelled && (
-              <span className="text-[9px] text-[var(--text-lo)] truncate">{task.desc}</span>
+              <span className="text-[9px] text-[var(--text-lo)] truncate" title={task.desc}>
+                {firstLine(task.desc)}
+              </span>
             )}
           </div>
         </div>
