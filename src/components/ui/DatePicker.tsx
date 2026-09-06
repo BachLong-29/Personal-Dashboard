@@ -16,6 +16,10 @@ export interface DatePickerProps {
   label?: string;
   disabled?: boolean;
   className?: string;
+  /** Dates before this are shown dimmed and can't be selected */
+  minDate?: Date;
+  /** Dates after this are shown dimmed and can't be selected */
+  maxDate?: Date;
 }
 
 function formatDate(date: Date, months: string[]): string {
@@ -54,6 +58,8 @@ export function DatePicker({
   label,
   disabled,
   className,
+  minDate,
+  maxDate,
 }: DatePickerProps) {
   const t = useTranslations('common');
   const today = new Date();
@@ -150,6 +156,10 @@ export function DatePicker({
     a.getFullYear() === b.getFullYear() &&
     a.getMonth() === b.getMonth() &&
     a.getDate() === b.getDate();
+
+  const isOutOfRange = (d: Date) =>
+    (!!minDate && d < minDate && !isSameDay(d, minDate)) ||
+    (!!maxDate && d > maxDate && !isSameDay(d, maxDate));
 
   return (
     <div ref={rootRef} className={cn('relative flex flex-col gap-1.5', className)}>
@@ -250,18 +260,22 @@ export function DatePicker({
                 if (!cell.date) return <span key={i} />;
                 const isToday = isSameDay(cell.date, today);
                 const isSelected = value ? isSameDay(cell.date, value) : false;
+                const outOfRange = isOutOfRange(cell.date);
                 const d = cell.date;
 
                 return (
                   <button
                     key={i}
                     type="button"
+                    disabled={outOfRange}
                     onClick={() => !cell.muted && selectDate(d)}
                     className={cn(
                       'aspect-square flex items-center justify-center rounded-[var(--r-sm)] text-[13px]',
                       'transition-all duration-150 relative',
-                      cell.muted && 'text-[var(--text-dim)] opacity-50',
+                      (cell.muted || outOfRange) && 'text-[var(--text-dim)] opacity-50',
+                      outOfRange && 'cursor-not-allowed',
                       !cell.muted &&
+                        !outOfRange &&
                         !isSelected &&
                         'text-[var(--text-md)] hover:bg-[var(--surface-3)] hover:text-[var(--text-hi)]',
                       isToday && !isSelected && 'text-[var(--gold)] font-bold',
