@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useTranslations } from 'next-intl';
 
 import { Icon } from '@/components/common/Icon';
@@ -87,14 +88,41 @@ export function DatePicker({
   const [viewYear, setViewYear] = useState(value?.getFullYear() ?? today.getFullYear());
   const [viewMonth, setViewMonth] = useState(value?.getMonth() ?? today.getMonth());
   const rootRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+  const [panelPos, setPanelPos] = useState<{ top: number; left: number } | null>(null);
 
   useEffect(() => {
     if (!open) return;
     const handle = (e: MouseEvent) => {
-      if (!rootRef.current?.contains(e.target as Node)) setOpen(false);
+      const target = e.target as Node;
+      if (!rootRef.current?.contains(target) && !panelRef.current?.contains(target)) {
+        setOpen(false);
+      }
     };
     document.addEventListener('mousedown', handle);
     return () => document.removeEventListener('mousedown', handle);
+  }, [open]);
+
+  // Panel renders in a portal (so it escapes any clipped/overflow-hidden ancestor
+  // like a scrollable modal body) — track the trigger's viewport rect to anchor it there.
+  useLayoutEffect(() => {
+    if (!open) return;
+
+    const updatePos = () => {
+      const rect = triggerRef.current?.getBoundingClientRect();
+      if (!rect) return;
+      setPanelPos({ top: rect.bottom + 6, left: rect.left });
+    };
+
+    updatePos();
+    window.addEventListener('scroll', updatePos, true);
+    window.addEventListener('resize', updatePos);
+
+    return () => {
+      window.removeEventListener('scroll', updatePos, true);
+      window.removeEventListener('resize', updatePos);
+    };
   }, [open]);
 
   const prevMonth = () => {
@@ -132,6 +160,7 @@ export function DatePicker({
       )}
 
       <button
+        ref={triggerRef}
         type="button"
         disabled={disabled}
         onClick={() => setOpen((p) => !p)}
@@ -173,82 +202,88 @@ export function DatePicker({
         </span>
       </button>
 
-      {open && (
-        <div
-          className="absolute top-[calc(100%+6px)] left-0 z-50 w-[280px] p-4 rounded-[var(--r-md)]"
-          style={{
-            background: 'var(--bg-2)',
-            border: '1px solid var(--gold)',
-            boxShadow: 'var(--sh-3), var(--sh-glow-gold)',
-          }}
-        >
-          <div className="flex items-center justify-between mb-3">
-            <button
-              type="button"
-              onClick={prevMonth}
-              className="w-6 h-6 flex items-center justify-center rounded-[var(--r-sm)] bg-[var(--surface-2)] border border-[var(--border)] text-[var(--text-md)] text-[10px] hover:text-[var(--gold)] hover:border-[var(--gold)]"
-            >
-              <Icon icon="ArrowLeft" className="text-[14px]" />
-            </button>
-            <span className="[font-family:var(--f-title)] text-[15px] tracking-[0.08em] text-[var(--text-hi)]">
-              {months[viewMonth]} {viewYear}
-            </span>
-            <button
-              type="button"
-              onClick={nextMonth}
-              className="w-6 h-6 flex items-center justify-center rounded-[var(--r-sm)] bg-[var(--surface-2)] border border-[var(--border)] text-[var(--text-md)] text-[10px] hover:text-[var(--gold)] hover:border-[var(--gold)]"
-            >
-              <Icon icon="ArrowRight" className="text-[14px]" />
-            </button>
-          </div>
-
-          <div className="grid grid-cols-7 gap-0.5">
-            {days.map((d, i) => (
-              <span
-                key={`dow-${i}`}
-                className="aspect-square flex items-center justify-center [font-family:var(--f-title)] text-[9px] tracking-[0.1em] text-[var(--text-dim)]"
+      {open &&
+        panelPos &&
+        createPortal(
+          <div
+            ref={panelRef}
+            className="fixed z-[1050] w-[280px] p-4 rounded-[var(--r-md)]"
+            style={{
+              top: panelPos.top,
+              left: panelPos.left,
+              background: 'var(--bg-2)',
+              border: '1px solid var(--gold)',
+              boxShadow: 'var(--sh-3), var(--sh-glow-gold)',
+            }}
+          >
+            <div className="flex items-center justify-between mb-3">
+              <button
+                type="button"
+                onClick={prevMonth}
+                className="w-6 h-6 flex items-center justify-center rounded-[var(--r-sm)] bg-[var(--surface-2)] border border-[var(--border)] text-[var(--text-md)] text-[10px] hover:text-[var(--gold)] hover:border-[var(--gold)]"
               >
-                {d}
+                <Icon icon="ArrowLeft" className="text-[14px]" />
+              </button>
+              <span className="[font-family:var(--f-title)] text-[15px] tracking-[0.08em] text-[var(--text-hi)]">
+                {months[viewMonth]} {viewYear}
               </span>
-            ))}
+              <button
+                type="button"
+                onClick={nextMonth}
+                className="w-6 h-6 flex items-center justify-center rounded-[var(--r-sm)] bg-[var(--surface-2)] border border-[var(--border)] text-[var(--text-md)] text-[10px] hover:text-[var(--gold)] hover:border-[var(--gold)]"
+              >
+                <Icon icon="ArrowRight" className="text-[14px]" />
+              </button>
+            </div>
 
-            {cells.map((cell, i) => {
-              if (!cell.date) return <span key={i} />;
-              const isToday = isSameDay(cell.date, today);
-              const isSelected = value ? isSameDay(cell.date, value) : false;
-              const d = cell.date;
-
-              return (
-                <button
-                  key={i}
-                  type="button"
-                  onClick={() => !cell.muted && selectDate(d)}
-                  className={cn(
-                    'aspect-square flex items-center justify-center rounded-[var(--r-sm)] text-[13px]',
-                    'transition-all duration-150 relative',
-                    cell.muted && 'text-[var(--text-dim)] opacity-50',
-                    !cell.muted &&
-                      !isSelected &&
-                      'text-[var(--text-md)] hover:bg-[var(--surface-3)] hover:text-[var(--text-hi)]',
-                    isToday && !isSelected && 'text-[var(--gold)] font-bold',
-                    isSelected && 'font-bold text-[#0a0400] shadow-[var(--sh-glow-gold)]',
-                  )}
-                  style={
-                    isSelected
-                      ? { background: 'linear-gradient(135deg, var(--gold-2), var(--gold))' }
-                      : undefined
-                  }
+            <div className="grid grid-cols-7 gap-0.5">
+              {days.map((d, i) => (
+                <span
+                  key={`dow-${i}`}
+                  className="aspect-square flex items-center justify-center [font-family:var(--f-title)] text-[9px] tracking-[0.1em] text-[var(--text-dim)]"
                 >
-                  {d.getDate()}
-                  {isToday && !isSelected && (
-                    <span className="absolute bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-[var(--gold)] shadow-[0_0_6px_var(--gold-glow)]" />
-                  )}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      )}
+                  {d}
+                </span>
+              ))}
+
+              {cells.map((cell, i) => {
+                if (!cell.date) return <span key={i} />;
+                const isToday = isSameDay(cell.date, today);
+                const isSelected = value ? isSameDay(cell.date, value) : false;
+                const d = cell.date;
+
+                return (
+                  <button
+                    key={i}
+                    type="button"
+                    onClick={() => !cell.muted && selectDate(d)}
+                    className={cn(
+                      'aspect-square flex items-center justify-center rounded-[var(--r-sm)] text-[13px]',
+                      'transition-all duration-150 relative',
+                      cell.muted && 'text-[var(--text-dim)] opacity-50',
+                      !cell.muted &&
+                        !isSelected &&
+                        'text-[var(--text-md)] hover:bg-[var(--surface-3)] hover:text-[var(--text-hi)]',
+                      isToday && !isSelected && 'text-[var(--gold)] font-bold',
+                      isSelected && 'font-bold text-[#0a0400] shadow-[var(--sh-glow-gold)]',
+                    )}
+                    style={
+                      isSelected
+                        ? { background: 'linear-gradient(135deg, var(--gold-2), var(--gold))' }
+                        : undefined
+                    }
+                  >
+                    {d.getDate()}
+                    {isToday && !isSelected && (
+                      <span className="absolute bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-[var(--gold)] shadow-[0_0_6px_var(--gold-glow)]" />
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </div>,
+          document.body,
+        )}
     </div>
   );
 }

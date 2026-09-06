@@ -152,6 +152,7 @@ function OverdueRow({ item, onRemove, onNeedsScheduleUpdate }: OverdueRowProps) 
             variant="primary"
             onClick={handleReschedule}
             disabled={!rescheduleDate || isPending}
+            className="h-[42px]"
           >
             {isPending ? '…' : t('overdueReview.set')}
           </Button>
@@ -163,6 +164,7 @@ function OverdueRow({ item, onRemove, onNeedsScheduleUpdate }: OverdueRowProps) 
               setRescheduleDate(null);
             }}
             disabled={isPending}
+            className="h-[42px]"
           >
             ✕
           </Button>
