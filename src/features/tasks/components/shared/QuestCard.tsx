@@ -335,14 +335,15 @@ function ExpandedPanel({
         </div>
       )}
 
-      {/* Sage's note */}
-      {task.expandedNote && (
+      {/* Sage's note — expandedNote is demo/lore flavor text; real tasks carry their
+          full note in desc (the collapsed row only shows its first line). */}
+      {(task.expandedNote || task.desc) && (
         <div className="mb-3 p-2 bg-[oklch(0.66_0.22_295_/_0.06)] border border-[oklch(0.66_0.22_295_/_0.2)] rounded-[var(--r-sm)]">
           <div className="text-[8px] tracking-[0.12em] text-[var(--violet)] font-bold mb-1">
             SAGE&apos;S NOTE
           </div>
-          <div className="text-[10px] text-[var(--text-mid)] leading-[1.5]">
-            {task.expandedNote}
+          <div className="text-[10px] text-[var(--text-mid)] leading-[1.5] whitespace-pre-line">
+            {task.expandedNote ?? task.desc}
           </div>
         </div>
       )}
