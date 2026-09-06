@@ -515,7 +515,12 @@ export function SessionPlanner({ open, task, onClose }: SessionPlannerProps) {
               {t('sessionPlanner.actions.autofill', { duration: fmtDur(remaining) })}
             </Button>
           )}
-          <Button variant="primary" onClick={onClose} disabled={busy}>
+          <Button
+            variant="primary"
+            onClick={onClose}
+            disabled={busy || editId !== null}
+            title={editId !== null ? t('sessionPlanner.titles.finishEditFirst') : undefined}
+          >
             {allocated > 0 ? t('sessionPlanner.actions.done') : t('sessionPlanner.actions.later')}
           </Button>
         </div>

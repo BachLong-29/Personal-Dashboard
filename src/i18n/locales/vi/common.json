@@ -817,7 +817,8 @@
         "tight": "Nghỉ quá ngắn",
         "editSession": "Sửa buổi",
         "deleteSession": "Xóa buổi",
-        "fillAll": "Đẩy toàn bộ thời lượng còn lại vào ô phút"
+        "fillAll": "Đẩy toàn bộ thời lượng còn lại vào ô phút",
+        "finishEditFirst": "Hoàn tất chỉnh sửa buổi trước khi đóng"
       }
     },
     "dayTimeline": {

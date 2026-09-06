@@ -817,7 +817,8 @@
         "tight": "Break too short",
         "editSession": "Edit session",
         "deleteSession": "Delete session",
-        "fillAll": "Put all remaining duration into the minutes field"
+        "fillAll": "Put all remaining duration into the minutes field",
+        "finishEditFirst": "Finish editing the session before closing"
       }
     },
     "dayTimeline": {
