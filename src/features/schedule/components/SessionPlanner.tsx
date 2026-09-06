@@ -345,7 +345,7 @@ export function SessionPlanner({ open, task, onClose }: SessionPlannerProps) {
                     <DatePicker
                       value={eDate ? dateFromStr(eDate) : null}
                       onChange={(d) => setEDate(dateToStr(d))}
-                      className="w-[150px]"
+                      className="w-[200px]"
                     />
                   </Field>
                   <Field label={t('sessionPlanner.fields.time')}>
@@ -374,7 +374,7 @@ export function SessionPlanner({ open, task, onClose }: SessionPlannerProps) {
                       type="button"
                       onClick={saveEdit}
                       disabled={busy || !eDur || !!editDurError}
-                      className="h-[42px] px-2.5 text-[10px] font-bold rounded-[var(--r-sm)] border border-[oklch(0.76_0.14_162_/_0.4)] text-[var(--mint)] hover:bg-[oklch(0.76_0.14_162_/_0.1)] transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                      className="h-[42px] w-[42px] flex items-center justify-center text-[12px] font-bold rounded-[var(--r-sm)] border border-[oklch(0.76_0.14_162_/_0.4)] text-[var(--mint)] hover:bg-[oklch(0.76_0.14_162_/_0.1)] transition-all disabled:opacity-40 disabled:cursor-not-allowed"
                       title={t('sessionPlanner.titles.save')}
                     >
                       ✓
@@ -383,7 +383,7 @@ export function SessionPlanner({ open, task, onClose }: SessionPlannerProps) {
                       type="button"
                       onClick={cancelEdit}
                       disabled={busy}
-                      className="h-[42px] px-2.5 text-[10px] font-bold rounded-[var(--r-sm)] border border-[var(--border)] text-[var(--text-lo)] hover:text-[var(--text-hi)] transition-all disabled:opacity-40"
+                      className="h-[42px] w-[42px] flex items-center justify-center text-[12px] font-bold rounded-[var(--r-sm)] border border-[var(--border)] text-[var(--text-lo)] hover:text-[var(--text-hi)] transition-all disabled:opacity-40"
                       title={t('sessionPlanner.titles.cancel')}
                     >
                       ✕
