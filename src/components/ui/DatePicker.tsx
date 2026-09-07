@@ -111,21 +111,46 @@ export function DatePicker({
   }, [open]);
 
   // Panel renders in a portal (so it escapes any clipped/overflow-hidden ancestor
-  // like a scrollable modal body) — track the trigger's viewport rect to anchor it there.
+  // like a scrollable modal body) — track the trigger's viewport rect to anchor it
+  // there, clamped so the (fixed-width) panel never overflows past the viewport
+  // edge — the classic custom-dropdown bug on narrow/mobile screens.
   useLayoutEffect(() => {
     if (!open) return;
+
+    const margin = 8;
 
     const updatePos = () => {
       const rect = triggerRef.current?.getBoundingClientRect();
       if (!rect) return;
-      setPanelPos({ top: rect.bottom + 6, left: rect.left });
+
+      // First pass (before the panel has mounted) falls back to its known
+      // CSS width/a rough height estimate; the rAF pass below re-measures
+      // the real, rendered panel once it exists.
+      const panelW = panelRef.current?.offsetWidth ?? 280;
+      const panelH = panelRef.current?.offsetHeight ?? 0;
+
+      let left = rect.left;
+      left = Math.min(left, window.innerWidth - panelW - margin);
+      left = Math.max(margin, left);
+
+      let top = rect.bottom + 6;
+      if (panelH && top + panelH > window.innerHeight - margin) {
+        // Not enough room below — flip above the trigger instead.
+        top = Math.max(margin, rect.top - panelH - 6);
+      }
+
+      setPanelPos({ top, left });
     };
 
     updatePos();
+    // Re-run after the panel has actually painted, so the vertical flip can
+    // use its real height instead of the 0px fallback from the first pass.
+    const raf = requestAnimationFrame(updatePos);
     window.addEventListener('scroll', updatePos, true);
     window.addEventListener('resize', updatePos);
 
     return () => {
+      cancelAnimationFrame(raf);
       window.removeEventListener('scroll', updatePos, true);
       window.removeEventListener('resize', updatePos);
     };
