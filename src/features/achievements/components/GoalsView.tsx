@@ -1,9 +1,9 @@
 'use client';
 
-import { useMemo, useRef, useState } from 'react';
+import { useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 
 import { cn } from '@/libs/utils';
-import { useOnClickOutside } from '@/hooks/useOnClickOutside';
 import { CATEGORIES } from '../constants';
 import type { Goal, AmbitionsStats, GoalCategory, GoalSortBy, GoalStatus } from '../types';
 import { StatCard } from './StatCard';
@@ -47,7 +47,45 @@ export function GoalsView({ goals, stats, onAction, onToggleMilestone, onNew }: 
   const [sortOpen, setSortOpen] = useState(false);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const sortRef = useRef<HTMLDivElement>(null);
-  useOnClickOutside(sortRef, () => setSortOpen(false));
+  const sortMenuRef = useRef<HTMLDivElement>(null);
+  const [sortMenuPos, setSortMenuPos] = useState<{ top: number; left: number } | null>(null);
+
+  useLayoutEffect(() => {
+    if (!sortOpen) return;
+
+    const handlePointerDown = (event: MouseEvent | TouchEvent) => {
+      const target = event.target as Node;
+      if (!sortRef.current?.contains(target) && !sortMenuRef.current?.contains(target)) {
+        setSortOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handlePointerDown);
+    document.addEventListener('touchstart', handlePointerDown);
+
+    // Menu renders in a portal, clamped to the viewport, so it can't overflow
+    // off-screen on narrow/mobile widths the way an `absolute right-0` menu can.
+    const margin = 8;
+    const menuWidth = 130;
+    const updatePos = () => {
+      const rect = sortRef.current?.getBoundingClientRect();
+      if (!rect) return;
+      const left = Math.min(
+        Math.max(margin, rect.right - menuWidth),
+        window.innerWidth - menuWidth - margin,
+      );
+      setSortMenuPos({ top: rect.bottom + 4, left });
+    };
+    updatePos();
+    window.addEventListener('scroll', updatePos, true);
+    window.addEventListener('resize', updatePos);
+
+    return () => {
+      document.removeEventListener('mousedown', handlePointerDown);
+      document.removeEventListener('touchstart', handlePointerDown);
+      window.removeEventListener('scroll', updatePos, true);
+      window.removeEventListener('resize', updatePos);
+    };
+  }, [sortOpen]);
 
   const onToggleExpand = (id: string) => setExpandedId((cur) => (cur === id ? null : id));
 
@@ -175,29 +213,36 @@ export function GoalsView({ goals, stats, onAction, onToggleMilestone, onNew }: 
             >
               ⇅ {currentSortLabel} <span className="text-[8px] opacity-60">▼</span>
             </button>
-            {sortOpen && (
-              <div className="absolute right-0 top-[calc(100%+4px)] z-50 w-[130px] bg-[var(--panel)] border border-[var(--border)] rounded-[var(--r-sm)] shadow-[0_8px_24px_oklch(0_0_0_/_0.35)] overflow-hidden py-1">
-                {SORTS.map((s) => (
-                  <button
-                    key={s.id}
-                    type="button"
-                    onClick={() => {
-                      setSortBy(s.id);
-                      setSortOpen(false);
-                    }}
-                    className={cn(
-                      'flex items-center justify-between w-full px-3 py-2 text-[11px] font-semibold transition-colors',
-                      sortBy === s.id
-                        ? 'text-[var(--gold)] bg-[oklch(0.74_0.17_85_/_0.08)]'
-                        : 'text-[var(--text-hi)] hover:bg-[var(--panel2)]',
-                    )}
-                  >
-                    {s.label}
-                    {sortBy === s.id && <span className="text-[8px]">✓</span>}
-                  </button>
-                ))}
-              </div>
-            )}
+            {sortOpen &&
+              sortMenuPos &&
+              createPortal(
+                <div
+                  ref={sortMenuRef}
+                  style={{ top: sortMenuPos.top, left: sortMenuPos.left }}
+                  className="fixed z-[1050] w-[130px] bg-[var(--panel)] border border-[var(--border)] rounded-[var(--r-sm)] shadow-[0_8px_24px_oklch(0_0_0_/_0.35)] overflow-hidden py-1"
+                >
+                  {SORTS.map((s) => (
+                    <button
+                      key={s.id}
+                      type="button"
+                      onClick={() => {
+                        setSortBy(s.id);
+                        setSortOpen(false);
+                      }}
+                      className={cn(
+                        'flex items-center justify-between w-full px-3 py-2 text-[11px] font-semibold transition-colors',
+                        sortBy === s.id
+                          ? 'text-[var(--gold)] bg-[oklch(0.74_0.17_85_/_0.08)]'
+                          : 'text-[var(--text-hi)] hover:bg-[var(--panel2)]',
+                      )}
+                    >
+                      {s.label}
+                      {sortBy === s.id && <span className="text-[8px]">✓</span>}
+                    </button>
+                  ))}
+                </div>,
+                document.body,
+              )}
           </div>
 
           {/* New goal */}
