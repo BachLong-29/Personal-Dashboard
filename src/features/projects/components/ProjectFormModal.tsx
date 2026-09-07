@@ -4,6 +4,7 @@ import { useState } from 'react';
 
 import { Modal, ModalHead, ModalBody, ModalFoot } from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
+import { DatePicker } from '@/components/ui/DatePicker';
 import { cn } from '@/libs/utils';
 import type { TaskColor } from '@/types';
 import type {
@@ -18,6 +19,19 @@ import { useCreateProject } from '../hooks/useCreateProject';
 import { useUpdateProject } from '../hooks/useUpdateProject';
 
 const DEFAULT_ICON = PROJECT_ICONS[0] ?? '🚀';
+
+function toDateString(d: Date): string {
+  return [
+    d.getFullYear(),
+    String(d.getMonth() + 1).padStart(2, '0'),
+    String(d.getDate()).padStart(2, '0'),
+  ].join('-');
+}
+
+function parseDateString(s: string): Date {
+  const [y, m, d] = s.split('-').map(Number);
+  return new Date(y ?? 1970, (m ?? 1) - 1, d ?? 1);
+}
 
 interface Props {
   open: boolean;
@@ -178,11 +192,10 @@ export function ProjectFormModal({ open, onClose, project, onSaved }: Props) {
 
         {/* Deadline */}
         <Field label="Deadline (optional)">
-          <input
-            type="date"
-            className={input}
-            value={deadline}
-            onChange={(e) => setDeadline(e.target.value)}
+          <DatePicker
+            value={deadline ? parseDateString(deadline) : null}
+            onChange={(d) => setDeadline(toDateString(d))}
+            onClear={() => setDeadline('')}
           />
         </Field>
 
