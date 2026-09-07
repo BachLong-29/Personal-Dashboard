@@ -121,12 +121,9 @@ export function GoalCard({
         <div className={cn('relative shrink-0', ringText)}>
           <ProgressRing value={goal.progress} size={52} stroke={5} />
           <div className="absolute inset-0 flex items-center justify-center">
-            <span
-              className={cn(
-                'font-[var(--font-title)] text-[11px] font-black',
-                done ? 'text-[var(--mint)]' : '',
-              )}
-            >
+            {/* Inherits color from the ring wrapper so it always matches the
+                ring's own (category) color instead of a hardcoded mint. */}
+            <span className="font-[var(--font-title)] text-[11px] font-black">
               {done ? '✓' : Math.round(goal.progress * 100)}
             </span>
           </div>
