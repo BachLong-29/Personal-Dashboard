@@ -41,8 +41,8 @@ export function ProjectsList() {
 
       <div className="flex-1 flex flex-col min-h-0 overflow-y-auto p-4 gap-4">
         {/* Header */}
-        <div className="flex items-center gap-3 flex-wrap">
-          <div className="flex-1 min-w-0">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+          <div className="min-w-0 sm:flex-1">
             <div className="text-[9px] tracking-[0.3em] text-[var(--gold)] [font-family:var(--f-title)]">
               CAMPAIGNS
             </div>
@@ -52,14 +52,14 @@ export function ProjectsList() {
           </div>
 
           {/* Filters */}
-          <div className="flex items-center gap-1 bg-[var(--panel)] border border-[var(--border)] rounded-[var(--r-sm)] p-1">
+          <div className="flex items-center gap-1 w-full sm:w-auto bg-[var(--panel)] border border-[var(--border)] rounded-[var(--r-sm)] p-1">
             {(['active', 'completed', 'all'] as Filter[]).map((f) => (
               <button
                 key={f}
                 type="button"
                 onClick={() => setFilter(f)}
                 className={
-                  'px-3 py-1 text-[11px] font-bold uppercase tracking-[0.06em] rounded-[var(--r-sm)] transition-all [font-family:var(--f-title)] ' +
+                  'flex-1 sm:flex-none px-3 py-1 text-[11px] font-bold uppercase tracking-[0.06em] rounded-[var(--r-sm)] transition-all [font-family:var(--f-title)] ' +
                   (filter === f
                     ? 'bg-[oklch(0.74_0.17_85_/_0.14)] text-[var(--gold)]'
                     : 'text-[var(--text-mid)] hover:text-[var(--text-hi)]')
@@ -73,7 +73,7 @@ export function ProjectsList() {
           <button
             type="button"
             onClick={() => setShowCreate(true)}
-            className="px-4 py-2 text-[12px] font-bold uppercase tracking-[0.08em] [font-family:var(--f-title)] rounded-[var(--r-sm)] bg-gradient-to-br from-[var(--gold-2)] to-[var(--gold)] text-[#0a0400] border border-[var(--gold)] hover:-translate-y-px transition-all"
+            className="w-full sm:w-auto shrink-0 px-4 py-2 text-[12px] font-bold uppercase tracking-[0.08em] [font-family:var(--f-title)] rounded-[var(--r-sm)] bg-gradient-to-br from-[var(--gold-2)] to-[var(--gold)] text-[#0a0400] border border-[var(--gold)] hover:-translate-y-px transition-all"
           >
             ＋ New Project
           </button>
