@@ -146,6 +146,7 @@ function HudTile({
   suffix,
   of: ofVal,
   sub,
+  className,
 }: {
   label: string;
   ico: string;
@@ -155,6 +156,8 @@ function HudTile({
   suffix?: string;
   of?: number;
   sub: string;
+  /** Extra classes on the tile root — used to drop secondary tiles on mobile. */
+  className?: string;
 }) {
   const [bumped, setBumped] = useState(false);
   const prev = useRef(value);
@@ -171,9 +174,11 @@ function HudTile({
   return (
     <div
       className={cn(
-        'relative overflow-hidden rounded-[var(--r-md)] px-3 pt-3 pb-2.5',
+        'relative overflow-hidden rounded-[var(--r-md)]',
+        'px-2.5 pt-2 pb-2 min-[540px]:px-3 min-[540px]:pt-3 min-[540px]:pb-2.5',
         'border border-[var(--border)] transition-[transform,box-shadow] duration-200',
         'hover:-translate-y-0.5 hover:shadow-[0_8px_22px_oklch(0_0_0_/_0.4)]',
+        className,
       )}
       style={{
         background: 'linear-gradient(180deg,var(--surface-2),var(--surface))',
@@ -183,16 +188,16 @@ function HudTile({
       }}
     >
       <div
-        className="absolute -right-3 -top-3 w-14 h-14 rounded-full opacity-30 pointer-events-none"
+        className="absolute -right-3 -top-3 hidden min-[540px]:block w-14 h-14 rounded-full opacity-30 pointer-events-none"
         style={{ background: `radial-gradient(circle, ${glow}, transparent 70%)` }}
       />
-      <div className="flex items-center gap-1.5 mb-2">
+      <div className="flex items-center gap-1.5 mb-1 min-[540px]:mb-2">
         <span style={{ color: accent, fontSize: 12 }}>{ico}</span>
         <span className="font-[var(--font-title)] text-[8px] tracking-[0.16em] text-[var(--text-lo)] uppercase whitespace-nowrap">
           {label}
         </span>
       </div>
-      <div className="font-[var(--font-title)] text-[22px] font-extrabold leading-none flex items-baseline gap-1 text-[var(--text-hi)]">
+      <div className="font-[var(--font-title)] text-[18px] min-[540px]:text-[22px] font-extrabold leading-none flex items-baseline gap-1 text-[var(--text-hi)]">
         <AnimatedNumber value={value} />
         {suffix && (
           <small className="text-[11px] text-[var(--text-lo)] font-semibold">{suffix}</small>
@@ -201,7 +206,7 @@ function HudTile({
           <span className="text-[12px] text-[var(--text-dim)] font-bold">/{ofVal}</span>
         )}
       </div>
-      <div className="font-[var(--font-code)] text-[9px] text-[var(--text-lo)] mt-1.5 tracking-[0.04em]">
+      <div className="hidden min-[540px]:block font-[var(--font-code)] text-[9px] text-[var(--text-lo)] mt-1.5 tracking-[0.04em]">
         {sub}
       </div>
     </div>
@@ -1709,24 +1714,31 @@ export function BingoView({ goals, streak, onCompleteGoal, onToggleMilestone }: 
           <h2 className="font-[var(--font-title)] text-[22px] font-black text-[var(--text-hi)] tracking-[0.04em] leading-none mb-1.5">
             Goal Bingo
           </h2>
-          <p className="text-[10.5px] text-[var(--text-mid)] leading-[1.55] max-w-[500px]">
+          <p className="hidden min-[540px]:block text-[10.5px] text-[var(--text-mid)] leading-[1.55] max-w-[500px]">
             Sixteen ambitions, one board. Conquer goals to daub their cells — complete a full
             <span className="text-[var(--cyan)] font-bold"> row, column, or diagonal</span> to land
             a BINGO.
+          </p>
+          <p className="min-[540px]:hidden text-[10.5px] text-[var(--text-mid)] leading-[1.55]">
+            Complete a full{' '}
+            <span className="text-[var(--cyan)] font-bold">row, column, or diagonal</span> to land a
+            BINGO.
           </p>
         </div>
         <button
           type="button"
           onClick={resetBoard}
-          className="shrink-0 flex items-center gap-1.5 px-3 py-1.5 bg-[var(--panel)] border border-[var(--border)] rounded-[var(--r-sm)] text-[10px] font-bold text-[var(--text-mid)] font-[var(--font-title)] hover:border-[oklch(0.74_0.17_85_/_0.3)] hover:text-[var(--text-hi)] transition-colors"
+          aria-label="Reset Board"
+          className="shrink-0 flex items-center gap-1.5 px-2.5 min-[540px]:px-3 py-1.5 bg-[var(--panel)] border border-[var(--border)] rounded-[var(--r-sm)] text-[10px] font-bold text-[var(--text-mid)] font-[var(--font-title)] hover:border-[oklch(0.74_0.17_85_/_0.3)] hover:text-[var(--text-hi)] transition-colors"
         >
-          ↺ Reset Board
+          ↺<span className="hidden min-[540px]:inline">Reset Board</span>
         </button>
       </div>
 
       {/* HUD */}
       <div className="grid grid-cols-2 min-[540px]:grid-cols-4 sm:grid-cols-7 gap-2.5">
         <HudTile
+          className="hidden min-[540px]:block"
           label="Ambitions"
           ico="◈"
           accent="var(--violet)"
@@ -1762,6 +1774,7 @@ export function BingoView({ goals, streak, onCompleteGoal, onToggleMilestone }: 
           sub="unbroken"
         />
         <HudTile
+          className="hidden min-[540px]:block"
           label="XP Earned"
           ico="◆"
           accent="var(--violet)"
@@ -1779,6 +1792,7 @@ export function BingoView({ goals, streak, onCompleteGoal, onToggleMilestone }: 
           sub="lines lit"
         />
         <HudTile
+          className="hidden min-[540px]:block"
           label="Active"
           ico="❖"
           accent="var(--cyan)"
