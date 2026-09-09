@@ -207,7 +207,7 @@ export function ProfilePage() {
       {/* ── Mobile nav drawer overlay ─────────────────────────── */}
       {navOpen && (
         <div className="md:hidden fixed inset-0 z-50 flex">
-          <div className="w-[280px] flex-shrink-0 h-full overflow-y-auto">
+          <div className="w-[280px] flex-shrink-0 h-full overflow-y-auto animate-drawer-in-left">
             <ProfileSectionNav
               active={activeSection}
               onPick={handleSectionPickMobile}
@@ -216,7 +216,7 @@ export function ProfilePage() {
           </div>
           {/* backdrop */}
           <div
-            className="flex-1"
+            className="flex-1 animate-[fade-in_0.3s_ease]"
             style={{ background: 'oklch(8% 0.02 270/0.75)', backdropFilter: 'blur(4px)' }}
             onClick={() => setNavOpen(false)}
             aria-label="Close navigation"
