@@ -33,25 +33,58 @@ const REWARD_MAP: Record<GoalRank, [number, number]> = {
   D: [180, 50],
 };
 
+type FormErrors = Partial<Record<'title' | 'desc' | 'targetDate', string>>;
+
+/** Mirrors `createSchema` in src/app/api/v1/goals/route.ts — keep the two in sync. */
+function validate({
+  title,
+  desc,
+  target,
+}: {
+  title: string;
+  desc: string;
+  target: string;
+}): FormErrors {
+  const errors: FormErrors = {};
+
+  if (!title.trim()) errors.title = 'Title is required';
+  else if (title.trim().length > 100) errors.title = 'Title must be 100 characters or less';
+
+  if (desc.length > 500) errors.desc = 'The vision must be 500 characters or less';
+
+  if (!target) errors.targetDate = 'Target date is required';
+
+  return errors;
+}
+
 const PRIORITY_OPTS: { value: GoalPriority; label: string }[] = [
-  { value: 'high',   label: 'High' },
+  { value: 'high', label: 'High' },
   { value: 'medium', label: 'Medium' },
-  { value: 'low',    label: 'Low' },
+  { value: 'low', label: 'Low' },
 ];
 
 export function GoalModal({ mode, goal, onClose, onSave }: GoalModalProps) {
-  const [title,    setTitle]    = useState(goal?.title       ?? '');
-  const [desc,     setDesc]     = useState(goal?.desc        ?? '');
-  const [cat,      setCat]      = useState<GoalCategory>(goal?.cat     ?? 'career');
-  const [rank,     setRank]     = useState<GoalRank>(goal?.rank        ?? 'B');
+  const [title, setTitle] = useState(goal?.title ?? '');
+  const [desc, setDesc] = useState(goal?.desc ?? '');
+  const [cat, setCat] = useState<GoalCategory>(goal?.cat ?? 'career');
+  const [rank, setRank] = useState<GoalRank>(goal?.rank ?? 'B');
   const [priority, setPriority] = useState<GoalPriority>(goal?.priority ?? 'medium');
-  const [target,   setTarget]   = useState(goal?.targetDate ?? '');
+  const [target, setTarget] = useState(goal?.targetDate ?? '');
   const [milestone, setMilestone] = useState('');
+  const [errors, setErrors] = useState<FormErrors>({});
 
   const [xp, coins] = REWARD_MAP[rank];
 
+  const clearError = (field: keyof FormErrors) =>
+    setErrors((prev) => (prev[field] ? { ...prev, [field]: undefined } : prev));
+
   const handleSave = () => {
-    onSave?.({ title, desc, cat, rank, priority, targetDate: target, milestone });
+    const found = validate({ title, desc, target });
+    setErrors(found);
+    // Bail before the request — the API rejects these with a 422 anyway.
+    if (Object.values(found).some(Boolean)) return;
+
+    onSave?.({ title: title.trim(), desc, cat, rank, priority, targetDate: target, milestone });
     onClose();
   };
 
@@ -64,24 +97,32 @@ export function GoalModal({ mode, goal, onClose, onSave }: GoalModalProps) {
 
       <ModalBody className="flex flex-col gap-4">
         {/* Title */}
-        <Field label="Ambition Title">
+        <Field label="Ambition Title" required error={errors.title}>
           <input
             autoFocus
             value={title}
-            onChange={(e) => setTitle(e.target.value)}
+            onChange={(e) => {
+              setTitle(e.target.value);
+              clearError('title');
+            }}
             placeholder="e.g. Run a half marathon"
-            className={inputCls}
+            aria-invalid={Boolean(errors.title)}
+            className={cn(inputCls, errors.title && invalidCls)}
           />
         </Field>
 
         {/* Vision */}
-        <Field label="The Vision">
+        <Field label="The Vision" error={errors.desc}>
           <textarea
             rows={2}
             value={desc}
-            onChange={(e) => setDesc(e.target.value)}
+            onChange={(e) => {
+              setDesc(e.target.value);
+              clearError('desc');
+            }}
             placeholder="What does victory look like? Describe the summit…"
-            className={cn(inputCls, 'resize-none')}
+            aria-invalid={Boolean(errors.desc)}
+            className={cn(inputCls, 'resize-none', errors.desc && invalidCls)}
           />
         </Field>
 
@@ -123,19 +164,25 @@ export function GoalModal({ mode, goal, onClose, onSave }: GoalModalProps) {
                   )}
                 >
                   {r}
-                  <small className="text-[7px] font-normal opacity-60 leading-none mt-0.5">{RANK_DESC[r].slice(0, 4)}</small>
+                  <small className="text-[7px] font-normal opacity-60 leading-none mt-0.5">
+                    {RANK_DESC[r].slice(0, 4)}
+                  </small>
                 </button>
               ))}
             </div>
           </Field>
 
           {/* Target date */}
-          <Field label="Target Date">
+          <Field label="Target Date" required error={errors.targetDate}>
             <input
               type="date"
               value={target}
-              onChange={(e) => setTarget(e.target.value)}
-              className={inputCls}
+              onChange={(e) => {
+                setTarget(e.target.value);
+                clearError('targetDate');
+              }}
+              aria-invalid={Boolean(errors.targetDate)}
+              className={cn(inputCls, errors.targetDate && invalidCls)}
             />
           </Field>
         </div>
@@ -180,16 +227,20 @@ export function GoalModal({ mode, goal, onClose, onSave }: GoalModalProps) {
           </span>
           <div className="flex-1" />
           <span className="font-[var(--font-title)] text-[16px] font-black text-[var(--cyan)]">
-            {xp}<small className="text-[10px] ml-0.5 text-[var(--text-mid)] font-bold">XP</small>
+            {xp}
+            <small className="text-[10px] ml-0.5 text-[var(--text-mid)] font-bold">XP</small>
           </span>
           <span className="font-[var(--font-title)] text-[16px] font-black text-[var(--gold)]">
-            {coins}<small className="text-[10px] ml-0.5 text-[var(--text-mid)] font-bold">◉</small>
+            {coins}
+            <small className="text-[10px] ml-0.5 text-[var(--text-mid)] font-bold">◉</small>
           </span>
         </div>
       </ModalBody>
 
       <ModalFoot>
-        <Button type="button" variant="ghost" onClick={onClose}>Cancel</Button>
+        <Button type="button" variant="ghost" onClick={onClose}>
+          Cancel
+        </Button>
         <Button type="button" variant="default" onClick={handleSave}>
           <span>✦</span> {mode === 'edit' ? 'Save Changes' : 'Declare It'}
         </Button>
@@ -198,16 +249,34 @@ export function GoalModal({ mode, goal, onClose, onSave }: GoalModalProps) {
   );
 }
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
+function Field({
+  label,
+  required,
+  error,
+  children,
+}: {
+  label: string;
+  required?: boolean;
+  error?: string;
+  children: React.ReactNode;
+}) {
   return (
     <div className="flex flex-col gap-1.5">
       <label className="text-[10px] font-bold tracking-[0.08em] uppercase text-[var(--text-mid)] font-[var(--font-title)]">
         {label}
+        {required && <span className="text-[var(--rose)] ml-0.5">*</span>}
       </label>
       {children}
+      {error && (
+        <p role="alert" className="text-[10px] text-[var(--rose)] leading-tight">
+          {error}
+        </p>
+      )}
     </div>
   );
 }
 
 const inputCls =
   'w-full px-3 py-2 bg-[var(--panel2)] border border-[var(--border)] rounded-[var(--r-sm)] text-[12px] text-[var(--text-hi)] placeholder-[var(--text-lo)] outline-none focus:border-[oklch(0.74_0.17_85_/_0.5)] transition-colors';
+
+const invalidCls = 'border-[var(--rose)] focus:border-[var(--rose)]';
