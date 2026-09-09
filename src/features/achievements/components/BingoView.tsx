@@ -727,7 +727,7 @@ function BingoDetailPanel({
           background: 'linear-gradient(180deg,var(--bg-2),var(--bg-1))',
           borderLeftColor: accent,
           boxShadow: `-24px 0 60px oklch(0 0 0 / 0.6)`,
-          animation: 'bingo-deal 0.38s cubic-bezier(0.16,1,0.3,1)',
+          animation: 'bingo-drawer-in 0.34s cubic-bezier(0.32,0.72,0,1) both',
           color: accent,
         }}
         role="dialog"
