@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useState, useEffect, useCallback, startTransition, type ReactNode } from 'react';
 import { cn } from '@/libs/utils';
 import { Button } from '@/components/ui';
@@ -97,7 +98,25 @@ function AmbientBg() {
   );
 }
 
-// ─── Hamburger icon ───────────────────────────────────────────────────────────
+// ─── Mobile top-bar icons ─────────────────────────────────────────────────────
+function BackIcon() {
+  return (
+    <svg
+      width="18"
+      height="14"
+      viewBox="0 0 18 14"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      <path d="M7 1 1 7l6 6M1 7h16" />
+    </svg>
+  );
+}
+
 function HamburgerIcon() {
   return (
     <svg width="20" height="14" viewBox="0 0 20 14" fill="currentColor">
@@ -226,19 +245,29 @@ export function ProfilePage() {
 
       {/* ── Mobile top bar ────────────────────────────────────── */}
       <div
-        className="md:hidden sticky top-0 z-20 flex items-center justify-between px-4 py-3 border-b border-border-lo"
+        className="md:hidden sticky top-0 z-20 flex items-center justify-between gap-2 px-4 py-3 border-b border-border-lo"
         style={{
           background: 'oklch(13% 0.03 270/0.95)',
           backdropFilter: 'blur(12px)',
         }}
       >
-        <div>
-          <div className="[font-family:var(--f-mono)] text-[8px] tracking-[0.28em] uppercase text-text-lo">
-            EDITING CHAMBER
+        {/* Back sits in the pinned bar — inside the drawer it is two taps away. */}
+        <div className="flex items-center gap-2 min-w-0">
+          <Link
+            href="/dashboard"
+            aria-label="Back to dashboard"
+            className="w-9 h-9 -ml-1.5 flex-shrink-0 flex items-center justify-center rounded-xs text-text-md hover:text-gold hover:bg-bg-2 transition-colors"
+          >
+            <BackIcon />
+          </Link>
+          <div className="min-w-0">
+            <div className="[font-family:var(--f-mono)] text-[8px] tracking-[0.28em] uppercase text-text-lo">
+              EDITING CHAMBER
+            </div>
+            <h1 className="[font-family:var(--f-title)] italic font-medium text-[18px] leading-tight truncate">
+              Hero Identity
+            </h1>
           </div>
-          <h1 className="[font-family:var(--f-title)] italic font-medium text-[18px] leading-tight">
-            Hero Identity
-          </h1>
         </div>
         <button
           onClick={() => setNavOpen(true)}
