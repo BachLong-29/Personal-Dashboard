@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { cn } from '@/libs/utils';
 import { Modal, ModalHead, ModalBody, ModalFoot } from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
+import { DatePicker } from '@/components/ui/DatePicker';
 import { CATEGORIES, RANK_DESC } from '../constants';
 import type { GoalCategory, GoalPriority, GoalRank, Goal } from '../types';
 
@@ -32,6 +33,20 @@ const REWARD_MAP: Record<GoalRank, [number, number]> = {
   C: [300, 80],
   D: [180, 50],
 };
+
+/** `targetDate` is stored as a plain "YYYY-MM-DD" string, so convert at the edges. */
+function toDateString(d: Date): string {
+  return [
+    d.getFullYear(),
+    String(d.getMonth() + 1).padStart(2, '0'),
+    String(d.getDate()).padStart(2, '0'),
+  ].join('-');
+}
+
+function parseDateString(s: string): Date {
+  const [y, m, d] = s.split('-').map(Number);
+  return new Date(y ?? 1970, (m ?? 1) - 1, d ?? 1);
+}
 
 type FormErrors = Partial<Record<'title' | 'desc' | 'targetDate', string>>;
 
@@ -174,15 +189,14 @@ export function GoalModal({ mode, goal, onClose, onSave }: GoalModalProps) {
 
           {/* Target date */}
           <Field label="Target Date" required error={errors.targetDate}>
-            <input
-              type="date"
-              value={target}
-              onChange={(e) => {
-                setTarget(e.target.value);
+            <DatePicker
+              value={target ? parseDateString(target) : null}
+              onChange={(d) => {
+                setTarget(toDateString(d));
                 clearError('targetDate');
               }}
-              aria-invalid={Boolean(errors.targetDate)}
-              className={cn(inputCls, errors.targetDate && invalidCls)}
+              placeholder="Pick the day of reckoning…"
+              className={cn(errors.targetDate && '[&>button]:border-[var(--rose)]')}
             />
           </Field>
         </div>
