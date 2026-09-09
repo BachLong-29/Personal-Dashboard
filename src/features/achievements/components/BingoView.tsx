@@ -753,7 +753,8 @@ function BingoDetailPanel({
             ✕
           </button>
 
-          <div className="flex items-center gap-2 mb-2.5">
+          {/* pr-9 keeps the ml-auto priority badge clear of the absolute close button */}
+          <div className="flex items-center gap-2 mb-2.5 pr-9">
             <span
               className="inline-flex items-center gap-1.5 font-[var(--font-title)] text-[8px] tracking-[0.14em] font-bold px-2.5 py-[3px] rounded-full border uppercase"
               style={{
