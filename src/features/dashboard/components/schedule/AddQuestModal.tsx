@@ -5,11 +5,12 @@ import { useState } from 'react';
 
 import { Input, Select, type SelectOption } from '@/components/ui';
 import { Button } from '@/components/ui/Button';
+import { DatePicker } from '@/components/ui/DatePicker';
 import { Modal, ModalBody, ModalFoot, ModalHead } from '@/components/ui/Modal';
 import { QUEST_ICONS, XP_MAP } from '../../constants';
 import { useCreateQuest } from '../../hooks/useCreateQuest';
 import type { Difficulty, Quest, QuestType } from '../../types';
-import { todayISO } from '@/features/tasks/utils/date.utils';
+import { parseLocalDate, todayISO, toLocalDate } from '@/features/tasks/utils/date.utils';
 
 interface AddQuestModalProps {
   onAdd: (quest: Quest) => void;
@@ -87,11 +88,9 @@ export function AddQuestModal({ onAdd, onClose }: AddQuestModalProps) {
         </div>
         <div className="modal-field">
           <div className="modal-label">{t('addQuest.fields.dueDate')}</div>
-          <Input
-            className="modal-input"
-            type="date"
-            value={dueDate}
-            onChange={(e) => setDueDate(e.target.value)}
+          <DatePicker
+            value={dueDate ? parseLocalDate(dueDate) : null}
+            onChange={(d) => setDueDate(toLocalDate(d))}
             disabled={isPending}
           />
         </div>

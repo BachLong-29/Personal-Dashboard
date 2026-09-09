@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 
 import { Button } from '@/components/ui/Button';
+import { DatePicker } from '@/components/ui/DatePicker';
 import { Modal, ModalHead, ModalBody, ModalFoot } from '@/components/ui/Modal';
 import { cn } from '@/libs/utils';
 import type { FinanceGoal, TaskColor } from '@/types';
@@ -12,6 +13,20 @@ import { COLOR_CSS, COLOR_OPTIONS, GOAL_ICONS } from '../constants';
 import { useCreateGoal } from '../hooks/useCreateGoal';
 import { useUpdateGoal } from '../hooks/useUpdateGoal';
 import { formatAmountInput, toAmountDigits } from '../utils';
+
+/** `targetDate` travels as a plain "YYYY-MM-DD" string, so convert at the edges. */
+function toDateString(d: Date): string {
+  return [
+    d.getFullYear(),
+    String(d.getMonth() + 1).padStart(2, '0'),
+    String(d.getDate()).padStart(2, '0'),
+  ].join('-');
+}
+
+function parseDateString(s: string): Date {
+  const [y, m, d] = s.split('-').map(Number);
+  return new Date(y ?? 1970, (m ?? 1) - 1, d ?? 1);
+}
 
 interface Props {
   open: boolean;
@@ -100,11 +115,10 @@ export function GoalFormModal({ open, onClose, goal }: Props) {
 
         <label className="flex flex-col gap-1.5">
           <span className={fieldLabel}>{t('goals.targetDate')}</span>
-          <input
-            type="date"
-            className={input}
-            value={targetDate}
-            onChange={(e) => setTargetDate(e.target.value)}
+          <DatePicker
+            value={targetDate ? parseDateString(targetDate) : null}
+            onChange={(d) => setTargetDate(toDateString(d))}
+            onClear={() => setTargetDate('')}
           />
           <span className="text-[11px] text-[var(--text-mid)]">{t('goals.noTargetDate')}</span>
         </label>
