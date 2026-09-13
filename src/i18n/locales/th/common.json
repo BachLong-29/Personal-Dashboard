@@ -561,7 +561,9 @@
       "manageSchedule": "จัดการตารางเวลา",
       "blockWarning": {
         "title": "อัปเดตตารางเวลา",
-        "message": "ภารกิจนี้มี <strong>{count} ช่วงเวลาที่จัดไว้</strong> เปิด Session Planner เพื่ออัปเดตหลังจากบันทึกหรือไม่?"
+        "message": "ภารกิจนี้มี <strong>{count} ช่วงเวลาที่จัดไว้</strong> เปิด Session Planner เพื่ออัปเดตหลังจากบันทึกหรือไม่?",
+        "moveToDate": "ย้ายไปวันที่ {date}",
+        "moveFailed": "ย้ายช่วงเวลาไม่สำเร็จ ลองอีกครั้งหรือเปิด Session Planner"
       }
     },
     "addTaskModal": {

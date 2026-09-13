@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/Button';
 import { DatePicker } from '@/components/ui/DatePicker';
 import { useUpdateTask } from '@/features/dashboard/hooks/useUpdateTask';
 import { SessionPlanner, type PlannerTask } from '@/features/schedule/components/SessionPlanner';
-import { useTaskBlocks } from '@/features/schedule/hooks/useScheduleBlocks';
+import { useTaskBlocks, useUpdateScheduleBlock } from '@/features/schedule/hooks/useScheduleBlocks';
 import { cn } from '@/libs/utils';
 
 import type { OverdueItem } from '../../hooks/useOverdueReview';
@@ -38,8 +38,9 @@ interface OverdueRowProps {
   item: OverdueItem;
   onRemove: (id: string) => void;
   /** Fires after a successful reschedule when the task already has scheduled
-   * sessions, so the caller can prompt the user to go update them. */
-  onNeedsScheduleUpdate: (plannerTask: PlannerTask, blockCount: number) => void;
+   * sessions, so the caller can prompt the user to go update them. Block ids
+   * travel along so the prompt can move them without a second fetch. */
+  onNeedsScheduleUpdate: (plannerTask: PlannerTask, blockIds: string[]) => void;
 }
 
 function OverdueRow({ item, onRemove, onNeedsScheduleUpdate }: OverdueRowProps) {
@@ -76,7 +77,7 @@ function OverdueRow({ item, onRemove, onNeedsScheduleUpdate }: OverdueRowProps) 
                 duration: item.duration,
                 startDate: newStartDate,
               },
-              blocks.length,
+              blocks.map((b) => b.id),
             );
           }
         },
@@ -246,10 +247,33 @@ export function OverdueReviewModal({ open, items, onRemoveItem, onDismiss }: Pro
   // Post-reschedule prompt — lives on the parent (not OverdueRow) so it
   // survives the row being removed/unmounted when the item is rescheduled.
   const [blockWarning, setBlockWarning] = useState<{
-    blockCount: number;
+    blockIds: string[];
     plannerData: PlannerTask;
   } | null>(null);
   const [plannerTask, setPlannerTask] = useState<PlannerTask | null>(null);
+
+  const { mutateAsync: updateBlock, isPending: movingSessions } = useUpdateScheduleBlock();
+  const [moveFailed, setMoveFailed] = useState(false);
+
+  // Shortcut for the common case: the sessions belong on the day just picked,
+  // so move them there instead of making the user open the planner to do it.
+  async function handleMoveSessions() {
+    if (!blockWarning) return;
+    const { blockIds, plannerData } = blockWarning;
+    setMoveFailed(false);
+    try {
+      await Promise.all(blockIds.map((id) => updateBlock({ id, date: plannerData.startDate })));
+      setBlockWarning(null);
+    } catch {
+      // Stay open so the user can retry or fall back to the planner.
+      setMoveFailed(true);
+    }
+  }
+
+  function closeBlockWarning() {
+    setBlockWarning(null);
+    setMoveFailed(false);
+  }
 
   return (
     <>
@@ -282,8 +306,8 @@ export function OverdueReviewModal({ open, items, onRemoveItem, onDismiss }: Pro
                   key={item.id}
                   item={item}
                   onRemove={onRemoveItem}
-                  onNeedsScheduleUpdate={(plannerData, blockCount) =>
-                    setBlockWarning({ blockCount, plannerData })
+                  onNeedsScheduleUpdate={(plannerData, blockIds) =>
+                    setBlockWarning({ blockIds, plannerData })
                   }
                 />
               ))}
@@ -304,30 +328,54 @@ export function OverdueReviewModal({ open, items, onRemoveItem, onDismiss }: Pro
       </Modal>
 
       {/* Post-reschedule — nudge the user to update the task's existing sessions */}
-      <Modal open={blockWarning !== null} onClose={() => setBlockWarning(null)} maxWidth="380px">
+      <Modal open={blockWarning !== null} onClose={closeBlockWarning} maxWidth="380px">
         <ModalHead title={`⚡ ${t('editModal.blockWarning.title')}`} />
         <ModalBody>
           <p className="text-[12px] text-[var(--text-hi)] leading-relaxed">
             {t.rich('editModal.blockWarning.message', {
-              count: blockWarning?.blockCount ?? 0,
+              count: blockWarning?.blockIds.length ?? 0,
               strong: (chunks) => <strong>{chunks}</strong>,
             })}
           </p>
+          {moveFailed && (
+            <p className="mt-2 text-[11px] text-[var(--rose)]">
+              ✕ {t('editModal.blockWarning.moveFailed')}
+            </p>
+          )}
         </ModalBody>
         <ModalFoot>
-          <div className="flex items-center justify-end gap-2 w-full">
-            <Button variant="ghost" onClick={() => setBlockWarning(null)}>
+          <div className="flex flex-col gap-2 w-full sm:flex-row sm:items-center sm:justify-end">
+            <Button
+              variant="ghost"
+              onClick={closeBlockWarning}
+              disabled={movingSessions}
+              className="w-full sm:w-auto justify-center"
+            >
               {t('overdueReview.later')}
             </Button>
             <Button
-              variant="primary"
+              variant="ghost"
               onClick={() => {
                 const data = blockWarning?.plannerData ?? null;
-                setBlockWarning(null);
+                closeBlockWarning();
                 if (data) setPlannerTask(data);
               }}
+              disabled={movingSessions}
+              className="w-full sm:w-auto justify-center"
             >
               {t('editModal.manageSchedule')}
+            </Button>
+            <Button
+              variant="primary"
+              onClick={handleMoveSessions}
+              disabled={movingSessions}
+              className="w-full sm:w-auto justify-center"
+            >
+              {movingSessions
+                ? '…'
+                : t('editModal.blockWarning.moveToDate', {
+                    date: blockWarning?.plannerData.startDate ?? '',
+                  })}
             </Button>
           </div>
         </ModalFoot>

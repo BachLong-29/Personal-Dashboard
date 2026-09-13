@@ -561,7 +561,9 @@
       "manageSchedule": "Manage Schedule",
       "blockWarning": {
         "title": "Update Schedule",
-        "message": "This task has <strong>{count} scheduled sessions</strong>. Open Session Planner to update them after saving?"
+        "message": "This task has <strong>{count} scheduled sessions</strong>. Open Session Planner to update them after saving?",
+        "moveToDate": "Move to {date}",
+        "moveFailed": "Could not move the sessions. Try again or open Session Planner."
       }
     },
     "addTaskModal": {

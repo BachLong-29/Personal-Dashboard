@@ -561,7 +561,9 @@
       "manageSchedule": "Quản lý lịch",
       "blockWarning": {
         "title": "Cập nhật lịch",
-        "message": "Task có <strong>{count} buổi</strong> lịch. Mở Session Planner để cập nhật sau khi lưu?"
+        "message": "Task có <strong>{count} buổi</strong> lịch. Mở Session Planner để cập nhật sau khi lưu?",
+        "moveToDate": "Chuyển sang {date}",
+        "moveFailed": "Không chuyển được lịch. Thử lại hoặc mở Session Planner."
       }
     },
     "addTaskModal": {
