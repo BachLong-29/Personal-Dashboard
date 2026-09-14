@@ -30,7 +30,6 @@ Model `Event` + rule lặp, mở rộng [calendar-item](./calendar-item.md) thà
 | -------------------- | ----------------------------------------------------------------------------------------------------------------------- |
 | Habit không XP       | Habit sinh HabitLog + streak + XP cứng; rule chỉ weekly, không có `endDate`, không lặp cách tuần                        |
 | Task + ScheduleBlock | Task có `status`/backlog/overdue — "cuộc họp quá hạn" là vô nghĩa; task **không có** cơ chế lặp, họp tuần = tạo 52 task |
-| Quest                | Gamified theo difficulty rank, sai bản chất hơn cả task                                                                 |
 
 ## Model: Event
 
@@ -65,8 +64,7 @@ Event {
 }
 ```
 
-- Chỉ `weekly` + `monthly`, bám đúng [finance-recurring](./finance-recurring.md) — không
-  `daily`/`yearly` (YAGNI).
+- Chỉ `weekly` + `monthly` theo [finance-recurring](./finance-recurring.md) — YAGNI.
 - `dayOfMonth` > số ngày thật của tháng → rơi vào **ngày cuối tháng đó**.
 - **Override nằm chung collection**, theo đúng pattern `habitRef` của
   [reschedule-habit](./reschedule-habit.md): một `Event` có `seriesRef` + `overrideDate` là bản
@@ -143,12 +141,11 @@ làm sau) · không người tham dự / địa điểm / sync Google Calendar �
 
 ## Trạng thái hiện tại
 
-✅ Đã implement: model + `expandEvents`, 4 nguồn trong `buildCalendar`, capacity trong
-`task-suggestion`, API CRUD + `/override`, trang `/manage/events`, event trong Week view
-(viền đứt, click 1 occurrence lặp → confirm bỏ buổi), link trong global search.
+✅ Model + `expandEvents`, 4 nguồn trong `buildCalendar`, capacity trong `task-suggestion`,
+API CRUD + `/override`, `/manage/events`, event trong Week view (viền đứt, click occurrence
+lặp → confirm bỏ buổi).
 
-🟡 Chưa làm: dời 1 occurrence sang ngày/giờ khác từ UI (API `/override` đã nhận `newDate`),
-Day/Month view, và `conflict-capacity` vẫn chưa được triển khai.
+🟡 Chưa: dời occurrence sang ngày khác từ UI (`/override` đã nhận `newDate`), Day/Month view.
 
 </requirement>
 
