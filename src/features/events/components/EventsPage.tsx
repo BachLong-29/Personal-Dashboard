@@ -5,6 +5,7 @@ import { motion } from 'framer-motion';
 
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
+import { Modal, ModalBody, ModalFoot, ModalHead } from '@/components/ui/Modal';
 import { NoData } from '@/components/ui/NoData';
 import { SkelBlock } from '@/components/ui/Skeleton';
 import { Switch } from '@/components/ui/Switch';
@@ -69,7 +70,7 @@ export function EventsPage() {
 
   const [editing, setEditing] = useState<EventDTO | null>(null);
   const [showForm, setShowForm] = useState(false);
-  const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState<EventDTO | null>(null);
 
   const categoryName = useMemo(() => new Map(categories.map((c) => [c.id, c.name])), [categories]);
 
@@ -195,45 +196,24 @@ export function EventsPage() {
                   </p>
                 </div>
 
-                {confirmDelete === event.id ? (
-                  <div className="flex shrink-0 items-center gap-1.5">
-                    <span className="text-[10px] text-[var(--rose)]">Delete?</span>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      disabled={deleteEvent.isPending}
-                      onClick={async () => {
-                        await deleteEvent.mutateAsync(event.id);
-                        setConfirmDelete(null);
-                      }}
-                      className="text-[var(--rose)]"
-                    >
-                      Yes
-                    </Button>
-                    <Button size="sm" variant="ghost" onClick={() => setConfirmDelete(null)}>
-                      No
-                    </Button>
-                  </div>
-                ) : (
-                  <div className="flex shrink-0 items-center gap-2">
-                    <Switch
-                      checked={event.active}
-                      disabled={updateEvent.isPending}
-                      onChange={(active) => updateEvent.mutate({ id: event.id, active })}
-                    />
-                    <Button size="sm" variant="ghost" onClick={() => openEdit(event)}>
-                      Edit
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => setConfirmDelete(event.id)}
-                      className="text-[var(--rose)]"
-                    >
-                      Delete
-                    </Button>
-                  </div>
-                )}
+                <div className="flex shrink-0 items-center gap-2">
+                  <Switch
+                    checked={event.active}
+                    disabled={updateEvent.isPending}
+                    onChange={(active) => updateEvent.mutate({ id: event.id, active })}
+                  />
+                  <Button size="sm" variant="ghost" onClick={() => openEdit(event)}>
+                    Edit
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => setDeleting(event)}
+                    className="text-[var(--rose)]"
+                  >
+                    Delete
+                  </Button>
+                </div>
               </motion.div>
             ))}
           </div>
@@ -241,6 +221,48 @@ export function EventsPage() {
       </div>
 
       <EventFormModal open={showForm} onClose={() => setShowForm(false)} event={editing} />
+
+      <Modal open={deleting !== null} onClose={() => setDeleting(null)} maxWidth="380px">
+        <ModalHead
+          title={
+            <>
+              <span className="text-[var(--rose)]">⚠</span> Delete Event
+            </>
+          }
+        />
+        <ModalBody>
+          <p className="text-[12px] leading-relaxed text-[var(--text-mid)]">
+            Delete <strong className="text-[var(--text-hi)]">{deleting?.title}</strong>?
+            {deleting?.recurrence
+              ? ' Every occurrence leaves the calendar, including the ones you moved.'
+              : ''}
+          </p>
+        </ModalBody>
+        <ModalFoot>
+          <div className="flex w-full flex-col gap-2 sm:flex-row sm:justify-end">
+            <Button
+              variant="ghost"
+              onClick={() => setDeleting(null)}
+              disabled={deleteEvent.isPending}
+              className="w-full justify-center sm:w-auto"
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="danger"
+              disabled={deleteEvent.isPending}
+              onClick={async () => {
+                if (!deleting) return;
+                await deleteEvent.mutateAsync(deleting.id);
+                setDeleting(null);
+              }}
+              className="w-full justify-center sm:w-auto"
+            >
+              {deleteEvent.isPending ? '…' : 'Delete'}
+            </Button>
+          </div>
+        </ModalFoot>
+      </Modal>
     </div>
   );
 }
