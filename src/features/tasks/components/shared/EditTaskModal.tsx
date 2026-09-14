@@ -5,7 +5,7 @@ import { useRef, useState } from 'react';
 import { useTranslations } from 'next-intl';
 
 import { Icon } from '@/components/common/Icon';
-import { Modal, ModalBody, ModalFoot, ModalHead } from '@/components/ui/Modal';
+import { Modal, ModalBody, ModalFoot } from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
 import { Checkbox } from '@/components/ui/Checkbox';
 import { DatePicker } from '@/components/ui/DatePicker';
@@ -16,6 +16,7 @@ import { useTaskBlocks } from '@/features/schedule/hooks/useScheduleBlocks';
 
 import { parseDateLocal } from '../../data/adapters';
 import type { UITask } from '../../data/mock';
+import { SessionUpdatePrompt, type SessionUpdateTarget } from './SessionUpdatePrompt';
 import { TaskForm, type TaskFormValues, type TaskFormHandle } from './TaskForm';
 
 function tomorrow(): Date {
@@ -55,10 +56,7 @@ export function EditTaskModal({ task, open, onClose, onSave, saving }: EditTaskM
   const [plannerTask, setPlannerTask] = useState<PlannerTask | null>(null);
 
   // Warning modal — shown after save when existing blocks need to be rescheduled
-  const [blockWarning, setBlockWarning] = useState<{
-    blockCount: number;
-    plannerData: PlannerTask;
-  } | null>(null);
+  const [blockWarning, setBlockWarning] = useState<SessionUpdateTarget | null>(null);
 
   // Defer state — reset whenever task changes (key prop on outer element handles this)
   const [isDeferred, setIsDeferred] = useState(false);
@@ -77,31 +75,11 @@ export function EditTaskModal({ task, open, onClose, onSave, saving }: EditTaskM
         task={plannerTask}
         onClose={() => setPlannerTask(null)}
       />
-      <Modal open={blockWarning !== null} onClose={() => setBlockWarning(null)} maxWidth="380px">
-        <ModalHead title={`⚡ ${t('editModal.blockWarning.title')}`} />
-        <ModalBody>
-          <p className="text-[12px] text-[var(--text-hi)] leading-relaxed">
-            {t.rich('editModal.blockWarning.message', {
-              count: blockWarning?.blockCount ?? 0,
-              strong: (chunks) => <strong>{chunks}</strong>,
-            })}
-          </p>
-        </ModalBody>
-        <ModalFoot>
-          <div className="flex justify-end w-full">
-            <Button
-              variant="primary"
-              onClick={() => {
-                const data = blockWarning?.plannerData ?? null;
-                setBlockWarning(null);
-                if (data) setPlannerTask(data);
-              }}
-            >
-              OK
-            </Button>
-          </div>
-        </ModalFoot>
-      </Modal>
+      <SessionUpdatePrompt
+        target={blockWarning}
+        onClose={() => setBlockWarning(null)}
+        onManage={setPlannerTask}
+      />
     </>
   );
 
@@ -185,7 +163,9 @@ export function EditTaskModal({ task, open, onClose, onSave, saving }: EditTaskM
       } else if (needsBlockWarning) {
         // Existing blocks may be out of sync — show warning modal first
         setBlockWarning({
-          blockCount: blocks.length,
+          blockIds: blocks.map((b) => b.id),
+          // Only a duration change leaves the sessions on the right day already.
+          dateMoved: startDateMoved,
           plannerData: {
             id: task.sourceId ?? '',
             name: values.name,
