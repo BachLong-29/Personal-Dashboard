@@ -99,12 +99,9 @@ expandEvents(userId, from, to) → EventOccurrence[]
 
 ## Capacity — chỗ phải sửa
 
-| File                                     | Sửa gì                                                                                             |
-| ---------------------------------------- | -------------------------------------------------------------------------------------------------- |
-| `src/server/services/task-suggestion.ts` | `remainingMinutes` trừ thêm duration của event `busy` trong ngày (hiện chỉ trừ block + dated task) |
-| `conflict-capacity` (chưa làm)           | Khi triển khai phải coi event là item chiếm giờ như block                                          |
-
-Event `allDay` hoặc `busy: false` **không** trừ capacity.
+`task-suggestion.ts`: `remainingMinutes` trừ thêm duration event `busy` trong ngày (hiện chỉ
+trừ block + dated task). `conflict-capacity` khi triển khai phải coi event là item chiếm giờ
+như block. Event `allDay` hoặc `busy: false` **không** trừ capacity.
 
 ## API
 
