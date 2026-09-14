@@ -56,7 +56,9 @@ Event {
     dayOfMonth?: number    // 1..31, required khi freq='monthly'
     interval: number       // default 1 · 2 = cách tuần/cách tháng
   }
-  skipDates: Date[]        // các occurrence đã bị huỷ, default []
+  seriesRef?: ObjectId     // trỏ về event lặp mà row này ghi đè
+  overrideDate?: Date      // ngày occurrence GỐC bị thay thế
+  cancelled: boolean       // default false — true = buổi đó bị huỷ
 
   busy: boolean            // default true — trừ vào capacity ngày
   active: boolean          // soft delete
@@ -66,9 +68,11 @@ Event {
 - Chỉ `weekly` + `monthly`, bám đúng [finance-recurring](./finance-recurring.md) — không
   `daily`/`yearly` (YAGNI).
 - `dayOfMonth` > số ngày thật của tháng → rơi vào **ngày cuối tháng đó**.
-- **Không có collection exception riêng.** Huỷ 1 buổi → push ngày vào `skipDates`.
-  Dời 1 buổi → skip ngày cũ + tạo 1 event one-off. Đánh đổi: buổi bị dời mất liên kết với
-  series — chấp nhận được với app cá nhân, đổi lại bớt hẳn 1 collection + 1 tầng API.
+- **Override nằm chung collection**, theo đúng pattern `habitRef` của
+  [reschedule-habit](./reschedule-habit.md): một `Event` có `seriesRef` + `overrideDate` là bản
+  ghi đè cho đúng 1 occurrence của series. Huỷ 1 buổi → override `cancelled: true`. Dời 1 buổi
+  → override mang ngày/giờ mới. Không cần collection thứ hai, và buổi bị dời **vẫn giữ liên kết**
+  với series (đổi tên/màu series không làm nó trôi, xoá series thì dọn được kèm).
 
 ## Sinh occurrence — tính on-the-fly, KHÔNG cron
 
@@ -82,7 +86,10 @@ expandEvents(userId, from, to) → EventOccurrence[]
 
 - one-off: `startDate` nằm trong range → 1 occurrence.
 - recurring: duyệt từng ngày trong range, ngày khớp `days`/`dayOfMonth`, `>= startDate`,
-  `<= endDate`, đúng `interval` (đếm số tuần/tháng từ `startDate`), không nằm trong `skipDates`.
+  `<= endDate`, đúng `interval` (đếm số tuần/tháng từ `startDate`).
+- Nạp sẵn override của range (`seriesRef` ∈ các series đang expand) → occurrence nào có override
+  thì **bỏ bản sinh ra**, thay bằng override; override `cancelled` thì không ra item nào. Đây
+  chính là cơ chế Habit dùng để tránh double count.
 - Chỉ lấy `active: true`.
 
 ## Tích hợp CalendarItem
@@ -103,13 +110,13 @@ Event `allDay` hoặc `busy: false` **không** trừ capacity.
 
 ## API
 
-| Method   | Endpoint                   | Mô tả                                                                                |
-| -------- | -------------------------- | ------------------------------------------------------------------------------------ |
-| `GET`    | `/api/v1/events?from=&to=` | Không có range → list rule; có range → occurrence đã expand                          |
-| `POST`   | `/api/v1/events`           | Tạo (validate `startTime`/`duration` theo `allDay`, `days`/`dayOfMonth` theo `freq`) |
-| `PATCH`  | `/api/v1/events/:id`       | Sửa cả series                                                                        |
-| `POST`   | `/api/v1/events/:id/skip`  | Body `{ date }` → push vào `skipDates` (huỷ 1 buổi)                                  |
-| `DELETE` | `/api/v1/events/:id`       | Soft-delete `active: false`                                                          |
+| Method   | Endpoint                      | Mô tả                                                                                |
+| -------- | ----------------------------- | ------------------------------------------------------------------------------------ |
+| `GET`    | `/api/v1/events?from=&to=`    | Không có range → list rule; có range → occurrence đã expand                          |
+| `POST`   | `/api/v1/events`              | Tạo (validate `startTime`/`duration` theo `allDay`, `days`/`dayOfMonth` theo `freq`) |
+| `PATCH`  | `/api/v1/events/:id`          | Sửa cả series                                                                        |
+| `POST`   | `/api/v1/events/:id/override` | Body `{ date, cancelled }` hoặc ngày/giờ mới → override 1 buổi                       |
+| `DELETE` | `/api/v1/events/:id`          | Soft-delete `active: false`                                                          |
 
 ## UI
 
@@ -124,7 +131,7 @@ Event `allDay` hoặc `busy: false` **không** trừ capacity.
 
 **Week/Day view dashboard** — event hiện cùng task/habit/quest qua CalendarItem; style phân biệt
 (viền đứt hoặc nền nhạt) để thấy ngay đây là việc không phải làm để "hoàn thành". Menu ngữ cảnh
-trên 1 occurrence: "Huỷ buổi này" → gọi `/skip`.
+trên 1 occurrence: "Huỷ buổi này" / "Dời buổi này" → gọi `/override`.
 
 **Bắt buộc:** chỉ Tailwind + design token sẵn có, component từ `src/components/ui`, có Loading
 (`Skeleton`) / Empty (`NoData`) / Error state, responsive mobile-first.
