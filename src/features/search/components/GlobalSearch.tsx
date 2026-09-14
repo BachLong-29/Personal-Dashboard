@@ -91,6 +91,12 @@ export function GlobalSearch() {
       { href: '/marketplace', icon: '🛍', label: tNav('marketplace'), keywords: ['shop', 'store'] },
       { href: '/achievements', icon: '🏆', label: t('pageNames.achievements') },
       { href: '/manage/rewards', icon: '🎁', label: t('pageNames.rewards') },
+      {
+        href: '/manage/events',
+        icon: '📅',
+        label: t('pageNames.events'),
+        keywords: ['event', 'events', 'meeting', 'calendar'],
+      },
       { href: '/profile', icon: '✦', label: tNav('profile') },
       { href: '/finance', icon: '💰', label: tNav('finance') },
       {

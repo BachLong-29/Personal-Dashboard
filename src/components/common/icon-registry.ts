@@ -110,6 +110,16 @@ const ICON_EXTENSIONS: Partial<Record<IconFile, IconExtension>> = {
   GiNotebook: 'png',
 };
 
+/**
+ * An icon value that is an uploaded image rather than an emoji or a registry
+ * key. Stored in the same string field, so callers tell them apart by shape.
+ */
+const UPLOADED_ICON_REGEX = /^https?:\/\//i;
+
+export function isUploadedIcon(name: string | null | undefined): boolean {
+  return Boolean(name && UPLOADED_ICON_REGEX.test(name.trim()));
+}
+
 /** Fast lookup set for the canonical file names. */
 const ICON_SET = new Set<IconFile>(ICON_FILES);
 const EMOJI_VARIATION_SELECTOR_REGEX = /\uFE0F/g;
@@ -160,7 +170,9 @@ function resolveIconFile(name: string | null | undefined): IconFile | null {
  */
 export function resolveIconSrc(name: string | null | undefined): string | null {
   const iconFile = resolveIconFile(name);
-  return iconFile ? toIconSrc(iconFile) : null;
+  if (iconFile) return toIconSrc(iconFile);
+  // Uploaded images are already a usable src — pass them straight through.
+  return isUploadedIcon(name) ? (name as string).trim() : null;
 }
 
 /** Resolve an icon identifier to its default color token, when one is defined. */

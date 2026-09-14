@@ -34,6 +34,11 @@ export const queryKeys = {
     insights: (from: string, to: string) =>
       [...queryKeys.calendar.all, 'insights', from, to] as const,
   },
+  events: {
+    all: ['events'] as const,
+    rules: () => [...queryKeys.events.all, 'rules'] as const,
+    range: (from: string, to: string) => [...queryKeys.events.all, 'range', from, to] as const,
+  },
   scheduleBlocks: {
     all: ['schedule-blocks'] as const,
     list: (params: Record<string, unknown>) =>

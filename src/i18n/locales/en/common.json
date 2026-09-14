@@ -22,7 +22,8 @@
     "pagesLabel": "Pages",
     "pageNames": {
       "achievements": "Achievements",
-      "rewards": "Rewards"
+      "rewards": "Rewards",
+      "events": "Events"
     },
     "hint": "Type to search tasks, habits, quests, projects, pages…",
     "empty": "No results for \"{query}\""

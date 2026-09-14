@@ -29,6 +29,7 @@ import { useUpdateHabit } from '../../hooks/useUpdateHabit';
 import { useUpdateTask } from '../../hooks/useUpdateTask';
 import type { CenterTab, Habit, HabitColor, Quest, Task, TaskColor } from '../../types';
 import type { ScheduleDisplayOptions } from '../../hooks/useScheduleState';
+import { Button } from '@/components/ui/Button';
 import { Modal, ModalBody, ModalFoot, ModalHead } from '@/components/ui/Modal';
 import { AddTaskModal } from '@/features/tasks/components/shared/AddTaskModal';
 import { EditTaskModal } from '@/features/tasks/components/shared/EditTaskModal';
@@ -40,6 +41,8 @@ import { parseLocalDate, todayISO } from '@/features/tasks/utils/date.utils';
 import type { ScheduleBlock, Task as CoreTask } from '@/types';
 import { useProfile } from '@/features/profile/hooks/useProfile';
 import { useScheduleBlocks } from '@/features/schedule/hooks/useScheduleBlocks';
+import { useEventOccurrences, useOverrideEvent } from '@/features/events/hooks/useEvents';
+import type { EventOccurrence } from '@/types';
 
 interface WeekViewProps {
   weekStart: string;
@@ -66,7 +69,8 @@ type DayItem =
       blockId?: string;
     }
   | { kind: 'quest'; item: Quest; time?: string }
-  | { kind: 'habit'; item: Habit; time?: string; color: string };
+  | { kind: 'habit'; item: Habit; time?: string; color: string }
+  | { kind: 'event'; item: EventOccurrence; time?: string; color: string };
 
 // UTC-based so the result never drifts by a day in negative-UTC timezones.
 function addDays(dateStr: string, n: number): string {
@@ -119,6 +123,8 @@ export function WeekView({
     sourceType: 'task',
   });
   const { data: weekQuests = [] } = useQuests(weekStart, weekEnd);
+  const { data: weekEvents = [] } = useEventOccurrences(weekStart, weekEnd);
+  const { mutate: overrideEvent } = useOverrideEvent();
   const { mutate: updateTask } = useUpdateTask();
   const { mutate: deleteTask } = useDeleteTask();
   const { mutate: moveQuest } = useMoveQuest();
@@ -135,6 +141,7 @@ export function WeekView({
   const [deletingTask, setDeletingTask] = useState<Task | undefined>(undefined);
   const [activeDrag, setActiveDrag] = useState<ActiveDrag | null>(null);
   const [pickerDay, setPickerDay] = useState<string | null>(null);
+  const [cancelling, setCancelling] = useState<EventOccurrence | null>(null);
 
   const sensors = useSensors(
     useSensor(MouseSensor, { activationConstraint: { distance: 8 } }),
@@ -161,6 +168,12 @@ export function WeekView({
     }
     return map;
   }, [weekQuests]);
+
+  const eventsByDate = useMemo<Record<string, EventOccurrence[]>>(() => {
+    const map: Record<string, EventOccurrence[]> = {};
+    for (const occ of weekEvents) (map[occ.date] ??= []).push(occ);
+    return map;
+  }, [weekEvents]);
 
   const weekDays = getWeekDays(weekStart);
   const dailyWorkingHoursMinutes = profileData?.settings.dailyCapacityMinutes ?? 600;
@@ -336,9 +349,11 @@ export function WeekView({
           ) : (
             weekDays.map((dayStr, i) => {
               const dayTaskEntries = getTaskBlocksForDay(dayStr);
-              const taskUsageMinutes = getTaskUsageForDay(
-                dayTaskEntries.map((entry) => entry.block),
-              );
+              const dayEvents = eventsByDate[dayStr] ?? [];
+              // Events are not tasks, but a busy one still spends the day.
+              const taskUsageMinutes =
+                getTaskUsageForDay(dayTaskEntries.map((entry) => entry.block)) +
+                dayEvents.reduce((sum, e) => sum + (e.busy && !e.allDay ? e.duration : 0), 0);
               const isToday = dayStr === todayStr;
               const dayNum = new Date(dayStr).getDate();
 
@@ -399,6 +414,12 @@ export function WeekView({
                             ? h.schedule.find((e) => e.days.includes(dow))?.time
                             : undefined,
                           color: HABIT_COLORS[h.color as HabitColor]?.value ?? 'var(--violet)',
+                        })),
+                        ...dayEvents.map((e) => ({
+                          kind: 'event' as const,
+                          item: e,
+                          time: e.startTime ?? undefined,
+                          color: HABIT_COLORS[e.color as TaskColor]?.value ?? 'var(--cyan)',
                         })),
                       ];
 
@@ -475,6 +496,28 @@ export function WeekView({
                           );
                         }
 
+                        if (item.kind === 'event') {
+                          const occ = item.item;
+                          return (
+                            <div
+                              key={occ.id}
+                              className={cn(miniTask, miniTaskEvent, miniTaskNoGrab)}
+                              style={{ borderLeftColor: item.color, borderLeftWidth: 2 }}
+                              title={`${item.time ? item.time + ' ' : ''}${occ.title}`}
+                              onClick={() => occ.recurring && setCancelling(occ)}
+                            >
+                              <div className="flex items-center gap-1 w-full min-w-0">
+                                <span className={miniTaskIcon}>
+                                  <Icon icon={occ.icon} />
+                                </span>
+                                <span className={miniTaskName}>{occ.title}</span>
+                                {occ.recurring && <span className={miniRepeat}>↻</span>}
+                              </div>
+                              {item.time && <span className={miniTime}>{item.time}</span>}
+                            </div>
+                          );
+                        }
+
                         // habit — no drag
                         const h = item.item;
                         const done = isToday ? (habitLogMap[h.id] ?? false) : false;
@@ -543,6 +586,40 @@ export function WeekView({
       </DndContext>
 
       {/* Pick — assign an existing task onto a day */}
+      {/* Skip one occurrence of a repeating event without touching the series */}
+      <Modal open={cancelling !== null} onClose={() => setCancelling(null)} maxWidth="360px">
+        <ModalHead title={`↻ ${cancelling?.title ?? ''}`} />
+        <ModalBody>
+          <p className="text-[12px] text-[var(--text-hi)] leading-relaxed">
+            Skip this one on <strong>{cancelling?.date}</strong>? The repeating event stays as it
+            is.
+          </p>
+        </ModalBody>
+        <ModalFoot>
+          <div className="flex w-full flex-col gap-2 sm:flex-row sm:justify-end">
+            <Button
+              variant="ghost"
+              onClick={() => setCancelling(null)}
+              className="w-full justify-center sm:w-auto"
+            >
+              Keep it
+            </Button>
+            <Button
+              variant="primary"
+              onClick={() => {
+                if (cancelling) {
+                  overrideEvent({ id: cancelling.eventId, date: cancelling.date, cancelled: true });
+                }
+                setCancelling(null);
+              }}
+              className="w-full justify-center sm:w-auto"
+            >
+              Skip this one
+            </Button>
+          </div>
+        </ModalFoot>
+      </Modal>
+
       <TaskPickerModal
         open={pickerDay !== null}
         dateStr={pickerDay ?? ''}
@@ -712,6 +789,9 @@ const miniTaskDone = 'opacity-50';
 const miniTaskBlocked = 'opacity-60 cursor-default';
 const miniTaskQuest = 'border-[oklch(0.74_0.17_85_/_0.25)] bg-[oklch(0.74_0.17_85_/_0.05)]';
 const miniTaskHabit = 'border-[oklch(0.66_0.22_295_/_0.25)] bg-[oklch(0.66_0.22_295_/_0.05)]';
+// Dashed edge marks an event: it happens, there is nothing to complete.
+const miniTaskEvent = 'border-dashed border-[var(--border-hi)] bg-[var(--bg-2)]';
+const miniRepeat = 'text-[7px] text-[var(--text-lo)] shrink-0';
 const miniTaskIcon = 'text-[10px] shrink-0';
 const miniTaskName = 'flex-1 truncate text-[var(--text-hi)] leading-tight';
 const miniLock = 'text-[8px] shrink-0';

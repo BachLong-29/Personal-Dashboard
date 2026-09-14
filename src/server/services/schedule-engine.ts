@@ -3,6 +3,7 @@ import { HabitLogModel } from '@/server/models/habit-log.model';
 import { ScheduleBlockModel } from '@/server/models/schedule-block.model';
 import { TaskModel } from '@/server/models/task.model';
 import { QuestModel } from '@/server/models/quest.model';
+import { expandEvents } from '@/server/services/event-expand';
 import type { CalendarItem, CalendarStatus } from '@/types/calendar';
 import type { HabitDay } from '@/types/habit';
 import type { QuestType } from '@/types/quest';
@@ -80,10 +81,11 @@ export async function buildCalendar(
   const todayKey = toKey(new Date());
   const days = eachDay(fromStr, toStr);
 
-  const [habits, habitLogs, blocks] = await Promise.all([
+  const [habits, habitLogs, blocks, events] = await Promise.all([
     HabitModel.find({ userId, active: true }).lean(),
     HabitLogModel.find({ userId, date: { $gte: from, $lt: toEnd } }).lean(),
     ScheduleBlockModel.find({ userId, date: { $gte: from, $lt: toEnd } }).lean(),
+    expandEvents(userId, fromStr, toStr),
   ]);
 
   // Source ids referenced by blocks
@@ -235,6 +237,27 @@ export async function buildCalendar(
       icon: meta.icon,
       color: meta.color,
       meta: { deadline: true },
+    });
+  }
+
+  // ── D. Event occurrences ─────────────────────────────────────────────────
+  // Events are not achievements — they happen, so they are always 'planned'
+  // and never resolve to done/missed the way the other three sources do.
+  for (const occ of events) {
+    items.push({
+      id: occ.id,
+      title: occ.title,
+      date: occ.date,
+      startTime: occ.startTime,
+      endTime:
+        occ.startTime && occ.duration > 0 ? addMinutes(occ.startTime, occ.duration) : occ.startTime,
+      duration: occ.duration,
+      status: 'planned',
+      sourceType: 'event',
+      sourceId: occ.eventId,
+      icon: occ.icon,
+      color: occ.color,
+      meta: { isOverride: occ.isOverride, busy: occ.busy },
     });
   }
 
