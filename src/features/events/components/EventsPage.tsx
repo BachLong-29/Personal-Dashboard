@@ -73,6 +73,10 @@ export function EventsPage() {
 
   const categoryName = useMemo(() => new Map(categories.map((c) => [c.id, c.name])), [categories]);
 
+  // The empty state carries its own centred CTA — two of the same button on an
+  // otherwise blank page is noise, so the header one stands down for it.
+  const isEmpty = !isLoading && !isError && events.length === 0;
+
   // Repeating rules first — they are the backbone of the week.
   const sorted = useMemo(
     () =>
@@ -109,13 +113,15 @@ export function EventsPage() {
               Events
             </h1>
           </div>
-          <Button
-            variant="primary"
-            onClick={openCreate}
-            className="w-full justify-center sm:w-auto"
-          >
-            ＋ New Event
-          </Button>
+          {!isEmpty && (
+            <Button
+              variant="primary"
+              onClick={openCreate}
+              className="w-full justify-center sm:w-auto"
+            >
+              ＋ New Event
+            </Button>
+          )}
         </div>
 
         {isLoading && (
