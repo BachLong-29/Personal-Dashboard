@@ -74,15 +74,24 @@ export function SessionUpdatePrompt({ target, onClose, onManage }: Props) {
         )}
       </ModalBody>
       <ModalFoot>
-        <div className="flex flex-col gap-2 w-full sm:flex-row sm:items-center sm:justify-end">
-          <Button
-            variant="ghost"
-            onClick={close}
-            disabled={moving}
-            className="w-full sm:w-auto justify-center"
-          >
-            {t('overdueReview.later')}
-          </Button>
+        {/*
+          Stacked at every width on purpose: the labels carry a date and two
+          words, and three of them side by side wrap into ragged two-line
+          buttons even on desktop — this dialog is only 380px wide.
+        */}
+        <div className="flex w-full flex-col gap-2">
+          {target?.dateMoved && (
+            <Button
+              variant="primary"
+              onClick={handleMove}
+              disabled={moving}
+              className="w-full justify-center"
+            >
+              {moving
+                ? '…'
+                : t('editModal.blockWarning.moveToDate', { date: target.plannerData.startDate })}
+            </Button>
+          )}
           <Button
             variant="ghost"
             onClick={() => {
@@ -91,22 +100,18 @@ export function SessionUpdatePrompt({ target, onClose, onManage }: Props) {
               if (data) onManage(data);
             }}
             disabled={moving}
-            className="w-full sm:w-auto justify-center"
+            className="w-full justify-center"
           >
             {t('editModal.manageSchedule')}
           </Button>
-          {target?.dateMoved && (
-            <Button
-              variant="primary"
-              onClick={handleMove}
-              disabled={moving}
-              className="w-full sm:w-auto justify-center"
-            >
-              {moving
-                ? '…'
-                : t('editModal.blockWarning.moveToDate', { date: target.plannerData.startDate })}
-            </Button>
-          )}
+          <Button
+            variant="ghost"
+            onClick={close}
+            disabled={moving}
+            className="w-full justify-center"
+          >
+            {t('overdueReview.later')}
+          </Button>
         </div>
       </ModalFoot>
     </Modal>
