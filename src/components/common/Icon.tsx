@@ -2,7 +2,7 @@ import type { CSSProperties, ReactNode } from 'react';
 
 import { cn } from '@/libs/utils/cn';
 
-import { resolveIconColor, resolveIconSrc } from './icon-registry';
+import { isUploadedIcon, resolveIconColor, resolveIconSrc } from './icon-registry';
 
 interface IconProps {
   /** Icon identifier: a registered `Gi*` name / alias, or a raw value (emoji). */
@@ -27,6 +27,7 @@ interface IconProps {
  * emoji), or nothing.
  *
  * @example
+ * <Icon icon="https://…/x.png" /> // → the uploaded image, never masked
  * <Icon icon="fire" />            // → public/icons/GiSmallFire.svg
  * <Icon icon="fire" useMappedColor /> // → same icon with mapped default color
  * <Icon icon="🎯" />              // → renders the emoji unchanged
@@ -42,6 +43,7 @@ export function Icon({
   renderMode = 'auto',
 }: IconProps) {
   const src = resolveIconSrc(icon);
+  const uploaded = isUploadedIcon(icon);
   const mappedColor = useMappedColor ? resolveIconColor(icon) : null;
   const resolvedColor = style?.color ?? mappedColor;
   const resolvedStyle: CSSProperties = {
@@ -51,7 +53,10 @@ export function Icon({
 
   if (src) {
     const isPngAsset = src.toLowerCase().endsWith('.png');
-    const shouldRenderAsImage = renderMode === 'image' || (renderMode === 'auto' && isPngAsset);
+    // A photo has its own colours — masking it with currentColor would flatten
+    // it to a silhouette, so an upload always renders as an image.
+    const shouldRenderAsImage =
+      uploaded || renderMode === 'image' || (renderMode === 'auto' && isPngAsset);
 
     if (shouldRenderAsImage) {
       return (
@@ -64,6 +69,7 @@ export function Icon({
           src={src}
           className={cn(
             'inline-block w-[1em] h-[1em] shrink-0 align-[-0.125em] object-contain',
+            uploaded && 'rounded-[0.15em]',
             className,
           )}
           style={style}

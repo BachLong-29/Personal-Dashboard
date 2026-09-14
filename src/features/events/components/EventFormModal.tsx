@@ -1,10 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import data from '@emoji-mart/data';
 import Picker from '@emoji-mart/react';
 
 import { Icon } from '@/components/common/Icon';
+import { isUploadedIcon } from '@/components/common/icon-registry';
 import { Button } from '@/components/ui/Button';
 import { DatePicker } from '@/components/ui/DatePicker';
 import { Input } from '@/components/ui/Input';
@@ -13,11 +14,18 @@ import { Select } from '@/components/ui/Select';
 import { Switch } from '@/components/ui/Switch';
 import { useCategories } from '@/features/dashboard/hooks/useCategories';
 import { COLOR_CSS, COLOR_OPTIONS } from '@/features/projects/constants';
+import { apiClient } from '@/libs/axios';
 import { cn } from '@/libs/utils';
-import type { EventDTO, EventFrequency, TaskColor } from '@/types';
+import type { ApiResponse, EventDTO, EventFrequency, TaskColor } from '@/types';
 import type { HabitDay } from '@/types/habit';
 
-import { DAY_ORDER, DEFAULT_EVENT_ICON, WEEKDAYS } from '../constants';
+import {
+  DAY_ORDER,
+  DEFAULT_EVENT_ICON,
+  ICON_UPLOAD_MAX_BYTES,
+  ICON_UPLOAD_TYPES,
+  WEEKDAYS,
+} from '../constants';
 import { useCreateEvent, useUpdateEvent } from '../hooks/useEvents';
 
 /** `startDate` travels as a plain "YYYY-MM-DD" string, so convert at the edges. */
@@ -56,6 +64,9 @@ export function EventFormModal({ open, onClose, event }: Props) {
   const [color, setColor] = useState<TaskColor>('violet');
   const [icon, setIcon] = useState(DEFAULT_EVENT_ICON);
   const [showPicker, setShowPicker] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
   const [allDay, setAllDay] = useState(false);
   const [startTime, setStartTime] = useState('09:00');
   const [duration, setDuration] = useState('60');
@@ -82,6 +93,7 @@ export function EventFormModal({ open, onClose, event }: Props) {
       setColor(event?.color ?? 'violet');
       setIcon(event?.icon ?? DEFAULT_EVENT_ICON);
       setShowPicker(false);
+      setUploadError(null);
       setAllDay(event?.allDay ?? false);
       setStartTime(event?.startTime ?? '09:00');
       setDuration(event?.duration ? String(event.duration) : '60');
@@ -95,6 +107,36 @@ export function EventFormModal({ open, onClose, event }: Props) {
       setBusy(event?.busy ?? true);
       setErrors({});
       setSaveFailed(false);
+    }
+  }
+
+  // Same limits the upload route enforces — fail here rather than round-trip.
+  async function handleIconFile(file: File) {
+    if (!ICON_UPLOAD_TYPES.includes(file.type)) {
+      setUploadError('Use a JPG, PNG, WebP or GIF.');
+      return;
+    }
+    if (file.size > ICON_UPLOAD_MAX_BYTES) {
+      setUploadError('Image must be under 5 MB.');
+      return;
+    }
+
+    setUploadError(null);
+    setUploading(true);
+    try {
+      const form = new FormData();
+      form.append('file', file);
+      const { data } = await apiClient.post<ApiResponse<{ url: string }>>(
+        '/upload/attachment',
+        form,
+        { headers: { 'Content-Type': 'multipart/form-data' } },
+      );
+      setIcon(data.data.url);
+      setShowPicker(false);
+    } catch {
+      setUploadError('Upload failed. Try again.');
+    } finally {
+      setUploading(false);
     }
   }
 
@@ -178,20 +220,57 @@ export function EventFormModal({ open, onClose, event }: Props) {
       <ModalHead tag="SCHEDULE" title={isEdit ? '📅 Edit Event' : '📅 New Event'} />
       <ModalBody scrollable className="flex flex-col gap-4">
         <Field label="Icon">
-          <button
-            type="button"
-            onClick={() => setShowPicker((v) => !v)}
-            disabled={saving}
-            aria-expanded={showPicker}
-            className={cn(
-              'flex h-11 w-11 items-center justify-center rounded-[var(--r-sm)] border text-[22px] transition-all',
-              showPicker
-                ? 'border-[var(--gold)] shadow-[0_0_10px_oklch(0.74_0.17_85_/_0.3)]'
-                : 'border-[var(--border)] hover:border-[var(--border-hi)]',
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setShowPicker((v) => !v)}
+              disabled={saving || uploading}
+              aria-expanded={showPicker}
+              className={cn(
+                'flex h-11 w-11 items-center justify-center rounded-[var(--r-sm)] border text-[22px] transition-all',
+                showPicker
+                  ? 'border-[var(--gold)] shadow-[0_0_10px_oklch(0.74_0.17_85_/_0.3)]'
+                  : 'border-[var(--border)] hover:border-[var(--border-hi)]',
+              )}
+            >
+              <Icon icon={icon} />
+            </button>
+            <Button
+              size="sm"
+              variant="ghost"
+              disabled={saving || uploading}
+              onClick={() => fileRef.current?.click()}
+            >
+              {uploading ? '…' : 'Upload image'}
+            </Button>
+            {isUploadedIcon(icon) && (
+              <Button
+                size="sm"
+                variant="ghost"
+                disabled={saving || uploading}
+                onClick={() => setIcon(DEFAULT_EVENT_ICON)}
+              >
+                Reset
+              </Button>
             )}
-          >
-            <Icon icon={icon} />
-          </button>
+            <input
+              ref={fileRef}
+              type="file"
+              accept={ICON_UPLOAD_TYPES.join(',')}
+              className="hidden"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                // Reset so picking the same file twice still fires a change.
+                e.target.value = '';
+                if (file) handleIconFile(file);
+              }}
+            />
+          </div>
+          {uploadError && (
+            <p role="alert" className="text-[10px] text-[var(--rose)]">
+              {uploadError}
+            </p>
+          )}
           {showPicker && (
             <div className="relative z-50 mt-1">
               <Picker
