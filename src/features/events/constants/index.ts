@@ -1,6 +1,7 @@
 import type { HabitDay } from '@/types/habit';
 
-export const EVENT_ICONS = ['📅', '👥', '🎓', '🏥', '✈️', '🎂', '🍽️', '🎬', '🏋️', '📞', '🎤', '🚗'];
+/** Seed for a new event — the form picks anything from the emoji picker. */
+export const DEFAULT_EVENT_ICON = '📅';
 
 export const WEEKDAYS: { value: HabitDay; label: string }[] = [
   { value: 'mon', label: 'M' },

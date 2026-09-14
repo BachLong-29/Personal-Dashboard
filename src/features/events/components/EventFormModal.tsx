@@ -1,6 +1,8 @@
 'use client';
 
 import { useState } from 'react';
+import data from '@emoji-mart/data';
+import Picker from '@emoji-mart/react';
 
 import { Button } from '@/components/ui/Button';
 import { DatePicker } from '@/components/ui/DatePicker';
@@ -14,7 +16,7 @@ import { cn } from '@/libs/utils';
 import type { EventDTO, EventFrequency, TaskColor } from '@/types';
 import type { HabitDay } from '@/types/habit';
 
-import { DAY_ORDER, EVENT_ICONS, WEEKDAYS } from '../constants';
+import { DAY_ORDER, DEFAULT_EVENT_ICON, WEEKDAYS } from '../constants';
 import { useCreateEvent, useUpdateEvent } from '../hooks/useEvents';
 
 /** `startDate` travels as a plain "YYYY-MM-DD" string, so convert at the edges. */
@@ -51,7 +53,8 @@ export function EventFormModal({ open, onClose, event }: Props) {
   const [note, setNote] = useState('');
   const [tagId, setTagId] = useState('');
   const [color, setColor] = useState<TaskColor>('violet');
-  const [icon, setIcon] = useState(EVENT_ICONS[0] ?? '📅');
+  const [icon, setIcon] = useState(DEFAULT_EVENT_ICON);
+  const [showPicker, setShowPicker] = useState(false);
   const [allDay, setAllDay] = useState(false);
   const [startTime, setStartTime] = useState('09:00');
   const [duration, setDuration] = useState('60');
@@ -76,7 +79,8 @@ export function EventFormModal({ open, onClose, event }: Props) {
       setNote(event?.note ?? '');
       setTagId(event?.tagId ?? '');
       setColor(event?.color ?? 'violet');
-      setIcon(event?.icon ?? EVENT_ICONS[0] ?? '📅');
+      setIcon(event?.icon ?? DEFAULT_EVENT_ICON);
+      setShowPicker(false);
       setAllDay(event?.allDay ?? false);
       setStartTime(event?.startTime ?? '09:00');
       setDuration(event?.duration ? String(event.duration) : '60');
@@ -230,23 +234,35 @@ export function EventFormModal({ open, onClose, event }: Props) {
         </div>
 
         <Field label="Icon">
-          <div className="flex flex-wrap gap-1.5">
-            {EVENT_ICONS.map((ic) => (
-              <button
-                key={ic}
-                type="button"
-                onClick={() => setIcon(ic)}
-                className={cn(
-                  'flex h-9 w-9 items-center justify-center rounded-[var(--r-sm)] border text-[18px] transition-all',
-                  icon === ic
-                    ? 'border-[var(--gold)] bg-[oklch(0.74_0.17_85_/_0.12)]'
-                    : 'border-[var(--border)] hover:border-[var(--border-hi)]',
-                )}
-              >
-                {ic}
-              </button>
-            ))}
-          </div>
+          <button
+            type="button"
+            onClick={() => setShowPicker((v) => !v)}
+            disabled={saving}
+            aria-expanded={showPicker}
+            className={cn(
+              'flex h-11 w-11 items-center justify-center rounded-[var(--r-sm)] border text-[22px] transition-all',
+              showPicker
+                ? 'border-[var(--gold)] shadow-[0_0_10px_oklch(0.74_0.17_85_/_0.3)]'
+                : 'border-[var(--border)] hover:border-[var(--border-hi)]',
+            )}
+          >
+            {icon}
+          </button>
+          {showPicker && (
+            <div className="relative z-50 mt-1">
+              <Picker
+                data={data}
+                theme="dark"
+                previewPosition="none"
+                skinTonePosition="none"
+                perLine={9}
+                onEmojiSelect={(emoji: { native: string }) => {
+                  setIcon(emoji.native);
+                  setShowPicker(false);
+                }}
+              />
+            </div>
+          )}
         </Field>
 
         <Field label={repeats ? 'Starts on' : 'Date'} required error={errors.startDate}>
