@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 
+import { Icon } from '@/components/common/Icon';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Modal, ModalBody, ModalFoot, ModalHead } from '@/components/ui/Modal';
@@ -174,7 +175,9 @@ export function EventsPage() {
                 )}
                 style={{ borderLeft: `3px solid ${COLOR_CSS[event.color]}` }}
               >
-                <span className="shrink-0 text-[20px] leading-none">{event.icon}</span>
+                <span className="shrink-0 text-[20px] leading-none">
+                  <Icon icon={event.icon} />
+                </span>
 
                 <div className="min-w-0 flex-1">
                   <div className="mb-0.5 flex flex-wrap items-center gap-1.5">

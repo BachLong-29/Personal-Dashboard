@@ -4,6 +4,7 @@ import { useState } from 'react';
 import data from '@emoji-mart/data';
 import Picker from '@emoji-mart/react';
 
+import { Icon } from '@/components/common/Icon';
 import { Button } from '@/components/ui/Button';
 import { DatePicker } from '@/components/ui/DatePicker';
 import { Input } from '@/components/ui/Input';
@@ -189,7 +190,7 @@ export function EventFormModal({ open, onClose, event }: Props) {
                 : 'border-[var(--border)] hover:border-[var(--border-hi)]',
             )}
           >
-            {icon}
+            <Icon icon={icon} />
           </button>
           {showPicker && (
             <div className="relative z-50 mt-1">

@@ -507,7 +507,9 @@ export function WeekView({
                               onClick={() => occ.recurring && setCancelling(occ)}
                             >
                               <div className="flex items-center gap-1 w-full min-w-0">
-                                <span className={miniTaskIcon}>{occ.icon}</span>
+                                <span className={miniTaskIcon}>
+                                  <Icon icon={occ.icon} />
+                                </span>
                                 <span className={miniTaskName}>{occ.title}</span>
                                 {occ.recurring && <span className={miniRepeat}>↻</span>}
                               </div>
