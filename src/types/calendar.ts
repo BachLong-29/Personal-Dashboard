@@ -1,4 +1,4 @@
-export type CalendarSource = 'habit' | 'quest' | 'task';
+export type CalendarSource = 'habit' | 'quest' | 'task' | 'event';
 export type CalendarStatus = 'planned' | 'done' | 'missed';
 
 export interface CalendarItem {
@@ -21,5 +21,9 @@ export interface CalendarItem {
   meta?: {
     blockId?: string;
     deadline?: boolean;
+    /** Event only — the occurrence replaces one from a recurring series */
+    isOverride?: boolean;
+    /** Event only — false when the event does not consume the day's capacity */
+    busy?: boolean;
   };
 }

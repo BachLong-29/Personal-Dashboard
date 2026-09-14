@@ -2,6 +2,7 @@ import { ProjectModel } from '@/server/models/project.model';
 import { ScheduleBlockModel } from '@/server/models/schedule-block.model';
 import { TaskModel } from '@/server/models/task.model';
 import { UserSettingModel, DEFAULT_SCHEDULE_SETTINGS } from '@/server/models/user-setting.model';
+import { expandEvents } from '@/server/services/event-expand';
 import type { ITask } from '@/server/models/task.model';
 import type { Task } from '@/types/task';
 import type { SuggestionReason, TaskSuggestion } from '@/types/task-suggestion';
@@ -88,7 +89,7 @@ export async function suggestBacklogTasks(
 ): Promise<TaskSuggestion[]> {
   const { start: dayStart, end: dayEnd } = dayBounds(dateStr);
 
-  const [backlog, setting, dayBlocks, dayTasks] = await Promise.all([
+  const [backlog, setting, dayBlocks, dayTasks, dayEvents] = await Promise.all([
     // Backlog = active, unfinished, never given a date.
     TaskModel.find({
       userId,
@@ -106,6 +107,7 @@ export async function suggestBacklogTasks(
         { endDate: { $gte: dayStart }, startDate: { $lt: dayEnd } },
       ],
     }),
+    expandEvents(userId, dateStr, dateStr),
   ]);
 
   if (backlog.length === 0) return [];
@@ -121,9 +123,14 @@ export async function suggestBacklogTasks(
   const unblockedMinutes = dayTasks
     .filter((t) => !blockedTaskIds.has(t._id.toString()))
     .reduce((sum, t) => sum + (t.duration ?? 0), 0);
+  // Meetings, classes and the like are not tasks but they do take the hours.
+  // All-day and non-busy events are on the calendar without claiming time.
+  const eventMinutes = dayEvents
+    .filter((e) => e.busy && !e.allDay)
+    .reduce((sum, e) => sum + e.duration, 0);
   const remainingMinutes = Math.max(
     0,
-    sched.dailyCapacityMinutes - plannedMinutes - unblockedMinutes,
+    sched.dailyCapacityMinutes - plannedMinutes - unblockedMinutes - eventMinutes,
   );
 
   const dayTagIds = new Set(dayTasks.map((t) => t.tagId));

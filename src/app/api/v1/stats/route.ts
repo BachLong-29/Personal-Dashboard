@@ -171,7 +171,7 @@ export const GET = asyncHandler(async (req: NextRequest) => {
   let plannedMin = 0;
   let completedMin = 0;
   let missedMin = 0;
-  const bySource: Record<CalendarSource, number> = { habit: 0, quest: 0, task: 0 };
+  const bySource: Record<CalendarSource, number> = { habit: 0, quest: 0, task: 0, event: 0 };
   const trendMap = new Map<string, { planned: number; completed: number }>();
 
   for (const item of calItems) {
