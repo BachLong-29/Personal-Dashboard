@@ -143,7 +143,12 @@ làm sau) · không người tham dự / địa điểm / sync Google Calendar �
 
 ## Trạng thái hiện tại
 
-❌ Chưa có gì — model, expand service, API, UI, và phần sửa capacity đều mới.
+✅ Đã implement: model + `expandEvents`, 4 nguồn trong `buildCalendar`, capacity trong
+`task-suggestion`, API CRUD + `/override`, trang `/manage/events`, event trong Week view
+(viền đứt, click 1 occurrence lặp → confirm bỏ buổi), link trong global search.
+
+🟡 Chưa làm: dời 1 occurrence sang ngày/giờ khác từ UI (API `/override` đã nhận `newDate`),
+Day/Month view, và `conflict-capacity` vẫn chưa được triển khai.
 
 </requirement>
 

@@ -22,7 +22,8 @@
     "pagesLabel": "Trang",
     "pageNames": {
       "achievements": "Thành tựu",
-      "rewards": "Phần thưởng"
+      "rewards": "Phần thưởng",
+      "events": "Sự kiện"
     },
     "hint": "Gõ để tìm task, habit, quest, dự án, trang…",
     "empty": "Không có kết quả cho \"{query}\""
