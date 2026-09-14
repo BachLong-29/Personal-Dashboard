@@ -176,6 +176,38 @@ export function EventFormModal({ open, onClose, event }: Props) {
     <Modal open={open} onClose={onClose} maxWidth="480px" scrollable>
       <ModalHead tag="SCHEDULE" title={isEdit ? '📅 Edit Event' : '📅 New Event'} />
       <ModalBody scrollable className="flex flex-col gap-4">
+        <Field label="Icon">
+          <button
+            type="button"
+            onClick={() => setShowPicker((v) => !v)}
+            disabled={saving}
+            aria-expanded={showPicker}
+            className={cn(
+              'flex h-11 w-11 items-center justify-center rounded-[var(--r-sm)] border text-[22px] transition-all',
+              showPicker
+                ? 'border-[var(--gold)] shadow-[0_0_10px_oklch(0.74_0.17_85_/_0.3)]'
+                : 'border-[var(--border)] hover:border-[var(--border-hi)]',
+            )}
+          >
+            {icon}
+          </button>
+          {showPicker && (
+            <div className="relative z-50 mt-1">
+              <Picker
+                data={data}
+                theme="dark"
+                previewPosition="none"
+                skinTonePosition="none"
+                perLine={9}
+                onEmojiSelect={(emoji: { native: string }) => {
+                  setIcon(emoji.native);
+                  setShowPicker(false);
+                }}
+              />
+            </div>
+          )}
+        </Field>
+
         <Field label="Title" required error={errors.title}>
           <Input
             autoFocus
@@ -231,38 +263,6 @@ export function EventFormModal({ open, onClose, event }: Props) {
               />
             ))}
           </div>
-        </Field>
-
-        <Field label="Icon">
-          <button
-            type="button"
-            onClick={() => setShowPicker((v) => !v)}
-            disabled={saving}
-            aria-expanded={showPicker}
-            className={cn(
-              'flex h-11 w-11 items-center justify-center rounded-[var(--r-sm)] border text-[22px] transition-all',
-              showPicker
-                ? 'border-[var(--gold)] shadow-[0_0_10px_oklch(0.74_0.17_85_/_0.3)]'
-                : 'border-[var(--border)] hover:border-[var(--border-hi)]',
-            )}
-          >
-            {icon}
-          </button>
-          {showPicker && (
-            <div className="relative z-50 mt-1">
-              <Picker
-                data={data}
-                theme="dark"
-                previewPosition="none"
-                skinTonePosition="none"
-                perLine={9}
-                onEmojiSelect={(emoji: { native: string }) => {
-                  setIcon(emoji.native);
-                  setShowPicker(false);
-                }}
-              />
-            </div>
-          )}
         </Field>
 
         <Field label={repeats ? 'Starts on' : 'Date'} required error={errors.startDate}>
