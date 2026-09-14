@@ -198,40 +198,40 @@ export function EventFormModal({ open, onClose, event }: Props) {
           />
         </Field>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <Field label="Category" required error={errors.tagId}>
-            <Select
-              options={categoryOptions}
-              value={tagId}
-              onValueChange={(v) => {
-                setTagId(v);
-                clearError('tagId');
-              }}
-              placeholder="Pick a category"
-              disabled={saving}
-            />
-          </Field>
+        <Field label="Category" required error={errors.tagId}>
+          <Select
+            options={categoryOptions}
+            value={tagId}
+            onValueChange={(v) => {
+              setTagId(v);
+              clearError('tagId');
+            }}
+            placeholder="Pick a category"
+            disabled={saving}
+          />
+        </Field>
 
-          <Field label="Colour">
-            <div className="flex flex-wrap gap-1.5">
-              {COLOR_OPTIONS.map((opt) => (
-                <button
-                  key={opt.value}
-                  type="button"
-                  aria-label={opt.label}
-                  onClick={() => setColor(opt.value)}
-                  className={cn(
-                    'h-7 w-7 rounded-full border-2 transition-transform',
-                    color === opt.value
-                      ? 'scale-110 border-[var(--text-hi)]'
-                      : 'border-transparent hover:scale-105',
-                  )}
-                  style={{ background: COLOR_CSS[opt.value] }}
-                />
-              ))}
-            </div>
-          </Field>
-        </div>
+        {/* Seven swatches need the full width — halved they wrap onto two rows. */}
+        <Field label="Colour">
+          <div className="flex flex-wrap gap-2">
+            {COLOR_OPTIONS.map((opt) => (
+              <button
+                key={opt.value}
+                type="button"
+                aria-label={opt.label}
+                aria-pressed={color === opt.value}
+                onClick={() => setColor(opt.value)}
+                className={cn(
+                  'h-7 w-7 rounded-full border-2 transition-transform',
+                  color === opt.value
+                    ? 'scale-110 border-[var(--text-hi)]'
+                    : 'border-transparent hover:scale-105',
+                )}
+                style={{ background: COLOR_CSS[opt.value] }}
+              />
+            ))}
+          </div>
+        </Field>
 
         <Field label="Icon">
           <button
