@@ -788,6 +788,12 @@
       "later": "Để sau"
     }
   },
+  "events": {
+    "marquee": {
+      "allDay": "Cả ngày",
+      "ariaLabel": "Sự kiện hôm nay"
+    }
+  },
   "schedule": {
     "sessionPlanner": {
       "tag": "TRÌNH LẬP KẾ HOẠCH BUỔI",

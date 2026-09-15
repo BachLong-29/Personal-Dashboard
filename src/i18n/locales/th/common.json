@@ -788,6 +788,12 @@
       "later": "ไว้ทีหลัง"
     }
   },
+  "events": {
+    "marquee": {
+      "allDay": "ทั้งวัน",
+      "ariaLabel": "กิจกรรมวันนี้"
+    }
+  },
   "schedule": {
     "sessionPlanner": {
       "tag": "ตัววางแผนเซสชัน",

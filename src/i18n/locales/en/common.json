@@ -788,6 +788,12 @@
       "later": "Later"
     }
   },
+  "events": {
+    "marquee": {
+      "allDay": "All day",
+      "ariaLabel": "Today's events"
+    }
+  },
   "schedule": {
     "sessionPlanner": {
       "tag": "SESSION PLANNER",

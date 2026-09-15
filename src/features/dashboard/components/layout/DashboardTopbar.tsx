@@ -11,6 +11,7 @@ import { Dropdown } from '@/components/ui/Dropdown';
 import { findClass, findCompanion, findRank } from '@/constants/hero-data';
 import { useLogout } from '@/features/auth/hooks/useLogout';
 import { useAuthStore } from '@/features/auth/stores/auth.store';
+import { EventMarquee } from '@/features/events/components/EventMarquee';
 import { useProfile } from '@/features/profile/hooks/useProfile';
 import { locales, type Locale } from '@/i18n/config';
 import { Link, usePathname, useRouter } from '@/i18n/navigation';
@@ -185,6 +186,9 @@ const DashboardTopbar = (props: DashboardTopbarProps) => {
           <NotificationBell />
         </div>
       </div>
+
+      {/* Today at a glance — rides along with the topbar on every page. */}
+      <EventMarquee />
 
       {/* ── Mobile bottom sheet ─────────────────────────────────────────────── */}
       {sheetMounted && (
