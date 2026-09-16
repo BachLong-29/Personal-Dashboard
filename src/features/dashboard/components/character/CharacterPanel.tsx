@@ -112,6 +112,15 @@ export function CharacterPanel({ char, settings }: CharacterPanelProps) {
                 <span>{tDash('questLog')}</span>
               </Link>
               <Link
+                href="/manage/events"
+                className={menuItem}
+                role="menuitem"
+                onClick={() => setMenuOpen(false)}
+              >
+                <Icon icon="📅" />
+                <span>{tNav('events')}</span>
+              </Link>
+              <Link
                 href="/projects"
                 className={menuItem}
                 role="menuitem"
@@ -119,6 +128,15 @@ export function CharacterPanel({ char, settings }: CharacterPanelProps) {
               >
                 <Icon icon="🚀" />
                 <span>{tNav('projects')}</span>
+              </Link>
+              <Link
+                href="/achievements"
+                className={menuItem}
+                role="menuitem"
+                onClick={() => setMenuOpen(false)}
+              >
+                <Icon icon="🏆" />
+                <span>{tNav('achievements')}</span>
               </Link>
               <Link
                 href="/finance"

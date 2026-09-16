@@ -11,7 +11,9 @@
     "projects": "Dự án",
     "finance": "Tài chính",
     "vault": "Kho báu",
-    "search": "Tìm kiếm"
+    "search": "Tìm kiếm",
+    "events": "Sự kiện",
+    "achievements": "Thành tựu"
   },
   "search": {
     "placeholder": "Tìm task, habit, quest, dự án, trang…",
