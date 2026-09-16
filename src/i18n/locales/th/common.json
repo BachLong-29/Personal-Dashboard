@@ -794,6 +794,25 @@
       "ariaLabel": "กิจกรรมวันนี้"
     }
   },
+  "share": {
+    "title": "แชร์กำหนดการ",
+    "short": "แชร์",
+    "scopeDay": "วันนี้",
+    "scopeWeek": "สัปดาห์นี้",
+    "copyText": "คัดลอกข้อความ",
+    "downloadImage": "ดาวน์โหลดรูป",
+    "close": "ปิด",
+    "copied": "คัดลอกแล้ว",
+    "copyFailed": "คัดลอกไม่สำเร็จ ลองเลือกข้อความเอง",
+    "imageFailed": "สร้างรูปไม่สำเร็จ",
+    "loadFailed": "โหลดกำหนดการไม่สำเร็จ",
+    "retry": "ลองอีกครั้ง",
+    "emptyDay": "วันนี้ว่าง",
+    "emptyWeek": "สัปดาห์นี้ว่าง",
+    "summary": "เสร็จ {done}/{total}",
+    "more": "อีก {count} รายการ",
+    "previewAriaLabel": "ตัวอย่างกำหนดการ"
+  },
   "schedule": {
     "sessionPlanner": {
       "tag": "ตัววางแผนเซสชัน",

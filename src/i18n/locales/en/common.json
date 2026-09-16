@@ -794,6 +794,25 @@
       "ariaLabel": "Today's events"
     }
   },
+  "share": {
+    "title": "Share agenda",
+    "short": "Share",
+    "scopeDay": "Today",
+    "scopeWeek": "This week",
+    "copyText": "Copy text",
+    "downloadImage": "Download image",
+    "close": "Close",
+    "copied": "Agenda copied",
+    "copyFailed": "Could not copy — try selecting the text",
+    "imageFailed": "Could not build the image",
+    "loadFailed": "Could not load the agenda",
+    "retry": "Try again",
+    "emptyDay": "Nothing on today.",
+    "emptyWeek": "Nothing on this week.",
+    "summary": "{done}/{total} done",
+    "more": "+{count} more",
+    "previewAriaLabel": "Agenda preview"
+  },
   "schedule": {
     "sessionPlanner": {
       "tag": "SESSION PLANNER",

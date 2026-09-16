@@ -32,12 +32,14 @@ const DashboardTopbar = (props: DashboardTopbarProps) => {
   const tNav = useTranslations('nav');
   const tDash = useTranslations('dashboard');
   const tCommon = useTranslations('common');
+  const tShare = useTranslations('share');
   const router = useRouter();
   const pathname = usePathname();
   const logout = useLogout();
   const openSearch = useUIStore((s) => s.openSearch);
   const openQuickAddTask = useUIStore((s) => s.openQuickAddTask);
   const openQuickAddTransaction = useUIStore((s) => s.openQuickAddTransaction);
+  const openShareAgenda = useUIStore((s) => s.openShareAgenda);
 
   const { data: profileData } = useProfile();
   const profile = profileData?.profile;
@@ -112,6 +114,14 @@ const DashboardTopbar = (props: DashboardTopbarProps) => {
               },
             ]}
           />
+          <button
+            type="button"
+            className={tabletMenuBtn}
+            onClick={openShareAgenda}
+            aria-label={tShare('title')}
+          >
+            <span className="text-[15px] leading-none text-[var(--gold)]">⇪</span>
+          </button>
           <NotificationBell />
         </div>
 
@@ -183,6 +193,14 @@ const DashboardTopbar = (props: DashboardTopbarProps) => {
         {/* ── Desktop nav (1025px+): Streak | Bell | Logout ──────────────── */}
         <div className="hidden min-[1025px]:flex items-center gap-2">
           <div className={streakPill}>{tDash('streakDays', { count: char.streak })}</div>
+          <button
+            type="button"
+            className={tabletMenuBtn}
+            onClick={openShareAgenda}
+            aria-label={tShare('title')}
+          >
+            <span className="text-[15px] leading-none text-[var(--gold)]">⇪</span>
+          </button>
           <NotificationBell />
         </div>
       </div>

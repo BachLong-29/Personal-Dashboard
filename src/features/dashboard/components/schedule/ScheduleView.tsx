@@ -36,6 +36,7 @@ export function ScheduleView({
   onReward,
 }: ScheduleViewProps) {
   const tDash = useTranslations('dashboard');
+  const tShare = useTranslations('share');
   const {
     tab,
     year,
@@ -55,6 +56,7 @@ export function ScheduleView({
   // Apply a one-shot navigation intent (e.g. from clicking a notification)
   // whenever it's set — works whether ScheduleView is already mounted or was
   // just mounted by a tab switch, unlike a mount-only localStorage read.
+  const openShareAgenda = useUIStore((s) => s.openShareAgenda);
   const pendingNav = useUIStore((s) => s.pendingScheduleNav);
   const setPendingNav = useUIStore((s) => s.setPendingScheduleNav);
   useEffect(() => {
@@ -103,6 +105,16 @@ export function ScheduleView({
         </div>
 
         <div className={rightControls}>
+          {/* Sits before the display toggles so it never splits that pair. */}
+          <button
+            type="button"
+            className={toggleBtn}
+            onClick={openShareAgenda}
+            title={tShare('title')}
+            aria-label={tShare('title')}
+          >
+            ⇪ <span className="hidden sm:inline">{tShare('short')}</span>
+          </button>
           <button
             type="button"
             className={cn(toggleBtn, display.showQuests && toggleBtnActive)}

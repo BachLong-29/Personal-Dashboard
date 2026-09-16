@@ -794,6 +794,25 @@
       "ariaLabel": "Sự kiện hôm nay"
     }
   },
+  "share": {
+    "title": "Chia sẻ lịch",
+    "short": "Chia sẻ",
+    "scopeDay": "Hôm nay",
+    "scopeWeek": "Tuần này",
+    "copyText": "Copy text",
+    "downloadImage": "Tải ảnh",
+    "close": "Đóng",
+    "copied": "Đã copy lịch",
+    "copyFailed": "Không copy được — thử bôi đen rồi copy tay",
+    "imageFailed": "Không dựng được ảnh",
+    "loadFailed": "Không tải được lịch",
+    "retry": "Thử lại",
+    "emptyDay": "Hôm nay trống.",
+    "emptyWeek": "Tuần này trống.",
+    "summary": "{done}/{total} xong",
+    "more": "+{count} mục nữa",
+    "previewAriaLabel": "Xem trước nội dung chia sẻ"
+  },
   "schedule": {
     "sessionPlanner": {
       "tag": "TRÌNH LẬP KẾ HOẠCH BUỔI",
