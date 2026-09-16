@@ -7,6 +7,7 @@ import { defaultLocale } from '@/i18n/config';
 import { ToastContainer } from '@/components/common/ToastContainer';
 import { QuickAddTransaction } from '@/features/finance/components/QuickAddTransaction';
 import { GlobalSearch } from '@/features/search/components/GlobalSearch';
+import { ShareAgendaModal } from '@/features/share/components/ShareAgendaModal';
 import { QuickAddTask } from '@/features/tasks/components/shared/QuickAddTask';
 
 async function getSession() {
@@ -39,6 +40,7 @@ export default async function ProtectedLayout({
     <>
       {children}
       <GlobalSearch />
+      <ShareAgendaModal />
       <QuickAddTask />
       <QuickAddTransaction />
       <ToastContainer />
