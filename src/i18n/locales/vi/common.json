@@ -181,7 +181,13 @@
       "title": "Lịch hôm nay"
     },
     "scheduleView": {
-      "openQuestLog": "Mở nhật ký nhiệm vụ"
+      "openQuestLog": "Mở nhật ký nhiệm vụ",
+      "quests": "Quest",
+      "toggleQuests": "Ẩn hiện quest",
+      "habits": "Habit",
+      "toggleHabits": "Ẩn hiện habit",
+      "events": "Sự kiện",
+      "toggleEvents": "Ẩn hiện sự kiện"
     },
     "analytics": {
       "title": "Phân tích tuần",

@@ -355,7 +355,9 @@ export function WeekView({
           ) : (
             weekDays.map((dayStr, i) => {
               const dayTaskEntries = getTaskBlocksForDay(dayStr);
-              const dayEvents = eventsByDate[dayStr] ?? [];
+              // Hiding events takes their hours out of the meter too — a total
+              // the column cannot account for is worse than no total.
+              const dayEvents = display.showEvents ? (eventsByDate[dayStr] ?? []) : [];
               // Events are not tasks, but a busy one still spends the day.
               const taskUsageMinutes =
                 getTaskUsageForDay(dayTaskEntries.map((entry) => entry.block)) +

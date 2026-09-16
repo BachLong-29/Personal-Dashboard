@@ -119,17 +119,25 @@ export function ScheduleView({
             type="button"
             className={cn(toggleBtn, display.showQuests && toggleBtnActive)}
             onClick={() => setDisplay({ showQuests: !display.showQuests })}
-            title="Toggle quests"
+            title={tDash('scheduleView.toggleQuests')}
           >
-            ⚡ <span className="hidden sm:inline">Quests</span>
+            ⚡ <span className="hidden sm:inline">{tDash('scheduleView.quests')}</span>
           </button>
           <button
             type="button"
             className={cn(toggleBtn, display.showHabits && toggleBtnActive)}
             onClick={() => setDisplay({ showHabits: !display.showHabits })}
-            title="Toggle habits"
+            title={tDash('scheduleView.toggleHabits')}
           >
-            ✦ <span className="hidden sm:inline">Habits</span>
+            ✦ <span className="hidden sm:inline">{tDash('scheduleView.habits')}</span>
+          </button>
+          <button
+            type="button"
+            className={cn(toggleBtn, display.showEvents && toggleBtnActive)}
+            onClick={() => setDisplay({ showEvents: !display.showEvents })}
+            title={tDash('scheduleView.toggleEvents')}
+          >
+            📅 <span className="hidden sm:inline">{tDash('scheduleView.events')}</span>
           </button>
 
           <select
