@@ -11,7 +11,9 @@
     "projects": "โปรเจกต์",
     "finance": "การเงิน",
     "vault": "คลัง",
-    "search": "ค้นหา"
+    "search": "ค้นหา",
+    "events": "กิจกรรม",
+    "achievements": "ความสำเร็จ"
   },
   "search": {
     "placeholder": "ค้นหางาน นิสัย เควสต์ โปรเจกต์ หน้า…",

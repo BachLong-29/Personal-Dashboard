@@ -303,11 +303,23 @@ const DashboardTopbar = (props: DashboardTopbarProps) => {
                 </span>
                 <span>{tDash('questLog')}</span>
               </Link>
+              <Link href="/manage/events" className={sheetItem} onClick={closeSheet}>
+                <span className={sheetItemIcon}>
+                  <Icon icon="📅" />
+                </span>
+                <span>{tNav('events')}</span>
+              </Link>
               <Link href="/projects" className={sheetItem} onClick={closeSheet}>
                 <span className={sheetItemIcon}>
                   <Icon icon="🚀" />
                 </span>
                 <span>{tNav('projects')}</span>
+              </Link>
+              <Link href="/achievements" className={sheetItem} onClick={closeSheet}>
+                <span className={sheetItemIcon}>
+                  <Icon icon="🏆" />
+                </span>
+                <span>{tNav('achievements')}</span>
               </Link>
               <Link href="/finance" className={sheetItem} onClick={closeSheet}>
                 <span className={sheetItemIcon}>

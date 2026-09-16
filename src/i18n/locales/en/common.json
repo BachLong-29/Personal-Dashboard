@@ -11,7 +11,9 @@
     "projects": "Projects",
     "finance": "Finance",
     "vault": "Vault",
-    "search": "Search"
+    "search": "Search",
+    "events": "Events",
+    "achievements": "Achievements"
   },
   "search": {
     "placeholder": "Search tasks, habits, quests, projects, pages…",
