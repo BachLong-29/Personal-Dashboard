@@ -23,6 +23,7 @@ interface SlotColumnProps {
   onReschedule?: (task: UITask) => void;
   onCompleteTask?: (id: string) => void;
   onEdit?: (task: UITask) => void;
+  onDeleteQuest?: (task: UITask) => void;
   onClone?: (task: UITask) => void;
   onMoveToNextDay?: (task: UITask) => void;
   draggingId: string | null;
@@ -37,6 +38,7 @@ export function SlotColumn({
   onReschedule,
   onCompleteTask,
   onEdit,
+  onDeleteQuest,
   onClone,
   onMoveToNextDay,
   draggingId,
@@ -86,6 +88,7 @@ export function SlotColumn({
               onReschedule={onReschedule}
               onCompleteTask={onCompleteTask}
               onEdit={onEdit}
+              onDeleteQuest={onDeleteQuest}
               onClone={onClone}
               onMoveToNextDay={onMoveToNextDay}
               isDragging={draggingId === t.id}
@@ -211,6 +214,7 @@ interface DraggableCardProps {
   onReschedule?: (task: UITask) => void;
   onCompleteTask?: (id: string) => void;
   onEdit?: (task: UITask) => void;
+  onDeleteQuest?: (task: UITask) => void;
   onClone?: (task: UITask) => void;
   onMoveToNextDay?: (task: UITask) => void;
   isDragging: boolean;
@@ -224,6 +228,7 @@ function DraggableCard({
   onReschedule,
   onCompleteTask,
   onEdit,
+  onDeleteQuest,
   onClone,
   onMoveToNextDay,
   isDragging,
@@ -258,6 +263,7 @@ function DraggableCard({
           onReschedule={onReschedule}
           onCompleteTask={onCompleteTask}
           onEdit={onEdit}
+          onDeleteQuest={onDeleteQuest}
           onClone={onClone}
           onMoveToNextDay={onMoveToNextDay}
         />

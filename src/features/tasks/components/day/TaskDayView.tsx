@@ -47,6 +47,8 @@ interface TaskDayViewProps {
   onRescheduleHabit: (task: UITask, newTime: string) => void;
   onCompleteTask: (id: string) => void;
   onEdit?: (task: UITask) => void;
+  /** Only the dashboard day panel wires this up; /tasks leaves quests alone. */
+  onDeleteQuest?: (task: UITask) => void;
   onClone?: (task: UITask) => void;
   rescheduleLoading?: boolean;
   splitMode: 'week' | 'month';
@@ -83,6 +85,7 @@ export function TaskDayView({
   onRescheduleHabit,
   onCompleteTask,
   onEdit,
+  onDeleteQuest,
   onClone,
   rescheduleLoading,
   splitMode,
@@ -225,6 +228,7 @@ export function TaskDayView({
                 onReschedule={setRescheduleTarget}
                 onCompleteTask={onCompleteTask}
                 onEdit={onEdit}
+                onDeleteQuest={onDeleteQuest}
                 onClone={onClone}
                 onMoveToNextDay={handleMoveToNextDay}
                 draggingId={activeId}

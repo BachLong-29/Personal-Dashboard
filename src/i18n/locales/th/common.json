@@ -160,6 +160,9 @@
     },
     "quests": {
       "title": "ภารกิจวันนี้",
+      "deleteTitle": "ลบเควสต์",
+      "deleteConfirm": "ลบ <strong>{title}</strong> หรือไม่? เควสต์แก้ไขไม่ได้ นี่จึงเป็นทางเดียวที่จะย้อนกลับ",
+      "deleteAction": "ลบ",
       "new": "ภารกิจใหม่",
       "newShort": "ใหม่",
       "dailyProgress": "ความคืบหน้าประจำวัน",
@@ -212,6 +215,7 @@
         "questName": "ชื่อเควสต์",
         "description": "คำอธิบาย",
         "dueDate": "กำหนดส่ง",
+        "dueTime": "เวลา (ไม่บังคับ)",
         "type": "ประเภท",
         "difficulty": "ความยาก"
       },
@@ -610,7 +614,8 @@
       "moveToNextDay": "ย้ายไปวันถัดไป",
       "cloneTask": "โคลนงาน",
       "edit": "แก้ไข",
-      "goToHabits": "ไปที่แท็บ Habits"
+      "goToHabits": "ไปที่แท็บ Habits",
+      "deleteQuest": "ลบเควสต์"
     },
     "pageHeader": {
       "title": "บันทึกภารกิจ",

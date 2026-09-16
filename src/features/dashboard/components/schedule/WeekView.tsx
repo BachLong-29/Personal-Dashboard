@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import {
   DndContext,
   DragOverlay,
@@ -19,6 +20,7 @@ import { Icon } from '@/components/common/Icon';
 import { cn } from '@/libs/utils';
 
 import { HABIT_COLORS } from '../../constants';
+import { useDeleteQuest } from '../../hooks/useDeleteQuest';
 import { useDeleteTask } from '../../hooks/useDeleteTask';
 import { useHabitLogs } from '../../hooks/useHabitLogs';
 import { useHabits } from '../../hooks/useHabits';
@@ -127,6 +129,7 @@ export function WeekView({
   const { mutate: overrideEvent } = useOverrideEvent();
   const { mutate: updateTask } = useUpdateTask();
   const { mutate: deleteTask } = useDeleteTask();
+  const { mutate: deleteQuest, isPending: deletingQuestPending } = useDeleteQuest();
   const { mutate: moveQuest } = useMoveQuest();
   const { data: habits = [] } = useHabits();
   const { data: todayHabitLogs = [] } = useHabitLogs(todayStr);
@@ -142,6 +145,9 @@ export function WeekView({
   const [activeDrag, setActiveDrag] = useState<ActiveDrag | null>(null);
   const [pickerDay, setPickerDay] = useState<string | null>(null);
   const [cancelling, setCancelling] = useState<EventOccurrence | null>(null);
+  const [deletingQuest, setDeletingQuest] = useState<Quest | null>(null);
+  const tDash = useTranslations('dashboard');
+  const tCommon = useTranslations('common');
 
   const sensors = useSensors(
     useSensor(MouseSensor, { activationConstraint: { distance: 8 } }),
@@ -405,7 +411,7 @@ export function WeekView({
                         ...(display.showQuests ? (questsByDate[dayStr] ?? []) : []).map((q) => ({
                           kind: 'quest' as const,
                           item: q,
-                          time: undefined,
+                          time: q.dueTime,
                         })),
                         ...(display.showHabits ? getHabitsForDay(dayStr) : []).map((h) => ({
                           kind: 'habit' as const,
@@ -486,10 +492,11 @@ export function WeekView({
                               <div
                                 className={cn(miniTask, miniTaskQuest, q.done && miniTaskDone)}
                                 title={q.title}
-                                onClick={() => onNavigateTab?.('schedule')}
+                                onClick={() => setDeletingQuest(q)}
                               >
                                 <span className={miniTaskIcon}>{q.habitIcon ?? '📌'}</span>
                                 <span className={miniTaskName}>{q.title}</span>
+                                {item.time && <span className={miniTime}>{item.time}</span>}
                                 {q.done && <span className={miniDone}>✓</span>}
                               </div>
                             </DraggableItem>
@@ -586,6 +593,48 @@ export function WeekView({
       </DndContext>
 
       {/* Pick — assign an existing task onto a day */}
+      {/* Quests have no edit path, so removing a mistaken one is the only repair */}
+      <Modal open={deletingQuest !== null} onClose={() => setDeletingQuest(null)} maxWidth="360px">
+        <ModalHead
+          title={
+            <>
+              <span className="text-[var(--rose)]">⚠</span> {tDash('quests.deleteTitle')}
+            </>
+          }
+        />
+        <ModalBody>
+          <p className="text-[12px] leading-relaxed text-[var(--text-mid)]">
+            {tDash.rich('quests.deleteConfirm', {
+              title: deletingQuest?.title ?? '',
+              strong: (chunks) => <strong className="text-[var(--text-hi)]">{chunks}</strong>,
+            })}
+          </p>
+        </ModalBody>
+        <ModalFoot>
+          <div className="flex w-full flex-col gap-2 sm:flex-row sm:justify-end">
+            <Button
+              variant="ghost"
+              onClick={() => setDeletingQuest(null)}
+              disabled={deletingQuestPending}
+              className="w-full justify-center sm:w-auto"
+            >
+              {tCommon('cancel')}
+            </Button>
+            <Button
+              variant="danger"
+              disabled={deletingQuestPending}
+              onClick={() => {
+                if (deletingQuest) deleteQuest(deletingQuest.id);
+                setDeletingQuest(null);
+              }}
+              className="w-full justify-center sm:w-auto"
+            >
+              {deletingQuestPending ? '…' : tDash('quests.deleteAction')}
+            </Button>
+          </div>
+        </ModalFoot>
+      </Modal>
+
       {/* Skip one occurrence of a repeating event without touching the series */}
       <Modal open={cancelling !== null} onClose={() => setCancelling(null)} maxWidth="360px">
         <ModalHead title={`↻ ${cancelling?.title ?? ''}`} />

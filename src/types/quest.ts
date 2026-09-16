@@ -13,6 +13,8 @@ export interface Quest {
   done: boolean;
   tags: string[];
   dueDate: string;
+  /** "HH:MM" — absent means no particular hour */
+  dueTime?: string;
   completedAt?: string;
   createdAt: string;
   updatedAt: string;
@@ -25,4 +27,6 @@ export interface CreateQuestPayload {
   difficulty: Difficulty;
   tags?: string[];
   dueDate?: string;
+  /** "HH:MM" — omit for a quest due any time that day */
+  dueTime?: string;
 }

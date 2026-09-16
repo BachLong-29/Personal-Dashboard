@@ -4,11 +4,16 @@ import { useState } from 'react';
 
 import { useTranslations } from 'next-intl';
 
+import { Button } from '@/components/ui/Button';
+import { Modal, ModalBody, ModalFoot, ModalHead } from '@/components/ui/Modal';
 import { TaskDayView } from '@/features/tasks/components/day/TaskDayView';
 import { AddTaskModal } from '@/features/tasks/components/shared/AddTaskModal';
 import { EditTaskModal } from '@/features/tasks/components/shared/EditTaskModal';
 import { parseLocalDate, toLocalDate } from '@/features/tasks/utils/date.utils';
 
+import type { UITask } from '@/features/tasks/data/mock';
+
+import { useDeleteQuest } from '../../hooks/useDeleteQuest';
 import { useScheduleDayTasks } from '../../hooks/useScheduleDayTasks';
 import type { Quest } from '../../types';
 import { AddHabitModal } from '../habits/AddHabitModal';
@@ -55,6 +60,9 @@ export function ScheduleDayViewPanel({
 
   // ── Create-modal + expand UI state ─────────────────────────────────────────
   const [showAddQuestModal, setShowAddQuestModal] = useState(false);
+  const [deletingQuest, setDeletingQuest] = useState<UITask | null>(null);
+  const tCommon = useTranslations('common');
+  const { mutate: deleteQuest, isPending: deletingQuestPending } = useDeleteQuest();
   const [showAddTaskModal, setShowAddTaskModal] = useState(false);
   const [showAddHabitModal, setShowAddHabitModal] = useState(false);
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -109,6 +117,7 @@ export function ScheduleDayViewPanel({
           onRescheduleHabit={onRescheduleHabit}
           onCompleteTask={onCompleteTask}
           onEdit={onEdit}
+          onDeleteQuest={setDeletingQuest}
           rescheduleLoading={isRescheduling}
           splitMode="week"
           hideSidePanel
@@ -139,6 +148,48 @@ export function ScheduleDayViewPanel({
           onSaved={() => setShowAddHabitModal(false)}
         />
       )}
+      {/* Quests have no edit path, so removing a mistaken one is the only repair */}
+      <Modal open={deletingQuest !== null} onClose={() => setDeletingQuest(null)} maxWidth="360px">
+        <ModalHead
+          title={
+            <>
+              <span className="text-[var(--rose)]">⚠</span> {t('quests.deleteTitle')}
+            </>
+          }
+        />
+        <ModalBody>
+          <p className="text-[12px] leading-relaxed text-[var(--text-mid)]">
+            {t.rich('quests.deleteConfirm', {
+              title: deletingQuest?.title ?? '',
+              strong: (chunks) => <strong className="text-[var(--text-hi)]">{chunks}</strong>,
+            })}
+          </p>
+        </ModalBody>
+        <ModalFoot>
+          <div className="flex w-full flex-col gap-2 sm:flex-row sm:justify-end">
+            <Button
+              variant="ghost"
+              onClick={() => setDeletingQuest(null)}
+              disabled={deletingQuestPending}
+              className="w-full justify-center sm:w-auto"
+            >
+              {tCommon('cancel')}
+            </Button>
+            <Button
+              variant="danger"
+              disabled={deletingQuestPending}
+              onClick={() => {
+                if (deletingQuest?.sourceId) deleteQuest(deletingQuest.sourceId);
+                setDeletingQuest(null);
+              }}
+              className="w-full justify-center sm:w-auto"
+            >
+              {deletingQuestPending ? '…' : t('quests.deleteAction')}
+            </Button>
+          </div>
+        </ModalFoot>
+      </Modal>
+
       <EditTaskModal
         task={editingTask}
         open={editingTask !== null}

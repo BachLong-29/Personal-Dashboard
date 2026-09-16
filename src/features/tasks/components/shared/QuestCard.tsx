@@ -50,6 +50,8 @@ export interface QuestCardProps {
   onEdit?: (task: UITask) => void;
   onClone?: (task: UITask) => void;
   onMoveToNextDay?: (task: UITask) => void;
+  /** Quests cannot be edited, so deleting is the only way to undo a mistake. */
+  onDeleteQuest?: (task: UITask) => void;
   isOverlay?: boolean;
   compact?: boolean;
 }
@@ -66,6 +68,7 @@ export function QuestCard({
   onEdit,
   onClone,
   onMoveToNextDay,
+  onDeleteQuest,
   isOverlay,
   compact,
 }: QuestCardProps) {
@@ -86,7 +89,8 @@ export function QuestCard({
     !!onMoveToNextDay && !task.done && !task.cancelled && task.source !== 'habit';
   const canClone = !!onClone && task.source === 'task';
   const canEdit = !!onEdit && (task.source === 'task' || task.source === 'habit');
-  const hasQuickActions = canMoveToNextDay || canClone || canEdit;
+  const canDeleteQuest = !!onDeleteQuest && task.source === 'quest';
+  const hasQuickActions = canMoveToNextDay || canClone || canEdit || canDeleteQuest;
 
   return (
     <article
@@ -238,6 +242,19 @@ export function QuestCard({
                   {task.source === 'habit' ? '↗' : '✎'}
                 </button>
               )}
+              {canDeleteQuest && (
+                <button
+                  type="button"
+                  title={t('questCard.deleteQuest')}
+                  className={cn(actionBtn, 'text-[var(--rose)]')}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDeleteQuest?.(task);
+                  }}
+                >
+                  ✕
+                </button>
+              )}
             </div>
 
             {/* Mobile: always-visible "more actions" menu */}
@@ -248,6 +265,8 @@ export function QuestCard({
                 canMoveToNextDay={canMoveToNextDay}
                 canClone={canClone}
                 canEdit={canEdit}
+                canDeleteQuest={canDeleteQuest}
+                onDeleteQuest={onDeleteQuest}
                 onMoveToNextDay={onMoveToNextDay}
                 onClone={onClone}
                 onEdit={onEdit}
@@ -629,6 +648,8 @@ interface QuestCardActionsMenuProps {
   canMoveToNextDay: boolean;
   canClone: boolean;
   canEdit: boolean;
+  canDeleteQuest: boolean;
+  onDeleteQuest?: (task: UITask) => void;
   onMoveToNextDay?: (task: UITask) => void;
   onClone?: (task: UITask) => void;
   onEdit?: (task: UITask) => void;
@@ -640,6 +661,8 @@ function QuestCardActionsMenu({
   canMoveToNextDay,
   canClone,
   canEdit,
+  canDeleteQuest,
+  onDeleteQuest,
   onMoveToNextDay,
   onClone,
   onEdit,
@@ -702,6 +725,16 @@ function QuestCardActionsMenu({
             >
               <span>{task.source === 'habit' ? '↗' : '✎'}</span>{' '}
               {task.source === 'habit' ? t('questCard.goToHabits') : t('questCard.edit')}
+            </button>
+          )}
+          {canDeleteQuest && (
+            <button
+              type="button"
+              role="menuitem"
+              className={cn(moreActionsItem, 'text-[var(--rose)]')}
+              onClick={() => select(() => onDeleteQuest?.(task))}
+            >
+              <span>✕</span> {t('questCard.deleteQuest')}
             </button>
           )}
         </div>

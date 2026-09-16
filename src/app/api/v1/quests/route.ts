@@ -24,6 +24,10 @@ const createSchema = z.object({
   difficulty: z.enum(DIFFICULTIES),
   tags: z.array(z.string()).optional(),
   dueDate: z.string().optional(),
+  dueTime: z
+    .string()
+    .regex(/^([01]\d|2[0-3]):[0-5]\d$/, 'Must be HH:MM')
+    .optional(),
 });
 
 function startOfDay(date: Date): Date {
@@ -47,6 +51,7 @@ function serialize(q: IQuest): Quest {
     done: q.done,
     tags: q.tags,
     dueDate: q.dueDate.toISOString(),
+    dueTime: q.dueTime,
     completedAt: q.completedAt?.toISOString(),
     createdAt: q.createdAt.toISOString(),
     updatedAt: q.updatedAt.toISOString(),
@@ -96,6 +101,7 @@ export const POST = asyncHandler(async (req: NextRequest) => {
     coins: COIN_MAP[data.difficulty],
     tags: data.tags ?? [data.type],
     dueDate,
+    dueTime: data.dueTime,
   });
 
   return createdResponse(serialize(quest), 'Quest created successfully');

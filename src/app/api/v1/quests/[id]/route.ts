@@ -4,6 +4,7 @@ import type { NextRequest } from 'next/server';
 import { connectDB } from '@/libs/mongodb';
 import { getAuthUser } from '@/server/helpers/get-auth-user';
 import { QuestModel } from '@/server/models/quest.model';
+import { ScheduleBlockModel } from '@/server/models/schedule-block.model';
 import { asyncHandler, notFoundResponse, successResponse, unauthorizedResponse } from '@/server';
 import { validateBody } from '@/server/validate';
 import type { Quest } from '@/types/quest';
@@ -12,7 +13,10 @@ import type { IQuest } from '@/server/models/quest.model';
 const updateSchema = z
   .object({
     done: z.boolean().optional(),
-    dueDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+    dueDate: z
+      .string()
+      .regex(/^\d{4}-\d{2}-\d{2}$/)
+      .optional(),
   })
   .refine((d) => d.done !== undefined || d.dueDate !== undefined, {
     message: 'Must provide done or dueDate',
@@ -31,6 +35,7 @@ function serialize(q: IQuest): Quest {
     done: q.done,
     tags: q.tags,
     dueDate: q.dueDate.toISOString(),
+    dueTime: q.dueTime,
     completedAt: q.completedAt?.toISOString(),
     createdAt: q.createdAt.toISOString(),
     updatedAt: q.updatedAt.toISOString(),
@@ -67,4 +72,30 @@ export const PATCH = asyncHandler(async (req: NextRequest, ctx) => {
   if (!quest) return notFoundResponse('Quest not found');
 
   return successResponse(serialize(quest), 'Quest updated');
+});
+
+// DELETE /api/v1/quests/:id
+export const DELETE = asyncHandler(async (req: NextRequest, ctx) => {
+  const user = getAuthUser(req);
+  if (!user) return unauthorizedResponse();
+
+  const { id } = await ctx.params;
+
+  await connectDB();
+
+  // Quest carries no `active` flag the way Task and Event do, and four separate
+  // queries read it — a soft delete would mean teaching every one of them to
+  // filter. A quest is a day's challenge, not a record worth keeping.
+  const quest = await QuestModel.findOneAndDelete({ _id: id, userId: user.sub });
+  if (!quest) return notFoundResponse('Quest not found');
+
+  // Blocks outliving their quest are invisible (buildCalendar skips them) but
+  // still occupy the day's capacity, so they go too.
+  await ScheduleBlockModel.deleteMany({
+    userId: user.sub,
+    sourceType: 'quest',
+    sourceId: quest._id,
+  });
+
+  return successResponse(null, 'Quest deleted successfully');
 });
