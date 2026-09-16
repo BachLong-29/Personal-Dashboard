@@ -181,7 +181,13 @@
       "title": "Today's Schedule"
     },
     "scheduleView": {
-      "openQuestLog": "Open Quest Log"
+      "openQuestLog": "Open Quest Log",
+      "quests": "Quests",
+      "toggleQuests": "Toggle quests",
+      "habits": "Habits",
+      "toggleHabits": "Toggle habits",
+      "events": "Events",
+      "toggleEvents": "Toggle events"
     },
     "analytics": {
       "title": "Weekly Analytics",

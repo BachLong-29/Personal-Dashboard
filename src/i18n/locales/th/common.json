@@ -181,7 +181,13 @@
       "title": "ตารางวันนี้"
     },
     "scheduleView": {
-      "openQuestLog": "เปิดบันทึกภารกิจ"
+      "openQuestLog": "เปิดบันทึกภารกิจ",
+      "quests": "เควสต์",
+      "toggleQuests": "สลับเควสต์",
+      "habits": "นิสัย",
+      "toggleHabits": "สลับนิสัย",
+      "events": "กิจกรรม",
+      "toggleEvents": "สลับกิจกรรม"
     },
     "analytics": {
       "title": "การวิเคราะห์รายสัปดาห์",

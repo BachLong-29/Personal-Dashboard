@@ -301,6 +301,20 @@ export function useScheduleDayTasks({
   const apiLoadedRef = useRef(false);
   const [tasks, setTasks] = useState<UITask[]>(() => []);
 
+  /**
+   * Ticks the user has made that the server has not confirmed yet.
+   *
+   * The merge effect below rebuilds `tasks` from the query caches, and one of
+   * its dependencies is `isFetchingDayTasks` — which flips the moment a
+   * mutation invalidates. So the rebuild runs *while* the caches still hold
+   * pre-tick data, wiping the optimistic value, and only the refetch landing
+   * afterwards puts it back: checked, unchecked, checked.
+   *
+   * Holding the intent here lets every rebuild re-apply it until the server
+   * agrees, so the box never travels backwards.
+   */
+  const pendingDoneRef = useRef(new Map<string, boolean>());
+
   useEffect(() => {
     if (apiMerged.length === 0) return;
 
@@ -381,7 +395,23 @@ export function useScheduleDayTasks({
       ...habitItemsForDay,
     ];
 
-    startTransition(() => setTasks(merged));
+    // Re-apply any tick the server has not caught up with, and drop the ones
+    // it has — an entry that matches is no longer doing any work.
+    const pending = pendingDoneRef.current;
+    const settled =
+      pending.size === 0
+        ? merged
+        : merged.map((t) => {
+            const want = pending.get(t.id);
+            if (want === undefined) return t;
+            if (t.done === want) {
+              pending.delete(t.id);
+              return t;
+            }
+            return { ...t, done: want, progress: want ? 1 : t.progress };
+          });
+
+    startTransition(() => setTasks(settled));
     apiLoadedRef.current = true;
   }, [
     apiMerged,
@@ -421,7 +451,12 @@ export function useScheduleDayTasks({
       setTasks((ts) =>
         ts.map((t) => (t.id === id ? { ...t, loggedToday: nextLogged, done: nextLogged } : t)),
       );
-      toggleTaskLog.mutate({ taskId: task.sourceId, date: selectedDateStr });
+      pendingDoneRef.current.set(id, nextLogged);
+      toggleTaskLog.mutate(
+        { taskId: task.sourceId, date: selectedDateStr },
+        // A failed write must be allowed to show through on the next rebuild.
+        { onError: () => pendingDoneRef.current.delete(id) },
+      );
       if (nextLogged && task.status === 'todo') {
         updateTask.mutate({ id: task.sourceId, status: 'in_progress' });
       }
@@ -435,16 +470,21 @@ export function useScheduleDayTasks({
         t.id === id ? { ...t, done: nextDone, progress: nextDone ? 1 : t.progress } : t,
       ),
     );
+    pendingDoneRef.current.set(id, nextDone);
+    const forgetPending = { onError: () => pendingDoneRef.current.delete(id) };
 
     if (task.source === 'quest' && task.sourceId) {
-      updateQuestStatus.mutate({ id: task.sourceId, done: nextDone });
+      updateQuestStatus.mutate({ id: task.sourceId, done: nextDone }, forgetPending);
       if (nextDone) onReward?.({ xp: task.xp, coins: task.coins });
     } else if (task.source === 'task' && task.sourceId) {
-      updateTask.mutate({ id: task.sourceId, status: nextDone ? 'done' : 'todo' });
+      updateTask.mutate({ id: task.sourceId, status: nextDone ? 'done' : 'todo' }, forgetPending);
       if (nextDone) onReward?.({ xp: TASK_XP, coins: TASK_COINS });
     } else if (task.source === 'habit' && task.sourceId) {
       const habitDate = offsetToISO(task.day);
-      toggleHabitLog.mutate({ habitId: task.sourceId, date: habitDate, done: nextDone });
+      toggleHabitLog.mutate(
+        { habitId: task.sourceId, date: habitDate, done: nextDone },
+        forgetPending,
+      );
       if (nextDone) onReward?.({ xp: HABIT_XP, coins: HABIT_COINS });
     }
   }
@@ -455,7 +495,11 @@ export function useScheduleDayTasks({
     setTasks((ts) =>
       ts.map((t) => (t.id === id ? { ...t, done: true, progress: 1, status: 'done' } : t)),
     );
-    updateTask.mutate({ id: task.sourceId, status: 'done' });
+    pendingDoneRef.current.set(id, true);
+    updateTask.mutate(
+      { id: task.sourceId, status: 'done' },
+      { onError: () => pendingDoneRef.current.delete(id) },
+    );
     if (!task.done) onReward?.({ xp: TASK_XP, coins: TASK_COINS });
   }
 

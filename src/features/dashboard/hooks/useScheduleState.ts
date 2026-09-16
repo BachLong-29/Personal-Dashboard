@@ -9,6 +9,7 @@ export type ScheduleSubTab = 'day' | 'week' | 'month';
 export interface ScheduleDisplayOptions {
   showQuests: boolean;
   showHabits: boolean;
+  showEvents: boolean;
 }
 
 interface ScheduleState {
@@ -42,7 +43,7 @@ function defaultState(): ScheduleState {
     dayDate: today,
     weekStart: getMonday(today),
     month: new Date().getMonth(),
-    display: { showQuests: true, showHabits: true },
+    display: { showQuests: true, showHabits: true, showEvents: true },
   };
 }
 
@@ -51,7 +52,17 @@ function loadState(): ScheduleState {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return defaultState();
-    return { ...defaultState(), ...(JSON.parse(raw) as Partial<ScheduleState>) };
+
+    const stored = JSON.parse(raw) as Partial<ScheduleState>;
+    const fallback = defaultState();
+    return {
+      ...fallback,
+      ...stored,
+      // `display` gains keys over time, and a stored object predates the newest
+      // ones. Spreading it wholesale would leave those undefined — read as
+      // "off" — so anyone with an older state would silently lose the toggle.
+      display: { ...fallback.display, ...stored.display },
+    };
   } catch {
     return defaultState();
   }

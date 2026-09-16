@@ -8,6 +8,8 @@ import { Modal, ModalBody, ModalFoot, ModalHead } from '@/components/ui/Modal';
 import { SkelBlock } from '@/components/ui/Skeleton';
 import { Tabs } from '@/components/ui/Tabs';
 import { useCalendar } from '@/features/schedule/hooks/useCalendar';
+
+import { DownloadImageButton } from './DownloadImageButton';
 import { todayISO, toLocalDate } from '@/features/tasks/utils/date.utils';
 import { apiClient } from '@/libs/axios';
 import { useUIStore } from '@/stores/ui.store';
@@ -152,23 +154,13 @@ export function ShareAgendaModal() {
         )}
       </ModalBody>
       <ModalFoot>
+        {/*
+          Three tiers, strongest first: copying is what most shares end in,
+          downloading is the other real action, closing is the way out. Close
+          and download used to share the ghost variant, which made the exit
+          look like an action.
+        */}
         <div className="flex w-full flex-col gap-2 sm:flex-row sm:justify-end">
-          <Button
-            variant="ghost"
-            onClick={close}
-            className="w-full justify-center sm:w-auto"
-            disabled={downloading}
-          >
-            {t('close')}
-          </Button>
-          <Button
-            variant="ghost"
-            onClick={handleDownload}
-            disabled={isLoading || isError || downloading}
-            className="w-full justify-center sm:w-auto"
-          >
-            {downloading ? '…' : t('downloadImage')}
-          </Button>
           <Button
             variant="primary"
             onClick={handleCopy}
@@ -176,6 +168,20 @@ export function ShareAgendaModal() {
             className="w-full justify-center sm:w-auto"
           >
             {t('copyText')}
+          </Button>
+          <DownloadImageButton
+            label={t('downloadImage')}
+            onDownload={handleDownload}
+            downloading={downloading}
+            disabled={isLoading || isError}
+          />
+          <Button
+            variant="ghost"
+            onClick={close}
+            className="w-full justify-center sm:w-auto"
+            disabled={downloading}
+          >
+            {t('close')}
           </Button>
         </div>
       </ModalFoot>
