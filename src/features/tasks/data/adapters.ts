@@ -18,6 +18,8 @@ export interface QuestLike {
   done: boolean;
   tags: string[];
   dueDate?: string;
+  /** "HH:MM" — absent means the quest is due that day at no particular hour */
+  dueTime?: string;
 }
 
 // ─── Date helpers ─────────────────────────────────────────────────────────────
@@ -226,7 +228,9 @@ export function questToUITask(q: QuestLike): UITask {
     subtasks: 0,
     subtasksDone: 0,
     day: offset,
-    slot: offsetToSlot(offset),
+    // The hour, when set, decides both the time shown and which slot it lands in.
+    slot: offsetToSlot(offset, q.dueTime),
+    startTime: q.dueTime,
     tags: q.tags,
     streak: 0,
     combo: 0,

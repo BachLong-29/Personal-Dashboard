@@ -15,12 +15,23 @@ export interface IQuest extends Document {
   done: boolean;
   tags: string[];
   dueDate: Date;
+  /** "HH:MM" — absent means the quest is due some time that day, not at an hour */
+  dueTime?: string;
   completedAt?: Date;
   createdAt: Date;
   updatedAt: Date;
 }
 
-const QUEST_TYPES: QuestType[] = ['focus', 'habit', 'reflect', 'admin', 'create', 'health', 'break'];
+const QUEST_TYPES: QuestType[] = [
+  'focus',
+  'habit',
+  'reflect',
+  'admin',
+  'create',
+  'health',
+  'break',
+];
+const TIME_RE = /^([01]\d|2[0-3]):[0-5]\d$/;
 const DIFFICULTIES: Difficulty[] = ['S', 'A', 'B', 'C', 'D'];
 
 const questSchema = new Schema<IQuest>(
@@ -74,6 +85,10 @@ const questSchema = new Schema<IQuest>(
     dueDate: {
       type: Date,
       required: true,
+    },
+    dueTime: {
+      type: String,
+      match: [TIME_RE, 'dueTime must be in HH:MM (24-hour) format'],
     },
     completedAt: {
       type: Date,

@@ -160,6 +160,9 @@
     },
     "quests": {
       "title": "Today's Quests",
+      "deleteTitle": "Delete Quest",
+      "deleteConfirm": "Delete <strong>{title}</strong>? A quest cannot be edited, so this is the only way to undo it.",
+      "deleteAction": "Delete",
       "new": "New Quest",
       "newShort": "New",
       "dailyProgress": "Daily Progress",
@@ -212,6 +215,7 @@
         "questName": "Quest Name",
         "description": "Description",
         "dueDate": "Due Date",
+        "dueTime": "Due time (optional)",
         "type": "Type",
         "difficulty": "Difficulty"
       },
@@ -610,7 +614,8 @@
       "moveToNextDay": "Move to next day",
       "cloneTask": "Clone task",
       "edit": "Edit",
-      "goToHabits": "Go to Habits"
+      "goToHabits": "Go to Habits",
+      "deleteQuest": "Delete quest"
     },
     "pageHeader": {
       "title": "Quest Log",

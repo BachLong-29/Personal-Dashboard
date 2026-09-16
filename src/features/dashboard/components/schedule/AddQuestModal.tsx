@@ -36,6 +36,8 @@ export function AddQuestModal({ onAdd, onClose }: AddQuestModalProps) {
   const [type, setType] = useState<QuestType>('focus');
   const [diff, setDiff] = useState<Difficulty>('B');
   const [dueDate, setDueDate] = useState(() => todayISO());
+  // Empty keeps the old behaviour: due that day, at no particular hour.
+  const [dueTime, setDueTime] = useState('');
 
   const { mutate: createQuest, isPending, error } = useCreateQuest();
 
@@ -50,6 +52,7 @@ export function AddQuestModal({ onAdd, onClose }: AddQuestModalProps) {
         difficulty: diff,
         tags: [type],
         dueDate,
+        dueTime: dueTime || undefined,
       },
       {
         onSuccess: (quest) => {
@@ -91,6 +94,16 @@ export function AddQuestModal({ onAdd, onClose }: AddQuestModalProps) {
           <DatePicker
             value={dueDate ? parseLocalDate(dueDate) : null}
             onChange={(d) => setDueDate(toLocalDate(d))}
+            disabled={isPending}
+          />
+        </div>
+        <div className="modal-field">
+          <div className="modal-label">{t('addQuest.fields.dueTime')}</div>
+          <Input
+            className="modal-input"
+            type="time"
+            value={dueTime}
+            onChange={(e) => setDueTime(e.target.value)}
             disabled={isPending}
           />
         </div>

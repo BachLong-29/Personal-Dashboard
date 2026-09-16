@@ -23,6 +23,8 @@ export interface Quest {
   done: boolean;
   tags: string[];
   dueDate?: string;
+  /** "HH:MM" — absent means the quest is due that day at no particular hour */
+  dueTime?: string;
   habitId?: string;
   habitColor?: HabitColor;
   habitIcon?: string;

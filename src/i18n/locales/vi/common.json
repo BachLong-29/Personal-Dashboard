@@ -160,6 +160,9 @@
     },
     "quests": {
       "title": "Nhiệm vụ hôm nay",
+      "deleteTitle": "Xoá Quest",
+      "deleteConfirm": "Xoá <strong>{title}</strong>? Quest không sửa được nên đây là cách duy nhất để làm lại.",
+      "deleteAction": "Xoá",
       "new": "Nhiệm vụ mới",
       "newShort": "Mới",
       "dailyProgress": "Tiến độ hôm nay",
@@ -212,6 +215,7 @@
         "questName": "Tên quest",
         "description": "Mô tả",
         "dueDate": "Hạn chót",
+        "dueTime": "Giờ (tuỳ chọn)",
         "type": "Loại",
         "difficulty": "Độ khó"
       },
@@ -610,7 +614,8 @@
       "moveToNextDay": "Dời sang ngày mai",
       "cloneTask": "Nhân bản task",
       "edit": "Sửa",
-      "goToHabits": "Đến tab Habits"
+      "goToHabits": "Đến tab Habits",
+      "deleteQuest": "Xoá quest"
     },
     "pageHeader": {
       "title": "Nhật ký nhiệm vụ",

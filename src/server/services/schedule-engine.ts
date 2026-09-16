@@ -228,8 +228,9 @@ export async function buildCalendar(
       id: `quest:${quest._id.toString()}:${key}`,
       title: quest.title,
       date: key,
-      startTime: null,
-      endTime: null,
+      // A quest due at an hour is placed at it; without one it stays all-day.
+      startTime: quest.dueTime ?? null,
+      endTime: quest.dueTime ?? null,
       duration: 0,
       status: resolveStatus(key, todayKey, quest.done),
       sourceType: 'quest',
