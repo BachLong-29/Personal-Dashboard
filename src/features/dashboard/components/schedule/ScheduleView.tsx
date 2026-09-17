@@ -27,6 +27,13 @@ interface ScheduleViewProps {
 }
 
 const CURRENT_YEAR = new Date().getFullYear();
+/**
+ * Sub-tabs on offer. Month is parked for now — put `'month'` back here and the
+ * view, its state and its navigation all light up again; nothing else was
+ * removed.
+ */
+const SUB_TABS = ['day', 'week'] as const;
+
 const YEARS = Array.from({ length: 5 }, (_, i) => CURRENT_YEAR - 2 + i);
 
 export function ScheduleView({
@@ -59,6 +66,11 @@ export function ScheduleView({
   const openShareAgenda = useUIStore((s) => s.openShareAgenda);
   const pendingNav = useUIStore((s) => s.pendingScheduleNav);
   const setPendingNav = useUIStore((s) => s.setPendingScheduleNav);
+  const monthHidden = !(SUB_TABS as readonly ScheduleSubTab[]).includes('month');
+  useEffect(() => {
+    if (monthHidden && tab === 'month') setTab('day');
+  }, [monthHidden, tab, setTab]);
+
   useEffect(() => {
     if (!pendingNav) return;
     if (pendingNav.year !== undefined) setYear(pendingNav.year);
@@ -92,7 +104,7 @@ export function ScheduleView({
       {/* Sub-tab bar + display toggles + year selector */}
       <div className={controlBar}>
         <div className={subTabGroup}>
-          {(['day', 'week', 'month'] as const).map((t) => (
+          {SUB_TABS.map((t) => (
             <button
               key={t}
               type="button"
