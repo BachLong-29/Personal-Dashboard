@@ -1,5 +1,6 @@
 'use client';
 
+import { Icon } from '@/components/common/Icon';
 import { cn } from '@/libs/utils';
 
 export interface PaginationProps {
@@ -55,7 +56,7 @@ export function Pagination({
           'disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:text-[var(--text-md)] disabled:hover:border-[var(--border)]',
         )}
       >
-        ‹
+        <Icon icon="ArrowLeft" className="text-[14px]" />
       </button>
 
       {pages.map((p, i) =>
@@ -94,7 +95,7 @@ export function Pagination({
           'disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:text-[var(--text-md)] disabled:hover:border-[var(--border)]',
         )}
       >
-        ›
+        <Icon icon="ArrowRight" className="text-[14px]" />
       </button>
     </div>
   );

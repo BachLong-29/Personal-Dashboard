@@ -1,5 +1,7 @@
 import { useMemo } from 'react';
 
+import { Icon } from '@/components/common/Icon';
+
 import { WEEK_DAYS, type UITask } from '../../data/mock';
 import { WeekColumn } from './WeekColumn';
 
@@ -55,7 +57,7 @@ function WeekSelector({ weekOffset, onChange }: WeekSelectorProps) {
         onClick={() => onChange(weekOffset - 1)}
         aria-label="Previous week"
       >
-        ‹
+        <Icon icon="ArrowLeft" className="text-[14px]" />
       </button>
 
       {/* Centre label */}
@@ -99,7 +101,7 @@ function WeekSelector({ weekOffset, onChange }: WeekSelectorProps) {
 
       {/* Next */}
       <button className={navBtn} onClick={() => onChange(weekOffset + 1)} aria-label="Next week">
-        ›
+        <Icon icon="ArrowRight" className="text-[14px]" />
       </button>
     </div>
   );

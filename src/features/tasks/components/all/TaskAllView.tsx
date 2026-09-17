@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslations } from 'next-intl';
 
+import { Icon } from '@/components/common/Icon';
 import { cn } from '@/libs/utils';
 import { Modal, ModalBody, ModalFoot, ModalHead } from '@/components/ui/Modal';
 import { useCategories } from '@/features/dashboard/hooks/useCategories';
@@ -284,7 +285,7 @@ export function TaskAllView({ tasks, onEdit, pagination }: TaskAllViewProps) {
               disabled={pagination.offset === 0 || pagination.isFetching}
               onClick={pagination.onPrev}
             >
-              ← {t('taskAllView.pagination.prev')}
+              <Icon icon="ArrowLeft" className="text-[14px]" /> {t('taskAllView.pagination.prev')}
             </button>
             <button
               type="button"
@@ -292,7 +293,7 @@ export function TaskAllView({ tasks, onEdit, pagination }: TaskAllViewProps) {
               disabled={!pagination.meta?.hasNextPage || pagination.isFetching}
               onClick={pagination.onNext}
             >
-              {t('taskAllView.pagination.next')} →
+              {t('taskAllView.pagination.next')} <Icon icon="ArrowRight" className="text-[14px]" />
             </button>
           </div>
         </div>

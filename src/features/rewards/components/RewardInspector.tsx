@@ -1,5 +1,6 @@
 'use client';
 
+import { Icon } from '@/components/common/Icon';
 import { cn } from '@/libs/utils';
 import type { Reward } from '@/types/reward';
 import type { UpdateRewardPayload, RewardRarity, RewardStatus, RewardColor } from '@/types/reward';
@@ -71,7 +72,7 @@ export function RewardInspector({
             onClick={onClose}
             aria-label="Back to list"
           >
-            ‹
+            <Icon icon="ArrowLeft" className="text-[14px]" />
           </button>
         )}
         <div className="flex min-w-0 flex-1 flex-col gap-0.5">

@@ -18,6 +18,13 @@ export interface INotification extends Document {
   title: string;
   message: string;
   isRead: boolean;
+  /**
+   * Set when the user dismisses it. The row has to survive, not vanish: the
+   * schedule generator upserts on `dedupeKey`, so a deleted row is simply
+   * recreated on the next run. A dismissed row still matches, so the upsert
+   * finds it and its `$setOnInsert` does nothing.
+   */
+  dismissedAt?: Date;
   /** Idempotency key for engine-generated notifications (e.g. `overload:2026-06-19`) */
   dedupeKey?: string;
   /** Optional reference to an entity (e.g. task ObjectId as string) */
@@ -60,6 +67,9 @@ const notificationSchema = new Schema<INotification>(
       required: true,
       trim: true,
       maxlength: 500,
+    },
+    dismissedAt: {
+      type: Date,
     },
     isRead: {
       type: Boolean,

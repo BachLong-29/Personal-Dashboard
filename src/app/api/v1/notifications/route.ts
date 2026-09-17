@@ -26,6 +26,7 @@ export const GET = asyncHandler(async (req: NextRequest) => {
   const now = new Date();
   const notifications = await NotificationModel.find({
     userId: new mongoose.Types.ObjectId(user.sub),
+    dismissedAt: { $exists: false },
     $or: [{ expiresAt: { $exists: false } }, { expiresAt: { $gt: now } }],
   })
     .sort({ createdAt: -1 })

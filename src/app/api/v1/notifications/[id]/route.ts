@@ -18,10 +18,14 @@ export const DELETE = asyncHandler(
     }
     await connectDB();
 
-    const result = await NotificationModel.findOneAndDelete({
-      _id: new mongoose.Types.ObjectId(id),
-      userId: new mongoose.Types.ObjectId(user.sub),
-    });
+    // Marked, not erased — see `dismissedAt` on the model for why.
+    const result = await NotificationModel.findOneAndUpdate(
+      {
+        _id: new mongoose.Types.ObjectId(id),
+        userId: new mongoose.Types.ObjectId(user.sub),
+      },
+      { $set: { dismissedAt: new Date() } },
+    );
 
     if (!result) return notFoundResponse('Notification not found');
 
