@@ -38,6 +38,11 @@ import { EditTaskModal } from '@/features/tasks/components/shared/EditTaskModal'
 
 import { DayActionMenu } from './DayActionMenu';
 import { TaskPickerModal } from './TaskPickerModal';
+import { SessionPlanner, type PlannerTask } from '@/features/schedule/components/SessionPlanner';
+import {
+  SessionUpdatePrompt,
+  type SessionUpdateTarget,
+} from '@/features/tasks/components/shared/SessionUpdatePrompt';
 import { taskToUITask } from '@/features/tasks/data/adapters';
 import { parseLocalDate, todayISO } from '@/features/tasks/utils/date.utils';
 import type { ScheduleBlock, Task as CoreTask } from '@/types';
@@ -146,6 +151,8 @@ export function WeekView({
   const [pickerDay, setPickerDay] = useState<string | null>(null);
   const [cancelling, setCancelling] = useState<EventOccurrence | null>(null);
   const [deletingQuest, setDeletingQuest] = useState<Quest | null>(null);
+  const [sessionPrompt, setSessionPrompt] = useState<SessionUpdateTarget | null>(null);
+  const [plannerTask, setPlannerTask] = useState<PlannerTask | null>(null);
   const tDash = useTranslations('dashboard');
   const tCommon = useTranslations('common');
 
@@ -287,12 +294,38 @@ export function WeekView({
     if (drag.dayStr === targetDay) return;
 
     if (drag.type === 'task') {
+      const task = drag.item;
       const diff = dayDiff(drag.dayStr, targetDay);
-      updateTask({
-        id: drag.item.id,
-        startDate: addDays(drag.item.startDate, diff),
-        endDate: drag.item.endDate ? addDays(drag.item.endDate, diff) : undefined,
-      });
+      const newStartDate = addDays(task.startDate, diff);
+      const newEndDate = task.endDate ? addDays(task.endDate, diff) : undefined;
+
+      // Captured before the write: the ids do not change, and after the
+      // mutation invalidates, this list is briefly refetching.
+      const blockIds = weekTaskBlocks.filter((b) => b.sourceId === task.id).map((b) => b.id);
+
+      updateTask(
+        { id: task.id, startDate: newStartDate, endDate: newEndDate },
+        {
+          onSuccess: () => {
+            // Sessions stay on the day they were booked, so a task dragged away
+            // from them needs the same prompt the edit modal gives.
+            if (blockIds.length === 0) return;
+            setSessionPrompt({
+              blockIds,
+              dateMoved: true,
+              plannerData: {
+                id: task.id,
+                name: task.name,
+                icon: task.icon,
+                color: task.color,
+                duration: task.duration,
+                startDate: newStartDate,
+                endDate: newEndDate,
+              },
+            });
+          },
+        },
+      );
     } else if (drag.type === 'quest') {
       moveQuest({ id: drag.item.id, dueDate: targetDay });
     } else if (drag.type === 'habit') {
@@ -444,17 +477,24 @@ export function WeekView({
                           const task = item.item;
                           const blocked = isBlocked(task);
                           const itemKey = item.blockId ?? `span-${task.id}`;
+                          // A task carrying both ends of a range shows up on
+                          // every day it covers, so dragging one of those days
+                          // is an ambiguous way to move the whole span. It gets
+                          // moved by editing its dates instead.
+                          const spansDates = Boolean(task.endDate);
                           return (
                             <DraggableItem
                               key={itemKey}
                               id={`task|${task.id}|${dayStr}|${itemKey}`}
                               data={{ type: 'task', item: task, color: item.color, dayStr }}
+                              disabled={spansDates}
                             >
                               <div
                                 className={cn(
                                   miniTask,
                                   task.status === 'done' && miniTaskDone,
                                   blocked && miniTaskBlocked,
+                                  spansDates && miniTaskNoGrab,
                                 )}
                                 style={{ borderLeftColor: item.color, borderLeftWidth: 2 }}
                                 onClick={() => handleEdit(task)}
@@ -496,10 +536,17 @@ export function WeekView({
                                 title={q.title}
                                 onClick={() => setDeletingQuest(q)}
                               >
-                                <span className={miniTaskIcon}>{q.habitIcon ?? '📌'}</span>
-                                <span className={miniTaskName}>{q.title}</span>
+                                {/* Same two-row shape as a task: identity on one
+                                    line, time under it. miniTask is a column, so
+                                    loose children stack instead of sitting inline. */}
+                                <div className="flex items-center gap-1 w-full min-w-0">
+                                  <span className={miniTaskIcon}>
+                                    <Icon icon={q.habitIcon ?? '📌'} />
+                                  </span>
+                                  <span className={miniTaskName}>{q.title}</span>
+                                  {q.done && <span className={miniDone}>✓</span>}
+                                </div>
                                 {item.time && <span className={miniTime}>{item.time}</span>}
-                                {q.done && <span className={miniDone}>✓</span>}
                               </div>
                             </DraggableItem>
                           );
@@ -595,6 +642,18 @@ export function WeekView({
       </DndContext>
 
       {/* Pick — assign an existing task onto a day */}
+      <SessionUpdatePrompt
+        target={sessionPrompt}
+        onClose={() => setSessionPrompt(null)}
+        onManage={setPlannerTask}
+      />
+
+      <SessionPlanner
+        open={plannerTask !== null}
+        task={plannerTask}
+        onClose={() => setPlannerTask(null)}
+      />
+
       {/* Quests have no edit path, so removing a mistaken one is the only repair */}
       <Modal open={deletingQuest !== null} onClose={() => setDeletingQuest(null)} maxWidth="360px">
         <ModalHead
@@ -779,13 +838,19 @@ function DroppableDay({
 function DraggableItem({
   id,
   data,
+  disabled,
   children,
 }: {
   id: string;
   data: Record<string, unknown>;
+  disabled?: boolean;
   children: React.ReactNode;
 }) {
-  const { attributes, listeners, setNodeRef, isDragging, transform } = useDraggable({ id, data });
+  const { attributes, listeners, setNodeRef, isDragging, transform } = useDraggable({
+    id,
+    data,
+    disabled,
+  });
   return (
     <div
       ref={setNodeRef}
