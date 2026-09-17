@@ -120,7 +120,9 @@ export function ShareAgendaModal() {
   }
 
   return (
-    <Modal open={open} onClose={close} maxWidth="520px" scrollable>
+    // bottomSheet keeps this centred from `sm` up and docks it to the bottom
+    // edge below that, where a sheet is the native shape for a panel like this.
+    <Modal open={open} onClose={close} maxWidth="520px" scrollable bottomSheet>
       <ModalHead tag="SHARE" title={t('title')} />
       <ModalBody scrollable className="flex flex-col gap-3">
         <Tabs
