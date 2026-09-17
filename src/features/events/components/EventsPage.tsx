@@ -171,51 +171,94 @@ export function EventsPage() {
                 className={cn(
                   'flex flex-col gap-3 rounded-[var(--r-md)] border border-[var(--border)]',
                   'bg-[var(--panel)] p-3 transition-colors hover:border-[var(--border-hi)]',
-                  'sm:flex-row sm:items-center',
+                  'sm:flex-row sm:items-center sm:gap-4',
                 )}
-                style={{ borderLeft: `3px solid ${COLOR_CSS[event.color]}` }}
+                style={{
+                  borderLeft: `3px solid ${COLOR_CSS[event.color]}`,
+                  opacity: event.paused ? 0.55 : 1,
+                }}
               >
-                <span className="shrink-0 text-[20px] leading-none">
-                  <Icon icon={event.icon} />
-                </span>
-
-                <div className="min-w-0 flex-1">
-                  <div className="mb-0.5 flex flex-wrap items-center gap-1.5">
-                    <span className="truncate text-[13px] font-semibold text-[var(--text-hi)]">
-                      {event.title}
-                    </span>
-                    {event.recurrence ? (
-                      <Badge variant="violet">↻ Repeats</Badge>
-                    ) : (
-                      <Badge variant="cyan">Once</Badge>
+                {/* Identity — icon rides beside the title instead of claiming
+                    its own line, which is what made the card so tall. */}
+                <div className="flex min-w-0 flex-1 items-center gap-3">
+                  <span
+                    className={cn(
+                      'flex h-9 w-9 shrink-0 items-center justify-center text-[18px]',
+                      'rounded-[var(--r-sm)] border border-[var(--border)] bg-[var(--bg-2)]',
                     )}
-                    {!event.busy && <Badge variant="mint">Free</Badge>}
+                  >
+                    <Icon icon={event.icon} />
+                  </span>
+
+                  <div className="min-w-0">
+                    <div className="mb-0.5 flex flex-wrap items-center gap-1.5">
+                      <span className="truncate text-[13px] font-semibold text-[var(--text-hi)]">
+                        {event.title}
+                      </span>
+                      {/* The meta line below already reads "Weekly · Tue · 11:00"
+                          against a plain date, so the glyph is a marker, not a
+                          label — and a one-off needs no badge to say so. */}
+                      {event.recurrence && (
+                        <span
+                          className="shrink-0 text-[12px] leading-none text-[var(--violet)]"
+                          title="Repeats"
+                          aria-label="Repeats"
+                        >
+                          ↻
+                        </span>
+                      )}
+                      {!event.busy && <Badge variant="mint">Free</Badge>}
+                    </div>
+                    <p className="truncate text-[11px] text-[var(--text-lo)]">
+                      {scheduleLabel(event)}
+                      {event.tagId && categoryName.has(event.tagId)
+                        ? ` · ${categoryName.get(event.tagId)}`
+                        : ''}
+                    </p>
                   </div>
-                  <p className="truncate text-[11px] text-[var(--text-lo)]">
-                    {scheduleLabel(event)}
-                    {event.tagId && categoryName.has(event.tagId)
-                      ? ` · ${categoryName.get(event.tagId)}`
-                      : ''}
-                  </p>
                 </div>
 
-                <div className="flex shrink-0 items-center gap-2">
+                {/* Controls — a rule separates them on a phone, where they sit
+                    under the title rather than beside it. */}
+                <div
+                  className={cn(
+                    'flex shrink-0 items-center justify-between gap-3',
+                    'border-t border-[var(--border)] pt-3',
+                    'sm:justify-end sm:border-t-0 sm:pt-0',
+                  )}
+                >
+                  {/* The label is the whole point: a bare switch left people
+                      asking whether it deleted the event. */}
                   <Switch
-                    checked={event.active}
+                    checked={!event.paused}
                     disabled={updateEvent.isPending}
-                    onChange={(active) => updateEvent.mutate({ id: event.id, active })}
-                  />
-                  <Button size="sm" variant="ghost" onClick={() => openEdit(event)}>
-                    Edit
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => setDeleting(event)}
-                    className="text-[var(--rose)]"
+                    onChange={(on) => updateEvent.mutate({ id: event.id, paused: !on })}
                   >
-                    Delete
-                  </Button>
+                    <span className="text-[10px] tracking-[0.08em] text-[var(--text-lo)] uppercase">
+                      {event.paused ? 'Off' : 'On'}
+                    </span>
+                  </Switch>
+
+                  <div className="flex items-center gap-1">
+                    <button
+                      type="button"
+                      className={rowIconBtn}
+                      onClick={() => openEdit(event)}
+                      title="Edit event"
+                      aria-label="Edit event"
+                    >
+                      ✎
+                    </button>
+                    <button
+                      type="button"
+                      className={cn(rowIconBtn, rowIconBtnDanger)}
+                      onClick={() => setDeleting(event)}
+                      title="Delete event"
+                      aria-label="Delete event"
+                    >
+                      ✕
+                    </button>
+                  </div>
                 </div>
               </motion.div>
             ))}
@@ -269,3 +312,13 @@ export function EventsPage() {
     </div>
   );
 }
+
+// ── Row controls ──────────────────────────────────────────────────────────────
+
+const rowIconBtn = cn(
+  'flex h-8 w-8 shrink-0 items-center justify-center rounded-[var(--r-sm)]',
+  'border border-[var(--border)] text-[13px] text-[var(--text-mid)]',
+  'transition-colors hover:border-[var(--border-hi)] hover:text-[var(--text-hi)]',
+);
+
+const rowIconBtnDanger = 'hover:border-[oklch(0.72_0.18_5_/_0.45)] hover:text-[var(--rose)]';
