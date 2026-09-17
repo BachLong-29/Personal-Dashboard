@@ -39,6 +39,8 @@ export interface EventDTO {
   cancelled: boolean;
   /** Consumes the day's capacity */
   busy: boolean;
+  /** Switched off — still listed, but produces no occurrences */
+  paused: boolean;
   active: boolean;
   createdAt: string;
   updatedAt: string;
@@ -101,6 +103,7 @@ export interface UpdateEventPayload {
   /** null turns a series back into a one-off */
   recurrence?: EventRecurrence | null;
   busy?: boolean;
+  paused?: boolean;
   active?: boolean;
 }
 
