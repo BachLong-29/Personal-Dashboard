@@ -27,6 +27,7 @@ const updateSchema = z
     endDate: z.string().regex(DATE_RE, 'Must be YYYY-MM-DD').nullable().optional(),
     recurrence: recurrenceSchema.nullable().optional(),
     busy: z.boolean().optional(),
+    paused: z.boolean().optional(),
     active: z.boolean().optional(),
   })
   .superRefine((data, ctx) => {
@@ -65,7 +66,16 @@ export const PATCH = asyncHandler(async (req: NextRequest, ctx) => {
     else set[key] = map(value);
   }
 
-  for (const key of ['title', 'tagId', 'color', 'icon', 'busy', 'active', 'allDay'] as const) {
+  for (const key of [
+    'title',
+    'tagId',
+    'color',
+    'icon',
+    'busy',
+    'paused',
+    'active',
+    'allDay',
+  ] as const) {
     if (data[key] !== undefined) set[key] = data[key];
   }
   put('note', data.note);

@@ -93,6 +93,7 @@ export function serialize(e: IEvent): EventDTO {
     overrideDate: e.overrideDate?.toISOString().substring(0, 10),
     cancelled: e.cancelled,
     busy: e.busy,
+    paused: e.paused,
     active: e.active,
     createdAt: e.createdAt.toISOString(),
     updatedAt: e.updatedAt.toISOString(),

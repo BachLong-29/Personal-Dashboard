@@ -40,6 +40,13 @@ export interface IEvent extends Document {
   cancelled: boolean;
   /** Consumes the day's capacity */
   busy: boolean;
+  /**
+   * Switched off for now: keeps its place in the list so it can be switched
+   * back on, but produces no occurrences. Distinct from `active`, which is the
+   * soft delete — one list would have made the toggle a delete without a
+   * confirmation.
+   */
+  paused: boolean;
   active: boolean;
   createdAt: Date;
   updatedAt: Date;
@@ -81,6 +88,7 @@ const eventSchema = new Schema<IEvent>(
     overrideDate: { type: Date },
     cancelled: { type: Boolean, default: false },
     busy: { type: Boolean, default: true },
+    paused: { type: Boolean, default: false },
     active: { type: Boolean, default: true },
   },
   { timestamps: true },

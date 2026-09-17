@@ -113,6 +113,9 @@ export async function expandEvents(
   const rows = await EventModel.find({
     userId,
     active: true,
+    // Paused rows stay in the list but off the calendar. Overrides are never
+    // paused themselves, so this only removes series and one-offs.
+    paused: { $ne: true },
     $or: [
       // Series overlapping the range — an open-ended rule has no endDate.
       { recurrence: { $exists: true }, startDate: { $lt: toEnd } },
@@ -156,7 +159,7 @@ export async function expandEvents(
 
   // ── Recurring series ────────────────────────────────────────────────────
   for (const series of seriesById.values()) {
-    if (!series.recurrence || !series.active) continue;
+    if (!series.recurrence || !series.active || series.paused) continue;
     const sid = series._id.toString();
 
     for (let d = new Date(from); toKey(d) <= toStr; d.setDate(d.getDate() + 1)) {
@@ -184,7 +187,9 @@ export async function expandEvents(
     const key = toKey(row.startDate);
     if (key < fromStr || key > toStr) continue;
     const series = seriesById.get(seriesId);
-    if (!series || !series.active) continue;
+    // The backfill query below fetches a series by id without the filters
+    // above, so a paused one can still arrive here through its override.
+    if (!series || !series.active || series.paused) continue;
     out.push(toOccurrence(series, key, row, row._id.toString()));
   }
 
