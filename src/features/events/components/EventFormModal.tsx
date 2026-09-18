@@ -14,18 +14,13 @@ import { Select } from '@/components/ui/Select';
 import { Switch } from '@/components/ui/Switch';
 import { useCategories } from '@/features/dashboard/hooks/useCategories';
 import { COLOR_CSS, COLOR_OPTIONS } from '@/features/projects/constants';
-import { apiClient } from '@/libs/axios';
+import { ICON_UPLOAD_TYPES } from '@/constants/upload';
+import { useIconUpload } from '@/hooks/useIconUpload';
 import { cn } from '@/libs/utils';
-import type { ApiResponse, EventDTO, EventFrequency, TaskColor } from '@/types';
+import type { EventDTO, EventFrequency, TaskColor } from '@/types';
 import type { HabitDay } from '@/types/habit';
 
-import {
-  DAY_ORDER,
-  DEFAULT_EVENT_ICON,
-  ICON_UPLOAD_MAX_BYTES,
-  ICON_UPLOAD_TYPES,
-  WEEKDAYS,
-} from '../constants';
+import { DAY_ORDER, DEFAULT_EVENT_ICON, WEEKDAYS } from '../constants';
 import { useCreateEvent, useUpdateEvent } from '../hooks/useEvents';
 
 /** `startDate` travels as a plain "YYYY-MM-DD" string, so convert at the edges. */
@@ -65,7 +60,7 @@ export function EventFormModal({ open, onClose, event }: Props) {
   const [icon, setIcon] = useState(DEFAULT_EVENT_ICON);
   const [showPicker, setShowPicker] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
-  const [uploading, setUploading] = useState(false);
+  const { upload, uploading } = useIconUpload();
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [allDay, setAllDay] = useState(false);
   const [startTime, setStartTime] = useState('09:00');
@@ -110,34 +105,21 @@ export function EventFormModal({ open, onClose, event }: Props) {
     }
   }
 
-  // Same limits the upload route enforces — fail here rather than round-trip.
   async function handleIconFile(file: File) {
-    if (!ICON_UPLOAD_TYPES.includes(file.type)) {
-      setUploadError('Use a JPG, PNG, WebP or GIF.');
-      return;
-    }
-    if (file.size > ICON_UPLOAD_MAX_BYTES) {
-      setUploadError('Image must be under 5 MB.');
-      return;
-    }
-
-    setUploadError(null);
-    setUploading(true);
-    try {
-      const form = new FormData();
-      form.append('file', file);
-      const { data } = await apiClient.post<ApiResponse<{ url: string }>>(
-        '/upload/attachment',
-        form,
-        { headers: { 'Content-Type': 'multipart/form-data' } },
-      );
-      setIcon(data.data.url);
+    const result = await upload(file);
+    if ('url' in result) {
+      setIcon(result.url);
       setShowPicker(false);
-    } catch {
-      setUploadError('Upload failed. Try again.');
-    } finally {
-      setUploading(false);
+      setUploadError(null);
+      return;
     }
+    setUploadError(
+      result.error === 'type'
+        ? 'Use a JPG, PNG, WebP or GIF.'
+        : result.error === 'size'
+          ? 'Image must be under 5 MB.'
+          : 'Upload failed. Try again.',
+    );
   }
 
   const clearError = (field: keyof FormErrors) =>
