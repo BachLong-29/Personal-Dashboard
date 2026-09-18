@@ -46,7 +46,17 @@ export function SlotColumn({
   const t = useTranslations('tasks');
   const { setNodeRef, isOver } = useDroppable({ id: slot.id });
   const [showAll, setShowAll] = useState(false);
-  const [collapsed, setCollapsed] = useState(false);
+
+  /**
+   * Null until the reader opens or closes this slot themselves; after that
+   * their choice wins. Left alone, an empty slot folds away — four of them
+   * standing open with nothing inside was most of the day's scroll.
+   *
+   * A drag forces every slot open regardless, because a folded one offers
+   * nowhere to drop.
+   */
+  const [chosenCollapsed, setChosenCollapsed] = useState<boolean | null>(null);
+  const collapsed = draggingId ? false : (chosenCollapsed ?? tasks.length === 0);
 
   const sortedTasks = [...tasks].sort((a, b) => {
     if (!a.startTime && !b.startTime) return 0;
@@ -71,7 +81,7 @@ export function SlotColumn({
         slot={slot}
         count={tasks.length}
         collapsed={collapsed}
-        onToggle={() => setCollapsed((c) => !c)}
+        onToggle={() => setChosenCollapsed(!collapsed)}
       />
 
       {collapsed ? null : tasks.length === 0 ? (

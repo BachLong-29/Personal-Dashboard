@@ -8,6 +8,10 @@ import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
+import { Icon } from '@/components/common/Icon';
+import { isUploadedIcon } from '@/components/common/icon-registry';
+import { ICON_UPLOAD_TYPES } from '@/constants/upload';
+import { useIconUpload } from '@/hooks/useIconUpload';
 import { DatePicker } from '@/components/ui/DatePicker';
 import { cn } from '@/libs/utils';
 import type { Category, TaskColor, TaskStatus } from '@/types';
@@ -97,6 +101,20 @@ export const TaskForm = forwardRef<TaskFormHandle, TaskFormProps>(function TaskF
 
   // ── UI state ─────────────────────────────────────────────────────────────────
   const [showPicker, setShowPicker] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
+  const { upload, uploading } = useIconUpload();
+  const [uploadError, setUploadError] = useState<string | null>(null);
+
+  async function handleIconFile(file: File) {
+    const result = await upload(file);
+    if ('url' in result) {
+      setIcon(result.url);
+      setShowPicker(false);
+      setUploadError(null);
+      return;
+    }
+    setUploadError(t(`taskForm.iconPicker.uploadError.${result.error}`));
+  }
   const [showAddCat, setShowAddCat] = useState(false);
   const [newCatName, setNewCatName] = useState('');
   const [depQuery, setDepQuery] = useState('');
@@ -230,23 +248,58 @@ export const TaskForm = forwardRef<TaskFormHandle, TaskFormProps>(function TaskF
             title={t('taskForm.iconPicker.pickEmoji')}
           >
             {icon ? (
-              <span className="text-[22px] leading-none">{icon}</span>
+              <span className="text-[22px] leading-none">
+                <Icon icon={icon} />
+              </span>
             ) : (
               <span className="text-[10px] text-[var(--text-lo)]">
                 {t('taskForm.iconPicker.pick')}
               </span>
             )}
           </button>
+          <button
+            type="button"
+            onClick={() => fileRef.current?.click()}
+            disabled={uploading}
+            className="text-[10px] text-[var(--text-lo)] hover:text-[var(--gold)] transition-colors cursor-pointer disabled:opacity-40"
+          >
+            {uploading ? '…' : t('taskForm.iconPicker.upload')}
+          </button>
           {icon && (
             <button
               type="button"
-              onClick={() => setIcon('')}
+              onClick={() => {
+                setIcon('');
+                setUploadError(null);
+              }}
               className="text-[10px] text-[var(--text-lo)] hover:text-[var(--rose)] transition-colors cursor-pointer"
             >
               {t('taskForm.iconPicker.clear')}
             </button>
           )}
+          <input
+            ref={fileRef}
+            type="file"
+            accept={ICON_UPLOAD_TYPES.join(',')}
+            className="hidden"
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              // Reset so picking the same file twice still fires a change.
+              e.target.value = '';
+              if (file) handleIconFile(file);
+            }}
+          />
         </div>
+        {uploadError && (
+          <p role="alert" className="text-[10px] text-[var(--rose)]">
+            {uploadError}
+          </p>
+        )}
+        {isUploadedIcon(icon) && (
+          <p className="text-[9px] text-[var(--text-lo)]">
+            {t('taskForm.iconPicker.uploadedHint')}
+          </p>
+        )}
         {showPicker && (
           <div className="mt-2 relative z-50">
             <Picker

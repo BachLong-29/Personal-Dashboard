@@ -8,6 +8,7 @@ import { useTranslations } from 'next-intl';
 import { cn, firstLine } from '@/libs/utils';
 
 import { ProjectBadge } from '@/components/common/ProjectBadge';
+import { SessionPlanner, type PlannerTask } from '@/features/schedule/components/SessionPlanner';
 import { useTaskBlocks } from '@/features/schedule/hooks/useScheduleBlocks';
 import { useOnClickOutside } from '@/hooks';
 
@@ -316,7 +317,24 @@ function ExpandedPanel({
   onClone?: (task: UITask) => void;
   onMoveToNextDay?: (task: UITask) => void;
 }) {
+  const t = useTranslations('tasks');
   const [lightbox, setLightbox] = useState<string | null>(null);
+  const [planning, setPlanning] = useState(false);
+
+  // Only one card is expanded at a time, so the planner lives here rather than
+  // being threaded down four levels from the page that owns the day view.
+  const plannerTask: PlannerTask | null =
+    task.sourceId && task.startDate
+      ? {
+          id: task.sourceId,
+          name: task.title,
+          icon: task.icon,
+          color: task.color,
+          duration: task.est,
+          startDate: task.startDate,
+          endDate: task.endDate,
+        }
+      : null;
 
   // Scheduled work sessions — only tasks carry schedule blocks.
   const { data: sessions = [] } = useTaskBlocks(task.source === 'task' ? task.sourceId : undefined);
@@ -370,8 +388,29 @@ function ExpandedPanel({
       {/* Scheduled sessions */}
       {sortedSessions.length > 0 && (
         <div className="mb-3">
-          <div className="text-[8px] tracking-[0.12em] text-[var(--text-lo)] font-bold uppercase mb-1.5 font-[var(--font-title)]">
-            🗓 Đã lên lịch ({sortedSessions.length})
+          <div className="mb-1.5 flex items-center gap-2">
+            <span className="text-[8px] tracking-[0.12em] text-[var(--text-lo)] font-bold uppercase font-[var(--font-title)]">
+              🗓 Đã lên lịch ({sortedSessions.length})
+            </span>
+            {plannerTask && (
+              <button
+                type="button"
+                className={cn(
+                  'ml-auto flex items-center gap-1 rounded-[var(--r-sm)] px-1.5 py-0.5',
+                  'border border-[var(--border)] text-[8px] font-bold tracking-[0.1em] uppercase',
+                  'text-[var(--text-lo)] transition-colors',
+                  'hover:border-[var(--gold)] hover:text-[var(--gold)]',
+                )}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setPlanning(true);
+                }}
+                title={t('questCard.editSessions')}
+                aria-label={t('questCard.editSessions')}
+              >
+                ✎ {t('questCard.editSessions')}
+              </button>
+            )}
           </div>
           <div className="flex flex-col gap-1">
             {sortedSessions.map((s) => (
@@ -634,6 +673,12 @@ function ExpandedPanel({
           Rescheduled — original slot cancelled
         </p>
       )}
+
+      <SessionPlanner
+        open={planning && plannerTask !== null}
+        task={plannerTask}
+        onClose={() => setPlanning(false)}
+      />
     </div>
   );
 }

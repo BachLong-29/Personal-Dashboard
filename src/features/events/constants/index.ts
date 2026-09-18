@@ -25,7 +25,3 @@ export const DAY_SHORT: Record<HabitDay, string> = {
   sat: 'Sat',
   sun: 'Sun',
 };
-
-/** Mirrors the limits in src/app/api/v1/upload/attachment/route.ts. */
-export const ICON_UPLOAD_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
-export const ICON_UPLOAD_MAX_BYTES = 5 * 1024 * 1024;
