@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useTranslations } from 'next-intl';
 
 import { cn } from '@/libs/utils';
 
@@ -162,6 +161,11 @@ export function ActiveBlock({ tasks }: ActiveBlockProps) {
   const displaySlotId = activeTask?.slot ?? currentSlot ?? 'evening';
   const displaySlot = SLOTS.find((s) => s.id === displaySlotId) ?? EVENING_SLOT;
 
+  // Nothing running needs no announcement — the day's list underneath already
+  // shows there is nothing to run, and the banner was taking a block of screen
+  // to repeat it.
+  if (!activeTask) return null;
+
   return (
     <>
       <style>{`
@@ -171,17 +175,13 @@ export function ActiveBlock({ tasks }: ActiveBlockProps) {
         }
       `}</style>
 
-      {activeTask ? (
-        <ActiveState
-          task={activeTask}
-          slotMeta={displaySlot}
-          remainingMs={windowEndsMs}
-          isTimed={isTimed}
-          now={now}
-        />
-      ) : (
-        <IdleState now={now} />
-      )}
+      <ActiveState
+        task={activeTask}
+        slotMeta={displaySlot}
+        remainingMs={windowEndsMs}
+        isTimed={isTimed}
+        now={now}
+      />
     </>
   );
 }
@@ -335,36 +335,6 @@ function ActiveState({ task, slotMeta, remainingMs, isTimed, now }: ActiveStateP
   );
 }
 
-// ─── Idle state ───────────────────────────────────────────────────────────────
-
-function IdleState({ now }: { now: Date }) {
-  const t = useTranslations('tasks');
-
-  return (
-    <div className={idleWrap}>
-      <div className={idlePulse} />
-
-      <div className="flex-1 min-w-0">
-        <div className="text-[9px] font-black tracking-[0.14em] font-[var(--font-title)] text-[var(--text-lo)] uppercase mb-[3px]">
-          {t('activeBlock.idleTitle', { time: fmtClock(now) })}
-        </div>
-        <div className="text-[12px] font-semibold text-[var(--text-mid)]">
-          {t('activeBlock.idleSubtitle')}
-        </div>
-        {/* Hidden on mobile — reclaims vertical space for the task list, the
-            title above already says the same thing in fewer words. */}
-        <div className="hidden sm:block text-[9px] text-[var(--text-lo)] mt-[2px]">
-          {t('activeBlock.idleDescription')}
-        </div>
-      </div>
-
-      <div className="hidden sm:block text-[28px] opacity-15 shrink-0 font-[var(--font-title)]">
-        ◈
-      </div>
-    </div>
-  );
-}
-
 // ─── Style constants ──────────────────────────────────────────────────────────
 
 const activeWrap =
@@ -372,8 +342,3 @@ const activeWrap =
 
 const pulse =
   'w-2 h-2 rounded-full bg-[var(--violet)] shadow-[0_0_8px_var(--violet-glow)] animate-pulse shrink-0';
-
-const idleWrap =
-  'flex items-center gap-3 mx-2 my-1.5 px-3 py-2 sm:mx-3 sm:my-2 sm:px-4 sm:py-3 bg-[var(--panel2)] border border-[var(--border)] rounded-[var(--r-sm)] shrink-0 opacity-60';
-
-const idlePulse = 'w-2 h-2 rounded-full border border-[var(--border)] shrink-0 opacity-50';
