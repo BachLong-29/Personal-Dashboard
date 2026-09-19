@@ -730,8 +730,7 @@
       "iconPicker": {
         "pickEmoji": "Chọn emoji",
         "pick": "Chọn",
-        "clear": "✕ xóa",
-        "upload": "↑ tải ảnh",
+        "upload": "Tải ảnh",
         "uploadedHint": "Ảnh tải lên — hiển thị ở cỡ icon, nên chọn hình đơn giản.",
         "uploadError": {"type": "Chỉ nhận JPG, PNG, WebP hoặc GIF.", "size": "Ảnh phải nhỏ hơn 5 MB.", "failed": "Tải ảnh thất bại. Thử lại."}
       },

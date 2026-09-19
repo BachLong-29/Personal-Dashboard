@@ -730,8 +730,7 @@
       "iconPicker": {
         "pickEmoji": "Pick emoji",
         "pick": "Pick",
-        "clear": "✕ clear",
-        "upload": "↑ upload",
+        "upload": "Upload image",
         "uploadedHint": "Uploaded image — shown at icon size, so keep it simple.",
         "uploadError": {"type": "Use a JPG, PNG, WebP or GIF.", "size": "Image must be under 5 MB.", "failed": "Upload failed. Try again."}
       },

@@ -257,26 +257,14 @@ export const TaskForm = forwardRef<TaskFormHandle, TaskFormProps>(function TaskF
               </span>
             )}
           </button>
-          <button
-            type="button"
-            onClick={() => fileRef.current?.click()}
+          <Button
+            size="sm"
+            variant="ghost"
             disabled={uploading}
-            className="text-[10px] text-[var(--text-lo)] hover:text-[var(--gold)] transition-colors cursor-pointer disabled:opacity-40"
+            onClick={() => fileRef.current?.click()}
           >
             {uploading ? '…' : t('taskForm.iconPicker.upload')}
-          </button>
-          {icon && (
-            <button
-              type="button"
-              onClick={() => {
-                setIcon('');
-                setUploadError(null);
-              }}
-              className="text-[10px] text-[var(--text-lo)] hover:text-[var(--rose)] transition-colors cursor-pointer"
-            >
-              {t('taskForm.iconPicker.clear')}
-            </button>
-          )}
+          </Button>
           <input
             ref={fileRef}
             type="file"
