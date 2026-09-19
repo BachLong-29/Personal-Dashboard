@@ -209,10 +209,11 @@ export function EventFormModal({ open, onClose, event }: Props) {
               disabled={saving || uploading}
               aria-expanded={showPicker}
               className={cn(
-                'flex h-11 w-11 items-center justify-center rounded-[var(--r-sm)] border text-[22px] transition-all',
+                'flex h-11 w-11 items-center justify-center text-[22px] transition-all duration-150',
+                'rounded-[var(--r-md)] border bg-[var(--bg-2)]',
                 showPicker
                   ? 'border-[var(--gold)] shadow-[0_0_10px_oklch(0.74_0.17_85_/_0.3)]'
-                  : 'border-[var(--border)] hover:border-[var(--border-hi)]',
+                  : 'border-[var(--border)] hover:border-[var(--border-hi)] hover:bg-[var(--bg-3)]',
               )}
             >
               <Icon icon={icon} />
@@ -225,16 +226,6 @@ export function EventFormModal({ open, onClose, event }: Props) {
             >
               {uploading ? '…' : 'Upload image'}
             </Button>
-            {isUploadedIcon(icon) && (
-              <Button
-                size="sm"
-                variant="ghost"
-                disabled={saving || uploading}
-                onClick={() => setIcon(DEFAULT_EVENT_ICON)}
-              >
-                Reset
-              </Button>
-            )}
             <input
               ref={fileRef}
               type="file"
@@ -251,6 +242,11 @@ export function EventFormModal({ open, onClose, event }: Props) {
           {uploadError && (
             <p role="alert" className="text-[10px] text-[var(--rose)]">
               {uploadError}
+            </p>
+          )}
+          {isUploadedIcon(icon) && (
+            <p className="text-[9px] text-[var(--text-lo)]">
+              Uploaded image — shown at icon size, so keep it simple.
             </p>
           )}
           {showPicker && (
