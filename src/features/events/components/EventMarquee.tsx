@@ -11,24 +11,10 @@ import { cn } from '@/libs/utils';
 import type { EventOccurrence } from '@/types';
 
 import { useEventOccurrences } from '../hooks/useEvents';
+import { isEventLive, LIVE_TICK_MS } from '../utils/live';
 
 /** Pixels per second the strip travels — slow enough to read while walking past. */
 const SCROLL_SPEED = 36;
-
-/** How often the strip re-checks which event is on air. */
-const LIVE_TICK_MS = 30_000;
-
-/** Is this occurrence happening right now? */
-function isLive(occ: EventOccurrence, now: Date): boolean {
-  // An all-day event is on for the whole day, which would leave it burning from
-  // midnight — the effect is meant to say "this is happening at this moment".
-  if (occ.allDay || !occ.startTime || occ.duration <= 0) return false;
-
-  const [h = 0, m = 0] = occ.startTime.split(':').map(Number);
-  const minutesNow = now.getHours() * 60 + now.getMinutes();
-  const start = h * 60 + m;
-  return minutesNow >= start && minutesNow < start + occ.duration;
-}
 
 /**
  * Guard against a pathological repeat count when a single pass is very narrow
@@ -71,7 +57,7 @@ export function EventMarquee() {
     return () => clearInterval(timer);
   }, []);
 
-  const anyLive = events.some((occ) => isLive(occ, now));
+  const anyLive = events.some((occ) => isEventLive(occ, now));
 
   const x = useMotionValue(0);
   const shellRef = useRef<HTMLDivElement>(null);
