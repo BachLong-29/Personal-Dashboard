@@ -98,7 +98,9 @@
       "close": "Close"
     },
     "select": {
-      "placeholder": "Select an option"
+      "placeholder": "Select an option",
+      "search": "Search…",
+      "noResults": "No matches"
     },
     "commandPalette": {
       "placeholder": "Run a command…",

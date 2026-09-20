@@ -19,6 +19,13 @@ export interface SelectOption {
   value: string;
   label: ReactNode;
   disabled?: boolean;
+  /** Text the filter matches on — needed only when `label` is not plain text. */
+  searchText?: string;
+}
+
+/** What a search query is compared against. */
+function optionText(option: SelectOption): string {
+  return option.searchText ?? (typeof option.label === 'string' ? option.label : option.value);
 }
 
 export interface SelectProps {
@@ -35,6 +42,12 @@ export interface SelectProps {
   id?: string;
   required?: boolean;
   disabled?: boolean;
+  /** Put a filter box above the list — worth it once the list outgrows a glance. */
+  searchable?: boolean;
+  /** Placeholder for that filter box; defaults to the shared translation. */
+  searchPlaceholder?: string;
+  /** Float the current choice to the top so it is never buried in a long list. */
+  selectedFirst?: boolean;
   containerClassName?: string;
   triggerClassName?: string;
   menuClassName?: string;
@@ -61,6 +74,9 @@ export function Select({
   id,
   required,
   disabled,
+  searchable,
+  searchPlaceholder,
+  selectedFirst,
   containerClassName,
   triggerClassName,
   menuClassName,
@@ -76,6 +92,7 @@ export function Select({
   const isControlled = value !== undefined;
   const [internalValue, setInternalValue] = useState(defaultValue);
   const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState('');
   const rootRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -86,13 +103,36 @@ export function Select({
 
   const currentValue = isControlled ? value : internalValue;
   const selectedOption = options.find((option) => option.value === currentValue);
-  const enabledOptions = useMemo(() => options.filter((option) => !option.disabled), [options]);
+  const visibleOptions = useMemo(() => {
+    const needle = query.trim().toLowerCase();
+    const matched = needle
+      ? options.filter((option) => optionText(option).toLowerCase().includes(needle))
+      : options;
+
+    if (!selectedFirst) return matched;
+
+    // Only the one move — everything else keeps its given order, so the list
+    // does not reshuffle under the reader between openings.
+    const chosen = matched.find((option) => option.value === currentValue);
+    return chosen ? [chosen, ...matched.filter((option) => option !== chosen)] : matched;
+  }, [options, query, selectedFirst, currentValue]);
+
+  const enabledOptions = useMemo(
+    () => visibleOptions.filter((option) => !option.disabled),
+    [visibleOptions],
+  );
 
   const [focusedValue, setFocusedValue] = useState<string | undefined>(() =>
     selectedOption?.disabled
       ? enabledOptions[0]?.value
       : (selectedOption?.value ?? enabledOptions[0]?.value),
   );
+
+  // Derived, not stored: a keystroke can filter the focused option away, and
+  // resolving that here is simpler than keeping the state in step with it.
+  const effectiveFocus = enabledOptions.some((option) => option.value === focusedValue)
+    ? focusedValue
+    : enabledOptions[0]?.value;
 
   const messageId = error
     ? `${selectId}-error`
@@ -109,6 +149,7 @@ export function Select({
   const [prevOpen, setPrevOpen] = useState(open);
   if (open !== prevOpen) {
     setPrevOpen(open);
+    setQuery('');
     if (open) {
       setFocusedValue(
         selectedOption && !selectedOption.disabled
@@ -155,11 +196,11 @@ export function Select({
   }, [open]);
 
   useEffect(() => {
-    if (!open || !focusedValue) return;
+    if (!open || !effectiveFocus) return;
 
-    const focusedIndex = options.findIndex((option) => option.value === focusedValue);
+    const focusedIndex = visibleOptions.findIndex((option) => option.value === effectiveFocus);
     optionRefs.current[focusedIndex]?.scrollIntoView({ block: 'nearest' });
-  }, [focusedValue, open, options]);
+  }, [effectiveFocus, open, visibleOptions]);
 
   const setValue = (nextValue: string) => {
     if (!isControlled) {
@@ -173,7 +214,7 @@ export function Select({
   const moveFocus = (direction: 1 | -1) => {
     if (enabledOptions.length === 0) return;
 
-    const focusedIndex = enabledOptions.findIndex((option) => option.value === focusedValue);
+    const focusedIndex = enabledOptions.findIndex((option) => option.value === effectiveFocus);
     const nextIndex =
       focusedIndex === -1
         ? 0
@@ -202,8 +243,8 @@ export function Select({
           setOpen(true);
           return;
         }
-        if (focusedValue) {
-          setValue(focusedValue);
+        if (effectiveFocus) {
+          setValue(effectiveFocus);
         }
         return;
       case 'Escape':
@@ -211,6 +252,29 @@ export function Select({
           event.preventDefault();
           setOpen(false);
         }
+        return;
+      default:
+        return;
+    }
+  };
+
+  // The filter box takes focus when the menu opens, so it has to answer the
+  // same keys the trigger does.
+  const handleSearchKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
+    switch (event.key) {
+      case 'ArrowDown':
+      case 'ArrowUp':
+        event.preventDefault();
+        moveFocus(event.key === 'ArrowDown' ? 1 : -1);
+        return;
+      case 'Enter':
+        event.preventDefault();
+        if (effectiveFocus) setValue(effectiveFocus);
+        return;
+      case 'Escape':
+        event.preventDefault();
+        setOpen(false);
+        triggerRef.current?.focus();
         return;
       default:
         return;
@@ -289,58 +353,85 @@ export function Select({
           createPortal(
             <div
               ref={menuRef}
-              id={listboxId}
-              role="listbox"
-              aria-labelledby={selectId}
               style={{ top: menuRect.top, left: menuRect.left, width: menuRect.width }}
               className={cn(
-                'fixed z-[1050] flex max-h-60 flex-col gap-0.5 overflow-y-auto rounded-[var(--r-md)]',
+                'fixed z-[1050] flex max-h-60 flex-col rounded-[var(--r-md)]',
                 'border border-[var(--gold)] bg-[var(--bg-2)] p-1 shadow-[var(--sh-3),var(--sh-glow-gold)]',
                 menuClassName,
               )}
             >
-              {options.map((option, index) => {
-                const selected = option.value === currentValue;
-                const focused = option.value === focusedValue;
+              {searchable && (
+                <input
+                  autoFocus
+                  value={query}
+                  onChange={(event) => setQuery(event.target.value)}
+                  onKeyDown={handleSearchKeyDown}
+                  placeholder={searchPlaceholder ?? t('select.search')}
+                  aria-label={searchPlaceholder ?? t('select.search')}
+                  aria-controls={listboxId}
+                  className={cn(
+                    'mb-1 w-full shrink-0 rounded-[var(--r-sm)] border border-[var(--border)]',
+                    'bg-[var(--bg-3)] px-3 py-2 text-[var(--t-3)] text-[var(--text-hi)]',
+                    'placeholder:text-[var(--text-dim)] focus:border-[var(--gold)] focus:outline-none',
+                  )}
+                />
+              )}
 
-                return (
-                  <button
-                    key={option.value}
-                    ref={(node) => {
-                      optionRefs.current[index] = node;
-                    }}
-                    type="button"
-                    role="option"
-                    aria-selected={selected}
-                    disabled={option.disabled}
-                    onMouseEnter={() => !option.disabled && setFocusedValue(option.value)}
-                    onClick={() => !option.disabled && setValue(option.value)}
-                    className={cn(
-                      'flex w-full items-center gap-2 rounded-[var(--r-sm)] px-3 py-2 text-left text-[var(--t-3)]',
-                      'transition-colors duration-[150ms] text-[var(--text-md)]',
-                      (focused || selected) && 'bg-[var(--surface-3)]',
-                      focused && 'text-[var(--text-hi)]',
-                      selected && 'text-[var(--gold)]',
-                      option.disabled && 'cursor-not-allowed opacity-40',
-                      optionClassName,
-                    )}
-                  >
-                    <span className="min-w-0 flex-1 truncate">
-                      {renderOption ? renderOption(option, { selected, focused }) : option.label}
-                    </span>
+              <div
+                id={listboxId}
+                role="listbox"
+                aria-labelledby={selectId}
+                className="flex min-h-0 flex-1 flex-col gap-0.5 overflow-y-auto"
+              >
+                {visibleOptions.map((option, index) => {
+                  const selected = option.value === currentValue;
+                  const focused = option.value === effectiveFocus;
 
-                    {selected && (
-                      <svg
-                        viewBox="0 0 16 16"
-                        className="h-3.5 w-3.5 shrink-0 fill-none stroke-current stroke-[1.8]"
-                        aria-hidden="true"
-                      >
-                        <path d="m3 8 3 3 7-7" />
-                      </svg>
-                    )}
-                  </button>
-                );
-              })}
+                  return (
+                    <button
+                      key={option.value}
+                      ref={(node) => {
+                        optionRefs.current[index] = node;
+                      }}
+                      type="button"
+                      role="option"
+                      aria-selected={selected}
+                      disabled={option.disabled}
+                      onMouseEnter={() => !option.disabled && setFocusedValue(option.value)}
+                      onClick={() => !option.disabled && setValue(option.value)}
+                      className={cn(
+                        'flex w-full items-center gap-2 rounded-[var(--r-sm)] px-3 py-2 text-left text-[var(--t-3)]',
+                        'transition-colors duration-[150ms] text-[var(--text-md)]',
+                        (focused || selected) && 'bg-[var(--surface-3)]',
+                        focused && 'text-[var(--text-hi)]',
+                        selected && 'text-[var(--gold)]',
+                        option.disabled && 'cursor-not-allowed opacity-40',
+                        optionClassName,
+                      )}
+                    >
+                      <span className="min-w-0 flex-1 truncate">
+                        {renderOption ? renderOption(option, { selected, focused }) : option.label}
+                      </span>
+
+                      {selected && (
+                        <svg
+                          viewBox="0 0 16 16"
+                          className="h-3.5 w-3.5 shrink-0 fill-none stroke-current stroke-[1.8]"
+                          aria-hidden="true"
+                        >
+                          <path d="m3 8 3 3 7-7" />
+                        </svg>
+                      )}
+                    </button>
+                  );
+                })}
+
+                {visibleOptions.length === 0 && (
+                  <p className="px-3 py-2 text-[var(--t-3)] text-[var(--text-dim)]">
+                    {t('select.noResults')}
+                  </p>
+                )}
+              </div>
             </div>,
             document.body,
           )}

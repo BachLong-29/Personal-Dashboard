@@ -157,6 +157,11 @@ export const TaskForm = forwardRef<TaskFormHandle, TaskFormProps>(function TaskF
   const resolvedTagId =
     tagId || defaultCategory?.id || (categories.length > 0 ? (categories[0] as Category).id : '');
 
+  const categoryOptions = (categories as Category[]).map((cat) => ({
+    value: cat.id,
+    label: cat.name,
+  }));
+
   const dateError =
     startDate && endDate && endDate.getTime() < startDate.getTime()
       ? 'End date must be on or after start date.'
@@ -432,18 +437,15 @@ export const TaskForm = forwardRef<TaskFormHandle, TaskFormProps>(function TaskF
           </div>
         )}
 
-        <div className="flex flex-wrap gap-1.5 max-h-[80px] overflow-y-auto">
-          {categories.map((cat) => (
-            <button
-              key={cat.id}
-              type="button"
-              onClick={() => setTagId(cat.id)}
-              className={cn(catChip, resolvedTagId === cat.id && catChipActive)}
-            >
-              {cat.name}
-            </button>
-          ))}
-        </div>
+        {/* A dropdown rather than a wrap of chips: the list keeps growing, and
+            three rows of pills were pushing the rest of the form off screen. */}
+        <Select
+          value={resolvedTagId}
+          onValueChange={setTagId}
+          options={categoryOptions}
+          searchable
+          selectedFirst
+        />
       </div>
 
       {/* ── Color ─────────────────────────────────────────────────────── */}
