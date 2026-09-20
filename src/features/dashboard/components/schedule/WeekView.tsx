@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import {
   DndContext,
@@ -48,7 +48,9 @@ import { parseLocalDate, todayISO } from '@/features/tasks/utils/date.utils';
 import type { ScheduleBlock, Task as CoreTask } from '@/types';
 import { useProfile } from '@/features/profile/hooks/useProfile';
 import { useScheduleBlocks } from '@/features/schedule/hooks/useScheduleBlocks';
+import { EventFlame } from '@/features/events/components/EventFlame';
 import { useEventOccurrences, useOverrideEvent } from '@/features/events/hooks/useEvents';
+import { isEventLive, LIVE_TICK_MS } from '@/features/events/utils/live';
 import type { EventOccurrence } from '@/types';
 
 interface WeekViewProps {
@@ -131,6 +133,14 @@ export function WeekView({
   });
   const { data: weekQuests = [] } = useQuests(weekStart, weekEnd);
   const { data: weekEvents = [] } = useEventOccurrences(weekStart, weekEnd);
+
+  // Only an event that is under way wears the artwork, so the grid needs a
+  // clock. Coarse on purpose: this re-renders the whole week.
+  const [now, setNow] = useState(() => new Date());
+  useEffect(() => {
+    const timer = setInterval(() => setNow(new Date()), LIVE_TICK_MS);
+    return () => clearInterval(timer);
+  }, []);
   const { mutate: overrideEvent } = useOverrideEvent();
   const { mutate: updateTask } = useUpdateTask();
   const { mutate: deleteTask } = useDeleteTask();
@@ -557,19 +567,27 @@ export function WeekView({
                           return (
                             <div
                               key={occ.id}
-                              className={cn(miniTask, miniTaskEvent, miniTaskNoGrab)}
+                              className={cn('relative', miniTask, miniTaskEvent, miniTaskNoGrab)}
                               style={{ borderLeftColor: item.color, borderLeftWidth: 2 }}
                               title={`${item.time ? item.time + ' ' : ''}${occ.title}`}
                               onClick={() => occ.recurring && setCancelling(occ)}
                             >
-                              <div className="flex items-center gap-1 w-full min-w-0">
-                                <span className={miniTaskIcon}>
-                                  <Icon icon={occ.icon} />
-                                </span>
-                                <span className={miniTaskName}>{occ.title}</span>
-                                {occ.recurring && <span className={miniRepeat}>↻</span>}
+                              {/* Behind the text, and only while the event is
+                                  actually on — the rest keep the plain chip. */}
+                              {isEventLive(occ, now) && <EventFlame />}
+
+                              {/* Positioned so it paints over the artwork — an
+                                  absolute sibling would otherwise sit on top. */}
+                              <div className="relative flex min-w-0 flex-col gap-0.5">
+                                <div className="flex items-center gap-1 w-full min-w-0">
+                                  <span className={miniTaskIcon}>
+                                    <Icon icon={occ.icon} />
+                                  </span>
+                                  <span className={miniTaskName}>{occ.title}</span>
+                                  {occ.recurring && <span className={miniRepeat}>↻</span>}
+                                </div>
+                                {item.time && <span className={miniTime}>{item.time}</span>}
                               </div>
-                              {item.time && <span className={miniTime}>{item.time}</span>}
                             </div>
                           );
                         }
