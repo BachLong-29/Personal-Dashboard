@@ -253,7 +253,11 @@ function DraggableCard({
     <div
       ref={setNodeRef}
       style={style}
-      className={cn('touch-none flex items-start gap-2', isDragging && 'opacity-40')}
+      // `touch-manipulation`, not `touch-none`: the drag only arms after a
+      // 250ms press, and until then dnd-kit cancels on the first few pixels of
+      // movement. `touch-none` bought nothing for that and cost the reader the
+      // ability to scroll the day with a finger on a card.
+      className={cn('touch-manipulation flex items-start gap-2', isDragging && 'opacity-40')}
       {...attributes}
       {...listeners}
     >
