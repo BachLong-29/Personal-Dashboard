@@ -98,7 +98,9 @@
       "close": "Đóng"
     },
     "select": {
-      "placeholder": "Chọn một tùy chọn"
+      "placeholder": "Chọn một tùy chọn",
+      "search": "Tìm kiếm…",
+      "noResults": "Không tìm thấy"
     },
     "commandPalette": {
       "placeholder": "Chạy một lệnh…",
