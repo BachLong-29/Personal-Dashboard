@@ -857,7 +857,9 @@ function DraggableItem({
       style={{
         transform: transform ? CSS.Translate.toString(transform) : undefined,
         opacity: isDragging ? 0 : 1,
-        touchAction: 'none',
+        // See SlotColumn: a press-and-hold drag must leave native panning
+        // alone, or the grid cannot be scrolled on a phone.
+        touchAction: 'manipulation',
       }}
       {...attributes}
       {...listeners}
