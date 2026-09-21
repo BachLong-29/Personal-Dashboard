@@ -68,6 +68,32 @@ const DashboardTopbar = (props: DashboardTopbarProps) => {
     router.push('/dashboard');
   };
 
+  /**
+   * The quick-add menu, which doubles as the only place the keyboard shortcuts
+   * are ever taught. Glyph style follows the ⌘K hint in the search bar.
+   * Shortcuts are left off the phone, where there is no keyboard to press.
+   */
+  const quickAddGroups = (withShortcuts: boolean) => [
+    {
+      items: [
+        {
+          key: 'task',
+          icon: '📋',
+          label: tDash('quickAddMenu.task'),
+          shortcut: withShortcuts ? '⌘⇧Q' : undefined,
+          onClick: openQuickAddTask,
+        },
+        {
+          key: 'transaction',
+          icon: '💰',
+          label: tDash('quickAddMenu.transaction'),
+          shortcut: withShortcuts ? '⌘⇧E' : undefined,
+          onClick: openQuickAddTransaction,
+        },
+      ],
+    },
+  ];
+
   const handleToggleLocale = () => {
     const currentIndex = locales.indexOf(locale);
     const nextLocale = locales[(currentIndex + 1) % locales.length] ?? locales[0];
@@ -95,24 +121,7 @@ const DashboardTopbar = (props: DashboardTopbarProps) => {
                 <span className="text-[15px] leading-none text-[var(--gold)]">＋</span>
               </button>
             }
-            groups={[
-              {
-                items: [
-                  {
-                    key: 'task',
-                    icon: '📋',
-                    label: tDash('quickAddMenu.task'),
-                    onClick: openQuickAddTask,
-                  },
-                  {
-                    key: 'transaction',
-                    icon: '💰',
-                    label: tDash('quickAddMenu.transaction'),
-                    onClick: openQuickAddTransaction,
-                  },
-                ],
-              },
-            ]}
+            groups={quickAddGroups(false)}
           />
           <button
             type="button"
@@ -193,6 +202,20 @@ const DashboardTopbar = (props: DashboardTopbarProps) => {
         {/* ── Desktop nav (1025px+): Streak | Bell | Logout ──────────────── */}
         <div className="hidden min-[1025px]:flex items-center gap-2">
           <div className={streakPill}>{tDash('streakDays', { count: char.streak })}</div>
+          {/* Creating anything had no home on desktop — only a shortcut nobody
+              was told about. */}
+          <Dropdown
+            trigger={
+              <button
+                type="button"
+                className={tabletMenuBtn}
+                aria-label={tDash('quickAddMenu.ariaLabel')}
+              >
+                <span className="text-[15px] leading-none text-[var(--gold)]">＋</span>
+              </button>
+            }
+            groups={quickAddGroups(true)}
+          />
           <button
             type="button"
             className={tabletMenuBtn}

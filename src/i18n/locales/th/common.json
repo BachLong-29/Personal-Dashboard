@@ -160,7 +160,9 @@
       "quests": "ภารกิจ",
       "habits": "นิสัย",
       "schedule": "ตารางเวลา",
-      "stats": "สถิติ"
+      "stats": "สถิติ",
+      "hero": "ฮีโร่",
+      "guild": "กิลด์"
     },
     "quests": {
       "title": "ภารกิจวันนี้",
@@ -189,7 +191,10 @@
       "habits": "นิสัย",
       "toggleHabits": "สลับนิสัย",
       "events": "กิจกรรม",
-      "toggleEvents": "สลับกิจกรรม"
+      "toggleEvents": "สลับกิจกรรม",
+      "showAll": "แสดงทั้งหมด",
+      "filtered": "กำลังกรอง",
+      "display": "การแสดงผล"
     },
     "analytics": {
       "title": "การวิเคราะห์รายสัปดาห์",

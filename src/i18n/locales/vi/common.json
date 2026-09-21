@@ -160,7 +160,9 @@
       "quests": "Nhiệm vụ",
       "habits": "Thói quen",
       "schedule": "Lịch trình",
-      "stats": "Thống kê"
+      "stats": "Thống kê",
+      "hero": "Anh hùng",
+      "guild": "Hội quán"
     },
     "quests": {
       "title": "Nhiệm vụ hôm nay",
@@ -189,7 +191,10 @@
       "habits": "Habit",
       "toggleHabits": "Ẩn hiện habit",
       "events": "Sự kiện",
-      "toggleEvents": "Ẩn hiện sự kiện"
+      "toggleEvents": "Ẩn hiện sự kiện",
+      "showAll": "Hiện tất cả",
+      "filtered": "Đang lọc",
+      "display": "Hiển thị"
     },
     "analytics": {
       "title": "Phân tích tuần",

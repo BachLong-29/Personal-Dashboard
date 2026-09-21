@@ -241,10 +241,16 @@ export default function MainDashboard() {
         <DashboardTopbar char={char} dateStr={dateStr} />
 
         {/* Desktop / Tablet layout (1025px+) */}
-        {/* 1025–1279px: 2 columns [220px + 1fr]. 1280px+: 3 columns [220px + 1fr + 260px] */}
-        <div className="hidden min-[1025px]:grid min-[1025px]:grid-cols-[220px_1fr] xl:grid-cols-[220px_1fr_260px] gap-3 p-3 flex-1 overflow-hidden min-h-0">
+        {/* 1025–1279px: 2 columns [240px + 1fr]. 1280px+: 3 columns [220px + 1fr + 260px] */}
+        <div className="hidden min-[1025px]:grid min-[1025px]:grid-cols-[240px_1fr] xl:grid-cols-[220px_1fr_260px] gap-3 p-3 flex-1 overflow-hidden min-h-0">
           <div className="flex flex-col gap-2.5 overflow-y-auto overflow-x-hidden">
             <LeftColumn char={char} settings={settings} />
+            {/* Below 1280px there is no third column, and the bottom nav that
+                would otherwise reach these is already hidden from 1025px — so
+                they ride along here rather than being unreachable. */}
+            <div className="flex flex-col gap-2.5 xl:hidden">
+              <RightColumn settings={settings} quote={quote} onOpenWeek={handleOpenWeekView} />
+            </div>
           </div>
           <CenterColumn
             tab={centerTab}
