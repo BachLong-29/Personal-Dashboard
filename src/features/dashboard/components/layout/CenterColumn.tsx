@@ -89,7 +89,9 @@ export const CenterColumn = memo(function CenterColumn({
 // ── Layout ────────────────────────────────────────────────────────────────────
 
 const centerCol = 'flex flex-col gap-2.5 overflow-hidden min-h-0';
-const centerTabs = 'flex gap-1 shrink-0';
+// Desktop only. Below 1025px the bottom nav already carries these same three,
+// and two rows of the same choice is one row of the day list.
+const centerTabs = 'hidden min-[1025px]:flex gap-1 shrink-0';
 
 // ── Tab buttons ───────────────────────────────────────────────────────────────
 
