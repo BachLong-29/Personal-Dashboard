@@ -160,7 +160,9 @@
       "quests": "Quests",
       "habits": "Habits",
       "schedule": "Schedule",
-      "stats": "Stats"
+      "stats": "Stats",
+      "hero": "Hero",
+      "guild": "Guild"
     },
     "quests": {
       "title": "Today's Quests",
@@ -189,7 +191,10 @@
       "habits": "Habits",
       "toggleHabits": "Toggle habits",
       "events": "Events",
-      "toggleEvents": "Toggle events"
+      "toggleEvents": "Toggle events",
+      "showAll": "Show all",
+      "filtered": "Filters on",
+      "display": "Display"
     },
     "analytics": {
       "title": "Weekly Analytics",

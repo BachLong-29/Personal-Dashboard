@@ -7,6 +7,7 @@ import { cn } from '@/libs/utils';
 import { useUIStore } from '@/stores/ui.store';
 
 import { Link } from '@/i18n/navigation';
+import { ScheduleDisplayMenu } from './ScheduleDisplayMenu';
 import { useScheduleState, type ScheduleSubTab } from '../../hooks/useScheduleState';
 import type { CenterTab, Quest } from '../../types';
 import { MonthView } from './MonthView';
@@ -26,15 +27,12 @@ interface ScheduleViewProps {
   onReward?: (reward: { xp: number; coins: number }) => void;
 }
 
-const CURRENT_YEAR = new Date().getFullYear();
 /**
  * Sub-tabs on offer. Month is parked for now — put `'month'` back here and the
  * view, its state and its navigation all light up again; nothing else was
  * removed.
  */
 const SUB_TABS = ['day', 'week'] as const;
-
-const YEARS = Array.from({ length: 5 }, (_, i) => CURRENT_YEAR - 2 + i);
 
 export function ScheduleView({
   onAddQuest,
@@ -89,6 +87,12 @@ export function ScheduleView({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [subTabRequest?.nonce]);
 
+  // Three switches that hide content, and no other sign they are off — a view
+  // that silently drops half the week reads as lost data, not as a filter.
+  const hiddenCount = [display.showQuests, display.showHabits, display.showEvents].filter(
+    (on) => !on,
+  ).length;
+
   function handleNavigateDay(date: string) {
     setDayDate(date);
     setTab('day');
@@ -101,7 +105,7 @@ export function ScheduleView({
 
   return (
     <div className={outerWrap}>
-      {/* Sub-tab bar + display toggles + year selector */}
+      {/* Sub-tab bar + display toggles */}
       <div className={controlBar}>
         <div className={subTabGroup}>
           {SUB_TABS.map((t) => (
@@ -117,60 +121,105 @@ export function ScheduleView({
         </div>
 
         <div className={rightControls}>
+          {/* Below sm the five labelled buttons cannot share a row with the
+              sub-tabs, and a second row comes straight out of the day list.
+              Only the three filters collapse — they are a set, and the control
+              still shows which of them are off. The two single actions stay
+              out here, one tap each. */}
+          <div className="flex items-center gap-1.5 sm:hidden">
+            <button
+              type="button"
+              className={compactBtn}
+              onClick={openShareAgenda}
+              title={tShare('title')}
+              aria-label={tShare('title')}
+            >
+              ⇪
+            </button>
+            <Link
+              href="/tasks"
+              className={cn(compactBtn, compactBtnQuestLog)}
+              title={tDash('scheduleView.openQuestLog')}
+              aria-label={tDash('scheduleView.openQuestLog')}
+            >
+              ❖
+            </Link>
+            {/* Last, because it is the only one that opens something rather
+                than doing something. */}
+            <ScheduleDisplayMenu display={display} setDisplay={setDisplay} />
+          </div>
+
           {/* Sits before the display toggles so it never splits that pair. */}
           <button
             type="button"
-            className={toggleBtn}
+            className={cn(toggleBtn, 'hidden sm:inline-block')}
             onClick={openShareAgenda}
             title={tShare('title')}
             aria-label={tShare('title')}
           >
-            ⇪ <span className="hidden sm:inline">{tShare('short')}</span>
+            ⇪ {tShare('short')}
           </button>
           <button
             type="button"
-            className={cn(toggleBtn, display.showQuests && toggleBtnActive)}
+            className={cn(
+              toggleBtn,
+              'hidden sm:inline-block',
+              display.showQuests && toggleBtnActive,
+            )}
             onClick={() => setDisplay({ showQuests: !display.showQuests })}
+            // A switch, not a link: screen readers should say whether it is on.
+            aria-pressed={display.showQuests}
             title={tDash('scheduleView.toggleQuests')}
           >
-            ⚡ <span className="hidden sm:inline">{tDash('scheduleView.quests')}</span>
+            ⚡ {tDash('scheduleView.quests')}
           </button>
           <button
             type="button"
-            className={cn(toggleBtn, display.showHabits && toggleBtnActive)}
+            className={cn(
+              toggleBtn,
+              'hidden sm:inline-block',
+              display.showHabits && toggleBtnActive,
+            )}
             onClick={() => setDisplay({ showHabits: !display.showHabits })}
+            // A switch, not a link: screen readers should say whether it is on.
+            aria-pressed={display.showHabits}
             title={tDash('scheduleView.toggleHabits')}
           >
-            ✦ <span className="hidden sm:inline">{tDash('scheduleView.habits')}</span>
+            ✦ {tDash('scheduleView.habits')}
           </button>
           <button
             type="button"
-            className={cn(toggleBtn, display.showEvents && toggleBtnActive)}
+            className={cn(
+              toggleBtn,
+              'hidden sm:inline-block',
+              display.showEvents && toggleBtnActive,
+            )}
             onClick={() => setDisplay({ showEvents: !display.showEvents })}
+            // A switch, not a link: screen readers should say whether it is on.
+            aria-pressed={display.showEvents}
             title={tDash('scheduleView.toggleEvents')}
           >
-            📅 <span className="hidden sm:inline">{tDash('scheduleView.events')}</span>
+            📅 {tDash('scheduleView.events')}
           </button>
 
-          <select
-            className={yearSelect}
-            value={year}
-            onChange={(e) => setYear(Number(e.target.value))}
-          >
-            {YEARS.map((y) => (
-              <option key={y} value={y}>
-                {y}
-              </option>
-            ))}
-          </select>
+          {hiddenCount > 0 && (
+            <button
+              type="button"
+              className={cn(filterAlert, 'hidden sm:inline-block')}
+              title={tDash('scheduleView.filtered')}
+              onClick={() => setDisplay({ showQuests: true, showHabits: true, showEvents: true })}
+            >
+              ⚠ {tDash('scheduleView.showAll')} ({hiddenCount})
+            </button>
+          )}
 
           <Link
             href="/tasks"
-            className={taskLogBtn}
+            className={cn(taskLogBtn, 'hidden sm:inline-block')}
             title={tDash('scheduleView.openQuestLog')}
             aria-label={tDash('scheduleView.openQuestLog')}
           >
-            ❖ <span className="hidden sm:inline">{tDash('questLog')}</span>
+            ❖ {tDash('questLog')}
           </Link>
         </div>
       </div>
@@ -224,26 +273,45 @@ export function ScheduleView({
 
 const outerWrap = 'flex flex-col flex-1 min-h-0 overflow-hidden';
 
+// One row at every width. Wrapping cost a second row on a phone, and the day
+// list below is what that height came out of.
 const controlBar =
-  'flex items-center gap-1.5 sm:gap-2 px-2 py-1.5 sm:px-3 sm:py-2 border-b border-[var(--border)] shrink-0 flex-wrap';
+  'flex items-center gap-1.5 sm:gap-2 px-2 py-1.5 sm:px-3 sm:py-2 border-b border-[var(--border)] shrink-0 flex-nowrap';
 
-const subTabGroup = 'flex gap-1';
+const subTabGroup = 'flex gap-1 shrink-0';
 const subTab =
-  'px-2.5 py-1 text-[9px] font-bold tracking-[0.1em] uppercase font-[var(--font-title)] rounded border border-[var(--border)] bg-[var(--panel2)] text-[var(--text-mid)] cursor-pointer transition-all hover:text-[var(--text-hi)] hover:border-[oklch(0.74_0.17_85_/_0.3)]';
+  'px-2.5 py-1 text-[10px] font-bold tracking-[0.1em] uppercase font-[var(--font-title)] rounded border border-[var(--border)] bg-[var(--panel2)] text-[var(--text-mid)] cursor-pointer transition-all hover:text-[var(--text-hi)] hover:border-[oklch(0.74_0.17_85_/_0.3)]';
 const subTabActive =
   'text-[var(--gold)] border-[oklch(0.74_0.17_85_/_0.5)] bg-[oklch(0.74_0.17_85_/_0.08)] shadow-[0_0_8px_var(--gold-glow)]';
 
-const rightControls = 'flex items-center gap-1.5 ml-auto flex-wrap';
+/**
+ * Right-aligned while the controls fit, and a swipeable strip once they do
+ * not: the last button sits half-cut against the edge, which is the cue that
+ * there is more. Kept scrollable rather than collapsed into a menu so every
+ * control stays one tap away.
+ */
+const rightControls = cn(
+  // The scroll is the wide-screen safety net only; below sm the controls are
+  // collapsed to two, and an overflow here would clip their menus.
+  'flex items-center gap-1.5 ml-auto min-w-0 flex-nowrap sm:overflow-x-auto',
+  '[&>*]:shrink-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden',
+);
 
 const toggleBtn =
-  'px-2 py-1 text-[9px] font-bold tracking-[0.08em] uppercase font-[var(--font-title)] rounded border border-[var(--border)] bg-[var(--panel2)] text-[var(--text-lo)] cursor-pointer transition-all hover:text-[var(--text-mid)]';
+  'px-2 py-1 text-[10px] font-bold tracking-[0.08em] uppercase font-[var(--font-title)] rounded border border-[var(--border)] bg-[var(--panel2)] text-[var(--text-lo)] cursor-pointer transition-all hover:text-[var(--text-mid)]';
+/** Icon-only twins of the wide-screen buttons, sized for a thumb. */
+const compactBtn =
+  'flex items-center justify-center rounded border border-[var(--border)] bg-[var(--panel2)] px-2 py-1 text-[13px] leading-none text-[var(--text-mid)] no-underline cursor-pointer transition-colors hover:text-[var(--text-hi)]';
+const compactBtnQuestLog =
+  'border-[oklch(0.66_0.22_295_/_0.4)] bg-[oklch(0.66_0.22_295_/_0.06)] text-[var(--violet)]';
+
+const filterAlert =
+  'px-2 py-1 text-[10px] font-bold tracking-[0.08em] uppercase font-[var(--font-title)] rounded border border-[var(--warning)] bg-[var(--warning)]/10 text-[var(--warning)] cursor-pointer transition-all hover:bg-[var(--warning)]/20';
+
 const toggleBtnActive =
   'text-[var(--gold)] border-[oklch(0.74_0.17_85_/_0.4)] bg-[oklch(0.74_0.17_85_/_0.06)]';
-
-const yearSelect =
-  'bg-[var(--panel2)] border border-[var(--border)] rounded text-[10px] text-[var(--text-hi)] px-2 py-1 cursor-pointer focus:outline-none focus:border-[var(--gold)] transition-colors appearance-none';
 
 const contentArea = 'flex-1 min-h-0 overflow-hidden flex flex-col';
 
 const taskLogBtn =
-  'px-2 py-1 text-[9px] font-bold tracking-[0.08em] uppercase font-[var(--font-title)] rounded border border-[oklch(0.66_0.22_295_/_0.4)] bg-[oklch(0.66_0.22_295_/_0.06)] text-[var(--violet)] no-underline transition-all hover:bg-[oklch(0.66_0.22_295_/_0.14)] hover:border-[oklch(0.66_0.22_295_/_0.65)]';
+  'px-2 py-1 text-[10px] font-bold tracking-[0.08em] uppercase font-[var(--font-title)] rounded border border-[oklch(0.66_0.22_295_/_0.4)] bg-[oklch(0.66_0.22_295_/_0.06)] text-[var(--violet)] no-underline transition-all hover:bg-[oklch(0.66_0.22_295_/_0.14)] hover:border-[oklch(0.66_0.22_295_/_0.65)]';

@@ -49,14 +49,17 @@ export const MobileNav = memo(function MobileNav({
     {
       id: 'character',
       icon: '🧝',
-      label: 'Hero',
+      label: t('tabs.hero'),
       isActive: mobilePanel === 'character',
       onClick: () => onPanelChange('character'),
     },
     {
-      id: 'timer',
-      icon: '⏱',
-      label: 'Timer',
+      // The panel holds projects, the week ahead and the gold ticker — there is
+      // no timer in it, and a nav that names the wrong thing is worse than a
+      // vague one.
+      id: 'guild',
+      icon: '🏰',
+      label: t('tabs.guild'),
       isActive: mobilePanel === 'timer',
       onClick: () => onPanelChange('timer'),
     },
