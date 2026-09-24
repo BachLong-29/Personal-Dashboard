@@ -2,6 +2,13 @@
   "app": {
     "name": "Personal Dashboard"
   },
+  "notFound": {
+    "eyebrow": "UNCHARTED",
+    "title": "This path leads nowhere",
+    "message": "The page you are looking for is not on any map. It may have been moved, or it may never have existed.",
+    "home": "Return to base",
+    "back": "Go back"
+  },
   "nav": {
     "home": "Home",
     "dashboard": "Dashboard",

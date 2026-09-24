@@ -2,6 +2,13 @@
   "app": {
     "name": "Personal Dashboard"
   },
+  "notFound": {
+    "eyebrow": "VÙNG CHƯA VẼ",
+    "title": "Lối này không dẫn tới đâu",
+    "message": "Trang bạn tìm không có trên bản đồ. Có thể nó đã được dời đi, hoặc chưa từng tồn tại.",
+    "home": "Về trang chủ",
+    "back": "Quay lại"
+  },
   "nav": {
     "home": "Trang chủ",
     "dashboard": "Bảng điều khiển",
