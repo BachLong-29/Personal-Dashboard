@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { motion } from 'framer-motion';
+import { motion, useReducedMotion } from 'framer-motion';
 
 import { Icon } from '@/components/common/Icon';
 import { Badge } from '@/components/ui/Badge';
@@ -15,12 +15,14 @@ import { useCategories } from '@/features/dashboard/hooks/useCategories';
 import type { Character } from '@/features/dashboard/types';
 import { buildEmptyChar, profileToCharacter } from '@/features/dashboard/utils/character.utils';
 import { useProfile } from '@/features/profile/hooks/useProfile';
+import { todayISO } from '@/features/tasks/utils/date.utils';
 import { COLOR_CSS } from '@/features/projects/constants';
 import { cn } from '@/libs/utils';
 import type { EventDTO } from '@/types';
 
 import { DAY_ORDER, DAY_SHORT } from '../constants';
-import { useDeleteEvent, useEvents, useUpdateEvent } from '../hooks/useEvents';
+import { useDeleteEvent, useEventOccurrences, useEvents, useUpdateEvent } from '../hooks/useEvents';
+import { isEventLive, LIVE_TICK_MS } from '../utils/live';
 import { EventFormModal } from './EventFormModal';
 
 /** "Every 2 weeks · Mon, Wed · 09:00" — one line that says when it happens. */
@@ -74,6 +76,25 @@ export function EventsPage() {
   const [deleting, setDeleting] = useState<EventDTO | null>(null);
 
   const categoryName = useMemo(() => new Map(categories.map((c) => [c.id, c.name])), [categories]);
+
+  // ── Which of these is on right now? ────────────────────────────────────────
+  // Asked of today's expanded occurrences rather than worked out from the rule
+  // here: the server already handles intervals, overrides and skipped dates,
+  // and a second implementation of that would drift from the first.
+  const reduceMotion = useReducedMotion();
+  const [now, setNow] = useState(() => new Date());
+  useEffect(() => {
+    const timer = setInterval(() => setNow(new Date()), LIVE_TICK_MS);
+    return () => clearInterval(timer);
+  }, []);
+
+  const today = todayISO();
+  const { data: todayOccurrences = [] } = useEventOccurrences(today, today);
+  const liveIds = useMemo(
+    () =>
+      new Set(todayOccurrences.filter((occ) => isEventLive(occ, now)).map((occ) => occ.eventId)),
+    [todayOccurrences, now],
+  );
 
   // The empty state carries its own centred CTA — two of the same button on an
   // otherwise blank page is noise, so the header one stands down for it.
@@ -162,106 +183,124 @@ export function EventsPage() {
 
         {!isLoading && !isError && sorted.length > 0 && (
           <div className="flex flex-col gap-2">
-            {sorted.map((event, i) => (
-              <motion.div
-                key={event.id}
-                initial={{ opacity: 0, y: 6 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: Math.min(i * 0.03, 0.3), duration: 0.22 }}
-                className={cn(
-                  'flex flex-col gap-3 rounded-[var(--r-md)] border border-[var(--border)]',
-                  'bg-[var(--panel)] p-3 transition-colors hover:border-[var(--border-hi)]',
-                  'sm:flex-row sm:items-center sm:gap-4',
-                )}
-                style={{
-                  borderLeft: `3px solid ${COLOR_CSS[event.color]}`,
-                  opacity: event.paused ? 0.55 : 1,
-                }}
-              >
-                {/* Identity — icon rides beside the title instead of claiming
+            {sorted.map((event, i) => {
+              const live = liveIds.has(event.id);
+              return (
+                <motion.div
+                  key={event.id}
+                  initial={{ opacity: 0, y: 6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: Math.min(i * 0.03, 0.3), duration: 0.22 }}
+                  className={cn(
+                    'flex flex-col gap-3 rounded-[var(--r-md)] border border-[var(--border)]',
+                    'bg-[var(--panel)] p-3 transition-colors hover:border-[var(--border-hi)]',
+                    'sm:flex-row sm:items-center sm:gap-4',
+                    live && 'border-[var(--rose)] shadow-[0_0_16px_var(--rose-glow)]',
+                  )}
+                  style={{
+                    borderLeft: `3px solid ${COLOR_CSS[event.color]}`,
+                    opacity: event.paused ? 0.55 : 1,
+                  }}
+                >
+                  {/* Identity — icon rides beside the title instead of claiming
                     its own line, which is what made the card so tall. */}
-                <div className="flex min-w-0 flex-1 items-center gap-3">
-                  <span
-                    className={cn(
-                      'flex h-9 w-9 shrink-0 items-center justify-center text-[18px]',
-                      'rounded-[var(--r-sm)] border border-[var(--border)] bg-[var(--bg-2)]',
-                    )}
-                  >
-                    <Icon icon={event.icon} />
-                  </span>
+                  <div className="flex min-w-0 flex-1 items-center gap-3">
+                    <span
+                      className={cn(
+                        'flex h-9 w-9 shrink-0 items-center justify-center text-[18px]',
+                        'rounded-[var(--r-sm)] border border-[var(--border)] bg-[var(--bg-2)]',
+                      )}
+                    >
+                      <Icon icon={event.icon} />
+                    </span>
 
-                  <div className="min-w-0">
-                    <div className="mb-0.5 flex flex-wrap items-center gap-1.5">
-                      <span className="truncate text-[13px] font-semibold text-[var(--text-hi)]">
-                        {event.title}
-                      </span>
-                      {/* The meta line below already reads "Weekly · Tue · 11:00"
+                    <div className="min-w-0">
+                      <div className="mb-0.5 flex flex-wrap items-center gap-1.5">
+                        <span className="truncate text-[13px] font-semibold text-[var(--text-hi)]">
+                          {event.title}
+                        </span>
+                        {/* The meta line below already reads "Weekly · Tue · 11:00"
                           against a plain date, so the glyph is a marker, not a
                           label — and a one-off needs no badge to say so. */}
-                      {event.recurrence && (
-                        <span
-                          className="shrink-0 text-[12px] leading-none text-[var(--violet)]"
-                          title="Repeats"
-                          aria-label="Repeats"
-                        >
-                          ↻
-                        </span>
-                      )}
-                      {!event.busy && <Badge variant="mint">Free</Badge>}
+                        {event.recurrence && (
+                          <span
+                            className="shrink-0 text-[12px] leading-none text-[var(--violet)]"
+                            title="Repeats"
+                            aria-label="Repeats"
+                          >
+                            ↻
+                          </span>
+                        )}
+                        {!event.busy && <Badge variant="mint">Free</Badge>}
+                        {live && (
+                          <span className={livePill}>
+                            <motion.span
+                              className="block h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--rose)]"
+                              animate={reduceMotion ? undefined : { opacity: [1, 0.25, 1] }}
+                              transition={
+                                reduceMotion
+                                  ? undefined
+                                  : { duration: 1.6, repeat: Infinity, ease: 'easeInOut' }
+                              }
+                            />
+                            Live
+                          </span>
+                        )}
+                      </div>
+                      <p className="truncate text-[11px] text-[var(--text-lo)]">
+                        {scheduleLabel(event)}
+                        {event.tagId && categoryName.has(event.tagId)
+                          ? ` · ${categoryName.get(event.tagId)}`
+                          : ''}
+                      </p>
                     </div>
-                    <p className="truncate text-[11px] text-[var(--text-lo)]">
-                      {scheduleLabel(event)}
-                      {event.tagId && categoryName.has(event.tagId)
-                        ? ` · ${categoryName.get(event.tagId)}`
-                        : ''}
-                    </p>
                   </div>
-                </div>
 
-                {/* Controls — a rule separates them on a phone, where they sit
+                  {/* Controls — a rule separates them on a phone, where they sit
                     under the title rather than beside it. */}
-                <div
-                  className={cn(
-                    'flex shrink-0 items-center justify-between gap-3',
-                    'border-t border-[var(--border)] pt-3',
-                    'sm:justify-end sm:border-t-0 sm:pt-0',
-                  )}
-                >
-                  {/* The label is the whole point: a bare switch left people
-                      asking whether it deleted the event. */}
-                  <Switch
-                    checked={!event.paused}
-                    disabled={updateEvent.isPending}
-                    onChange={(on) => updateEvent.mutate({ id: event.id, paused: !on })}
+                  <div
+                    className={cn(
+                      'flex shrink-0 items-center justify-between gap-3',
+                      'border-t border-[var(--border)] pt-3',
+                      'sm:justify-end sm:border-t-0 sm:pt-0',
+                    )}
                   >
-                    <span className="text-[10px] tracking-[0.08em] text-[var(--text-lo)] uppercase">
-                      {event.paused ? 'Off' : 'On'}
-                    </span>
-                  </Switch>
+                    {/* The label is the whole point: a bare switch left people
+                      asking whether it deleted the event. */}
+                    <Switch
+                      checked={!event.paused}
+                      disabled={updateEvent.isPending}
+                      onChange={(on) => updateEvent.mutate({ id: event.id, paused: !on })}
+                    >
+                      <span className="text-[10px] tracking-[0.08em] text-[var(--text-lo)] uppercase">
+                        {event.paused ? 'Off' : 'On'}
+                      </span>
+                    </Switch>
 
-                  <div className="flex items-center gap-1">
-                    <button
-                      type="button"
-                      className={rowIconBtn}
-                      onClick={() => openEdit(event)}
-                      title="Edit event"
-                      aria-label="Edit event"
-                    >
-                      ✎
-                    </button>
-                    <button
-                      type="button"
-                      className={cn(rowIconBtn, rowIconBtnDanger)}
-                      onClick={() => setDeleting(event)}
-                      title="Delete event"
-                      aria-label="Delete event"
-                    >
-                      ✕
-                    </button>
+                    <div className="flex items-center gap-1">
+                      <button
+                        type="button"
+                        className={rowIconBtn}
+                        onClick={() => openEdit(event)}
+                        title="Edit event"
+                        aria-label="Edit event"
+                      >
+                        ✎
+                      </button>
+                      <button
+                        type="button"
+                        className={cn(rowIconBtn, rowIconBtnDanger)}
+                        onClick={() => setDeleting(event)}
+                        title="Delete event"
+                        aria-label="Delete event"
+                      >
+                        ✕
+                      </button>
+                    </div>
                   </div>
-                </div>
-              </motion.div>
-            ))}
+                </motion.div>
+              );
+            })}
           </div>
         )}
       </div>
@@ -314,6 +353,16 @@ export function EventsPage() {
 }
 
 // ── Row controls ──────────────────────────────────────────────────────────────
+
+/**
+ * Red, not gold: gold already means "selected" throughout this app, and an
+ * on-air marker has to say something the rest of the page never says.
+ */
+const livePill = cn(
+  'flex shrink-0 items-center gap-1 rounded-full border border-[var(--rose)]',
+  'bg-[var(--rose)]/10 px-1.5 py-0.5 text-[9px] font-bold tracking-[0.1em] uppercase',
+  'text-[var(--rose)] [font-family:var(--f-title)]',
+);
 
 const rowIconBtn = cn(
   'flex h-8 w-8 shrink-0 items-center justify-center rounded-[var(--r-sm)]',
