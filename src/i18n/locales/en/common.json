@@ -201,6 +201,8 @@
       "toggleEvents": "Toggle events",
       "showAll": "Show all",
       "filtered": "Filters on",
+      "eventsOnly": "Events only",
+      "toggleEventsOnly": "Show only this week's events",
       "display": "Display"
     },
     "analytics": {

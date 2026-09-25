@@ -10,6 +10,11 @@ export interface ScheduleDisplayOptions {
   showQuests: boolean;
   showHabits: boolean;
   showEvents: boolean;
+  /**
+   * A mode rather than a fourth filter: while it is on the week shows events
+   * and nothing else, whatever the three switches above say.
+   */
+  eventsOnly: boolean;
 }
 
 interface ScheduleState {
@@ -43,7 +48,7 @@ function defaultState(): ScheduleState {
     dayDate: today,
     weekStart: getMonday(today),
     month: new Date().getMonth(),
-    display: { showQuests: true, showHabits: true, showEvents: true },
+    display: { showQuests: true, showHabits: true, showEvents: true, eventsOnly: false },
   };
 }
 

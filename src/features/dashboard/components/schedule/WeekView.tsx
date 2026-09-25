@@ -134,6 +134,14 @@ export function WeekView({
   const { data: weekQuests = [] } = useQuests(weekStart, weekEnd);
   const { data: weekEvents = [] } = useEventOccurrences(weekStart, weekEnd);
 
+  // "Events only" overrides the three switches for as long as it is on, and
+  // guarantees events are visible even if their own switch was left off — a
+  // mode that showed nothing would just look broken.
+  const showTasks = !display.eventsOnly;
+  const showQuests = display.showQuests && !display.eventsOnly;
+  const showHabits = display.showHabits && !display.eventsOnly;
+  const showEvents = display.showEvents || display.eventsOnly;
+
   // Only an event that is under way wears the artwork, so the grid needs a
   // clock. Coarse on purpose: this re-renders the whole week.
   const [now, setNow] = useState(() => new Date());
@@ -397,10 +405,11 @@ export function WeekView({
             <div className={loadingMsg}>Loading...</div>
           ) : (
             weekDays.map((dayStr, i) => {
-              const dayTaskEntries = getTaskBlocksForDay(dayStr);
+              const dayTaskEntries = showTasks ? getTaskBlocksForDay(dayStr) : [];
               // Hiding events takes their hours out of the meter too — a total
-              // the column cannot account for is worse than no total.
-              const dayEvents = display.showEvents ? (eventsByDate[dayStr] ?? []) : [];
+              // the column cannot account for is worse than no total. Same for
+              // tasks above: the meter counts what the column actually shows.
+              const dayEvents = showEvents ? (eventsByDate[dayStr] ?? []) : [];
               // Events are not tasks, but a busy one still spends the day.
               const taskUsageMinutes =
                 getTaskUsageForDay(dayTaskEntries.map((entry) => entry.block)) +
@@ -447,18 +456,18 @@ export function WeekView({
                           plannedMinutes: block.duration,
                           blockId: block.id,
                         })),
-                        ...getSpanTasksForDay(dayStr).map((task) => ({
+                        ...(showTasks ? getSpanTasksForDay(dayStr) : []).map((task) => ({
                           kind: 'task' as const,
                           item: task,
                           time: undefined,
                           color: HABIT_COLORS[task.color as TaskColor]?.value ?? 'var(--gold)',
                         })),
-                        ...(display.showQuests ? (questsByDate[dayStr] ?? []) : []).map((q) => ({
+                        ...(showQuests ? (questsByDate[dayStr] ?? []) : []).map((q) => ({
                           kind: 'quest' as const,
                           item: q,
                           time: q.dueTime,
                         })),
-                        ...(display.showHabits ? getHabitsForDay(dayStr) : []).map((h) => ({
+                        ...(showHabits ? getHabitsForDay(dayStr) : []).map((h) => ({
                           kind: 'habit' as const,
                           item: h,
                           time: dow
