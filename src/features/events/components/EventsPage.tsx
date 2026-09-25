@@ -100,15 +100,17 @@ export function EventsPage() {
   // otherwise blank page is noise, so the header one stands down for it.
   const isEmpty = !isLoading && !isError && events.length === 0;
 
-  // Repeating rules first — they are the backbone of the week.
+  // Whatever is on right now goes to the top — it is the only row with
+  // anything to do about it. Then repeating rules, the backbone of the week.
   const sorted = useMemo(
     () =>
       [...events].sort(
         (a, b) =>
+          Number(liveIds.has(b.id)) - Number(liveIds.has(a.id)) ||
           Number(Boolean(b.recurrence)) - Number(Boolean(a.recurrence)) ||
           a.startDate.localeCompare(b.startDate),
       ),
-    [events],
+    [events, liveIds],
   );
 
   function openCreate() {
@@ -195,13 +197,39 @@ export function EventsPage() {
                     'flex flex-col gap-3 rounded-[var(--r-md)] border border-[var(--border)]',
                     'bg-[var(--panel)] p-3 transition-colors hover:border-[var(--border-hi)]',
                     'sm:flex-row sm:items-center sm:gap-4',
-                    live && 'border-[var(--rose)] shadow-[0_0_16px_var(--rose-glow)]',
+                    // `relative overflow-hidden` so the sweep below is clipped
+                    // to the card. No outer glow: stacked down a list it bled
+                    // into its neighbours.
+                    live && 'relative overflow-hidden border-[var(--rose)]',
                   )}
                   style={{
                     borderLeft: `3px solid ${COLOR_CSS[event.color]}`,
                     opacity: event.paused ? 0.55 : 1,
+                    // Glow in the event's own colour rather than the marker's
+                    // red: it echoes the stripe already down the left edge, so
+                    // the card reads as one thing lit up, not two colours
+                    // arguing.
+                    boxShadow: live
+                      ? `0 0 18px color-mix(in oklch, ${COLOR_CSS[event.color]} 40%, transparent)`
+                      : undefined,
                   }}
                 >
+                  {/* A light passing over the card, borrowed from the active
+                    quest banner: motion says "now" where a static glow only
+                    said "look here". Transform-only, so it costs no layout. */}
+                  {live && !reduceMotion && (
+                    <motion.span
+                      aria-hidden
+                      className="pointer-events-none absolute inset-y-0 left-0 w-[60%]"
+                      style={{
+                        background:
+                          'linear-gradient(90deg, transparent, oklch(1 0 0 / 0.07), transparent)',
+                      }}
+                      animate={{ x: ['-120%', '220%'] }}
+                      transition={{ duration: 3.5, repeat: Infinity, ease: 'linear' }}
+                    />
+                  )}
+
                   {/* Identity — icon rides beside the title instead of claiming
                     its own line, which is what made the card so tall. */}
                   <div className="flex min-w-0 flex-1 items-center gap-3">
