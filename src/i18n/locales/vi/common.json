@@ -201,6 +201,8 @@
       "toggleEvents": "Ẩn hiện sự kiện",
       "showAll": "Hiện tất cả",
       "filtered": "Đang lọc",
+      "eventsOnly": "Chỉ sự kiện",
+      "toggleEventsOnly": "Chỉ hiện sự kiện trong tuần",
       "display": "Hiển thị"
     },
     "analytics": {

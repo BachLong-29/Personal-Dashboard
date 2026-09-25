@@ -89,9 +89,12 @@ export function ScheduleView({
 
   // Three switches that hide content, and no other sign they are off — a view
   // that silently drops half the week reads as lost data, not as a filter.
-  const hiddenCount = [display.showQuests, display.showHabits, display.showEvents].filter(
-    (on) => !on,
-  ).length;
+  // "Events only" is a mode of the week grid, not of the day list, so it is
+  // offered there alone — elsewhere it would hide everything and show nothing.
+  const eventsOnly = tab === 'week' && display.eventsOnly;
+  const hiddenCount = eventsOnly
+    ? 0
+    : [display.showQuests, display.showHabits, display.showEvents].filter((on) => !on).length;
 
   function handleNavigateDay(date: string) {
     setDayDate(date);
@@ -146,7 +149,11 @@ export function ScheduleView({
             </Link>
             {/* Last, because it is the only one that opens something rather
                 than doing something. */}
-            <ScheduleDisplayMenu display={display} setDisplay={setDisplay} />
+            <ScheduleDisplayMenu
+              display={display}
+              setDisplay={setDisplay}
+              showEventsOnly={tab === 'week'}
+            />
           </div>
 
           {/* Sits before the display toggles so it never splits that pair. */}
@@ -202,12 +209,35 @@ export function ScheduleView({
             📅 {tDash('scheduleView.events')}
           </button>
 
+          {tab === 'week' && (
+            <button
+              type="button"
+              className={cn(
+                toggleBtn,
+                'hidden sm:inline-block',
+                display.eventsOnly && toggleBtnActive,
+              )}
+              onClick={() => setDisplay({ eventsOnly: !display.eventsOnly })}
+              aria-pressed={display.eventsOnly}
+              title={tDash('scheduleView.toggleEventsOnly')}
+            >
+              ◉ {tDash('scheduleView.eventsOnly')}
+            </button>
+          )}
+
           {hiddenCount > 0 && (
             <button
               type="button"
               className={cn(filterAlert, 'hidden sm:inline-block')}
               title={tDash('scheduleView.filtered')}
-              onClick={() => setDisplay({ showQuests: true, showHabits: true, showEvents: true })}
+              onClick={() =>
+                setDisplay({
+                  showQuests: true,
+                  showHabits: true,
+                  showEvents: true,
+                  eventsOnly: false,
+                })
+              }
             >
               ⚠ {tDash('scheduleView.showAll')} ({hiddenCount})
             </button>

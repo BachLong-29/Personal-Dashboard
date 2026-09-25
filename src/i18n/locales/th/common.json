@@ -201,6 +201,8 @@
       "toggleEvents": "สลับกิจกรรม",
       "showAll": "แสดงทั้งหมด",
       "filtered": "กำลังกรอง",
+      "eventsOnly": "เฉพาะกิจกรรม",
+      "toggleEventsOnly": "แสดงเฉพาะกิจกรรมของสัปดาห์นี้",
       "display": "การแสดงผล"
     },
     "analytics": {
