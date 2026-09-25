@@ -9,7 +9,9 @@ export type NotificationType =
   | 'reward'
   | 'deadline'
   | 'overload'
-  | 'conflict';
+  | 'conflict'
+  /** End-of-day nudge to write down cash spending — see cash-log-notifications. */
+  | 'cash-log';
 
 export interface INotification extends Document {
   _id: mongoose.Types.ObjectId;
@@ -53,6 +55,7 @@ const notificationSchema = new Schema<INotification>(
         'deadline',
         'overload',
         'conflict',
+        'cash-log',
       ],
       required: true,
     },

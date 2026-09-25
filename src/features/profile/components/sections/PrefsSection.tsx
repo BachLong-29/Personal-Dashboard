@@ -1,26 +1,13 @@
 'use client';
 
-import type { ReactNode } from 'react';
 import { Switch } from '@/components/ui';
+
+import { PrefRow } from './PrefRow';
 import type { ProfileFormData, QuestDifficulty } from '@/types/profile';
 
 interface Props {
   form: ProfileFormData;
   onChange: <K extends keyof ProfileFormData>(key: K, value: ProfileFormData[K]) => void;
-}
-
-function PrefRow({ label, hint, children }: { label: string; hint: string; children: ReactNode }) {
-  return (
-    <div className="flex justify-between items-center gap-8 py-4 border-b border-border-lo last:border-b-0">
-      <div>
-        <div className="[font-family:var(--f-title)] italic text-[15px] text-text-hi">{label}</div>
-        <div className="[font-family:var(--f-mono)] text-[9px] tracking-[0.14em] uppercase text-text-lo mt-[3px]">
-          {hint}
-        </div>
-      </div>
-      <div className="flex-shrink-0">{children}</div>
-    </div>
-  );
 }
 
 function Stepper({

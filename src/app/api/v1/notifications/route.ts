@@ -5,6 +5,7 @@ import { getAuthUser } from '@/server/helpers/get-auth-user';
 import { NotificationModel, type NotificationType } from '@/server/models/notification.model';
 import { TaskModel } from '@/server/models/task.model';
 import { enforceNotificationCap } from '@/server/services/notification-cleanup';
+import { generateCashLogNotifications } from '@/server/services/cash-log-notifications';
 import { generateScheduleNotifications } from '@/server/services/schedule-notifications';
 import { asyncHandler, createdResponse, successResponse, unauthorizedResponse } from '@/server';
 import mongoose from 'mongoose';
@@ -21,6 +22,14 @@ export const GET = asyncHandler(async (req: NextRequest) => {
     await generateScheduleNotifications(user.sub);
   } catch (err) {
     console.error('[notifications] schedule generation failed', err);
+  }
+
+  // Same deal for the end-of-day cash reminder. Separate try/catch so one
+  // generator failing never costs the reader the other's notifications.
+  try {
+    await generateCashLogNotifications(user.sub);
+  } catch (err) {
+    console.error('[notifications] cash-log generation failed', err);
   }
 
   const now = new Date();

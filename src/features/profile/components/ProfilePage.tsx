@@ -16,6 +16,7 @@ import { ThemeSection } from './sections/ThemeSection';
 import { StatsSection } from './sections/StatsSection';
 import { FocusSection } from './sections/FocusSection';
 import { BadgesSection } from './sections/BadgesSection';
+import { CashLogSection } from './sections/CashLogSection';
 import { PrefsSection } from './sections/PrefsSection';
 import { findAccent } from '@/constants/hero-data';
 import { DEFAULT_PROFILE_FORM, mergeProfileToForm } from '@/types/profile';
@@ -355,6 +356,15 @@ export function ProfilePage() {
             subtitle="Cadence and difficulty"
           >
             <PrefsSection form={form} onChange={set} />
+          </FormSection>
+
+          <FormSection
+            id="cash-log"
+            num="IX"
+            label="Cash Reminder"
+            subtitle="Log what you spent in cash"
+          >
+            <CashLogSection form={form} onChange={set} />
           </FormSection>
         </div>
 

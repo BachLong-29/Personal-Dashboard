@@ -31,6 +31,7 @@ const CLICKABLE_TYPES = new Set<Notification['type']>([
   'deadline',
   'overload',
   'conflict',
+  'cash-log',
 ]);
 
 const TYPE_ICON: Record<string, string> = {
@@ -42,6 +43,9 @@ const TYPE_ICON: Record<string, string> = {
   deadline: '⚠',
   overload: '🔥',
   conflict: '✕',
+  // Matches the glyph baked into the title server-side, so the stripper below
+  // removes it there rather than showing it twice.
+  'cash-log': '💵',
 };
 
 // Titles are authored server-side with a leading/trailing icon glyph baked in
@@ -120,6 +124,14 @@ export function NotificationPanel({ onClose }: NotificationPanelProps) {
       });
       onClose();
       router.push('/dashboard?tab=schedule');
+      return;
+    }
+
+    // The cash reminder is about money, not the schedule — send them where
+    // the transaction gets written.
+    if (n.type === 'cash-log') {
+      onClose();
+      router.push('/finance');
       return;
     }
 
