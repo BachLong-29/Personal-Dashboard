@@ -16,7 +16,8 @@ export interface Notification {
     | 'reward'
     | 'deadline'
     | 'overload'
-    | 'conflict';
+    | 'conflict'
+    | 'cash-log';
   title: string;
   message: string;
   isRead: boolean;

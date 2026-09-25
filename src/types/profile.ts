@@ -50,6 +50,11 @@ export interface UserSettingData {
   theme: 'dark' | 'light' | 'system';
   compactMode: boolean;
   dailyCapacityMinutes: number;
+  cashLogEnabled: boolean;
+  /** `HH:MM`, read in `timezone`. */
+  cashLogTime: string;
+  /** Finance category ids; the server fills the defaults until first saved. */
+  cashLogCategoryIds: string[];
   updatedAt: string;
 }
 
@@ -80,6 +85,10 @@ export interface ProfileFormData {
   seasonalRites: boolean;
   autoReclaim: boolean;
   dailyCapacityMinutes: number;
+  timezone: string;
+  cashLogEnabled: boolean;
+  cashLogTime: string;
+  cashLogCategoryIds: string[];
 }
 
 export const DEFAULT_PROFILE_FORM: ProfileFormData = {
@@ -110,6 +119,10 @@ export const DEFAULT_PROFILE_FORM: ProfileFormData = {
   seasonalRites: true,
   autoReclaim: false,
   dailyCapacityMinutes: 600,
+  timezone: 'UTC',
+  cashLogEnabled: true,
+  cashLogTime: '22:00',
+  cashLogCategoryIds: [],
 };
 
 export function mergeProfileToForm(
@@ -138,5 +151,9 @@ export function mergeProfileToForm(
     seasonalRites: settings.seasonalRites,
     autoReclaim: settings.autoReclaim,
     dailyCapacityMinutes: settings.dailyCapacityMinutes,
+    timezone: settings.timezone,
+    cashLogEnabled: settings.cashLogEnabled,
+    cashLogTime: settings.cashLogTime,
+    cashLogCategoryIds: [...settings.cashLogCategoryIds],
   };
 }

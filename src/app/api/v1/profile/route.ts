@@ -1,10 +1,13 @@
+import mongoose from 'mongoose';
 import { z } from 'zod';
 import type { NextRequest } from 'next/server';
 
 import { connectDB } from '@/libs/mongodb';
 import { getAuthUser } from '@/server/helpers/get-auth-user';
 import { UserProfileModel } from '@/server/models/user-profile.model';
+import { FinanceCategoryModel } from '@/server/models/finance-category.model';
 import { UserSettingModel } from '@/server/models/user-setting.model';
+import { resolveCashLogCategoryIds } from '@/server/services/cash-log-notifications';
 import { asyncHandler, successResponse, unauthorizedResponse } from '@/server';
 import { validateBody } from '@/server/validate';
 import type { IUserProfile } from '@/server/models/user-profile.model';
@@ -52,6 +55,12 @@ const updateSchema = z.object({
   theme: z.enum(['dark', 'light', 'system']).optional(),
   compactMode: z.boolean().optional(),
   dailyCapacityMinutes: z.number().min(60).max(1440).optional(),
+  cashLogEnabled: z.boolean().optional(),
+  cashLogTime: z
+    .string()
+    .regex(/^([01]\d|2[0-3]):[0-5]\d$/, 'Use HH:MM')
+    .optional(),
+  cashLogCategoryIds: z.array(z.string().min(1)).optional(),
 });
 
 function serializeProfile(p: IUserProfile): UserProfileData {
@@ -90,7 +99,12 @@ function serializeProfile(p: IUserProfile): UserProfileData {
   };
 }
 
-function serializeSetting(s: IUserSetting): UserSettingData {
+/**
+ * Async because the cash-log category defaults are derived from the user's own
+ * finance categories: until they first save the setting, the picker should
+ * open with the obvious ones already ticked rather than empty.
+ */
+async function serializeSetting(s: IUserSetting): Promise<UserSettingData> {
   return {
     id: s._id.toString(),
     userId: s.userId.toString(),
@@ -105,6 +119,16 @@ function serializeSetting(s: IUserSetting): UserSettingData {
     theme: s.theme,
     compactMode: s.compactMode,
     dailyCapacityMinutes: s.schedule?.dailyCapacityMinutes ?? 600,
+    cashLogEnabled: s.cashLog?.enabled ?? true,
+    cashLogTime: s.cashLog?.time ?? '22:00',
+    cashLogCategoryIds: (
+      await (async () => {
+        const categories = await FinanceCategoryModel.find({ userId: s.userId, type: 'expense' })
+          .select('_id name')
+          .lean();
+        return resolveCashLogCategoryIds(s.cashLog?.categoryIds, categories);
+      })()
+    ).map((id) => id.toString()),
     updatedAt: s.updatedAt.toISOString(),
   };
 }
@@ -131,7 +155,7 @@ export const GET = asyncHandler(async (req: NextRequest) => {
 
   const response: CombinedProfileResponse = {
     profile: serializeProfile(profile),
-    settings: serializeSetting(settings),
+    settings: await serializeSetting(settings),
   };
 
   return successResponse(response);
@@ -186,6 +210,13 @@ export const PUT = asyncHandler(async (req: NextRequest) => {
     'theme',
     'compactMode',
   ] as const;
+  if (data.cashLogEnabled !== undefined) settingFields['cashLog.enabled'] = data.cashLogEnabled;
+  if (data.cashLogTime !== undefined) settingFields['cashLog.time'] = data.cashLogTime;
+  if (data.cashLogCategoryIds !== undefined) {
+    settingFields['cashLog.categoryIds'] = data.cashLogCategoryIds.map(
+      (id) => new mongoose.Types.ObjectId(id),
+    );
+  }
   if (data.dailyCapacityMinutes !== undefined) {
     settingFields['schedule.dailyCapacityMinutes'] = data.dailyCapacityMinutes;
   }
@@ -212,7 +243,7 @@ export const PUT = asyncHandler(async (req: NextRequest) => {
 
   const response: CombinedProfileResponse = {
     profile: serializeProfile(profile),
-    settings: serializeSetting(settings),
+    settings: await serializeSetting(settings),
   };
 
   return successResponse(response, 'Profile updated successfully');

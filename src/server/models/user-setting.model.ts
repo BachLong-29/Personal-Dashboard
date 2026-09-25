@@ -21,6 +21,22 @@ export interface IScheduleSettings {
   deadlineWarningDays: number;
 }
 
+/**
+ * End-of-day nudge to write down the cash you spent. Bank spending arrives by
+ * itself through the SePay webhook; cash only exists if someone types it in.
+ */
+export interface ICashLogSettings {
+  enabled: boolean;
+  /** `HH:MM`, read in the user's own timezone — see `UserSetting.timezone`. */
+  time: string;
+  /**
+   * Finance categories worth chasing. Left unset until the user first saves,
+   * which is what lets the defaults be filled in from their own category
+   * names rather than hardcoded ids — see `resolveCashLogCategoryIds`.
+   */
+  categoryIds?: mongoose.Types.ObjectId[];
+}
+
 export interface IUserSetting extends Document {
   _id: mongoose.Types.ObjectId;
   userId: mongoose.Types.ObjectId;
@@ -35,6 +51,7 @@ export interface IUserSetting extends Document {
   theme: ThemeEnum;
   compactMode: boolean;
   schedule: IScheduleSettings;
+  cashLog: ICashLogSettings;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -47,6 +64,27 @@ export const DEFAULT_SCHEDULE_SETTINGS: IScheduleSettings = {
   questReminderLead: 30,
   deadlineWarningDays: 1,
 };
+
+export const DEFAULT_CASH_LOG_SETTINGS: Omit<ICashLogSettings, 'categoryIds'> = {
+  enabled: true,
+  time: '22:00',
+};
+
+const cashLogSchema = new Schema<ICashLogSettings>(
+  {
+    enabled: { type: Boolean, default: DEFAULT_CASH_LOG_SETTINGS.enabled },
+    time: {
+      type: String,
+      default: DEFAULT_CASH_LOG_SETTINGS.time,
+      match: /^([01]\d|2[0-3]):[0-5]\d$/,
+    },
+    // No `default: []` on purpose: an empty array has to mean "the user
+    // deliberately unticked everything", which is different from "never
+    // configured" and must not be overwritten by the defaults.
+    categoryIds: { type: [Schema.Types.ObjectId], ref: 'FinanceCategory', default: undefined },
+  },
+  { _id: false },
+);
 
 const userSettingSchema = new Schema<IUserSetting>(
   {
@@ -69,6 +107,7 @@ const userSettingSchema = new Schema<IUserSetting>(
     autoReclaim: { type: Boolean, default: false },
     language: { type: String, default: 'en', trim: true },
     timezone: { type: String, default: 'UTC', trim: true },
+    cashLog: { type: cashLogSchema, default: () => ({}) },
     theme: {
       type: String,
       enum: ['dark', 'light', 'system'] satisfies ThemeEnum[],
