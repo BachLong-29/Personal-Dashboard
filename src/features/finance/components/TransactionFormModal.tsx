@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useTranslations } from 'next-intl';
 
@@ -101,6 +101,31 @@ export function TransactionFormModal({
   const amountNum = parseFloat(amount);
   const canSave =
     walletId && categoryId && amountNum > 0 && !saving && (!isEdit || !deleteTx.isPending);
+
+  // Only the current type's categories are on offer; switching type clears the
+  // choice below, so the list and the selection can never disagree.
+  const categoryOptions = useMemo(
+    () =>
+      categories
+        .filter((c) => c.type === type)
+        .map((c) => ({
+          value: c.id,
+          // The label is markup, so the filter needs the plain name to match on.
+          searchText: c.name,
+          label: (
+            <span className="flex min-w-0 items-center gap-2">
+              <span
+                aria-hidden
+                className="h-1.5 w-1.5 shrink-0 rounded-full"
+                style={{ background: COLOR_CSS[c.color] }}
+              />
+              <span className="shrink-0">{c.icon}</span>
+              <span className="truncate">{c.name}</span>
+            </span>
+          ),
+        })),
+    [categories, type],
+  );
 
   function handleTypeChange(next: TransactionType) {
     setType(next);
@@ -205,8 +230,10 @@ export function TransactionFormModal({
               />
             </Field>
 
-            {/* Category grid — both type's chip sets are stacked in the same CSS grid cell, so the
-            container's height is always the taller of the two and never jumps on toggle. */}
+            {/* A dropdown, not a chip grid: the list grows with every category
+            the reader adds, and at two dozen it had taken five wrapped rows —
+            more of the modal than the amount it belongs to. One row now, and
+            no height change when the type toggles. */}
             <div className="flex flex-col gap-1.5">
               <div className="flex items-center justify-between">
                 <span className="text-[9px] font-bold tracking-[0.12em] uppercase text-[var(--text-lo)] [font-family:var(--f-title)]">
@@ -220,50 +247,14 @@ export function TransactionFormModal({
                   ＋ {t('transactions.newCategory')}
                 </button>
               </div>
-              <div className="grid">
-                {(['expense', 'income'] as TransactionType[]).map((section) => {
-                  const active = type === section;
-                  return (
-                    <div
-                      key={section}
-                      aria-hidden={!active}
-                      className={cn(
-                        'col-start-1 row-start-1 flex flex-wrap content-start gap-1.5 transition-opacity duration-150',
-                        active ? 'opacity-100' : 'pointer-events-none opacity-0',
-                      )}
-                    >
-                      {categories
-                        .filter((c) => c.type === section)
-                        .map((c) => {
-                          const accent = COLOR_CSS[c.color];
-                          const selected = categoryId === c.id;
-                          return (
-                            <button
-                              key={c.id}
-                              type="button"
-                              tabIndex={active ? 0 : -1}
-                              onClick={() => setCategoryId(c.id)}
-                              className={cn(
-                                'flex items-center gap-1.5 rounded-[var(--r-sm)] border px-2.5 py-1.5 text-[11px] font-semibold transition-all',
-                                selected ? 'scale-[1.03]' : 'opacity-70 hover:opacity-100',
-                              )}
-                              style={{
-                                borderColor: selected ? accent : 'var(--border)',
-                                background: selected
-                                  ? `color-mix(in oklch, ${accent} 14%, transparent)`
-                                  : 'transparent',
-                                color: selected ? accent : 'var(--text-mid)',
-                              }}
-                            >
-                              <span>{c.icon}</span>
-                              {c.name}
-                            </button>
-                          );
-                        })}
-                    </div>
-                  );
-                })}
-              </div>
+              <Select
+                options={categoryOptions}
+                value={categoryId}
+                onValueChange={setCategoryId}
+                placeholder={t('transactions.category')}
+                searchable
+                selectedFirst
+              />
             </div>
 
             {/* Note */}
