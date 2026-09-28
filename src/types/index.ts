@@ -16,3 +16,4 @@ export type * from './calendar-insights';
 export type * from './finance';
 export type * from './task-suggestion';
 export type * from './event';
+export type * from './note';

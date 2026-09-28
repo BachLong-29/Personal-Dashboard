@@ -30,6 +30,7 @@ interface UIState {
   quickAddTaskOpen: boolean;
   quickAddTransactionOpen: boolean;
   shareAgendaOpen: boolean;
+  notesOpen: boolean;
   /** Task ID to restore + edit after a "Quest Failed" notification click */
   pendingRestoreTaskId: string | null;
   pendingScheduleNav: PendingScheduleNav | null;
@@ -47,6 +48,8 @@ interface UIState {
   toggleQuickAddTask: () => void;
   openQuickAddTransaction: () => void;
   closeQuickAddTransaction: () => void;
+  openNotes: () => void;
+  closeNotes: () => void;
   openShareAgenda: () => void;
   closeShareAgenda: () => void;
   setPendingRestoreTaskId: (id: string | null) => void;
@@ -64,6 +67,7 @@ export const useUIStore = create<UIState>()(
       quickAddTaskOpen: false,
       quickAddTransactionOpen: false,
       shareAgendaOpen: false,
+      notesOpen: false,
       pendingRestoreTaskId: null,
       pendingScheduleNav: null,
       setProjectViewMode: (mode) => set({ projectViewMode: mode }),
@@ -77,6 +81,8 @@ export const useUIStore = create<UIState>()(
       toggleQuickAddTask: () => set((state) => ({ quickAddTaskOpen: !state.quickAddTaskOpen })),
       openQuickAddTransaction: () => set({ quickAddTransactionOpen: true }),
       closeQuickAddTransaction: () => set({ quickAddTransactionOpen: false }),
+      openNotes: () => set({ notesOpen: true }),
+      closeNotes: () => set({ notesOpen: false }),
       openShareAgenda: () => set({ shareAgendaOpen: true }),
       closeShareAgenda: () => set({ shareAgendaOpen: false }),
       setPendingRestoreTaskId: (id) => set({ pendingRestoreTaskId: id }),
