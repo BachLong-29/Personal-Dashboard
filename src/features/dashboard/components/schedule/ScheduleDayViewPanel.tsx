@@ -23,6 +23,7 @@ import { NewItemMenu } from './NewItemMenu';
 interface Props {
   date: string;
   onDateChange: (d: string) => void;
+  showTasks?: boolean;
   showQuests?: boolean;
   showHabits?: boolean;
   onAddQuest?: (q: Quest) => void;
@@ -33,6 +34,7 @@ interface Props {
 export function ScheduleDayViewPanel({
   date,
   onDateChange,
+  showTasks = true,
   showQuests = true,
   showHabits = true,
   onAddQuest,
@@ -56,7 +58,14 @@ export function ScheduleDayViewPanel({
     onEdit,
     onSaveEdit,
     onCloseEdit,
-  } = useScheduleDayTasks({ date, showQuests, showHabits, requireBlock: true, onReward });
+  } = useScheduleDayTasks({
+    date,
+    showTasks,
+    showQuests,
+    showHabits,
+    requireBlock: true,
+    onReward,
+  });
 
   // ── Create-modal + expand UI state ─────────────────────────────────────────
   const [showAddQuestModal, setShowAddQuestModal] = useState(false);

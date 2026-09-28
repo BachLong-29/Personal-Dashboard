@@ -199,10 +199,10 @@
       "toggleHabits": "Ẩn hiện habit",
       "events": "Sự kiện",
       "toggleEvents": "Ẩn hiện sự kiện",
+      "tasks": "Công việc",
+      "toggleTasks": "Ẩn/hiện công việc",
       "showAll": "Hiện tất cả",
       "filtered": "Đang lọc",
-      "eventsOnly": "Chỉ sự kiện",
-      "toggleEventsOnly": "Chỉ hiện sự kiện trong tuần",
       "display": "Hiển thị"
     },
     "analytics": {

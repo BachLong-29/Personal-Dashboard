@@ -89,12 +89,12 @@ export function ScheduleView({
 
   // Three switches that hide content, and no other sign they are off — a view
   // that silently drops half the week reads as lost data, not as a filter.
-  // "Events only" is a mode of the week grid, not of the day list, so it is
-  // offered there alone — elsewhere it would hide everything and show nothing.
-  const eventsOnly = tab === 'week' && display.eventsOnly;
-  const hiddenCount = eventsOnly
-    ? 0
-    : [display.showQuests, display.showHabits, display.showEvents].filter((on) => !on).length;
+  const hiddenCount = [
+    display.showTasks,
+    display.showQuests,
+    display.showHabits,
+    display.showEvents,
+  ].filter((on) => !on).length;
 
   function handleNavigateDay(date: string) {
     setDayDate(date);
@@ -149,11 +149,7 @@ export function ScheduleView({
             </Link>
             {/* Last, because it is the only one that opens something rather
                 than doing something. */}
-            <ScheduleDisplayMenu
-              display={display}
-              setDisplay={setDisplay}
-              showEventsOnly={tab === 'week'}
-            />
+            <ScheduleDisplayMenu display={display} setDisplay={setDisplay} />
           </div>
 
           {/* Sits before the display toggles so it never splits that pair. */}
@@ -165,6 +161,20 @@ export function ScheduleView({
             aria-label={tShare('title')}
           >
             ⇪ {tShare('short')}
+          </button>
+          <button
+            type="button"
+            className={cn(
+              toggleBtn,
+              'hidden sm:inline-block',
+              display.showTasks && toggleBtnActive,
+            )}
+            onClick={() => setDisplay({ showTasks: !display.showTasks })}
+            // A switch, not a link: screen readers should say whether it is on.
+            aria-pressed={display.showTasks}
+            title={tDash('scheduleView.toggleTasks')}
+          >
+            📋 {tDash('scheduleView.tasks')}
           </button>
           <button
             type="button"
@@ -209,22 +219,6 @@ export function ScheduleView({
             📅 {tDash('scheduleView.events')}
           </button>
 
-          {tab === 'week' && (
-            <button
-              type="button"
-              className={cn(
-                toggleBtn,
-                'hidden sm:inline-block',
-                display.eventsOnly && toggleBtnActive,
-              )}
-              onClick={() => setDisplay({ eventsOnly: !display.eventsOnly })}
-              aria-pressed={display.eventsOnly}
-              title={tDash('scheduleView.toggleEventsOnly')}
-            >
-              ◉ {tDash('scheduleView.eventsOnly')}
-            </button>
-          )}
-
           {hiddenCount > 0 && (
             <button
               type="button"
@@ -232,10 +226,10 @@ export function ScheduleView({
               title={tDash('scheduleView.filtered')}
               onClick={() =>
                 setDisplay({
+                  showTasks: true,
                   showQuests: true,
                   showHabits: true,
                   showEvents: true,
-                  eventsOnly: false,
                 })
               }
             >
@@ -264,6 +258,7 @@ export function ScheduleView({
               setWeekStart(getMonday(d));
               setMonth(new Date(d).getMonth());
             }}
+            showTasks={display.showTasks}
             showQuests={display.showQuests}
             showHabits={display.showHabits}
             onReward={onReward}
