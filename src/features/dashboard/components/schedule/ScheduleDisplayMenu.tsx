@@ -12,14 +12,13 @@ import type { ScheduleDisplayOptions } from '../../hooks/useScheduleState';
 interface Props {
   display: ScheduleDisplayOptions;
   setDisplay: (next: Partial<ScheduleDisplayOptions>) => void;
-  /** Only the week grid honours "events only", so only it offers the row. */
-  showEventsOnly?: boolean;
 }
 
 /** Matches the panel's own width; needed to right-align it from a rect. */
 const PANEL_WIDTH = 190;
 
 const ROWS = [
+  { key: 'showTasks', glyph: '📋', label: 'tasks' },
   { key: 'showQuests', glyph: '⚡', label: 'quests' },
   { key: 'showHabits', glyph: '✦', label: 'habits' },
   { key: 'showEvents', glyph: '📅', label: 'events' },
@@ -35,21 +34,17 @@ const ROWS = [
  * it is only needed to *change* a filter, and then the rows are full width
  * with real labels and real switches, rather than 9px glyphs in a strip.
  */
-export function ScheduleDisplayMenu({ display, setDisplay, showEventsOnly }: Props) {
+export function ScheduleDisplayMenu({ display, setDisplay }: Props) {
   const t = useTranslations('dashboard');
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
   const [rect, setRect] = useState<{ top: number; left: number } | null>(null);
 
-  // While "events only" is on the three switches below it do nothing, so they
-  // are not what is hiding anything — the mode is.
-  const eventsOnly = !!showEventsOnly && display.eventsOnly;
-  const hiddenCount = eventsOnly ? 0 : ROWS.filter((row) => !display[row.key]).length;
-  const filtering = eventsOnly || hiddenCount > 0;
+  const hiddenCount = ROWS.filter((row) => !display[row.key]).length;
 
   const clearAll = () => {
-    setDisplay({ showQuests: true, showHabits: true, showEvents: true, eventsOnly: false });
+    setDisplay({ showTasks: true, showQuests: true, showHabits: true, showEvents: true });
     setOpen(false);
   };
 
@@ -92,8 +87,8 @@ export function ScheduleDisplayMenu({ display, setDisplay, showEventsOnly }: Pro
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
         aria-label={t('scheduleView.display')}
-        title={filtering ? t('scheduleView.filtered') : t('scheduleView.display')}
-        className={cn(trigger, open && triggerOpen, filtering && triggerFiltered)}
+        title={hiddenCount > 0 ? t('scheduleView.filtered') : t('scheduleView.display')}
+        className={cn(trigger, open && triggerOpen, hiddenCount > 0 && triggerFiltered)}
       >
         ⋯
       </button>
@@ -105,12 +100,8 @@ export function ScheduleDisplayMenu({ display, setDisplay, showEventsOnly }: Pro
             <div className={panelHead}>{t('scheduleView.display')}</div>
 
             {ROWS.map((row) => (
-              <div key={row.key} className={cn(rowWrap, eventsOnly && 'opacity-40')}>
-                <Switch
-                  checked={display[row.key]}
-                  disabled={eventsOnly}
-                  onChange={(on) => setDisplay({ [row.key]: on })}
-                >
+              <div key={row.key} className={rowWrap}>
+                <Switch checked={display[row.key]} onChange={(on) => setDisplay({ [row.key]: on })}>
                   <span className="text-[12px] text-[var(--text-hi)]">
                     {row.glyph} {t(`scheduleView.${row.label}`)}
                   </span>
@@ -118,26 +109,9 @@ export function ScheduleDisplayMenu({ display, setDisplay, showEventsOnly }: Pro
               </div>
             ))}
 
-            {showEventsOnly && (
-              <>
-                <div className={rule} />
-                <div className={rowWrap}>
-                  <Switch
-                    checked={display.eventsOnly}
-                    onChange={(on) => setDisplay({ eventsOnly: on })}
-                  >
-                    <span className="text-[12px] text-[var(--text-hi)]">
-                      ◉ {t('scheduleView.eventsOnly')}
-                    </span>
-                  </Switch>
-                </div>
-              </>
-            )}
-
-            {filtering && (
+            {hiddenCount > 0 && (
               <button type="button" className={showAllBtn} onClick={clearAll}>
-                ⚠ {t('scheduleView.showAll')}
-                {hiddenCount > 0 ? ` (${hiddenCount})` : ''}
+                ⚠ {t('scheduleView.showAll')} ({hiddenCount})
               </button>
             )}
           </div>,
@@ -168,7 +142,6 @@ const panel = cn(
 const panelHead =
   'px-1.5 pb-1.5 text-[9px] font-bold tracking-[0.18em] uppercase text-[var(--text-dim)] font-[var(--font-title)]';
 const rowWrap = 'px-1.5 py-1.5';
-const rule = 'my-1 h-px bg-[var(--border)]';
 const showAllBtn = cn(
   'mt-1 w-full rounded-[var(--r-sm)] border border-[var(--warning)] px-2 py-1.5',
   'text-[10px] font-bold tracking-[0.08em] uppercase font-[var(--font-title)]',

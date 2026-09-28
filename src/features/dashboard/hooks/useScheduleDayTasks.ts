@@ -43,6 +43,7 @@ const EMPTY_ARRAY: never[] = [];
 interface UseScheduleDayTasksParams {
   /** Selected day, "YYYY-MM-DD". */
   date: string;
+  showTasks?: boolean;
   showQuests?: boolean;
   showHabits?: boolean;
   /**
@@ -119,6 +120,7 @@ interface UseScheduleDayTasksResult {
  */
 export function useScheduleDayTasks({
   date,
+  showTasks = true,
   showQuests = true,
   showHabits = true,
   projectScope = 'active',
@@ -606,11 +608,12 @@ export function useScheduleDayTasks({
   const visibleTasks = useMemo(
     () =>
       tasks.filter((t) => {
+        if (t.source === 'task' && !showTasks) return false;
         if (t.source === 'quest' && !showQuests) return false;
         if (t.source === 'habit' && !showHabits) return false;
         return true;
       }),
-    [tasks, showQuests, showHabits],
+    [tasks, showTasks, showQuests, showHabits],
   );
 
   // Progress counts the selected day's visible items (tasks + quests + habits),
