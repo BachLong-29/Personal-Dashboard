@@ -92,8 +92,76 @@ function toMinutes(hhmm: string): number {
 }
 
 /**
- * Upsert one "write down today's cash" notification per day, listing only the
- * categories that have no cash spending recorded yet.
+ * Upsert the reminder for one day, if anything is still unrecorded for it.
+ *
+ * Returns whether it wrote, so the caller only pays for the notification cap
+ * when there was something to cap.
+ */
+async function remindForDay(args: {
+  uid: mongoose.Types.ObjectId;
+  dayISO: string;
+  dayStart: Date;
+  dayEnd: Date;
+  categories: CategoryLite[];
+  watched: Set<string>;
+  cashWalletIds: mongoose.Types.ObjectId[];
+  isToday: boolean;
+}): Promise<boolean> {
+  const { uid, dayISO, dayStart, dayEnd, categories, watched, cashWalletIds, isToday } = args;
+
+  const logged =
+    cashWalletIds.length === 0
+      ? []
+      : await TransactionModel.find({
+          userId: uid,
+          type: 'expense',
+          walletId: { $in: cashWalletIds },
+          date: { $gte: dayStart, $lt: dayEnd },
+        })
+          .select('categoryId')
+          .lean();
+
+  const loggedIds = new Set(logged.map((t) => t.categoryId.toString()));
+  const missing = categories.filter(
+    (c) => watched.has(c._id.toString()) && !loggedIds.has(c._id.toString()),
+  );
+  if (missing.length === 0) return false;
+
+  const names = missing.map((c) => c.name).join(' · ');
+  const dedupeKey = `cash-log:${dayISO}`;
+
+  await NotificationModel.updateOne(
+    { userId: uid, dedupeKey },
+    {
+      $setOnInsert: {
+        userId: uid,
+        type: 'cash-log',
+        title: isToday ? '💵 Log today\u2019s cash' : '💵 Log yesterday\u2019s cash',
+        message: `Nothing recorded yet for: ${names}`,
+        dedupeKey,
+        // Lapses at the end of the following day, so a reminder is readable
+        // the morning after without piling up for a week.
+        expiresAt: new Date(dayEnd.getTime() + 24 * 60 * 60_000),
+      },
+    },
+    { upsert: true },
+  );
+
+  return true;
+}
+
+/**
+ * Upsert the "write down today's cash" reminders, listing only the categories
+ * with no cash spending recorded yet.
+ *
+ * Covers **today and yesterday**. Nothing runs on a schedule here — the
+ * reminders are materialised when the bell is read — so a night the app was
+ * never opened would otherwise pass with the reminder never existing at all.
+ * Checking yesterday too is what makes "remind me at 22:00" survive going to
+ * bed early.
+ *
+ * Exactly one day back, not more: a week of missed reminders arriving at once
+ * is noise, and cash you cannot remember is not worth chasing.
  *
  * Idempotent via dedupeKey, so it is safe to call on every notification read.
  * Silent when there is nothing to chase: a reminder that fires on a day the
@@ -111,17 +179,18 @@ export async function generateCashLogNotifications(userId: string): Promise<void
   const now = new Date();
   const timeZone = setting.timezone || 'UTC';
   const { date: today, minutes: nowMinutes } = zonedParts(now, timeZone);
-  if (nowMinutes < toMinutes(setting.cashLog.time)) return;
 
   const categories = await FinanceCategoryModel.find({ userId: uid, type: 'expense' })
     .select('_id name')
     .lean();
   const watchedIds = resolveCashLogCategoryIds(setting.cashLog.categoryIds, categories);
   if (watchedIds.length === 0) return;
+  const watched = new Set(watchedIds.map((id) => id.toString()));
 
   // Cash only: bank and e-wallet spending arrives through the SePay webhook
   // without anyone typing it, which is the whole reason this reminder exists.
   const cashWallets = await WalletModel.find({ userId: uid, type: 'cash' }).select('_id').lean();
+  const cashWalletIds = cashWallets.map((w) => w._id);
 
   // The day's bounds as absolute instants, so the query matches the user's
   // day rather than the server's.
@@ -130,43 +199,36 @@ export async function generateCashLogNotifications(userId: string): Promise<void
   const dayStart = new Date(Date.UTC(y, m - 1, d) - offset * 60_000);
   const dayEnd = new Date(dayStart.getTime() + 24 * 60 * 60_000);
 
-  const logged =
-    cashWallets.length === 0
-      ? []
-      : await TransactionModel.find({
-          userId: uid,
-          type: 'expense',
-          walletId: { $in: cashWallets.map((w) => w._id) },
-          date: { $gte: dayStart, $lt: dayEnd },
-        })
-          .select('categoryId')
-          .lean();
+  // Yesterday's bounds are derived from an instant inside yesterday rather
+  // than by subtracting 24h from today's start: in a zone that shifts for DST
+  // those two are not the same day length.
+  const midYesterday = new Date(dayStart.getTime() - 12 * 60 * 60_000);
+  const yesterday = zonedParts(midYesterday, timeZone).date;
+  const yesterdayOffset = zoneOffsetMinutes(midYesterday, timeZone);
+  const [yy = 0, ym = 1, yd = 1] = yesterday.split('-').map(Number);
+  const yesterdayStart = new Date(Date.UTC(yy, ym - 1, yd) - yesterdayOffset * 60_000);
 
-  const loggedIds = new Set(logged.map((t) => t.categoryId.toString()));
-  const watched = new Set(watchedIds.map((id) => id.toString()));
-  const missing = categories.filter(
-    (c) => watched.has(c._id.toString()) && !loggedIds.has(c._id.toString()),
-  );
-  if (missing.length === 0) return;
+  const shared = { uid, categories, watched, cashWalletIds };
 
-  const names = missing.map((c) => c.name).join(' · ');
-  const dedupeKey = `cash-log:${today}`;
+  // Yesterday is over whatever the clock says, so it needs no time check.
+  const wroteYesterday = await remindForDay({
+    ...shared,
+    dayISO: yesterday,
+    dayStart: yesterdayStart,
+    dayEnd: dayStart,
+    isToday: false,
+  });
 
-  await NotificationModel.updateOne(
-    { userId: uid, dedupeKey },
-    {
-      $setOnInsert: {
-        userId: uid,
-        type: 'cash-log',
-        title: '💵 Log today’s cash',
-        message: `Nothing recorded yet for: ${names}`,
-        dedupeKey,
-        // Still there tomorrow morning if the app was never opened tonight.
-        expiresAt: new Date(dayEnd.getTime() + 24 * 60 * 60_000),
-      },
-    },
-    { upsert: true },
-  );
+  const wroteToday =
+    nowMinutes < toMinutes(setting.cashLog.time)
+      ? false
+      : await remindForDay({
+          ...shared,
+          dayISO: today,
+          dayStart,
+          dayEnd,
+          isToday: true,
+        });
 
-  await enforceNotificationCap(uid);
+  if (wroteYesterday || wroteToday) await enforceNotificationCap(uid);
 }
