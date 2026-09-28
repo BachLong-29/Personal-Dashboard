@@ -1,0 +1,201 @@
+'use client';
+
+import { useState } from 'react';
+
+import { Button } from '@/components/ui/Button';
+import { Modal, ModalBody, ModalHead } from '@/components/ui/Modal';
+import { SkelBlock } from '@/components/ui/Skeleton';
+import { AddTaskModal } from '@/features/tasks/components/shared/AddTaskModal';
+import { usePathname } from '@/i18n/navigation';
+import { cn } from '@/libs/utils';
+import { useUIStore } from '@/stores/ui.store';
+
+import { useCreateNote, useNotes, useToggleNoteArchived } from '../hooks/useNotes';
+
+/**
+ * Catch a thought in one tap.
+ *
+ * Mounted globally beside GlobalSearch and QuickAddTask, so the button is on
+ * every signed-in page and the sheet never costs a navigation — losing the
+ * page you were on is exactly the friction this exists to remove.
+ *
+ * Enter inserts a newline rather than saving: an idea is often two lines, and
+ * a key that silently commits half of one is worse than a button.
+ */
+export function QuickNotes() {
+  // Profile keeps a fixed save bar along the bottom edge (ProfilePage.tsx),
+  // and on a phone the button would land on top of its right-hand button.
+  // That bar is permanent, unlike a toast, so the button stands down there.
+  const pathname = usePathname();
+  const bottomEdgeTaken = pathname.startsWith('/profile');
+
+  const open = useUIStore((s) => s.notesOpen);
+  const openNotes = useUIStore((s) => s.openNotes);
+  const closeNotes = useUIStore((s) => s.closeNotes);
+
+  const { data: notes = [], isLoading } = useNotes();
+  const createNote = useCreateNote();
+  const toggleArchived = useToggleNoteArchived();
+
+  const [draft, setDraft] = useState('');
+  const [promoting, setPromoting] = useState<string | null>(null);
+
+  const canSave = draft.trim().length > 0 && !createNote.isPending;
+
+  const save = () => {
+    if (!canSave) return;
+    createNote.mutate(draft.trim(), { onSuccess: () => setDraft('') });
+  };
+
+  // Turning a note into a task hands over to the full form, so the sheet gets
+  // out of the way rather than stacking two panels.
+  const promote = (content: string) => {
+    closeNotes();
+    setPromoting(content);
+  };
+
+  return (
+    <>
+      {!open && !bottomEdgeTaken && (
+        <button
+          type="button"
+          onClick={openNotes}
+          aria-label="Quick notes"
+          title="Quick notes"
+          className={fab}
+        >
+          ✎
+        </button>
+      )}
+
+      <Modal open={open} onClose={closeNotes} maxWidth="520px" bottomSheet>
+        <ModalHead title="Quick Notes" />
+        <ModalBody>
+          <div className="flex flex-col gap-3">
+            <textarea
+              value={draft}
+              onChange={(e) => setDraft(e.target.value)}
+              // A shortcut for the same button, not a replacement: the repo
+              // already uses ⌘/Ctrl+Enter to commit text elsewhere.
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+                  e.preventDefault();
+                  save();
+                }
+              }}
+              rows={3}
+              maxLength={2000}
+              autoFocus
+              placeholder="What just came to mind?"
+              className={textarea}
+            />
+
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-[10px] text-[var(--text-dim)]">⌘ + Enter</span>
+              <Button variant="primary" size="sm" onClick={save} disabled={!canSave}>
+                {createNote.isPending ? '…' : 'Save note'}
+              </Button>
+            </div>
+
+            <div className="h-px bg-[var(--border)]" />
+
+            {isLoading ? (
+              <div className="flex flex-col gap-2">
+                {Array.from({ length: 3 }).map((_, i) => (
+                  <SkelBlock key={i} className="h-[44px] w-full" />
+                ))}
+              </div>
+            ) : notes.length === 0 ? (
+              <p className="py-6 text-center text-[12px] text-[var(--text-lo)]">
+                Nothing caught yet. The first line above becomes the first note.
+              </p>
+            ) : (
+              <div className="flex max-h-[40vh] flex-col gap-1.5 overflow-y-auto">
+                {notes.map((note) => {
+                  const done = !!note.archivedAt;
+                  return (
+                    <div key={note.id} className={row}>
+                      <button
+                        type="button"
+                        aria-pressed={done}
+                        title={done ? 'Reopen' : 'Mark as dealt with'}
+                        onClick={() => toggleArchived.mutate({ id: note.id, archived: !done })}
+                        className={cn(check, done && checkDone)}
+                      >
+                        {done ? '✓' : '○'}
+                      </button>
+
+                      <p
+                        className={cn(
+                          'min-w-0 flex-1 text-[12px] leading-relaxed whitespace-pre-wrap',
+                          done ? 'text-[var(--text-lo)] line-through' : 'text-[var(--text-hi)]',
+                        )}
+                      >
+                        {note.content}
+                      </p>
+
+                      <button
+                        type="button"
+                        onClick={() => promote(note.content)}
+                        title="Turn into a task"
+                        className={toTask}
+                      >
+                        → Task
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </ModalBody>
+      </Modal>
+
+      <AddTaskModal
+        open={promoting !== null}
+        onClose={() => setPromoting(null)}
+        onSaved={() => setPromoting(null)}
+        defaultValues={{ name: promoting ?? '' }}
+      />
+    </>
+  );
+}
+
+// ─── Styles ───────────────────────────────────────────────────────────────────
+
+/**
+ * Clear of the mobile bottom nav, which is fixed 56px tall on the dashboard.
+ * Sitting at `bottom-4` would bury the button under it on the one page most
+ * likely to be open when an idea arrives.
+ */
+const fab = cn(
+  'fixed right-4 bottom-[72px] z-30 flex h-12 w-12 items-center justify-center sm:right-6 sm:bottom-6',
+  'rounded-full border border-[var(--gold)] bg-[var(--panel)] text-[18px] text-[var(--gold)]',
+  'shadow-[0_6px_20px_rgba(0,0,0,0.45),0_0_16px_var(--gold-glow)] transition-transform',
+  'hover:scale-105 active:scale-95',
+);
+
+const textarea = cn(
+  'w-full resize-none rounded-[var(--r-md)] border border-[var(--border)] bg-[var(--bg-2)]',
+  'px-4 py-2.5 text-[13px] text-[var(--text-hi)] placeholder:text-[var(--text-dim)]',
+  'transition-all duration-[180ms] hover:border-[var(--border-hi)]',
+  'focus:border-[var(--gold)] focus:shadow-[0_0_0_3px_oklch(0.78_0.16_82_/_0.15)] focus:outline-none',
+);
+
+const row = cn(
+  'flex items-start gap-2 rounded-[var(--r-sm)] border border-[var(--border)]',
+  'bg-[var(--bg-2)] px-2.5 py-2 transition-colors hover:border-[var(--border-hi)]',
+);
+
+const check = cn(
+  'mt-[1px] flex h-5 w-5 shrink-0 items-center justify-center rounded-full',
+  'border border-[var(--border)] text-[10px] text-[var(--text-lo)] transition-colors',
+  'hover:border-[var(--mint)] hover:text-[var(--mint)]',
+);
+const checkDone = 'border-[var(--mint)] text-[var(--mint)]';
+
+const toTask = cn(
+  'shrink-0 rounded-[var(--r-sm)] border border-[var(--border)] px-1.5 py-0.5',
+  'text-[9px] font-bold tracking-[0.06em] text-[var(--text-lo)] uppercase [font-family:var(--f-title)]',
+  'transition-colors hover:border-[var(--gold)] hover:text-[var(--gold)]',
+);
