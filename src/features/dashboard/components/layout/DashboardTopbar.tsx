@@ -40,6 +40,12 @@ const DashboardTopbar = (props: DashboardTopbarProps) => {
   const openQuickAddTask = useUIStore((s) => s.openQuickAddTask);
   const openQuickAddTransaction = useUIStore((s) => s.openQuickAddTransaction);
   const openShareAgenda = useUIStore((s) => s.openShareAgenda);
+  const openNotes = useUIStore((s) => s.openNotes);
+
+  // The dashboard's own schedule bar already carries share, right beside the
+  // agenda it shares. Elsewhere there is no other way to reach it, so the
+  // topbar keeps it — one button, never two on the same screen.
+  const showShare = !pathname.startsWith('/dashboard');
 
   const { data: profileData } = useProfile();
   const profile = profileData?.profile;
@@ -69,26 +75,35 @@ const DashboardTopbar = (props: DashboardTopbarProps) => {
   };
 
   /**
-   * The quick-add menu, which doubles as the only place the keyboard shortcuts
-   * are ever taught. Glyph style follows the ⌘K hint in the search bar.
-   * Shortcuts are left off the phone, where there is no keyboard to press.
+   * Desktop's way to create anything, and the only place the keyboard
+   * shortcuts are ever taught. Glyph style follows the ⌘K hint in the search
+   * bar. The phone uses QuickCreateFab instead, where a shortcut would mean
+   * nothing.
    */
-  const quickAddGroups = (withShortcuts: boolean) => [
+  const quickAddGroups = () => [
     {
       items: [
         {
           key: 'task',
           icon: '📋',
           label: tDash('quickAddMenu.task'),
-          shortcut: withShortcuts ? '⌘⇧Q' : undefined,
+          shortcut: '⌘⇧Q',
           onClick: openQuickAddTask,
         },
         {
           key: 'transaction',
           icon: '💰',
           label: tDash('quickAddMenu.transaction'),
-          shortcut: withShortcuts ? '⌘⇧E' : undefined,
+          shortcut: '⌘⇧E',
           onClick: openQuickAddTransaction,
+        },
+        // No shortcut yet — the note sheet is reached by the phone's floating
+        // button, and this is desktop's way in.
+        {
+          key: 'note',
+          icon: '✎',
+          label: tDash('quickAddMenu.note'),
+          onClick: openNotes,
         },
       ],
     },
@@ -103,34 +118,36 @@ const DashboardTopbar = (props: DashboardTopbarProps) => {
   return (
     <>
       <div className={topBar}>
-        {/* ── Mobile: Dashboard shortcut + Search + Bell (left) ───────────── */}
+        {/* ── Mobile: Dashboard shortcut + Search + Share + Bell (left) ────
+            Creating lives in the floating button instead — five icons in the
+            corner furthest from a thumb was the whole problem. ── */}
         <div className="flex min-[1025px]:hidden items-center gap-2">
           <Link href="/dashboard" className={tabletMenuBtn} aria-label={tNav('dashboard')}>
-            <span className="text-[15px] leading-none text-[var(--gold)]">⌂</span>
+            {/* The app's own mark rather than a house glyph — it is the only
+                button here that means "this app", so it may as well look it.
+                `object-contain` because the file is 432×458, not square. */}
+            <Image
+              src="/logo.png"
+              alt=""
+              width={18}
+              height={18}
+              className="object-contain"
+              priority
+            />
           </Link>
           <button type="button" className={tabletMenuBtn} onClick={openSearch} aria-label="Search">
             <span className="text-[20px] leading-none text-[var(--gold)]">⌕</span>
           </button>
-          <Dropdown
-            trigger={
-              <button
-                type="button"
-                className={tabletMenuBtn}
-                aria-label={tDash('quickAddMenu.ariaLabel')}
-              >
-                <span className="text-[15px] leading-none text-[var(--gold)]">＋</span>
-              </button>
-            }
-            groups={quickAddGroups(false)}
-          />
-          <button
-            type="button"
-            className={tabletMenuBtn}
-            onClick={openShareAgenda}
-            aria-label={tShare('title')}
-          >
-            <span className="text-[15px] leading-none text-[var(--gold)]">⇪</span>
-          </button>
+          {showShare && (
+            <button
+              type="button"
+              className={tabletMenuBtn}
+              onClick={openShareAgenda}
+              aria-label={tShare('title')}
+            >
+              <span className="text-[15px] leading-none text-[var(--gold)]">⇪</span>
+            </button>
+          )}
           <NotificationBell />
         </div>
 
@@ -214,16 +231,18 @@ const DashboardTopbar = (props: DashboardTopbarProps) => {
                 <span className="text-[15px] leading-none text-[var(--gold)]">＋</span>
               </button>
             }
-            groups={quickAddGroups(true)}
+            groups={quickAddGroups()}
           />
-          <button
-            type="button"
-            className={tabletMenuBtn}
-            onClick={openShareAgenda}
-            aria-label={tShare('title')}
-          >
-            <span className="text-[15px] leading-none text-[var(--gold)]">⇪</span>
-          </button>
+          {showShare && (
+            <button
+              type="button"
+              className={tabletMenuBtn}
+              onClick={openShareAgenda}
+              aria-label={tShare('title')}
+            >
+              <span className="text-[15px] leading-none text-[var(--gold)]">⇪</span>
+            </button>
+          )}
           <NotificationBell />
         </div>
       </div>

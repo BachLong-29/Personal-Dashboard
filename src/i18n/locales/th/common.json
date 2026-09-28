@@ -161,7 +161,8 @@
     "quickAddMenu": {
       "ariaLabel": "เพิ่มด่วน",
       "task": "เพิ่มงานด่วน",
-      "transaction": "บันทึกธุรกรรมด่วน"
+      "transaction": "บันทึกธุรกรรมด่วน",
+      "note": "บันทึกด่วน"
     },
     "tabs": {
       "quests": "ภารกิจ",

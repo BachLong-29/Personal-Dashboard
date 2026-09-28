@@ -6,6 +6,7 @@ import { TOKEN_KEYS } from '@/constants/auth';
 import { defaultLocale } from '@/i18n/config';
 import { ToastContainer } from '@/components/common/ToastContainer';
 import { QuickAddTransaction } from '@/features/finance/components/QuickAddTransaction';
+import { QuickCreateFab } from '@/components/common/QuickCreateFab';
 import { QuickNotes } from '@/features/notes/components/QuickNotes';
 import { GlobalSearch } from '@/features/search/components/GlobalSearch';
 import { ShareAgendaModal } from '@/features/share/components/ShareAgendaModal';
@@ -45,6 +46,7 @@ export default async function ProtectedLayout({
       <QuickAddTask />
       <QuickAddTransaction />
       <QuickNotes />
+      <QuickCreateFab />
       <ToastContainer />
     </>
   );
