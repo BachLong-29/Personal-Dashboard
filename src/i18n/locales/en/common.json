@@ -161,7 +161,8 @@
     "quickAddMenu": {
       "ariaLabel": "Quick add",
       "task": "Quick add task",
-      "transaction": "Quick add transaction"
+      "transaction": "Quick add transaction",
+      "note": "Quick note"
     },
     "tabs": {
       "quests": "Quests",

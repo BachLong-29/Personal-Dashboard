@@ -161,7 +161,8 @@
     "quickAddMenu": {
       "ariaLabel": "Thêm nhanh",
       "task": "Tạo task nhanh",
-      "transaction": "Ghi giao dịch nhanh"
+      "transaction": "Ghi giao dịch nhanh",
+      "note": "Ghi chú nhanh"
     },
     "tabs": {
       "quests": "Nhiệm vụ",

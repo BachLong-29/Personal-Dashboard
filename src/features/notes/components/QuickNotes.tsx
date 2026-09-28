@@ -6,7 +6,6 @@ import { Button } from '@/components/ui/Button';
 import { Modal, ModalBody, ModalHead } from '@/components/ui/Modal';
 import { SkelBlock } from '@/components/ui/Skeleton';
 import { AddTaskModal } from '@/features/tasks/components/shared/AddTaskModal';
-import { usePathname } from '@/i18n/navigation';
 import { cn } from '@/libs/utils';
 import { useUIStore } from '@/stores/ui.store';
 
@@ -15,22 +14,16 @@ import { useCreateNote, useNotes, useToggleNoteArchived } from '../hooks/useNote
 /**
  * Catch a thought in one tap.
  *
- * Mounted globally beside GlobalSearch and QuickAddTask, so the button is on
- * every signed-in page and the sheet never costs a navigation — losing the
- * page you were on is exactly the friction this exists to remove.
+ * Mounted globally beside GlobalSearch and QuickAddTask, so it never costs a
+ * navigation — losing the page you were on is exactly the friction this
+ * exists to remove. Opened from QuickCreateFab on a phone and from the
+ * topbar's ＋ menu on desktop.
  *
  * Enter inserts a newline rather than saving: an idea is often two lines, and
  * a key that silently commits half of one is worse than a button.
  */
 export function QuickNotes() {
-  // Profile keeps a fixed save bar along the bottom edge (ProfilePage.tsx),
-  // and on a phone the button would land on top of its right-hand button.
-  // That bar is permanent, unlike a toast, so the button stands down there.
-  const pathname = usePathname();
-  const bottomEdgeTaken = pathname.startsWith('/profile');
-
   const open = useUIStore((s) => s.notesOpen);
-  const openNotes = useUIStore((s) => s.openNotes);
   const closeNotes = useUIStore((s) => s.closeNotes);
 
   const { data: notes = [], isLoading } = useNotes();
@@ -56,18 +49,6 @@ export function QuickNotes() {
 
   return (
     <>
-      {!open && !bottomEdgeTaken && (
-        <button
-          type="button"
-          onClick={openNotes}
-          aria-label="Quick notes"
-          title="Quick notes"
-          className={fab}
-        >
-          ✎
-        </button>
-      )}
-
       <Modal open={open} onClose={closeNotes} maxWidth="520px" bottomSheet>
         <ModalHead title="Quick Notes" />
         <ModalBody>
@@ -162,18 +143,6 @@ export function QuickNotes() {
 }
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
-
-/**
- * Clear of the mobile bottom nav, which is fixed 56px tall on the dashboard.
- * Sitting at `bottom-4` would bury the button under it on the one page most
- * likely to be open when an idea arrives.
- */
-const fab = cn(
-  'fixed right-4 bottom-[72px] z-30 flex h-12 w-12 items-center justify-center sm:right-6 sm:bottom-6',
-  'rounded-full border border-[var(--gold)] bg-[var(--panel)] text-[18px] text-[var(--gold)]',
-  'shadow-[0_6px_20px_rgba(0,0,0,0.45),0_0_16px_var(--gold-glow)] transition-transform',
-  'hover:scale-105 active:scale-95',
-);
 
 const textarea = cn(
   'w-full resize-none rounded-[var(--r-md)] border border-[var(--border)] bg-[var(--bg-2)]',
