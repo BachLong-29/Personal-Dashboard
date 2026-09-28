@@ -12,6 +12,7 @@ import { usePenaltyFlow } from '../../hooks/usePenaltyFlow';
 import { useQuestOrchestration } from '../../hooks/useQuestOrchestration';
 import type { BurstPos, CenterTab, Character, DashboardSettings } from '../../types';
 import { buildEmptyChar, profileToCharacter } from '../../utils/character.utils';
+import { CashLogReminderModal } from '@/features/finance/components/CashLogReminderModal';
 import { useOverdueReview } from '@/features/tasks/hooks/useOverdueReview';
 import { OverdueReviewModal } from '@/features/tasks/components/shared/OverdueReviewModal';
 import { useUIStore } from '@/stores/ui.store';
@@ -216,6 +217,12 @@ export default function MainDashboard() {
         onFailureContinue={handleFailureContinue}
         onConfirmQuest={handleConfirmQuest}
         onCancelQuest={handleCancelQuest}
+      />
+
+      {/* Last in the queue of things that greet you: a missing note is the
+          mildest of them, and three dialogs at once is a wall. */}
+      <CashLogReminderModal
+        suppressed={!!penaltyState || penaltyFailed || (showOverdueModal && !taskPenaltyPending)}
       />
 
       <OverdueReviewModal

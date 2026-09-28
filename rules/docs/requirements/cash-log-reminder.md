@@ -65,18 +65,35 @@ Thứ tự dừng sớm, rẻ trước đắt:
 
 1. Throttle 5 phút trong tiến trình (như `budget-notifications`)
 2. `cashLog.enabled` tắt → dừng
-3. Giờ hiện tại theo zone của user **chưa tới** `cashLog.time` → dừng
-4. Không có category nào được chọn → dừng
-5. Không có category nào còn thiếu → **dừng, không nhắc**
+3. Không có category nào được chọn → dừng
+4. Không có category nào còn thiếu → **dừng, không nhắc**
 
-Điểm 5 là điều kiện quan trọng nhất: ngày đã ghi đủ thì **im lặng**. Thông báo bắn cả vào ngày
+Điểm 4 là điều kiện quan trọng nhất: ngày đã ghi đủ thì **im lặng**. Thông báo bắn cả vào ngày
 user đã làm xong việc là thông báo người ta học cách bỏ qua.
 
 Chỉ đếm transaction `type: 'expense'` trên ví `type: 'cash'`. Ví bank và e-wallet đã tự vào sổ
 qua webhook — đó là toàn bộ lý do tính năng này tồn tại.
 
-`dedupeKey = cash-log:<YYYY-MM-DD>` → mở app 10 lần vẫn một hàng.
-`expiresAt` = hết ngày **hôm sau**, nên mở app lúc 1h sáng vẫn còn thấy nhắc của hôm trước.
+## Chạy cho HAI ngày, không phải một
+
+Không có scheduler, nên thông báo chỉ tồn tại khi có người đọc chuông. Nếu chỉ xét **hôm nay**
+thì một đêm không mở app là đêm đó **không bao giờ có nhắc** — kiểm tra giờ ở đầu hàm sẽ chặn
+ngay sáng hôm sau, và hôm qua thì đã trôi qua mà chưa ai sinh gì cả.
+
+Vì vậy mỗi lần chạy xét **hôm qua và hôm nay**:
+
+- **Hôm qua** — chạy vô điều kiện, nó đã kết thúc rồi nên không cần so giờ
+- **Hôm nay** — chỉ khi đã qua `cashLog.time` theo zone của user
+
+**Đúng một ngày lùi lại, không nhiều hơn.** Một tuần nhắc dồn về cùng lúc là nhiễu, và khoản
+tiền mặt không còn nhớ nổi thì cũng không đáng truy.
+
+Ranh giới hôm qua tính từ **một thời điểm nằm trong hôm qua**, không phải lấy đầu hôm nay trừ
+24 giờ — ở zone có DST hai cách đó ra kết quả khác nhau.
+
+`dedupeKey = cash-log:<YYYY-MM-DD>` → mở app 10 lần vẫn một hàng, và nhắc của hôm qua nếu đã
+sinh rồi thì không sinh lại.
+`expiresAt` = hết ngày **kế tiếp** của ngày được nhắc, nên nhắc không chồng chất.
 
 ## Giao diện
 
