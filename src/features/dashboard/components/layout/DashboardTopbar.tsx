@@ -2,6 +2,10 @@
 
 import { useLocale, useTranslations } from 'next-intl';
 import Image from 'next/image';
+
+// Imported rather than referenced by path: Next fingerprints the file, so
+// swapping the artwork changes the URL and no one is served a stale logo.
+import logo from '../../../../../public/logo.png';
 import { useState } from 'react';
 
 import { CharacterCard } from '@/components/common/CharacterCard';
@@ -126,14 +130,7 @@ const DashboardTopbar = (props: DashboardTopbarProps) => {
             {/* The app's own mark rather than a house glyph — it is the only
                 button here that means "this app", so it may as well look it.
                 `object-contain` because the file is 432×458, not square. */}
-            <Image
-              src="/logo.png"
-              alt=""
-              width={18}
-              height={18}
-              className="object-contain"
-              priority
-            />
+            <Image src={logo} alt="" width={18} height={18} className="object-contain" priority />
           </Link>
           <button type="button" className={tabletMenuBtn} onClick={openSearch} aria-label="Search">
             <span className="text-[20px] leading-none text-[var(--gold)]">⌕</span>

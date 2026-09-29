@@ -1,6 +1,10 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import Image from 'next/image';
+
+// Imported rather than referenced by path — see DashboardTopbar.
+import logo from '../../../../public/logo.png';
 import { useLocale } from 'next-intl';
 import { useTranslations } from 'next-intl';
 import { Link, usePathname, useRouter } from '@/i18n/navigation';
@@ -54,15 +58,32 @@ export function LandingNav() {
   return (
     <nav className="lp-nav" ref={navRef}>
       <div className="lp-nav-brand">
-        <div className="lp-nav-mark">A</div>
+        {/* Not `lp-nav-mark`: that rule paints the gradient tile and glow the
+            letter used to sit on, and overriding it from here cannot win —
+            both are single classes, and globals.css is written after the
+            utilities, so it takes the tie. Sizing is restated instead: 32px,
+            28px under the 767px breakpoint the rule itself uses. */}
+        <div className="h-8 w-8 shrink-0 max-[767px]:h-7 max-[767px]:w-7">
+          <Image src={logo} alt="" className="h-full w-full object-contain" priority />
+        </div>
         <div className="lp-nav-name">AETHERIA</div>
       </div>
       <div className="lp-nav-links">
-        <a className="lp-nav-link" href="#system">{t('theSystem')}</a>
-        <a className="lp-nav-link" href="#arsenal">{t('arsenal')}</a>
-        <a className="lp-nav-link" href="#metrics">{t('proof')}</a>
-        <a className="lp-nav-link" href="#vault">{t('vault')}</a>
-        <a className="lp-nav-link" href="#guild">{t('guild')}</a>
+        <a className="lp-nav-link" href="#system">
+          {t('theSystem')}
+        </a>
+        <a className="lp-nav-link" href="#arsenal">
+          {t('arsenal')}
+        </a>
+        <a className="lp-nav-link" href="#metrics">
+          {t('proof')}
+        </a>
+        <a className="lp-nav-link" href="#vault">
+          {t('vault')}
+        </a>
+        <a className="lp-nav-link" href="#guild">
+          {t('guild')}
+        </a>
       </div>
 
       <div className="flex items-center gap-2">
@@ -73,7 +94,16 @@ export function LandingNav() {
             aria-label="Switch language"
             className="flex items-center gap-1.5 rounded-md border border-white/10 bg-white/5 px-2.5 py-1.5 font-mono text-[11px] tracking-widest text-white/60 transition hover:border-white/20 hover:bg-white/10 hover:text-white/90"
           >
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <svg
+              width="12"
+              height="12"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
               <circle cx="12" cy="12" r="10" />
               <path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
             </svg>
@@ -93,9 +123,7 @@ export function LandingNav() {
                       : 'text-white/50 hover:bg-white/5 hover:text-white/80',
                   ].join(' ')}
                 >
-                  {loc === locale && (
-                    <span className="text-[var(--gold)]">◆</span>
-                  )}
+                  {loc === locale && <span className="text-[var(--gold)]">◆</span>}
                   {loc !== locale && <span className="w-[12px]" />}
                   {localeLabels[loc]}
                 </button>
