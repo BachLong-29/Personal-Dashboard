@@ -113,6 +113,28 @@ export interface TransactionFilters {
   search?: string;
 }
 
+export interface ImportBudgetRow {
+  /** Set when the client matched the sheet line to an existing category. */
+  categoryId?: string;
+  name: string;
+  icon?: string;
+  limit: number;
+  recurring: boolean;
+}
+
+export interface ImportBudgetsPayload {
+  month: string;
+  rows: ImportBudgetRow[];
+  /** The sheet's total line, stored as the month's overall budget. */
+  overall?: { limit: number; recurring: boolean };
+}
+
+export interface ImportBudgetsResult {
+  budgets: Budget[];
+  importedCount: number;
+  createdCategories: number;
+}
+
 export interface Budget {
   id: string;
   /** null = overall (all-expense) budget for the month */

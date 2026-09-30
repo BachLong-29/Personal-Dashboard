@@ -15,6 +15,8 @@ import type {
   SepayKeyResult,
   Budget,
   CreateBudgetPayload,
+  ImportBudgetsPayload,
+  ImportBudgetsResult,
   UpdateBudgetPayload,
   FinanceOverview,
   FinanceGoal,
@@ -93,6 +95,9 @@ export const financeEndpoints = {
     apiClient.patch<ApiResponse<Budget>>(`/finance/budgets/${id}`, payload),
 
   removeBudget: (id: string) => apiClient.delete<ApiResponse<null>>(`/finance/budgets/${id}`),
+
+  importBudgets: (payload: ImportBudgetsPayload) =>
+    apiClient.post<ApiResponse<ImportBudgetsResult>>('/finance/budgets/import', payload),
 
   listGoals: (month: string, today: string) =>
     apiClient.get<ApiResponse<FinanceGoal[]>>(`/finance/goals?month=${month}&today=${today}`),
