@@ -1,6 +1,7 @@
 import { useTranslations } from 'next-intl';
 import { CoinIcon } from '@/components/common/CoinIcon';
 import { Link } from '@/i18n/navigation';
+import { HeroSigilCore } from './HeroSigilCore';
 
 const embers = [
   { left: '8%', drift: '30px', duration: '14s', delay: '0s', color: '' },
@@ -111,7 +112,7 @@ export function LandingHero() {
           <div className="lp-sigil-ring r2" />
           <div className="lp-sigil-ring r3" />
           <div className="lp-sigil-ring r4" />
-          <div className="lp-sigil-core">A</div>
+          <HeroSigilCore />
         </div>
 
         <div className="lp-float-card fc1">
