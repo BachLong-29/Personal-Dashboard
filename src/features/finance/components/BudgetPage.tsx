@@ -19,6 +19,8 @@ import { currentMonthKey, formatCurrency, formatMonthLabel } from '../utils';
 import { BudgetFormModal } from './BudgetFormModal';
 import { BudgetList } from './BudgetList';
 import { FinancePageHeader } from './FinancePageHeader';
+import { buildBudgetTemplate } from '../budget-csv';
+import { BudgetImportModal } from './BudgetImportModal';
 import { MonthStepper } from './MonthStepper';
 
 const EASE_OUT = [0.16, 1, 0.3, 1] as const;
@@ -36,7 +38,24 @@ export function BudgetPage() {
   const [editingBudget, setEditingBudget] = useState<Budget | null>(null);
   const [deletingBudget, setDeletingBudget] = useState<Budget | null>(null);
 
+  const [showImport, setShowImport] = useState(false);
+
   const canCreate = month >= currentMonthKey();
+
+  /**
+   * A sheet of every category with the amounts blank. Built from the reader's
+   * own categories so an import matches them by name exactly, rather than by
+   * guessing — which is the one place this could quietly budget the wrong row.
+   */
+  function downloadTemplate() {
+    const csv = buildBudgetTemplate(expenseCategories, month, true);
+    const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `budget-${month}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+  }
   const existingCategoryIds = budgets.map((b) => b.categoryId);
 
   const totals = useMemo(() => {
@@ -84,11 +103,38 @@ export function BudgetPage() {
           title={t('budget.title')}
           hideTitleOnMobile
           controls={
-            <MonthStepper
-              month={month}
-              onChange={setMonth}
-              className="h-9 w-full justify-between sm:h-auto sm:w-auto sm:justify-start"
-            />
+            /* One row at every width. The two buttons shed their labels below
+               `sm` and become glyphs, the same way this header's own action
+               button does — letting them wrap instead left the month stepper
+               alone on a line with two stray pills underneath it. */
+            <div className="flex w-full min-w-0 items-center gap-1.5 sm:w-auto">
+              <MonthStepper
+                month={month}
+                onChange={setMonth}
+                className="h-9 min-w-0 flex-1 justify-between sm:h-auto sm:w-auto sm:flex-none sm:justify-start"
+              />
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={downloadTemplate}
+                title="Download template"
+                aria-label="Download template"
+                className={compactBtn}
+              >
+                ⤓ <span className="hidden sm:inline">Template</span>
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowImport(true)}
+                disabled={!canCreate}
+                title={canCreate ? 'Import budgets' : t('budget.pastMonth')}
+                aria-label="Import budgets"
+                className={compactBtn}
+              >
+                ⤒ <span className="hidden sm:inline">Import</span>
+              </Button>
+            </div>
           }
           stat={
             budgets.length > 0 ? (
@@ -187,6 +233,12 @@ export function BudgetPage() {
         budget={editingBudget}
       />
 
+      <BudgetImportModal
+        open={showImport}
+        onClose={() => setShowImport(false)}
+        defaultMonth={month}
+      />
+
       <Modal open={!!deletingBudget} onClose={() => setDeletingBudget(null)} maxWidth="380px">
         <ModalHead tag={t('budget.deleteTag')} title={`🗑 ${t('budget.deleteTitle')}`} />
         <ModalBody>
@@ -232,3 +284,7 @@ const panelHeader =
 const panelHeaderTitle =
   'font-[var(--font-title)] text-[10px] font-bold tracking-[0.15em] text-[var(--gold)] uppercase flex-1';
 const panelHeaderOrnament = 'text-[var(--gold-dim)] text-[8px] tracking-[3px] opacity-60';
+
+/** Glyph-only on a phone, glyph plus label from `sm` — mirrors the header's action button. */
+const compactBtn =
+  'h-9 w-9 shrink-0 justify-center gap-0 p-0 sm:h-auto sm:w-auto sm:gap-1.5 sm:px-3';
