@@ -107,7 +107,7 @@ export function BudgetPage() {
                `sm` and become glyphs, the same way this header's own action
                button does — letting them wrap instead left the month stepper
                alone on a line with two stray pills underneath it. */
-            <div className="flex w-full min-w-0 items-center gap-1.5 sm:w-auto">
+            <div className="flex w-full min-w-0 items-stretch gap-1.5 sm:w-auto">
               <MonthStepper
                 month={month}
                 onChange={setMonth}
@@ -115,7 +115,6 @@ export function BudgetPage() {
               />
               <Button
                 variant="ghost"
-                size="sm"
                 onClick={downloadTemplate}
                 title="Download template"
                 aria-label="Download template"
@@ -125,7 +124,6 @@ export function BudgetPage() {
               </Button>
               <Button
                 variant="ghost"
-                size="sm"
                 onClick={() => setShowImport(true)}
                 disabled={!canCreate}
                 title={canCreate ? 'Import budgets' : t('budget.pastMonth')}
@@ -285,6 +283,10 @@ const panelHeaderTitle =
   'font-[var(--font-title)] text-[10px] font-bold tracking-[0.15em] text-[var(--gold)] uppercase flex-1';
 const panelHeaderOrnament = 'text-[var(--gold-dim)] text-[8px] tracking-[3px] opacity-60';
 
-/** Glyph-only on a phone, glyph plus label from `sm` — mirrors the header's action button. */
-const compactBtn =
-  'h-9 w-9 shrink-0 justify-center gap-0 p-0 sm:h-auto sm:w-auto sm:gap-1.5 sm:px-3';
+/**
+ * The exact geometry of this header's own action button, so the four controls
+ * in the row share one height and one type scale: a 36px square on a phone,
+ * glyph plus label from `sm`. `size="sm"` here left them visibly shorter than
+ * the primary button beside them.
+ */
+const compactBtn = 'h-9 w-9 shrink-0 justify-center gap-0 p-0 sm:h-auto sm:w-auto sm:gap-2 sm:px-4';
