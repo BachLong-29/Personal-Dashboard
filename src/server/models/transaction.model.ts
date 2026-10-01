@@ -17,6 +17,16 @@ export interface ITransaction extends Document {
   note?: string;
   date: Date;
   source: TransactionSource;
+  /**
+   * Set when this arrived on its own and took the wallet below zero.
+   *
+   * The money really did leave the account, so the balance still moves — a
+   * balance that disagrees with the bank is worse than a negative number. What
+   * it stays out of is the income/expense totals, until the reader looks at it
+   * and accepts it. A wallet going negative almost always means the opening
+   * balance was never set right, and this is the flag that says so.
+   */
+  overdraft?: boolean;
   sepayTransactionId?: string;
   recurringId?: mongoose.Types.ObjectId;
   createdAt: Date;
@@ -62,6 +72,7 @@ const transactionSchema = new Schema<ITransaction>(
       type: Date,
       required: true,
     },
+    overdraft: { type: Boolean, default: false },
     source: {
       type: String,
       enum: TRANSACTION_SOURCES,

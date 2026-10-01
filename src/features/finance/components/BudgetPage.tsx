@@ -48,7 +48,13 @@ export function BudgetPage() {
    * guessing — which is the one place this could quietly budget the wrong row.
    */
   function downloadTemplate() {
-    const csv = buildBudgetTemplate(expenseCategories, month, true);
+    // Categories kept out of the totals never accumulate spending, so a line
+    // for them would only ever read 0% — see finance-exclusions.ts.
+    const csv = buildBudgetTemplate(
+      expenseCategories.filter((c) => !c.excludeFromTotals),
+      month,
+      true,
+    );
     const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
     const link = document.createElement('a');
     link.href = url;

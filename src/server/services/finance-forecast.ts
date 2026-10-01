@@ -1,5 +1,6 @@
 import { TransactionModel } from '@/server/models/transaction.model';
 import { WalletModel } from '@/server/models/wallet.model';
+import { excludedCategoryIds } from '@/server/services/finance-exclusions';
 
 export interface ForecastPoint {
   /** "YYYY-MM" */
@@ -45,9 +46,15 @@ export async function getBalanceForecast(
   const wallets = await WalletModel.find({ userId, active: true }).lean();
   const current = wallets.reduce((sum, w) => sum + w.balance, 0);
 
+  const excluded = await excludedCategoryIds(userId);
+
   const transactions = await TransactionModel.find({
     userId,
     date: { $gte: new Date(Date.UTC(Number(windowParts[0]), Number(windowParts[1]) - 1, 1)) },
+    // See finance-exclusions.ts — a correction is not a trend.
+    categoryId: { $nin: excluded },
+    // See transaction.model.ts — an unaccepted overdraft is not a trend.
+    overdraft: { $ne: true },
   }).lean();
 
   const netByMonth = new Map<string, number>();

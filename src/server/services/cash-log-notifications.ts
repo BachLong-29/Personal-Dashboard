@@ -6,6 +6,7 @@ import { TransactionModel } from '@/server/models/transaction.model';
 import { UserSettingModel } from '@/server/models/user-setting.model';
 import { WalletModel } from '@/server/models/wallet.model';
 import { enforceNotificationCap } from '@/server/services/notification-cleanup';
+import { excludedCategoryIds } from '@/server/services/finance-exclusions';
 
 // In-process throttle, same rationale as generateBudgetNotifications: this
 // runs three queries, and every notification-list read would otherwise redo
@@ -109,6 +110,8 @@ async function remindForDay(args: {
 }): Promise<boolean> {
   const { uid, dayISO, dayStart, dayEnd, categories, watched, cashWalletIds, isToday } = args;
 
+  const excluded = await excludedCategoryIds(uid);
+
   const logged =
     cashWalletIds.length === 0
       ? []
@@ -117,6 +120,11 @@ async function remindForDay(args: {
           type: 'expense',
           walletId: { $in: cashWalletIds },
           date: { $gte: dayStart, $lt: dayEnd },
+          // A correction is not a spend worth remembering to write down.
+          categoryId: { $nin: excluded },
+          // An overdrawn auto transaction does not count as "already written
+          // down" — see transaction.model.ts.
+          overdraft: { $ne: true },
         })
           .select('categoryId')
           .lean();

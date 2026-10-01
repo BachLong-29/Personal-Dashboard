@@ -1159,6 +1159,8 @@
       "icon": "Icon",
       "color": "Color",
       "keywords": "Auto-assign keywords",
+        "excludeFromTotals": "Not income or expense",
+        "excludeFromTotalsHint": "Moves the wallet but stays out of totals, budgets and forecasts — balance corrections, transfers between your own wallets.",
       "keywordsPlaceholder": "e.g. highlands, grab food",
       "keywordsHint": "A synced SePay transaction whose content contains any of these keywords is auto-filed under this category.",
       "created": "Category created",

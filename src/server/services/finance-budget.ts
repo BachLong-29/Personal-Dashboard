@@ -3,6 +3,7 @@ import type mongoose from 'mongoose';
 import { BudgetModel, type IBudget } from '@/server/models/budget.model';
 import { FinanceCategoryModel } from '@/server/models/finance-category.model';
 import { TransactionModel } from '@/server/models/transaction.model';
+import { excludedCategoryIds } from '@/server/services/finance-exclusions';
 
 export interface BudgetWithSpent {
   id: string;
@@ -64,10 +65,17 @@ export async function listBudgetsWithSpent(
   if (budgets.length === 0) return [];
 
   const { from, to } = monthRange(month);
+  const excluded = await excludedCategoryIds(userId);
+
   const expenses = await TransactionModel.find({
     userId,
     type: 'expense',
     date: { $gte: from, $lte: to },
+    // See finance-exclusions.ts — a correction is not spending.
+    categoryId: { $nin: excluded },
+    // Overdrawn auto transactions move the balance but stay out of every
+    // total until accepted — see transaction.model.ts.
+    overdraft: { $ne: true },
   }).lean();
 
   const totalSpent = expenses.reduce((sum, t) => sum + t.amount, 0);

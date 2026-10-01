@@ -1159,6 +1159,8 @@
       "icon": "Biểu tượng",
       "color": "Màu",
       "keywords": "Từ khoá tự động gán",
+        "excludeFromTotals": "Không tính thu/chi",
+        "excludeFromTotalsHint": "Vẫn đổi số dư nhưng không vào thống kê, ngân sách và dự báo — dùng cho chỉnh số dư, chuyển tiền giữa ví của bạn.",
       "keywordsPlaceholder": "VD: highlands, grab food",
       "keywordsHint": "Giao dịch đồng bộ từ SePay có nội dung chứa 1 trong các từ khoá này sẽ tự động được gán vào danh mục này.",
       "created": "Đã tạo danh mục",

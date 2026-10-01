@@ -60,6 +60,8 @@ export interface FinanceCategory {
   icon: string;
   color: TaskColor;
   keywords: string[];
+  /** Moves the wallet but stays out of income, expense, budgets and forecasts. */
+  excludeFromTotals: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -70,6 +72,7 @@ export interface CreateFinanceCategoryPayload {
   icon: string;
   color: TaskColor;
   keywords?: string[];
+  excludeFromTotals?: boolean;
 }
 
 export interface Transaction {
@@ -82,6 +85,12 @@ export interface Transaction {
   note?: string;
   date: string;
   source: TransactionSource;
+  /**
+   * Arrived automatically and took the wallet below zero. Still counted in the
+   * balance — the money did leave — but kept out of income/expense totals
+   * until accepted.
+   */
+  overdraft: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -102,6 +111,8 @@ export interface UpdateTransactionPayload {
   amount?: number;
   note?: string | null;
   date?: string;
+  /** Clearing it accepts an auto transaction that had overdrawn the wallet. */
+  overdraft?: boolean;
 }
 
 export interface TransactionFilters {
@@ -276,6 +287,7 @@ export interface UpdateFinanceCategoryPayload {
   icon?: string;
   color?: TaskColor;
   keywords?: string[];
+  excludeFromTotals?: boolean;
 }
 
 export type GoldType = 'sjc' | 'vngsjc';

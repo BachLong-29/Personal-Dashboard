@@ -45,6 +45,7 @@ export function serialize(t: ITransaction): Transaction {
     note: t.note,
     date: t.date.toISOString().substring(0, 10),
     source: t.source,
+    overdraft: t.overdraft === true,
     createdAt: t.createdAt.toISOString(),
     updatedAt: t.updatedAt.toISOString(),
   };
@@ -54,6 +55,13 @@ export function serialize(t: ITransaction): Transaction {
 function balanceDelta(type: 'income' | 'expense', amount: number): number {
   return type === 'income' ? amount : -amount;
 }
+
+/**
+ * A wallet is never allowed to go below zero by hand. Typed in, the overdraft
+ * is a mistake worth catching at the keyboard; arriving from the bank it is a
+ * fact, and the webhook records it with a flag instead — see the SePay route.
+ */
+export const OVERDRAFT_MESSAGE = 'This would put the wallet below zero';
 
 // GET /api/v1/finance/transactions?walletId=&categoryId=&type=&from=&to=&search=
 export const GET = asyncHandler(async (req: NextRequest) => {
@@ -109,6 +117,10 @@ export const POST = asyncHandler(async (req: NextRequest) => {
     type: data.type,
   });
   if (!category) return errorResponse('Category not found or type mismatch', 400);
+
+  if (wallet.balance + balanceDelta(data.type, data.amount) < 0) {
+    return errorResponse(OVERDRAFT_MESSAGE, 400);
+  }
 
   const transaction = await TransactionModel.create({
     userId: user.sub,

@@ -63,6 +63,10 @@ export function TransactionFormModal({
   const isEdit = !!transaction;
   const createTx = useCreateTransaction();
   const updateTx = useUpdateTransaction();
+  // The server refuses anything that would take a wallet below zero, and until
+  // now nothing in this form listened — a refusal left the modal sitting there
+  // as though the save had worked.
+  const [submitError, setSubmitError] = useState<string | null>(null);
   const deleteTx = useDeleteTransaction();
   const saving = createTx.isPending || updateTx.isPending;
 
@@ -80,6 +84,7 @@ export function TransactionFormModal({
   if (open !== prevOpen) {
     setPrevOpen(open);
     if (open) {
+      setSubmitError(null);
       if (transaction) {
         setType(transaction.type);
         setWalletId(transaction.walletId);
@@ -135,6 +140,7 @@ export function TransactionFormModal({
   function handleSubmit(e?: React.FormEvent) {
     e?.preventDefault();
     if (!canSave) return;
+    setSubmitError(null);
     const payload = {
       walletId,
       categoryId,
@@ -144,16 +150,26 @@ export function TransactionFormModal({
       date,
     };
 
+    const handlers = {
+      onSuccess: () => onClose(),
+      onError: (err: unknown) => setSubmitError(messageOf(err)),
+    };
+
     if (transaction) {
-      updateTx.mutate({ id: transaction.id, ...payload }, { onSuccess: () => onClose() });
+      updateTx.mutate({ id: transaction.id, ...payload }, handlers);
     } else {
-      createTx.mutate(payload, { onSuccess: () => onClose() });
+      createTx.mutate(payload, handlers);
     }
   }
 
   function handleDelete() {
     if (!transaction) return;
-    deleteTx.mutate(transaction.id, { onSuccess: () => onClose() });
+    setSubmitError(null);
+    // Removing income can overdraw too, so this refusal needs showing as well.
+    deleteTx.mutate(transaction.id, {
+      onSuccess: () => onClose(),
+      onError: (err: unknown) => setSubmitError(messageOf(err)),
+    });
   }
 
   return (
@@ -167,6 +183,38 @@ export function TransactionFormModal({
         />
         <form onSubmit={handleSubmit}>
           <ModalBody className="max-h-[calc(80vh-130px)] overflow-y-auto flex flex-col gap-4">
+            {/* Arrived from the bank and took the wallet under. The balance
+                already moved; what is withheld is its place in the totals,
+                until someone has looked at why the wallet went under. */}
+            {transaction?.overdraft && (
+              <div className={overdraftBox}>
+                <p className="text-[11px] leading-relaxed text-[var(--warning)]">
+                  ⚠ This put{' '}
+                  {wallets.find((w) => w.id === transaction.walletId)?.name ?? 'the wallet'} below
+                  zero, so it is left out of income, expense and budgets. Usually the wallet&rsquo;s
+                  opening balance needs correcting rather than this row.
+                </p>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  disabled={updateTx.isPending}
+                  onClick={() =>
+                    updateTx.mutate(
+                      { id: transaction.id, overdraft: false },
+                      { onSuccess: () => onClose() },
+                    )
+                  }
+                >
+                  Count it anyway
+                </Button>
+              </div>
+            )}
+
+            {submitError && (
+              <p className="text-[11px] leading-relaxed text-[var(--rose)]">⚠ {submitError}</p>
+            )}
+
             {/* Type toggle */}
             <div className="relative flex gap-1 rounded-[var(--r-sm)] border border-[var(--border)] bg-[var(--panel)] p-1">
               {(['expense', 'income'] as TransactionType[]).map((option) => (
@@ -326,3 +374,14 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 
 const input =
   'w-full bg-[var(--surface-2)] border border-[var(--border)] rounded-[var(--r-sm)] px-3 py-2 text-[13px] text-[var(--text-hi)] focus:border-[var(--gold)] focus:outline-none';
+
+const overdraftBox = [
+  'flex flex-col items-start gap-2 rounded-[var(--r-sm)] border border-[var(--warning)]',
+  'bg-[var(--warning)]/10 px-3 py-2.5',
+].join(' ');
+
+/** The server's own words when it refuses, falling back to something sayable. */
+function messageOf(err: unknown): string {
+  const message = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
+  return message ?? 'Could not save. Please try again.';
+}

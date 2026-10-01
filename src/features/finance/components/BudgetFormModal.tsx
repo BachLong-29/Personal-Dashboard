@@ -73,11 +73,15 @@ export function BudgetFormModal({
       label: '🧮 Overall (all expenses)',
       disabled: !isEdit && existingCategoryIds.includes(null),
     },
-    ...categories.map((c) => ({
-      value: c.id,
-      label: `${c.icon} ${c.name}`,
-      disabled: !isEdit && existingCategoryIds.includes(c.id),
-    })),
+    // A category kept out of the totals never accumulates spending, so a limit
+    // on it would sit at 0% forever — see finance-exclusions.ts.
+    ...categories
+      .filter((c) => !c.excludeFromTotals)
+      .map((c) => ({
+        value: c.id,
+        label: `${c.icon} ${c.name}`,
+        disabled: !isEdit && existingCategoryIds.includes(c.id),
+      })),
   ].sort((a, b) => Number(a.disabled) - Number(b.disabled));
 
   function handleSubmit() {
