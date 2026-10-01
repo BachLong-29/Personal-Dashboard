@@ -5,17 +5,29 @@ import type { EventOccurrence } from '@/types';
 export const LIVE_TICK_MS = 30_000;
 
 /**
+ * How long a timed occurrence lasts when nobody said. `duration` is optional on
+ * the series and arrives as 0 here, which read literally would mean such an
+ * event is never under way for even a moment.
+ */
+const ASSUMED_DURATION_MINUTES = 60;
+
+/**
  * Is this occurrence under way at `now`?
  *
- * An all-day event is deliberately never "live": it is on from midnight, and
- * every caller is asking whether something is happening at this moment.
+ * An all-day occurrence owns the whole of its date. That makes the marquee and
+ * the LIVE badge burn all day on a day that has one, which is the honest
+ * answer: the event really is on, and a reader who marked it all-day means
+ * exactly that.
  */
 export function isEventLive(occ: EventOccurrence, now: Date): boolean {
-  if (occ.allDay || !occ.startTime || occ.duration <= 0) return false;
   if (occ.date !== toLocalDate(now)) return false;
+  if (occ.allDay) return true;
+  if (!occ.startTime) return false;
 
   const [h = 0, m = 0] = occ.startTime.split(':').map(Number);
   const minutesNow = now.getHours() * 60 + now.getMinutes();
   const start = h * 60 + m;
-  return minutesNow >= start && minutesNow < start + occ.duration;
+  const duration = occ.duration > 0 ? occ.duration : ASSUMED_DURATION_MINUTES;
+
+  return minutesNow >= start && minutesNow < start + duration;
 }
