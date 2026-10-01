@@ -1,10 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import Image from 'next/image';
-
-// Imported rather than referenced by path — see DashboardTopbar.
-import logo from '../../../../public/logo.png';
+import { LogoMark } from '@/components/common/LogoMark';
 import { useLocale } from 'next-intl';
 import { useTranslations } from 'next-intl';
 import { Link, usePathname, useRouter } from '@/i18n/navigation';
@@ -63,9 +60,7 @@ export function LandingNav() {
             both are single classes, and globals.css is written after the
             utilities, so it takes the tie. Sizing is restated instead: 32px,
             28px under the 767px breakpoint the rule itself uses. */}
-        <div className="h-8 w-8 shrink-0 max-[767px]:h-7 max-[767px]:w-7">
-          <Image src={logo} alt="" className="h-full w-full object-contain" priority />
-        </div>
+        <LogoMark className="h-8 w-8 shrink-0 max-[767px]:h-7 max-[767px]:w-7" />
         <div className="lp-nav-name">AETHERIA</div>
       </div>
       <div className="lp-nav-links">

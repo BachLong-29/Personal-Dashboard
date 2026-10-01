@@ -1,12 +1,9 @@
 'use client';
 
 import { useState } from 'react';
-import Image from 'next/image';
 import { useLocale, useTranslations } from 'next-intl';
 
-// Imported rather than referenced by path, so Next fingerprints it and a
-// swapped logo is never served from cache — same as the topbar and landing nav.
-import logo from '../../../../public/logo.png';
+import { LogoMark } from '@/components/common/LogoMark';
 
 import { GoogleSignInButton } from './GoogleSignInButton';
 import { LoginForm } from './LoginForm';
@@ -31,9 +28,7 @@ export function AuthPanel({ initialMode = 'login' }: AuthPanelProps) {
           {/* Not `bm-mark`: that rule paints the gradient tile the letter sat
               on, and a component cannot win the specificity tie against
               globals.css. Only its 36px is restated here. */}
-          <div className="h-9 w-9 shrink-0">
-            <Image src={logo} alt="" className="h-full w-full object-contain" priority />
-          </div>
+          <LogoMark className="h-9 w-9 shrink-0" />
           <div>
             <div className="bm-name">AETHERIA</div>
             <div className="bm-tag">{t('panel.brandTag')}</div>
