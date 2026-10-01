@@ -50,8 +50,17 @@ export function TransactionRow({
       </span>
 
       <span className="min-w-0 flex-1">
-        <span className="block truncate text-[13px] font-semibold text-[var(--text-hi)]">
-          {transaction.note || category?.name || 'Transaction'}
+        <span className="flex items-center gap-1.5">
+          {/* Took the wallet below zero on the way in, so it is being left out
+              of every total until accepted — see transaction.model.ts. */}
+          {transaction.overdraft && (
+            <span className={overdraftMark} title="Overdraft — not counted in totals yet">
+              !
+            </span>
+          )}
+          <span className="min-w-0 truncate text-[13px] font-semibold text-[var(--text-hi)]">
+            {transaction.note || category?.name || 'Transaction'}
+          </span>
         </span>
         <span className="mt-[2px] flex items-center gap-1.5 text-[10px] text-[var(--text-lo)]">
           <span className="truncate">{category?.name}</span>
@@ -74,3 +83,8 @@ export function TransactionRow({
     </motion.button>
   );
 }
+
+const overdraftMark = [
+  'flex h-4 w-4 shrink-0 items-center justify-center rounded-full',
+  'border border-[var(--warning)] text-[9px] font-bold text-[var(--warning)]',
+].join(' ');

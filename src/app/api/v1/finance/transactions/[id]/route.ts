@@ -14,7 +14,7 @@ import {
   unauthorizedResponse,
 } from '@/server';
 import { validateBody } from '@/server/validate';
-import { serialize } from '../route';
+import { OVERDRAFT_MESSAGE, serialize } from '../route';
 
 const TRANSACTION_TYPES = ['income', 'expense'] as const;
 
@@ -30,6 +30,8 @@ const updateSchema = z.object({
   amount: z.number().positive().optional(),
   note: z.string().max(200).trim().optional().nullable(),
   date: dateField.optional(),
+  /** Clearing it accepts an auto transaction that had overdrawn the wallet. */
+  overdraft: z.boolean().optional(),
 });
 
 function balanceDelta(type: 'income' | 'expense', amount: number): number {
@@ -73,6 +75,19 @@ export const PATCH = asyncHandler(async (req: NextRequest, ctx) => {
     if (!category) return errorResponse('Category not found or type mismatch', 400);
   }
 
+  // An edit can overdraw just as easily as a new row — raising an expense, or
+  // moving it to a thinner wallet. Checked against the balance the edit would
+  // leave behind, which on the same wallet means undoing the old effect first.
+  const target = await WalletModel.findOne({ _id: nextWalletId, userId: user.sub });
+  if (!target) return notFoundResponse('Wallet not found');
+
+  const sameWallet = existing.walletId.toString() === nextWalletId;
+  const after =
+    target.balance -
+    (sameWallet ? balanceDelta(existing.type, existing.amount) : 0) +
+    balanceDelta(nextType, nextAmount);
+  if (after < 0) return errorResponse(OVERDRAFT_MESSAGE, 400);
+
   // Reverse the old effect on the old wallet, apply the new effect on the (possibly new) wallet
   await WalletModel.findByIdAndUpdate(existing.walletId, {
     $inc: { balance: -balanceDelta(existing.type, existing.amount) },
@@ -93,6 +108,7 @@ export const PATCH = asyncHandler(async (req: NextRequest, ctx) => {
   else if (data.note !== undefined) setData.note = data.note;
 
   if (data.date) setData.date = new Date(data.date);
+  if (data.overdraft !== undefined) setData.overdraft = data.overdraft;
 
   const updateOp: Record<string, unknown> = { $set: setData };
   if (Object.keys(unsetData).length > 0) updateOp.$unset = unsetData;
@@ -112,9 +128,17 @@ export const DELETE = asyncHandler(async (req: NextRequest, ctx) => {
 
   await connectDB();
 
-  const transaction = await TransactionModel.findOneAndDelete({ _id: id, userId: user.sub });
+  const transaction = await TransactionModel.findOne({ _id: id, userId: user.sub });
   if (!transaction) return notFoundResponse('Transaction not found');
 
+  // Removing income takes money back out, which can overdraw just as spending
+  // does. Checked before the row is gone, so nothing is lost on a refusal.
+  const wallet = await WalletModel.findById(transaction.walletId);
+  if (wallet && wallet.balance - balanceDelta(transaction.type, transaction.amount) < 0) {
+    return errorResponse(OVERDRAFT_MESSAGE, 400);
+  }
+
+  await TransactionModel.deleteOne({ _id: transaction._id });
   await WalletModel.findByIdAndUpdate(transaction.walletId, {
     $inc: { balance: -balanceDelta(transaction.type, transaction.amount) },
   });

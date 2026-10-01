@@ -24,6 +24,7 @@ const updateSchema = z.object({
   icon: z.string().min(1).optional(),
   color: z.enum(['gold', 'mint', 'violet', 'cyan', 'rose', 'amber', 'blue']).optional(),
   keywords: z.array(z.string().trim().min(1)).optional(),
+  excludeFromTotals: z.boolean().optional(),
 });
 
 // PATCH /api/v1/finance/categories/:id

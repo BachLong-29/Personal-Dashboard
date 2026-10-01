@@ -2,6 +2,7 @@ import { FinanceCategoryModel } from '@/server/models/finance-category.model';
 import { TransactionModel } from '@/server/models/transaction.model';
 
 import { monthRange } from './finance-budget';
+import { excludedCategoryIds } from '@/server/services/finance-exclusions';
 
 export interface OverviewCategorySlice {
   categoryId: string;
@@ -68,9 +69,17 @@ export async function getFinanceOverview(
 ): Promise<FinanceOverview> {
   const { from, to } = monthRange(month);
 
+  const excluded = await excludedCategoryIds(userId);
+
   const transactions = await TransactionModel.find({
     userId,
     date: { $gte: from, $lte: to },
+    // Balance corrections and internal transfers move a wallet without being
+    // income or expense — see finance-exclusions.ts.
+    categoryId: { $nin: excluded },
+    // Overdrawn auto transactions move the balance but stay out of income and
+    // expense until accepted — see transaction.model.ts.
+    overdraft: { $ne: true },
   })
     .sort({ date: -1, createdAt: -1 })
     .lean();

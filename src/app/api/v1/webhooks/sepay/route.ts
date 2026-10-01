@@ -107,6 +107,15 @@ export async function POST(req: NextRequest) {
           { upsert: true, new: true },
         );
 
+    const delta = type === 'income' ? payload.transferAmount : -payload.transferAmount;
+
+    // The money has already moved at the bank, so the balance follows it even
+    // when that lands below zero — a balance that disagrees with the statement
+    // is worse than a negative one. The flag keeps it out of the income and
+    // expense totals until the reader has looked, because a wallet going under
+    // nearly always means its opening balance was never set right.
+    const overdraft = wallet.balance + delta < 0;
+
     await TransactionModel.create({
       userId: wallet.userId,
       walletId: wallet._id,
@@ -116,12 +125,11 @@ export async function POST(req: NextRequest) {
       note: payload.content || payload.description,
       date: parseSepayDate(payload.transactionDate),
       source: 'sepay',
+      overdraft,
       sepayTransactionId: payload.id,
     });
 
-    await WalletModel.findByIdAndUpdate(wallet._id, {
-      $inc: { balance: type === 'income' ? payload.transferAmount : -payload.transferAmount },
-    });
+    await WalletModel.findByIdAndUpdate(wallet._id, { $inc: { balance: delta } });
 
     return ack(201);
   } catch (error) {

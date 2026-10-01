@@ -6,6 +6,7 @@ import data from '@emoji-mart/data';
 import Picker from '@emoji-mart/react';
 
 import { Button } from '@/components/ui/Button';
+import { Switch } from '@/components/ui/Switch';
 import { Modal, ModalHead, ModalBody, ModalFoot } from '@/components/ui/Modal';
 import { cn } from '@/libs/utils';
 import type { FinanceCategory, FinanceCategoryType, TaskColor } from '@/types';
@@ -46,6 +47,7 @@ export function FinanceCategoryFormModal({
   const [color, setColor] = useState<TaskColor>('gold');
   const [keywords, setKeywords] = useState<string[]>([]);
   const [keywordDraft, setKeywordDraft] = useState('');
+  const [excludeFromTotals, setExcludeFromTotals] = useState(false);
   const [showPicker, setShowPicker] = useState(false);
 
   // Re-seed on open (adjusted during render, not an effect — same as the other finance forms).
@@ -58,6 +60,7 @@ export function FinanceCategoryFormModal({
       setIcon(category?.icon ?? '📦');
       setColor(category?.color ?? 'gold');
       setKeywords(category?.keywords ?? []);
+      setExcludeFromTotals(category?.excludeFromTotals ?? false);
       setKeywordDraft('');
       setShowPicker(false);
     }
@@ -81,7 +84,7 @@ export function FinanceCategoryFormModal({
 
     if (category) {
       updateCategory.mutate(
-        { id: category.id, name: name.trim(), icon, color, keywords },
+        { id: category.id, name: name.trim(), icon, color, keywords, excludeFromTotals },
         {
           onSuccess: (updated) => {
             if (updated) onSaved?.('updated', updated);
@@ -93,7 +96,7 @@ export function FinanceCategoryFormModal({
     }
 
     createCategory.mutate(
-      { name: name.trim(), type, icon, color, keywords },
+      { name: name.trim(), type, icon, color, keywords, excludeFromTotals },
       {
         onSuccess: (created) => {
           if (created) onSaved?.('created', created);
@@ -209,6 +212,16 @@ export function FinanceCategoryFormModal({
             ))}
           </div>
         </div>
+        <div className="flex items-start justify-between gap-4">
+          <div className="min-w-0">
+            <div className={fieldLabel}>{t('categories.excludeFromTotals')}</div>
+            <p className="mt-1 text-[11px] leading-relaxed text-[var(--text-lo)]">
+              {t('categories.excludeFromTotalsHint')}
+            </p>
+          </div>
+          <Switch checked={excludeFromTotals} onChange={setExcludeFromTotals} />
+        </div>
+
         <div className="flex flex-col gap-1.5">
           <span className={fieldLabel}>{t('categories.keywords')}</span>
           <div className="flex gap-2">

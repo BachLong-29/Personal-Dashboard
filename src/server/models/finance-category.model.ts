@@ -26,6 +26,15 @@ export interface IFinanceCategory extends Document {
   /** Keywords matched (case-insensitive, substring) against incoming bank-sync transaction
    * content to auto-assign this category — see the SePay webhook handler. */
   keywords: string[];
+  /**
+   * Money that moves without being earned or spent: correcting a balance back
+   * to what the bank really says, or shifting cash between your own wallets.
+   *
+   * Transactions here still move the wallet — that is the point of them — but
+   * they are kept out of income, expense, budgets and forecasts, where they
+   * would otherwise inflate both sides of the ledger at once.
+   */
+  excludeFromTotals: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -63,6 +72,7 @@ const financeCategorySchema = new Schema<IFinanceCategory>(
       type: [String],
       default: [],
     },
+    excludeFromTotals: { type: Boolean, default: false },
   },
   { timestamps: true },
 );

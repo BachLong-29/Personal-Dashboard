@@ -46,6 +46,7 @@ const createSchema = z.object({
   icon: z.string().min(1),
   color: z.enum(FINANCE_CATEGORY_COLORS),
   keywords: z.array(z.string().trim().min(1)).optional(),
+  excludeFromTotals: z.boolean().optional(),
 });
 
 export function serialize(c: IFinanceCategory): FinanceCategory {
@@ -57,6 +58,7 @@ export function serialize(c: IFinanceCategory): FinanceCategory {
     icon: c.icon,
     color: c.color,
     keywords: c.keywords ?? [],
+    excludeFromTotals: c.excludeFromTotals === true,
     createdAt: c.createdAt.toISOString(),
     updatedAt: c.updatedAt.toISOString(),
   };
