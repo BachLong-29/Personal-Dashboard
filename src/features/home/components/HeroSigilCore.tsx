@@ -1,11 +1,8 @@
 'use client';
 
-import Image from 'next/image';
 import { motion, useReducedMotion } from 'framer-motion';
 
-// Imported rather than referenced by path, so Next fingerprints it and a
-// swapped logo is never served from cache.
-import logo from '../../../../public/logo.png';
+import { LogoMark } from '@/components/common/LogoMark';
 
 /**
  * The sphere at the centre of the hero sigil.
@@ -36,7 +33,7 @@ export function HeroSigilCore() {
       }
       transition={reduceMotion ? undefined : { duration: 4, repeat: Infinity, ease: 'easeInOut' }}
     >
-      <Image src={logo} alt="" className="h-[62%] w-[62%] object-contain" priority />
+      <LogoMark className="h-[62%] w-[62%]" />
     </motion.div>
   );
 }
