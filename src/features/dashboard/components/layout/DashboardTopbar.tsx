@@ -11,7 +11,6 @@ import { useState } from 'react';
 import { CharacterCard } from '@/components/common/CharacterCard';
 import { CoinIcon } from '@/components/common/CoinIcon';
 import { Icon } from '@/components/common/Icon';
-import { Dropdown } from '@/components/ui/Dropdown';
 import { findClass, findCompanion, findRank } from '@/constants/hero-data';
 import { useLogout } from '@/features/auth/hooks/useLogout';
 import { useAuthStore } from '@/features/auth/stores/auth.store';
@@ -41,10 +40,7 @@ const DashboardTopbar = (props: DashboardTopbarProps) => {
   const pathname = usePathname();
   const logout = useLogout();
   const openSearch = useUIStore((s) => s.openSearch);
-  const openQuickAddTask = useUIStore((s) => s.openQuickAddTask);
-  const openQuickAddTransaction = useUIStore((s) => s.openQuickAddTransaction);
   const openShareAgenda = useUIStore((s) => s.openShareAgenda);
-  const openNotes = useUIStore((s) => s.openNotes);
 
   // The dashboard's own schedule bar already carries share, right beside the
   // agenda it shares. Elsewhere there is no other way to reach it, so the
@@ -77,41 +73,6 @@ const DashboardTopbar = (props: DashboardTopbarProps) => {
   const handleUserTriggerClick = () => {
     router.push('/dashboard');
   };
-
-  /**
-   * Desktop's way to create anything, and the only place the keyboard
-   * shortcuts are ever taught. Glyph style follows the ⌘K hint in the search
-   * bar. The phone uses QuickCreateFab instead, where a shortcut would mean
-   * nothing.
-   */
-  const quickAddGroups = () => [
-    {
-      items: [
-        {
-          key: 'task',
-          icon: '📋',
-          label: tDash('quickAddMenu.task'),
-          shortcut: '⌘⇧Q',
-          onClick: openQuickAddTask,
-        },
-        {
-          key: 'transaction',
-          icon: '💰',
-          label: tDash('quickAddMenu.transaction'),
-          shortcut: '⌘⇧E',
-          onClick: openQuickAddTransaction,
-        },
-        // No shortcut yet — the note sheet is reached by the phone's floating
-        // button, and this is desktop's way in.
-        {
-          key: 'note',
-          icon: '✎',
-          label: tDash('quickAddMenu.note'),
-          onClick: openNotes,
-        },
-      ],
-    },
-  ];
 
   const handleToggleLocale = () => {
     const currentIndex = locales.indexOf(locale);
@@ -216,20 +177,9 @@ const DashboardTopbar = (props: DashboardTopbarProps) => {
         {/* ── Desktop nav (1025px+): Streak | Bell | Logout ──────────────── */}
         <div className="hidden min-[1025px]:flex items-center gap-2">
           <div className={streakPill}>{tDash('streakDays', { count: char.streak })}</div>
-          {/* Creating anything had no home on desktop — only a shortcut nobody
-              was told about. */}
-          <Dropdown
-            trigger={
-              <button
-                type="button"
-                className={tabletMenuBtn}
-                aria-label={tDash('quickAddMenu.ariaLabel')}
-              >
-                <span className="text-[15px] leading-none text-[var(--gold)]">＋</span>
-              </button>
-            }
-            groups={quickAddGroups()}
-          />
+          {/* Creating lives in the floating button now, at every width. A menu
+              opened from here hung off the right edge of the window and got
+              clipped. */}
           {showShare && (
             <button
               type="button"
