@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 
 import { Button } from '@/components/ui/Button';
 import { Modal, ModalBody, ModalHead } from '@/components/ui/Modal';
@@ -27,6 +27,19 @@ export function QuickNotes() {
   const closeNotes = useUIStore((s) => s.closeNotes);
 
   const { data: notes = [], isLoading } = useNotes();
+
+  // Dealt-with notes sink to the bottom rather than vanishing: still there to
+  // look back at, but out of the way of the ones still waiting. Sorted here
+  // rather than on the server so ticking one slides it down at once, off the
+  // optimistic update, with no round trip in between.
+  const ordered = useMemo(
+    () =>
+      [...notes].sort(
+        (a, b) =>
+          Number(!!a.archivedAt) - Number(!!b.archivedAt) || b.createdAt.localeCompare(a.createdAt),
+      ),
+    [notes],
+  );
   const createNote = useCreateNote();
   const toggleArchived = useToggleNoteArchived();
 
@@ -92,7 +105,7 @@ export function QuickNotes() {
               </p>
             ) : (
               <div className="flex max-h-[40vh] flex-col gap-1.5 overflow-y-auto">
-                {notes.map((note) => {
+                {ordered.map((note) => {
                   const done = !!note.archivedAt;
                   return (
                     <div key={note.id} className={row}>

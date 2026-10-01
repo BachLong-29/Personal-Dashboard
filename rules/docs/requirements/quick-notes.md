@@ -49,8 +49,9 @@ banner chỉ hiện thoáng qua — nên nút nhường chỗ.
 **Enter xuống dòng, không lưu.** Một ý tưởng thường hai dòng; phím lặng lẽ commit nửa ý tưởng
 còn tệ hơn một cái nút. `⌘/Ctrl + Enter` là lối tắt cho đúng cái nút đó, theo tiền lệ `BingoView`.
 
-**Note đã xử lý ở nguyên chỗ cũ**, gạch ngang và mờ đi — không biến mất. Server vì vậy không lọc
-`archivedAt`, client tự đánh dấu.
+**Note đã xử lý chìm xuống cuối danh sách**, gạch ngang và mờ đi — không biến mất. Server vì vậy
+không lọc `archivedAt`; client tự đánh dấu và tự sắp xếp, nên tick một cái là nó trượt xuống ngay
+theo optimistic update, không chờ vòng mạng nào.
 
 **Biến thành Task** đóng sheet rồi mở `AddTaskModal` với `defaultValues.name`. Không xếp chồng
 hai panel. Note **không** tự động được đánh dấu đã xử lý khi promote — chưa có ai yêu cầu.
