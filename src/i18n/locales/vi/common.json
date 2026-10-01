@@ -926,6 +926,8 @@
       "expense": "Chi tiêu",
       "savings": "Tiết kiệm",
       "savingsRate": "Tỷ lệ tiết kiệm",
+        "savingsPlan": "Tiết kiệm dự kiến",
+        "savingsPlanRate": "Tỷ lệ dự kiến",
       "leftToSpend": "Còn được tiêu",
       "ofBudget": "theo ngân sách tháng này",
       "daysLeft": "còn {days} ngày",

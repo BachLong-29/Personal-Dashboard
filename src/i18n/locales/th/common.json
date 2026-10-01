@@ -926,6 +926,8 @@
       "expense": "รายจ่าย",
       "savings": "เงินออม",
       "savingsRate": "อัตราการออม",
+        "savingsPlan": "เงินออมตามแผน",
+        "savingsPlanRate": "อัตราตามแผน",
       "leftToSpend": "ใช้ได้อีก",
       "ofBudget": "จากงบประมาณเดือนนี้",
       "daysLeft": "เหลืออีก {days} วัน",

@@ -15,7 +15,7 @@ import type { Budget } from '@/types';
 import { useBudgets } from '../hooks/useBudgets';
 import { useFinanceCategories } from '../hooks/useFinanceCategories';
 import { useDeleteBudget } from '../hooks/useDeleteBudget';
-import { currentMonthKey, formatCurrency, formatMonthLabel } from '../utils';
+import { currentMonthKey, formatCurrency, formatMonthLabel, monthBudgetLimit } from '../utils';
 import { BudgetFormModal } from './BudgetFormModal';
 import { BudgetList } from './BudgetList';
 import { FinancePageHeader } from './FinancePageHeader';
@@ -59,7 +59,9 @@ export function BudgetPage() {
   const existingCategoryIds = budgets.map((b) => b.categoryId);
 
   const totals = useMemo(() => {
-    const limit = budgets.reduce((sum, b) => sum + b.limit, 0);
+    // Not a plain sum: the list carries an "Overall" row alongside the
+    // categories it covers, so adding everything counted the same money twice.
+    const limit = monthBudgetLimit(budgets);
     const spent = budgets.reduce((sum, b) => sum + b.spent, 0);
     const percent = limit > 0 ? Math.min(999, Math.round((spent / limit) * 100)) : 0;
     return { limit, spent, percent };

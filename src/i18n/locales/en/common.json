@@ -926,6 +926,8 @@
       "expense": "Expense",
       "savings": "Savings",
       "savingsRate": "Savings rate",
+        "savingsPlan": "Planned savings",
+        "savingsPlanRate": "Planned rate",
       "leftToSpend": "Left to spend",
       "ofBudget": "of this month’s budget",
       "daysLeft": "{days, plural, =1 {# day left} other {# days left}}",

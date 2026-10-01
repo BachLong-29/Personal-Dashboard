@@ -4,7 +4,7 @@ import { useLocale, useTranslations } from 'next-intl';
 
 import { useBudgets } from '../../hooks/useBudgets';
 import { useFinanceOverview } from '../../hooks/useFinanceOverview';
-import { formatMonthLabel } from '../../utils';
+import { formatMonthLabel, monthBudgetLimit } from '../../utils';
 import { BookFlip } from './BookFlip';
 import { ReportBudgetPage } from './ReportBudgetPage';
 import { ReportOverviewPage } from './ReportOverviewPage';
@@ -22,10 +22,7 @@ export function MonthlyReportPage({ month }: MonthlyReportPageProps) {
   const { data: budgets = [], isLoading: budgetsLoading } = useBudgets(month);
   const isLoading = overviewLoading || budgetsLoading;
 
-  const overallBudget = budgets.find((b) => b.categoryId === null) ?? null;
-  const totalBudgetLimit = overallBudget
-    ? overallBudget.limit
-    : budgets.filter((b) => b.categoryId !== null).reduce((sum, b) => sum + b.limit, 0);
+  const totalBudgetLimit = monthBudgetLimit(budgets);
 
   const totalExpense = overview?.expense ?? 0;
   const savings =

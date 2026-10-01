@@ -1,3 +1,5 @@
+import type { Budget } from '@/types';
+
 /** Placeholder shown instead of an amount when the user has toggled amounts hidden. */
 export const AMOUNT_MASK = '••••••';
 
@@ -103,4 +105,18 @@ export function formatMonthLabel(month: string, locale = 'en-US'): string {
   const mo = Number(parts[1]);
   const d = new Date(year, mo - 1, 1);
   return d.toLocaleDateString(locale, { month: 'long', year: 'numeric' });
+}
+
+/**
+ * What the month is allowed to cost, as one number.
+ *
+ * `listBudgetsWithSpent` returns the per-category budgets *and* an "Overall"
+ * row with no category, so adding everything up counts the same money twice.
+ * An overall budget is the declared cap for the month and wins outright; with
+ * none set, the categories are all there is.
+ */
+export function monthBudgetLimit(budgets: Budget[]): number {
+  const overall = budgets.find((b) => b.categoryId === null);
+  if (overall) return overall.limit;
+  return budgets.reduce((sum, b) => sum + b.limit, 0);
 }
