@@ -16,8 +16,9 @@ import { useUIStore } from '@/stores/ui.store';
  * thumb already rests, and one button can hold all three things worth
  * capturing in a hurry.
  *
- * Phone only — on desktop the same three live in the topbar's ＋ menu, where
- * there is room to print their keyboard shortcuts beside them.
+ * At every width. It began as the phone's answer to a crowded topbar, and the
+ * desktop menu it replaced opened against the right edge of the window and was
+ * clipped by it. One place to create something, wherever you are.
  */
 export function QuickCreateFab() {
   const t = useTranslations('dashboard');
@@ -34,13 +35,20 @@ export function QuickCreateFab() {
   if (pathname.startsWith('/profile')) return null;
 
   const actions = [
-    { key: 'note', icon: '✎', label: t('quickAddMenu.note'), run: openNotes },
-    { key: 'task', icon: '📋', label: t('quickAddMenu.task'), run: openQuickAddTask },
+    { key: 'note', icon: '✎', label: t('quickAddMenu.note'), run: openNotes, shortcut: undefined },
+    {
+      key: 'task',
+      icon: '📋',
+      label: t('quickAddMenu.task'),
+      run: openQuickAddTask,
+      shortcut: '⌘⇧Q',
+    },
     {
       key: 'transaction',
       icon: '💰',
       label: t('quickAddMenu.transaction'),
       run: openQuickAddTransaction,
+      shortcut: '⌘⇧E',
     },
   ];
 
@@ -50,7 +58,7 @@ export function QuickCreateFab() {
   };
 
   return (
-    <div className="sm:hidden">
+    <>
       {/* Catches the next tap anywhere, so the dial never needs an X of its own. */}
       <AnimatePresence>
         {open && (
@@ -80,6 +88,14 @@ export function QuickCreateFab() {
                 transition={{ duration: 0.16, delay: (actions.length - 1 - i) * 0.035 }}
               >
                 <span className="text-[12px] whitespace-nowrap">{action.label}</span>
+                {/* A keyboard only exists on the wide layout, so the hint only
+                    shows there — it is the only place these are taught now
+                    that the topbar menu is gone. */}
+                {action.shortcut && (
+                  <span className="hidden font-[var(--f-mono)] text-[10px] tracking-[0.1em] text-[var(--text-dim)] sm:inline">
+                    {action.shortcut}
+                  </span>
+                )}
                 <span className={itemIcon}>{action.icon}</span>
               </motion.button>
             ))}
@@ -97,16 +113,17 @@ export function QuickCreateFab() {
           </span>
         </button>
       </div>
-    </div>
+    </>
   );
 }
 
 /**
- * Clear of the mobile bottom nav, which is fixed 56px tall on the dashboard.
- * Sitting at `bottom-4` would bury the button under it on the one page most
- * likely to be open when a thought arrives.
+ * Lifted clear of the mobile bottom nav, which is fixed 56px tall on the
+ * dashboard — at `bottom-4` the button would be buried under it on the page
+ * most likely to be open. The wide layout has no such bar, so it sits lower.
  */
-const stack = 'fixed right-4 bottom-[72px] z-40 flex flex-col items-end gap-2';
+const stack =
+  'fixed right-4 bottom-[72px] z-40 flex flex-col items-end gap-2 min-[1025px]:right-6 min-[1025px]:bottom-6';
 
 const fab = cn(
   'flex h-12 w-12 items-center justify-center rounded-full',
