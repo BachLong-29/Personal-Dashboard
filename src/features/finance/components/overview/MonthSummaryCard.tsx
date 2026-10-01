@@ -4,7 +4,8 @@ import { useLocale, useTranslations } from 'next-intl';
 
 import type { FinanceOverview } from '@/types';
 
-import { formatCurrency, formatMonthLabel } from '../../utils';
+import { useBudgets } from '../../hooks/useBudgets';
+import { formatCurrency, formatMonthLabel, monthBudgetLimit } from '../../utils';
 import { SectionCard } from './SectionCard';
 
 interface MonthSummaryCardProps {
@@ -13,20 +14,35 @@ interface MonthSummaryCardProps {
   isLoading: boolean;
 }
 
-/** Income / expense / savings / savings-rate for the selected month. */
+/**
+ * Income, expense and two readings of savings for the selected month.
+ *
+ * The first is what happened — income minus what was actually spent. The
+ * second is what was meant to happen — income minus the month's budget — so a
+ * month still in progress can be read against its plan rather than only
+ * against a total that is not finished yet.
+ */
 export function MonthSummaryCard({ overview, month, isLoading }: MonthSummaryCardProps) {
   const t = useTranslations('finance');
   const locale = useLocale();
+  const { data: budgets = [] } = useBudgets(month);
 
+  const income = overview?.income ?? 0;
   const net = overview?.net ?? 0;
   const rate = overview?.savingsRate ?? null;
+
+  const budgetLimit = monthBudgetLimit(budgets);
+  // No budget set is not zero planned spending — there is simply no plan to
+  // compare against, and a dash says that where a number would lie.
+  const planNet = budgetLimit > 0 ? income - budgetLimit : null;
+  const planRate = planNet !== null && income > 0 ? Math.round((planNet / income) * 100) : null;
 
   return (
     <SectionCard title={formatMonthLabel(month, locale)} index={1}>
       {isLoading ? (
         <div className="h-[72px] animate-pulse rounded-[var(--r-md)] bg-[var(--panel2)]" />
       ) : (
-        <dl className="grid grid-cols-2 gap-x-3 gap-y-2 sm:grid-cols-4 sm:gap-x-4 sm:gap-y-4">
+        <dl className="grid grid-cols-2 gap-x-3 gap-y-2 sm:grid-cols-3 sm:gap-x-4 sm:gap-y-4">
           <Stat
             label={t('overview.income')}
             value={formatCurrency(overview?.income ?? 0)}
@@ -46,6 +62,16 @@ export function MonthSummaryCard({ overview, month, isLoading }: MonthSummaryCar
             label={t('overview.savingsRate')}
             value={rate === null ? '—' : `${rate}%`}
             tone={rate !== null && rate < 0 ? 'rose' : 'text'}
+          />
+          <Stat
+            label={t('overview.savingsPlan')}
+            value={planNet === null ? '—' : formatCurrency(planNet)}
+            tone={planNet !== null && planNet < 0 ? 'rose' : 'gold'}
+          />
+          <Stat
+            label={t('overview.savingsPlanRate')}
+            value={planRate === null ? '—' : `${planRate}%`}
+            tone={planRate !== null && planRate < 0 ? 'rose' : 'text'}
           />
         </dl>
       )}
