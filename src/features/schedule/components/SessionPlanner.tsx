@@ -63,6 +63,12 @@ function eachDay(from: string, to: string): string[] {
   return out;
 }
 
+/** `HH:MM` on the clock right now — a session being added usually starts about now. */
+function nowHHMM(): string {
+  const d = new Date();
+  return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+}
+
 function addMinutes(time: string, minutes: number): string {
   const parts = time.split(':');
   const total = Math.min(23 * 60 + 59, Number(parts[0]) * 60 + Number(parts[1]) + minutes);
@@ -116,8 +122,18 @@ export function SessionPlanner({ open, task, onClose }: SessionPlannerProps) {
 
   // Add-session form
   const [date, setDate] = useState('');
-  const [time, setTime] = useState('09:00');
+  const [time, setTime] = useState(nowHHMM);
   const [durStr, setDurStr] = useState('');
+
+  // The planner stays mounted while closed, so the clock has to be re-read on
+  // the way in — a lazy initialiser alone would hand back whatever time the
+  // app happened to load at. Adjusted during render rather than in an effect,
+  // the same way TransactionFormModal re-seeds itself.
+  const [prevOpen, setPrevOpen] = useState(open);
+  if (open !== prevOpen) {
+    setPrevOpen(open);
+    if (open) setTime(nowHHMM());
+  }
 
   // Inline-edit state — the block currently being edited + its draft values
   const [editId, setEditId] = useState<string | null>(null);
@@ -225,7 +241,11 @@ export function SessionPlanner({ open, task, onClose }: SessionPlannerProps) {
     const n = days.length || 1;
     // Evenly distribute remaining across the task's day span, rounded to 15-min.
     const base = Math.max(15, Math.round(remaining / n / 15) * 15);
+    // Every day starts at the same hour, and the hour is now rather than a
+    // fixed 09:00 — the same default the manual form uses.
+    const start = nowHHMM();
     let rem = remaining;
+    let lastPlaced = 0;
     for (const d of days) {
       if (rem <= 0) break;
       const dur = Math.min(rem, base);
@@ -233,17 +253,21 @@ export function SessionPlanner({ open, task, onClose }: SessionPlannerProps) {
         sourceType: 'task',
         sourceId: task.id,
         date: d,
-        startTime: '09:00',
+        startTime: start,
         duration: dur,
       });
       rem -= dur;
+      lastPlaced = dur;
     }
     if (rem > 0) {
       await createBlock.mutateAsync({
         sourceType: 'task',
         sourceId: task.id,
         date: days.at(-1) ?? task.startDate,
-        startTime: '13:00',
+        // The remainder lands on a day that already has a block, so it starts
+        // where that one ends. The old 13:00 kept them apart by luck; against
+        // a start time that moves, it would have overlapped.
+        startTime: addMinutes(start, lastPlaced),
         duration: rem,
       });
     }
