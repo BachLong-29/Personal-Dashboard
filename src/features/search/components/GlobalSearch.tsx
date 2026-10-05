@@ -184,15 +184,19 @@ export function GlobalSearch() {
         placeholder={t('placeholder')}
       />
 
-      {editTaskId && editTask && (
-        <EditTaskModal
-          task={taskToUITask(editTask)}
-          open
-          onClose={() => setEditTaskId(null)}
-          onSave={handleSaveTask}
-          saving={updateTask.isPending}
-        />
-      )}
+      {/*
+        Mounted even with nothing to edit. EditTaskModal keeps its follow-up
+        dialogs — the session planner, the "your sessions moved" prompt — in its
+        own state, and raises them after a save has cleared the task. Rendering
+        it conditionally tore it down in the same breath, so those never showed.
+      */}
+      <EditTaskModal
+        task={editTask ? taskToUITask(editTask) : null}
+        open={!!editTaskId && !!editTask}
+        onClose={() => setEditTaskId(null)}
+        onSave={handleSaveTask}
+        saving={updateTask.isPending}
+      />
     </>
   );
 }
