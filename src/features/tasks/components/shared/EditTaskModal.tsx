@@ -136,29 +136,48 @@ export function EditTaskModal({ task, open, onClose, onSave, saving }: EditTaskM
 
     const effectiveStartDate = payload.startDate ?? undefined;
 
-    // After save: open SessionPlanner when task goes from no-date → has startDate + duration
-    const hadNoDate = !task.startDate;
-    const pendingPlanner =
-      hadNoDate && !!effectiveStartDate && !!resolvedDuration
-        ? {
-            id: task.sourceId,
-            name: values.name,
-            icon: values.icon,
-            color: values.color,
-            duration: resolvedDuration,
-            startDate: effectiveStartDate,
-            endDate: values.endDate ? toLocalDate(values.endDate) : undefined,
-          }
-        : null;
+    const startDateMoved = !!resolvedStartDate && resolvedStartDate !== task.startDate;
+    // Picking it back up after it was finished: the old sessions are spent, so
+    // it needs planning again just as much as a date that moved.
+    const reopened = !!task.done && values.status !== 'done';
+
+    /**
+     * After save: open SessionPlanner when the task is now something to do on a
+     * date, with nothing scheduled against it.
+     *
+     * Two things used to keep this quiet. It asked whether the task had never
+     * had a date at all, so a finished one dragged back to today was ignored.
+     * And it required an estimate, which the planner does not actually need —
+     * `PlannerTask.duration` is optional, and a task with no estimate is
+     * exactly the one you want to sit down and lay out by hand.
+     *
+     * Blocks that already exist are the other branch's business.
+     */
+    const needsPlan =
+      blocks.length === 0 &&
+      !!effectiveStartDate &&
+      values.status !== 'done' &&
+      (!task.startDate || startDateMoved || reopened);
+
+    const pendingPlanner = needsPlan
+      ? {
+          id: task.sourceId,
+          name: values.name,
+          icon: values.icon,
+          color: values.color,
+          duration: resolvedDuration,
+          startDate: effectiveStartDate,
+          endDate: values.endDate ? toLocalDate(values.endDate) : undefined,
+        }
+      : null;
 
     // After save: warn when existing blocks need rescheduling (date moved or duration changed)
-    const startDateMoved = !!resolvedStartDate && resolvedStartDate !== task.startDate;
     const durationChanged = resolvedDuration !== task.est;
     const needsBlockWarning = blocks.length > 0 && (startDateMoved || durationChanged);
 
     onSave(task.sourceId, payload, () => {
       if (pendingPlanner) {
-        // New task got a date+duration for the first time — open planner directly
+        // Nothing scheduled yet for a task that now needs it — plan it directly
         setPlannerTask(pendingPlanner as PlannerTask);
       } else if (needsBlockWarning) {
         // Existing blocks may be out of sync — show warning modal first

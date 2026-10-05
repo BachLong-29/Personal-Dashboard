@@ -232,16 +232,17 @@ export default function MainDashboard() {
         onDismiss={dismissOverdueModal}
       />
 
-      {/* Restore failed task — triggered by clicking a "Quest Failed" notification */}
-      {restoreTask && pendingRestoreTaskId && (
-        <EditTaskModal
-          task={taskToUITask(restoreTask)}
-          open={true}
-          onClose={() => setPendingRestoreTaskId(null)}
-          onSave={handleRestoreSave}
-          saving={false}
-        />
-      )}
+      {/* Restore failed task — triggered by clicking a "Quest Failed" notification.
+          Mounted unconditionally: EditTaskModal raises its follow-up dialogs
+          after a save has cleared the task, and unmounting it here took them
+          with it. */}
+      <EditTaskModal
+        task={restoreTask ? taskToUITask(restoreTask) : null}
+        open={!!restoreTask && !!pendingRestoreTaskId}
+        onClose={() => setPendingRestoreTaskId(null)}
+        onSave={handleRestoreSave}
+        saving={false}
+      />
 
       {/* h-screen flex-col: establishes the flex context so flex-1/min-h-0 work on children */}
       <div className="flex flex-col h-screen">
