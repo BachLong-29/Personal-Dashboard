@@ -1,4 +1,5 @@
 export type QuestDifficulty = 'gentle' | 'rising' | 'harsh';
+export type ThemePreference = 'dark' | 'light' | 'system';
 
 export interface HeroStats {
   discipline: number;
@@ -47,7 +48,7 @@ export interface UserSettingData {
   autoReclaim: boolean;
   language: string;
   timezone: string;
-  theme: 'dark' | 'light' | 'system';
+  theme: ThemePreference;
   compactMode: boolean;
   dailyCapacityMinutes: number;
   cashLogEnabled: boolean;
@@ -84,6 +85,7 @@ export interface ProfileFormData {
   questDifficulty: QuestDifficulty;
   seasonalRites: boolean;
   autoReclaim: boolean;
+  theme: ThemePreference;
   dailyCapacityMinutes: number;
   timezone: string;
   cashLogEnabled: boolean;
@@ -118,6 +120,7 @@ export const DEFAULT_PROFILE_FORM: ProfileFormData = {
   questDifficulty: 'rising',
   seasonalRites: true,
   autoReclaim: false,
+  theme: 'system',
   dailyCapacityMinutes: 600,
   timezone: 'UTC',
   cashLogEnabled: true,
@@ -150,6 +153,7 @@ export function mergeProfileToForm(
     questDifficulty: settings.questDifficulty,
     seasonalRites: settings.seasonalRites,
     autoReclaim: settings.autoReclaim,
+    theme: settings.theme,
     dailyCapacityMinutes: settings.dailyCapacityMinutes,
     timezone: settings.timezone,
     cashLogEnabled: settings.cashLogEnabled,

@@ -457,6 +457,6 @@ const inspFoot = 'flex items-center gap-2 px-3 py-2.5 border-t border-[var(--bor
 const footGhost =
   'flex-1 py-[7px] rounded-[var(--r-sm)] border border-[var(--border)] text-[10px] font-bold text-[var(--text-lo)] font-[var(--font-title)] tracking-[0.1em] cursor-pointer transition-all hover:border-[var(--border-hi)] hover:text-[var(--text-hi)] disabled:opacity-30 disabled:pointer-events-none';
 const footPrimary =
-  'flex-[2] py-[7px] rounded-[var(--r-sm)] text-[10px] font-bold font-[var(--font-title)] tracking-[0.1em] cursor-pointer transition-all text-[#0a0400] shadow-[0_0_12px_var(--rar-glow)]' +
+  'flex-[2] py-[7px] rounded-[var(--r-sm)] text-[10px] font-bold font-[var(--font-title)] tracking-[0.1em] cursor-pointer transition-all text-[var(--on-gold)] shadow-[0_0_12px_var(--rar-glow)]' +
   ' bg-[linear-gradient(135deg,var(--gold-2,oklch(0.68_0.14_82)),var(--gold,oklch(0.78_0.16_82)))]' +
   ' hover:shadow-[0_0_20px_var(--rar-glow)]';

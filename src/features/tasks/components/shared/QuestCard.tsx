@@ -799,8 +799,8 @@ const cardCancelled =
 
 const checkBtn =
   'w-[22px] h-[22px] sm:w-[18px] sm:h-[18px] rounded-full border border-[var(--border)] flex items-center justify-center text-[10px] sm:text-[9px] font-bold transition-all hover:border-[var(--mint)] shrink-0';
-const checkBtnDone = 'bg-[var(--mint)] border-[var(--mint)] text-[oklch(0.1_0_0)]';
-const checkBtnLogged = 'bg-[var(--cyan)] border-[var(--cyan)] text-[oklch(0.1_0_0)]';
+const checkBtnDone = 'bg-[var(--mint)] border-[var(--mint)] text-[var(--on-mint)]';
+const checkBtnLogged = 'bg-[var(--cyan)] border-[var(--cyan)] text-[var(--on-mint)]';
 
 const diffBadge =
   'min-w-[17px] h-[17px] px-1 rounded-sm flex items-center justify-center text-[9px] font-black font-[var(--font-title)] border border-[var(--border)] shrink-0';

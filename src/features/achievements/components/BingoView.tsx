@@ -966,7 +966,7 @@ function BingoDetailPanel({
                     'disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none disabled:translate-y-0',
                     noteSaved
                       ? 'bg-[var(--mint)] border-[var(--mint)] text-[#021]'
-                      : 'text-[#0a0400] border-[var(--gold)] hover:-translate-y-px hover:shadow-[0_0_20px_var(--gold-glow)]',
+                      : 'text-[var(--on-gold)] border-[var(--gold)] hover:-translate-y-px hover:shadow-[0_0_20px_var(--gold-glow)]',
                   )}
                   style={
                     noteSaved
@@ -1028,7 +1028,7 @@ function BingoDetailPanel({
             <button
               type="button"
               onClick={() => onComplete(goal)}
-              className="flex-1 flex items-center justify-center gap-2 rounded-[9px] py-3 font-[var(--font-title)] text-[12px] font-extrabold tracking-[0.16em] uppercase text-[#0a0400] border border-[var(--gold)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_0_32px_var(--gold-glow)]"
+              className="flex-1 flex items-center justify-center gap-2 rounded-[9px] py-3 font-[var(--font-title)] text-[12px] font-extrabold tracking-[0.16em] uppercase text-[var(--on-gold)] border border-[var(--gold)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_0_32px_var(--gold-glow)]"
               style={{
                 background: 'linear-gradient(135deg,var(--gold-2),var(--gold))',
                 boxShadow: '0 0 20px var(--gold-glow), inset 0 0 8px oklch(1 0 0 / 0.2)',
@@ -1108,7 +1108,7 @@ function NoteCard({
             <button
               type="button"
               onClick={onSaveEdit}
-              className="px-3 py-1 text-[9px] font-bold font-[var(--font-title)] tracking-[0.1em] uppercase text-[#0a0400] rounded-[7px]"
+              className="px-3 py-1 text-[9px] font-bold font-[var(--font-title)] tracking-[0.1em] uppercase text-[var(--on-gold)] rounded-[7px]"
               style={{ background: 'linear-gradient(135deg,var(--gold-2),var(--gold))' }}
             >
               ✓ Save
@@ -1295,7 +1295,7 @@ function AchievementToast({ data, onDone }: { data: AchData; onDone: () => void 
     <div
       className="fixed top-[18px] left-1/2 z-[1650] flex items-center gap-3.5 w-[360px] max-w-[92vw] border border-[var(--gold)] rounded-[var(--r-lg)] px-4 py-3.5"
       style={{
-        background: 'linear-gradient(135deg,var(--bg-2),oklch(0.18 0.15 295 / 0.4))',
+        background: 'linear-gradient(135deg,var(--bg-2),var(--violet-glow))',
         boxShadow: '0 0 30px var(--gold-glow), 0 18px 40px oklch(0 0 0 / 0.5)',
         animation: out
           ? 'bingo-ach-out 0.4s cubic-bezier(0.16,1,0.3,1) forwards'

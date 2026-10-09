@@ -74,7 +74,7 @@ export function Pagination({
               'font-[var(--f-mono)] text-[11px]',
               'transition-all duration-150',
               p === page
-                ? 'bg-gradient-to-br from-[var(--gold-2)] to-[var(--gold)] text-[#0a0400] border border-[var(--gold)] shadow-[var(--sh-glow-gold)]'
+                ? 'bg-gradient-to-br from-[var(--gold-2)] to-[var(--gold)] text-[var(--on-gold)] border border-[var(--gold)] shadow-[var(--sh-glow-gold)]'
                 : 'bg-[var(--surface-2)] border border-[var(--border)] text-[var(--text-md)] hover:text-[var(--gold)] hover:border-[var(--gold)]',
             )}
           >

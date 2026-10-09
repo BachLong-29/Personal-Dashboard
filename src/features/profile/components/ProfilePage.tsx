@@ -18,6 +18,8 @@ import { FocusSection } from './sections/FocusSection';
 import { BadgesSection } from './sections/BadgesSection';
 import { CashLogSection } from './sections/CashLogSection';
 import { PrefsSection } from './sections/PrefsSection';
+import { AppearanceSection } from './sections/AppearanceSection';
+import { useTheme } from '@/components/providers/ThemeProvider';
 import { findAccent } from '@/constants/hero-data';
 import { DEFAULT_PROFILE_FORM, mergeProfileToForm } from '@/types/profile';
 import type { ProfileFormData } from '@/types/profile';
@@ -132,6 +134,7 @@ function HamburgerIcon() {
 export function ProfilePage() {
   const { data, isLoading } = useProfile();
   const updateMutation = useUpdateProfile();
+  const { setTheme } = useTheme();
 
   const [form, setForm] = useState<ProfileFormData>(DEFAULT_PROFILE_FORM);
   const [activeSection, setActiveSection] = useState('identity');
@@ -195,7 +198,9 @@ export function ProfilePage() {
   }, []);
 
   const handleRevert = () => {
-    if (data) setForm(mergeProfileToForm(data.profile, data.settings));
+    if (!data) return;
+    setForm(mergeProfileToForm(data.profile, data.settings));
+    setTheme(data.settings.theme);
   };
 
   const handleConfirm = async () => {
@@ -237,7 +242,10 @@ export function ProfilePage() {
           {/* backdrop */}
           <div
             className="flex-1 animate-[fade-in_0.3s_ease]"
-            style={{ background: 'oklch(8% 0.02 270/0.75)', backdropFilter: 'blur(4px)' }}
+            style={{
+              background: 'color-mix(in oklab, var(--bg-0) 75%, transparent)',
+              backdropFilter: 'blur(4px)',
+            }}
             onClick={() => setNavOpen(false)}
             aria-label="Close navigation"
           />
@@ -248,7 +256,7 @@ export function ProfilePage() {
       <div
         className="md:hidden sticky top-0 z-20 flex items-center justify-between gap-2 px-4 py-3 border-b border-border-lo"
         style={{
-          background: 'oklch(13% 0.03 270/0.95)',
+          background: 'color-mix(in oklab, var(--panel) 95%, transparent)',
           backdropFilter: 'blur(12px)',
         }}
       >
@@ -366,6 +374,16 @@ export function ProfilePage() {
           >
             <CashLogSection form={form} onChange={set} />
           </FormSection>
+
+          <FormSection id="appearance" num="X" label="Appearance" subtitle="Light, dark or system">
+            <AppearanceSection
+              value={form.theme}
+              onChange={(v) => {
+                set('theme', v);
+                setTheme(v); // live preview; persisted on save
+              }}
+            />
+          </FormSection>
         </div>
 
         {/* Right rail (HeroCard) — hidden until lg */}
@@ -391,9 +409,10 @@ export function ProfilePage() {
           'xl:left-[260px] xl:right-[400px] xl:mx-10',
         )}
         style={{
-          background: 'linear-gradient(180deg, oklch(16% 0.04 270/0.9), oklch(12% 0.03 270/0.95))',
+          background:
+            'linear-gradient(180deg, color-mix(in oklab, var(--panel) 92%, transparent), color-mix(in oklab, var(--panel2) 96%, transparent))',
           backdropFilter: 'blur(12px)',
-          boxShadow: '0 24px 60px oklch(5% 0.02 270/0.7)',
+          boxShadow: 'var(--sh-4)',
         }}
       >
         <div className="flex gap-3 sm:gap-[22px] items-center min-w-0">

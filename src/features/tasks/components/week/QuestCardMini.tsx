@@ -64,7 +64,7 @@ function HabitRow({ task, expanded, onExpand, onToggleDone }: QuestCardMiniProps
           type="button"
           className={cn(
             'w-4 h-4 rounded-full border border-[var(--border)] flex items-center justify-center text-[7px] font-bold transition-all shrink-0',
-            task.done && 'bg-[var(--mint)] border-[var(--mint)] text-[oklch(0.1_0_0)]',
+            task.done && 'bg-[var(--mint)] border-[var(--mint)] text-[var(--on-mint)]',
           )}
           onClick={(e) => {
             e.stopPropagation();
@@ -129,7 +129,7 @@ function TaskRow({ task, expanded, onExpand, onToggleDone }: QuestCardMiniProps)
           type="button"
           className={cn(
             'mt-[1px] w-3.5 h-3.5 rounded-full border border-[var(--border)] flex items-center justify-center text-[7px] font-bold transition-all shrink-0',
-            task.done && 'bg-[var(--mint)] border-[var(--mint)] text-[oklch(0.1_0_0)]',
+            task.done && 'bg-[var(--mint)] border-[var(--mint)] text-[var(--on-mint)]',
           )}
           onClick={(e) => {
             e.stopPropagation();

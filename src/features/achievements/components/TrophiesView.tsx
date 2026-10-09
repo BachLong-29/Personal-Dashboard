@@ -42,7 +42,7 @@ export function TrophiesView({ trophies, stats }: TrophiesViewProps) {
           {recent.map((t) => (
             <div
               key={t.id}
-              className="flex items-center gap-3 px-4 py-3 bg-[linear-gradient(135deg,oklch(0.22_0.06_82_/_0.4),oklch(0.18_0.05_82_/_0.3))] border border-[oklch(0.74_0.17_85_/_0.25)] rounded-[var(--r)]"
+              className="flex items-center gap-3 px-4 py-3 bg-[linear-gradient(135deg,var(--gold-glow),transparent)] border border-[oklch(0.74_0.17_85_/_0.25)] rounded-[var(--r)]"
             >
               <div className="w-10 h-10 shrink-0 rounded-full bg-[oklch(0.74_0.17_85_/_0.15)] border border-[oklch(0.74_0.17_85_/_0.35)] flex items-center justify-center text-[20px]">
                 {t.icon}

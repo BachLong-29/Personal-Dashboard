@@ -1,6 +1,7 @@
 ﻿@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=Sora:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
 @import 'tailwindcss';
 @config "../../tailwind.config.ts";
+@custom-variant dark (&:where(.dark, .dark *));
 
 /* ── Light tokens ── */
 :root {
@@ -20,30 +21,146 @@
   --ring: hsl(221 83% 53%);
   --radius: 0.5rem;
 
-  --bg: #07070e;
-  --panel: #0e0e1a;
-  --panel2: #12121f;
-  --panel3: #181828;
-  --border: #2a2a45;
-  --gold: oklch(0.74 0.17 85);
-  --gold-dim: oklch(0.55 0.12 85);
-  --gold-glow: oklch(0.74 0.17 85 / 0.25);
-  --violet: oklch(0.66 0.22 295);
-  --violet-dim: oklch(0.45 0.15 295);
-  --violet-glow: oklch(0.66 0.22 295 / 0.3);
-  --cyan: oklch(0.76 0.16 205);
-  --cyan-dim: oklch(0.52 0.12 205);
-  --rose: oklch(0.72 0.18 5);
-  --mint: oklch(0.76 0.14 162);
-  --text-hi: #f0eeff;
-  --text-mid: #9090b8;
-  --text-lo: #4a4a6a;
+  --text-mid: #4a4668;
+  --gold-dim: #c9a35a;
+  --violet-dim: #a58be0;
+  --cyan-dim: #66b6c4;
   --font-title: 'Cinzel', serif;
   --font-body: 'Sora', sans-serif;
   --r: 10px;
   --r-sm: 6px;
 
   /* Surfaces */
+  --bg: #f3f1fa;
+  --bg-0: #f8f7fd;
+  --bg-1: #ffffff;
+  --bg-2: #f7f6fc;
+  --bg-3: #e8e6f3;
+  --bg-4: #dcd9ec;
+  --surface: #ffffff;
+  --surface-2: #f6f5fc;
+  --surface-3: #ebe8f6;
+  --panel: #ffffff;
+  --panel2: #faf9fe;
+  --panel3: #f1effa;
+
+  /* Borders */
+  --border: #dcd9ec;
+  --border-hi: #c3bfdc;
+  --border-lo: #ebe9f5;
+
+  /* Brand — Aetheric */
+  --gold: #a06800;
+  --gold-2: #7d5000;
+  --gold-glow: rgb(232 164 16 / 0.22);
+  --gold-border: #e2cf9f;
+  --violet: #6f3fd6;
+  --violet-2: #5a2cb8;
+  --violet-glow: rgb(111 63 214 / 0.22);
+  --cyan: #00758a;
+  --cyan-glow: rgb(0 117 138 / 0.22);
+  --rose: #cf2e69;
+  --rose-glow: rgb(207 46 105 / 0.22);
+  --mint: #12805a;
+  --mint-glow: rgb(18 128 90 / 0.22);
+  --crimson: #d11a38;
+  --crimson-glow: rgb(209 26 56 / 0.22);
+
+  /* Semantic */
+  --success: var(--mint);
+  --warning: #a85d00;
+  --danger: var(--crimson);
+  --info: var(--cyan);
+
+  /* Text */
+  --text-hi: #1b1830;
+  --text-md: #4a4668;
+  --text-lo: #6b6788;
+  --text-dim: #9a97b4;
+
+  /* Textured panel art: veil over the background image */
+  --panel-scrim: rgb(255 255 255 / 0.82);
+  --panel-grid: rgb(27 24 48 / 0.02);
+
+  /* Ink on filled gold / mint */
+  --on-gold: #ffffff;
+  --on-mint: #ffffff;
+
+  /* Type scale */
+  --t-9: 44px;
+  --t-8: 36px;
+  --t-7: 28px;
+  --t-6: 22px;
+  --t-5: 18px;
+  --t-4: 15px;
+  --t-3: 13px;
+  --t-2: 11px;
+  --t-1: 9px;
+
+  /* Spacing scale (4-base) */
+  --s-1: 4px;
+  --s-2: 8px;
+  --s-3: 12px;
+  --s-4: 16px;
+  --s-5: 20px;
+  --s-6: 24px;
+  --s-7: 32px;
+  --s-8: 44px;
+  --s-9: 60px;
+
+  /* Radii */
+  --r-xs: 3px;
+  --r-sm: 6px;
+  --r-md: 10px;
+  --r-lg: 14px;
+  --r-xl: 20px;
+  --r-pill: 999px;
+
+  /* Shadows */
+  --sh-1: 0 1px 2px rgb(27 24 48 / 0.08);
+  --sh-2: 0 4px 12px rgb(27 24 48 / 0.1);
+  --sh-3: 0 8px 24px rgb(27 24 48 / 0.12);
+  --sh-4: 0 16px 48px rgb(27 24 48 / 0.16);
+  --sh-glow-gold: 0 0 24px var(--gold-glow);
+  --sh-glow-violet: 0 0 24px var(--violet-glow);
+  --sh-glow-cyan: 0 0 24px var(--cyan-glow);
+
+  /* Easing */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-snap: cubic-bezier(0.4, 0.8, 0.2, 1);
+
+  /* Fonts */
+  --f-title: 'Cinzel', serif;
+  --f-body: 'Sora', sans-serif;
+  --f-mono: 'JetBrains Mono', monospace;
+}
+
+/* ── Dark tokens ── */
+.dark {
+  --background: hsl(222 84% 5%);
+  --foreground: hsl(210 40% 98%);
+  --primary: hsl(217 91% 60%);
+  --primary-foreground: hsl(222 47% 11%);
+  --secondary: hsl(217 33% 17%);
+  --secondary-foreground: hsl(210 40% 98%);
+  --muted: hsl(217 33% 17%);
+  --muted-foreground: hsl(215 20% 65%);
+  --accent: hsl(217 33% 17%);
+  --accent-foreground: hsl(210 40% 98%);
+  --destructive: hsl(0 62% 30%);
+  --border: hsl(217 33% 17%);
+  --input: hsl(217 33% 17%);
+  --ring: hsl(224 76% 48%);
+
+  /* Surfaces */
+  --bg: #07070e;
+  --panel: #0e0e1a;
+  --panel2: #12121f;
+  --panel3: #181828;
+  --gold: rgb(234, 171, 5);
+  --gold-2: oklch(0.68 0.14 82);
+  --gold-glow: oklch(0.78 0.16 82 / 0.35);
   --bg-0: #06060d;
   --bg-1: #0a0a14;
   --bg-2: #0f0f1d;
@@ -87,72 +204,18 @@
   --text-lo: #7676a0;
   --text-dim: #4a4a6a;
 
-  /* Type scale */
-  --t-9: 44px;
-  --t-8: 36px;
-  --t-7: 28px;
-  --t-6: 22px;
-  --t-5: 18px;
-  --t-4: 15px;
-  --t-3: 13px;
-  --t-2: 11px;
-  --t-1: 9px;
-
-  /* Spacing scale (4-base) */
-  --s-1: 4px;
-  --s-2: 8px;
-  --s-3: 12px;
-  --s-4: 16px;
-  --s-5: 20px;
-  --s-6: 24px;
-  --s-7: 32px;
-  --s-8: 44px;
-  --s-9: 60px;
-
-  /* Radii */
-  --r-xs: 3px;
-  --r-sm: 6px;
-  --r-md: 10px;
-  --r-lg: 14px;
-  --r-xl: 20px;
-  --r-pill: 999px;
-
-  /* Shadows */
+  --text-mid: #9090b8;
+  --gold-dim: oklch(0.55 0.12 85);
+  --violet-dim: oklch(0.45 0.15 295);
+  --cyan-dim: oklch(0.52 0.12 205);
+  --panel-scrim: rgb(8 6 16 / 0.55);
+  --panel-grid: oklch(1 0 0 / 0.012);
+  --on-gold: #0a0400;
+  --on-mint: #002211;
   --sh-1: 0 1px 2px oklch(0 0 0 / 0.4);
   --sh-2: 0 4px 12px oklch(0 0 0 / 0.5);
   --sh-3: 0 8px 24px oklch(0 0 0 / 0.6);
   --sh-4: 0 16px 48px oklch(0 0 0 / 0.7);
-  --sh-glow-gold: 0 0 24px var(--gold-glow);
-  --sh-glow-violet: 0 0 24px var(--violet-glow);
-  --sh-glow-cyan: 0 0 24px var(--cyan-glow);
-
-  /* Easing */
-  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
-  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
-  --ease-snap: cubic-bezier(0.4, 0.8, 0.2, 1);
-
-  /* Fonts */
-  --f-title: 'Cinzel', serif;
-  --f-body: 'Sora', sans-serif;
-  --f-mono: 'JetBrains Mono', monospace;
-}
-
-/* ── Dark tokens ── */
-.dark {
-  --background: hsl(222 84% 5%);
-  --foreground: hsl(210 40% 98%);
-  --primary: hsl(217 91% 60%);
-  --primary-foreground: hsl(222 47% 11%);
-  --secondary: hsl(217 33% 17%);
-  --secondary-foreground: hsl(210 40% 98%);
-  --muted: hsl(217 33% 17%);
-  --muted-foreground: hsl(215 20% 65%);
-  --accent: hsl(217 33% 17%);
-  --accent-foreground: hsl(210 40% 98%);
-  --destructive: hsl(0 62% 30%);
-  --border: hsl(217 33% 17%);
-  --input: hsl(217 33% 17%);
-  --ring: hsl(224 76% 48%);
 }
 
 /* ── Tailwind v4 theme bridge ── */
@@ -282,6 +345,12 @@ body {
   color: var(--text-hi);
   font-family: var(--font-body);
   font-size: 13px;
+  background-image:
+    radial-gradient(ellipse 80% 60% at 50% -10%, oklch(0.7 0.1 295 / 0.14) 0%, transparent 60%),
+    radial-gradient(ellipse 40% 40% at 85% 60%, oklch(0.75 0.1 295 / 0.08) 0%, transparent 55%);
+}
+
+.dark body {
   background-image:
     radial-gradient(ellipse 80% 60% at 50% -10%, oklch(0.35 0.12 270 / 0.18) 0%, transparent 60%),
     radial-gradient(ellipse 40% 40% at 85% 60%, oklch(0.45 0.15 295 / 0.08) 0%, transparent 55%);
@@ -715,7 +784,7 @@ body {
   bottom: 80px;
   left: 50%;
   transform: translateX(-50%) translateY(20px);
-  background: linear-gradient(135deg, oklch(0.25 0.05 280), oklch(0.2 0.04 260));
+  background: linear-gradient(135deg, var(--panel), var(--panel3));
   border: 1px solid var(--violet);
   border-radius: 30px;
   padding: 12px 28px;
@@ -918,7 +987,7 @@ body {
 .modal-btn.confirm {
   background: linear-gradient(135deg, oklch(0.55 0.12 85), var(--gold));
   border-color: var(--gold);
-  color: #050200;
+  color: var(--on-gold);
   box-shadow: 0 0 12px var(--gold-glow);
 }
 
@@ -1087,7 +1156,7 @@ body {
 .confirm-checkbox.checked {
   background: var(--gold);
   border-color: var(--gold);
-  color: #0a0400;
+  color: var(--on-gold);
 }
 
 .confirm-actions {
@@ -1113,7 +1182,7 @@ body {
 .confirm-btn.primary {
   background: linear-gradient(135deg, oklch(0.55 0.12 85), var(--gold));
   border-color: var(--gold);
-  color: #0a0400;
+  color: var(--on-gold);
   box-shadow: 0 0 16px var(--gold-glow);
 }
 
@@ -1664,7 +1733,11 @@ body {
   bottom: 100%;
   right: -4px;
   margin-bottom: 6px;
-  background: linear-gradient(180deg, oklch(0.12 0.05 290 / 0.94), oklch(0.06 0.03 280 / 0.94));
+  background: linear-gradient(
+    180deg,
+    color-mix(in oklab, var(--panel) 94%, transparent),
+    color-mix(in oklab, var(--panel2) 94%, transparent)
+  );
   border: 1px solid var(--violet);
   border-radius: 10px 10px 2px 10px;
   padding: 8px 12px;
@@ -1680,7 +1753,7 @@ body {
   bottom: -6px;
   width: 10px;
   height: 10px;
-  background: oklch(0.12 0.05 290 / 0.94);
+  background: color-mix(in oklab, var(--panel) 94%, transparent);
   border-right: 1px solid var(--violet);
   border-bottom: 1px solid var(--violet);
   transform: rotate(45deg);
@@ -1789,7 +1862,7 @@ body {
   font-family: var(--f-title);
   font-weight: 900;
   font-size: 18px;
-  color: #0a0400;
+  color: var(--on-gold);
   box-shadow:
     0 0 20px var(--gold-glow),
     inset 0 0 8px oklch(1 0 0 / 0.2);
@@ -1978,7 +2051,7 @@ body {
   color: var(--text-md);
 }
 .mt-btn.active {
-  color: #0a0400;
+  color: var(--on-gold);
 }
 .mt-indicator {
   position: absolute;
@@ -2184,7 +2257,7 @@ body {
 .auth-check-box.checked {
   background: linear-gradient(135deg, var(--gold-2), var(--gold));
   border-color: var(--gold);
-  color: #0a0400;
+  color: var(--on-gold);
   box-shadow: 0 0 10px var(--gold-glow);
 }
 .auth-check-pill:hover .auth-check-box {
@@ -2272,7 +2345,7 @@ body {
   font-size: 13px;
   font-weight: 700;
   letter-spacing: 0.32em;
-  color: #0a0400;
+  color: var(--on-gold);
   text-transform: uppercase;
   cursor: pointer;
   margin-top: 4px;
@@ -2643,7 +2716,7 @@ body {
   font-family: var(--f-title);
   font-weight: 900;
   font-size: 16px;
-  color: #0a0400;
+  color: var(--on-gold);
   box-shadow:
     var(--sh-glow-gold),
     inset 0 0 8px oklch(1 0 0 / 0.2);
@@ -2691,7 +2764,7 @@ body {
   padding: 8px var(--s-4);
   border-radius: var(--r-pill);
   background: linear-gradient(135deg, var(--gold-2), var(--gold));
-  color: #0a0400;
+  color: var(--on-gold);
   box-shadow:
     var(--sh-glow-gold),
     inset 0 0 6px oklch(1 0 0 / 0.25);
@@ -2905,7 +2978,7 @@ body {
   padding: 16px 28px;
   border-radius: var(--r-md);
   background: linear-gradient(135deg, var(--gold-2) 0%, var(--gold) 50%, oklch(0.86 0.16 70) 100%);
-  color: #0a0400;
+  color: var(--on-gold);
   border: 1px solid var(--gold);
   box-shadow:
     0 0 40px var(--gold-glow),
@@ -3081,7 +3154,7 @@ body {
   font-family: var(--f-title);
   font-size: 78px;
   font-weight: 900;
-  color: #0a0400;
+  color: var(--on-gold);
   text-shadow:
     0 2px 4px oklch(0 0 0 / 0.3),
     0 0 24px oklch(1 0.1 82 / 0.5);
@@ -4313,7 +4386,7 @@ body {
   bottom: -3px;
   right: -3px;
   background: linear-gradient(135deg, var(--gold-2), var(--gold));
-  color: #0a0400;
+  color: var(--on-gold);
   font-family: var(--f-title);
   font-weight: 900;
   font-size: 9px;

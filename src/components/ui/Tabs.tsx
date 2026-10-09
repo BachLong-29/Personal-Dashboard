@@ -38,7 +38,7 @@ export function Tabs({ tabs, activeKey, onChange, variant = 'underline', classNa
                 'rounded-full px-4 py-1.5 [font-family:var(--f-title)] text-[13px] tracking-[0.1em] uppercase',
                 'transition-all duration-[180ms] [transition-timing-function:var(--ease-out)]',
                 active
-                  ? 'bg-gradient-to-br from-[var(--gold-2)] to-[var(--gold)] text-[#0a0400] shadow-[var(--sh-glow-gold)]'
+                  ? 'bg-gradient-to-br from-[var(--gold-2)] to-[var(--gold)] text-[var(--on-gold)] shadow-[var(--sh-glow-gold)]'
                   : 'text-[var(--text-md)] hover:text-[var(--text-hi)]',
                 tab.disabled && 'opacity-40 cursor-not-allowed',
               )}

@@ -73,7 +73,7 @@ export function ProjectsList() {
           <button
             type="button"
             onClick={() => setShowCreate(true)}
-            className="w-full sm:w-auto shrink-0 px-4 py-2 text-[12px] font-bold uppercase tracking-[0.08em] [font-family:var(--f-title)] rounded-[var(--r-sm)] bg-gradient-to-br from-[var(--gold-2)] to-[var(--gold)] text-[#0a0400] border border-[var(--gold)] hover:-translate-y-px transition-all"
+            className="w-full sm:w-auto shrink-0 px-4 py-2 text-[12px] font-bold uppercase tracking-[0.08em] [font-family:var(--f-title)] rounded-[var(--r-sm)] bg-gradient-to-br from-[var(--gold-2)] to-[var(--gold)] text-[var(--on-gold)] border border-[var(--gold)] hover:-translate-y-px transition-all"
           >
             ＋ New Project
           </button>

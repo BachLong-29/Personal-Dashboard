@@ -96,7 +96,7 @@ function SealOverlay({ accent, sealed }: { accent: HeroAccent; sealed: boolean }
         className="absolute inset-0"
         style={{
           background:
-            'radial-gradient(circle at 50%, oklch(8% 0.025 270/0.7), oklch(5% 0.02 270/0.95))',
+            'radial-gradient(circle at 50%, color-mix(in oklab, var(--bg-0) 70%, transparent), color-mix(in oklab, var(--bg-0) 95%, transparent))',
           backdropFilter: 'blur(2px)',
         }}
       />
@@ -201,7 +201,7 @@ function SealOverlay({ accent, sealed }: { accent: HeroAccent; sealed: boolean }
         />
         <circle
           r="60"
-          fill="oklch(14% 0.03 270)"
+          fill="var(--panel)"
           stroke={accent.glow}
           strokeWidth="1.5"
           style={{
@@ -303,7 +303,7 @@ function ProgCell({
   return (
     <div
       className="relative px-4 py-4 border border-border rounded-xs"
-      style={{ background: 'oklch(16% 0.03 270/0.65)' }}
+      style={{ background: 'color-mix(in oklab, var(--panel) 65%, transparent)' }}
     >
       <div
         className="absolute -top-px left-2 right-2 h-px opacity-50"
@@ -384,7 +384,7 @@ export function RevealModal({ form, onClose, onConfirm }: RevealModalProps) {
         className="absolute inset-0 z-[1]"
         style={{
           background:
-            'radial-gradient(ellipse 80% 60% at 50% 50%, oklch(15% 0.04 270/0.85), oklch(6% 0.02 270/0.98))',
+            'radial-gradient(ellipse 80% 60% at 50% 50%, color-mix(in oklab, var(--panel) 85%, transparent), color-mix(in oklab, var(--bg-0) 98%, transparent))',
         }}
       />
       <div
@@ -410,7 +410,10 @@ export function RevealModal({ form, onClose, onConfirm }: RevealModalProps) {
 
       <button
         className="fixed top-6 right-8 z-[12] w-9 h-9 grid place-items-center border border-border rounded-xs text-text-md text-[18px] cursor-pointer transition-all hover:text-text-hi hover:border-text-md disabled:opacity-40"
-        style={{ background: 'oklch(15% 0.03 270/0.7)', backdropFilter: 'blur(8px)' }}
+        style={{
+          background: 'color-mix(in oklab, var(--panel) 70%, transparent)',
+          backdropFilter: 'blur(8px)',
+        }}
         onClick={onClose}
         disabled={phase === 'sealing'}
         aria-label="Close"
@@ -523,7 +526,7 @@ export function RevealModal({ form, onClose, onConfirm }: RevealModalProps) {
               key={eyebrow}
               className="relative border border-border rounded-xs p-5"
               style={{
-                background: 'oklch(16% 0.03 270/0.65)',
+                background: 'color-mix(in oklab, var(--panel) 65%, transparent)',
                 animation: `text-enter 800ms ease-out ${delay}s both`,
               }}
             >
@@ -554,7 +557,7 @@ export function RevealModal({ form, onClose, onConfirm }: RevealModalProps) {
           <div
             className="relative border border-border rounded-xs p-5"
             style={{
-              background: 'oklch(16% 0.03 270/0.65)',
+              background: 'color-mix(in oklab, var(--panel) 65%, transparent)',
               animation: 'text-enter 800ms ease-out 1.0s both',
             }}
           >
@@ -623,7 +626,7 @@ export function RevealModal({ form, onClose, onConfirm }: RevealModalProps) {
                     key={b.id}
                     className="flex flex-col items-center text-center border border-border rounded-xs p-4 min-h-[130px] justify-center gap-[3px]"
                     style={{
-                      background: `radial-gradient(circle at 50% 0%, ${ba.glow}20, oklch(16% 0.03 270/0.65))`,
+                      background: `radial-gradient(circle at 50% 0%, ${ba.glow}20, color-mix(in oklab, var(--panel) 65%, transparent))`,
                       animation: `badge-float-in 800ms cubic-bezier(.16,1,.3,1) ${i * 0.18 + 0.6}s both`,
                     }}
                   >
@@ -661,7 +664,7 @@ export function RevealModal({ form, onClose, onConfirm }: RevealModalProps) {
             style={{
               background: `linear-gradient(180deg, ${accent.glow}, ${accent.fill})`,
               border: `1px solid ${accent.glow}`,
-              color: 'oklch(12% 0.03 270)',
+              color: 'oklch(15% 0.03 270)',
               boxShadow: `0 0 30px ${accent.glow}66`,
             }}
             onClick={handleSeal}
@@ -713,9 +716,9 @@ export function SuccessToast({ accentGlow, onDismiss }: SuccessToastProps) {
       className="fixed right-4 sm:right-8 bottom-20 sm:bottom-8 left-4 sm:left-auto z-[250] grid items-center gap-4 px-5 py-[18px] border rounded-md sm:max-w-[360px]"
       style={{
         gridTemplateColumns: 'auto 1fr auto',
-        background: 'oklch(16% 0.04 270/0.95)',
+        background: 'color-mix(in oklab, var(--panel) 95%, transparent)',
         border: `1px solid ${accentGlow}`,
-        boxShadow: `0 24px 60px oklch(5% 0.02 270/0.7), 0 0 36px ${accentGlow}4d`,
+        boxShadow: `0 24px 60px color-mix(in oklab, var(--bg-0) 70%, transparent), 0 0 36px ${accentGlow}4d`,
         backdropFilter: 'blur(12px)',
         animation: 'toast-in 600ms cubic-bezier(.16,1,.3,1)',
       }}

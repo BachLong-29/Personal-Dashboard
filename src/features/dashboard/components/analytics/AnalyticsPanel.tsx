@@ -1091,7 +1091,7 @@ const wrap = 'flex-1 overflow-y-auto p-4 flex flex-col gap-6 min-h-0';
 // Glass panel base — gradient bg, backdrop blur, hover lift + gold border glow
 const glassBase =
   'relative overflow-hidden ' +
-  'bg-gradient-to-br from-[oklch(0.16_0.02_280/0.72)] to-[oklch(0.10_0.02_280/0.66)] ' +
+  'bg-gradient-to-br from-[color-mix(in_oklab,var(--panel)_92%,transparent)] to-[color-mix(in_oklab,var(--panel2)_88%,transparent)] ' +
   'border border-[var(--border)] rounded-[var(--r-lg)] backdrop-blur-md ' +
   'transition-all duration-300 ease-out ' +
   'hover:-translate-y-[3px] hover:border-[oklch(0.74_0.17_85/0.4)]';
@@ -1154,14 +1154,14 @@ const selfStatCls = 'flex items-center gap-2 flex-1 px-2';
 // Insight card — glass panel with coloured left border
 const insightCard =
   'relative overflow-hidden ' +
-  'bg-gradient-to-br from-[oklch(0.16_0.02_280/0.72)] to-[oklch(0.10_0.02_280/0.66)] ' +
+  'bg-gradient-to-br from-[color-mix(in_oklab,var(--panel)_92%,transparent)] to-[color-mix(in_oklab,var(--panel2)_88%,transparent)] ' +
   'border border-[var(--border)] border-l-[3px] rounded-[var(--r-lg)] backdrop-blur-md ' +
   'px-3 py-3 transition-all duration-300 ease-out';
 
 // Overdue row
 const overdueRow =
   'flex items-center gap-2.5 px-3 py-2 ' +
-  'bg-gradient-to-br from-[oklch(0.16_0.02_280/0.72)] to-[oklch(0.10_0.02_280/0.66)] ' +
+  'bg-gradient-to-br from-[color-mix(in_oklab,var(--panel)_92%,transparent)] to-[color-mix(in_oklab,var(--panel2)_88%,transparent)] ' +
   'border border-[oklch(0.72_0.18_5/0.18)] rounded-[var(--r-lg)] backdrop-blur-md ' +
   'hover:border-[oklch(0.72_0.18_5/0.4)] transition-colors duration-200';
 const lateBadge =
@@ -1171,7 +1171,7 @@ const lateBadge =
 // Unscheduled row
 const unscheduledRow =
   'w-full flex items-center gap-2.5 px-3 py-2 text-left ' +
-  'bg-gradient-to-br from-[oklch(0.16_0.02_280/0.72)] to-[oklch(0.10_0.02_280/0.66)] ' +
+  'bg-gradient-to-br from-[color-mix(in_oklab,var(--panel)_92%,transparent)] to-[color-mix(in_oklab,var(--panel2)_88%,transparent)] ' +
   'border border-[var(--border)] rounded-[var(--r-lg)] backdrop-blur-md ' +
   'hover:border-[oklch(0.74_0.17_85/0.35)] transition-colors group';
 const scheduleBtnCls =

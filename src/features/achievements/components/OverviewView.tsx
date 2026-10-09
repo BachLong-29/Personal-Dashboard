@@ -84,7 +84,7 @@ export function OverviewView({ allGoals, stats, trophies: _trophies, streak }: O
   return (
     <div className="flex flex-col gap-4">
       {/* Motivation banner */}
-      <div className="flex items-center gap-4 px-5 py-4 bg-[linear-gradient(135deg,oklch(0.22_0.06_82_/_0.5),oklch(0.18_0.05_270_/_0.5))] border border-[oklch(0.74_0.17_85_/_0.2)] rounded-[var(--r)]">
+      <div className="flex items-center gap-4 px-5 py-4 bg-[linear-gradient(135deg,var(--gold-glow),var(--violet-glow))] border border-[oklch(0.74_0.17_85_/_0.2)] rounded-[var(--r)]">
         <div className="w-8 h-8 shrink-0 flex items-center justify-center rounded-full bg-[oklch(0.74_0.17_85_/_0.15)] border border-[oklch(0.74_0.17_85_/_0.3)] text-[var(--gold)] text-[16px]">
           ✦
         </div>

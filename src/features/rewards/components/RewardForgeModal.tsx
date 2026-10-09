@@ -268,7 +268,7 @@ export function RewardForgeModal({ onClose, onCreated }: RewardForgeModalProps) 
         <button
           type="button"
           className={cn(
-            'flex-[2] py-2 rounded-[var(--r-sm)] text-[11px] font-bold font-[var(--font-title)] tracking-[0.1em] cursor-pointer transition-all text-[#0a0400]',
+            'flex-[2] py-2 rounded-[var(--r-sm)] text-[11px] font-bold font-[var(--font-title)] tracking-[0.1em] cursor-pointer transition-all text-[var(--on-gold)]',
             'bg-[linear-gradient(135deg,oklch(0.68_0.14_82),oklch(0.78_0.16_82))] shadow-[0_0_12px_oklch(0.74_0.17_85_/_0.35)]',
             'hover:shadow-[0_0_20px_oklch(0.74_0.17_85_/_0.5)]',
             isPending && 'opacity-60 pointer-events-none',

@@ -46,8 +46,8 @@ export function BadgesSection({ value, onChange }: Props) {
             'border rounded-xs p-3 cursor-pointer min-h-[110px]',
             'transition-all duration-[200ms]',
             b.rarity === 'legendary' && 'border-[oklch(0.78_0.16_82/0.6)]',
-            b.rarity === 'epic'      && 'border-[oklch(0.68_0.22_295/0.5)]',
-            b.rarity === 'rare'      && 'border-[oklch(0.78_0.16_205/0.4)]',
+            b.rarity === 'epic' && 'border-[oklch(0.68_0.22_295/0.5)]',
+            b.rarity === 'rare' && 'border-[oklch(0.78_0.16_205/0.4)]',
             (b.rarity === 'uncommon' || b.rarity === 'common') && 'border-border',
             active && 'shadow-[0_0_0_1px_var(--a)]',
           );
@@ -58,19 +58,29 @@ export function BadgesSection({ value, onChange }: Props) {
               className={tileCls}
               style={{
                 background: active
-                  ? `radial-gradient(circle at 50% 0%, ${accent.glow}30, oklch(16% 0.03 270/0.6))`
-                  : 'oklch(16% 0.03 270/0.6)',
+                  ? `radial-gradient(circle at 50% 0%, ${accent.glow}30, color-mix(in oklab, var(--panel) 60%, transparent))`
+                  : 'color-mix(in oklab, var(--panel) 60%, transparent)',
                 ['--a' as string]: accent.glow,
               }}
               onClick={() => toggle(b.id)}
               type="button"
             >
-              <div className="[font-family:var(--f-title)] italic text-[26px] leading-none" style={{ color: accent.glow }}>
+              <div
+                className="[font-family:var(--f-title)] italic text-[26px] leading-none"
+                style={{ color: accent.glow }}
+              >
                 {b.glyph}
               </div>
-              <div className="[font-family:var(--f-title)] italic text-[12px] text-text-hi">{b.name}</div>
-              <div className="[font-family:var(--f-mono)] text-[7px] tracking-[0.18em] text-text-lo uppercase">{b.era}</div>
-              <div className="[font-family:var(--f-mono)] text-[7px] tracking-[0.22em] uppercase" style={{ color: rColor }}>
+              <div className="[font-family:var(--f-title)] italic text-[12px] text-text-hi">
+                {b.name}
+              </div>
+              <div className="[font-family:var(--f-mono)] text-[7px] tracking-[0.18em] text-text-lo uppercase">
+                {b.era}
+              </div>
+              <div
+                className="[font-family:var(--f-mono)] text-[7px] tracking-[0.22em] uppercase"
+                style={{ color: rColor }}
+              >
                 {b.rarity}
               </div>
               {active && (

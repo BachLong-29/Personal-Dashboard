@@ -42,7 +42,7 @@ export function GoldPriceTicker() {
 }
 
 const card =
-  'block shrink-0 bg-[linear-gradient(135deg,oklch(0.3_0.05_85_/_0.2),oklch(0.22_0.03_270_/_0.2))] border border-[oklch(0.78_0.16_82_/_0.3)] rounded-[var(--r)] px-[14px] py-2.5 no-underline transition-colors hover:border-[oklch(0.78_0.16_82_/_0.55)]';
+  'block shrink-0 bg-[linear-gradient(135deg,var(--gold-glow),transparent)] border border-[oklch(0.78_0.16_82_/_0.3)] rounded-[var(--r)] px-[14px] py-2.5 no-underline transition-colors hover:border-[oklch(0.78_0.16_82_/_0.55)]';
 const row = 'flex items-center justify-between mb-1.5';
 const label = 'text-[8px] tracking-[0.12em] uppercase text-[var(--gold)] font-[var(--font-title)]';
 const staleTag =

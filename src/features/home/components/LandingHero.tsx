@@ -125,7 +125,7 @@ export function LandingHero() {
               className="lp-fc-icon"
               style={{
                 background: 'linear-gradient(135deg, var(--gold-2), var(--gold))',
-                color: '#0a0400',
+                color: 'var(--on-gold)',
               }}
             >
               ★

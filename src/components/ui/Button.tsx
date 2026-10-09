@@ -20,7 +20,7 @@ export const buttonVariants = cva(
         default: 'bg-[var(--surface-2)] text-[var(--text-hi)] border-[var(--border)]',
         primary: [
           'bg-gradient-to-br from-[var(--gold-2)] to-[var(--gold)]',
-          'text-[#0a0400] border-[var(--gold)]',
+          'text-[var(--on-gold)] border-[var(--gold)]',
           'btn-shadow-primary',
         ].join(' '),
         violet: [
@@ -58,8 +58,7 @@ export const buttonVariants = cva(
 );
 
 export interface ButtonProps
-  extends React.ButtonHTMLAttributes<HTMLButtonElement>,
-    VariantProps<typeof buttonVariants> {
+  extends React.ButtonHTMLAttributes<HTMLButtonElement>, VariantProps<typeof buttonVariants> {
   isLoading?: boolean;
 }
 
@@ -92,7 +91,14 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
           viewBox="0 0 24 24"
           aria-hidden="true"
         >
-          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+          <circle
+            className="opacity-25"
+            cx="12"
+            cy="12"
+            r="10"
+            stroke="currentColor"
+            strokeWidth="4"
+          />
           <path
             className="opacity-75"
             fill="currentColor"

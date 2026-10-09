@@ -30,7 +30,7 @@ function HeroSigil({ glyph, accent, size = 96 }: HeroSigilProps) {
           </radialGradient>
         </defs>
         <circle r="48" fill="url(#hc-sigil-glow)" />
-        <circle r="42" fill="oklch(14% 0.03 270)" stroke={accent.glow} strokeWidth="1" />
+        <circle r="42" fill="var(--panel)" stroke={accent.glow} strokeWidth="1" />
         <circle r="36" fill="none" stroke={accent.glow} strokeWidth="0.5" opacity="0.5" />
         <g
           style={{
@@ -200,7 +200,8 @@ export function HeroCard({ form }: HeroCardProps) {
     <div
       className={cardCls}
       style={{
-        background: 'linear-gradient(180deg, oklch(15% 0.04 270/0.95), oklch(11% 0.025 270/0.95))',
+        background:
+          'linear-gradient(180deg, color-mix(in oklab, var(--panel) 95%, transparent), color-mix(in oklab, var(--panel) 95%, transparent))',
         boxShadow: `0 0 0 1px ${accent.glow}66, 0 0 30px ${accent.glow}20`,
         ['--accent' as string]: accent.glow,
       }}
@@ -243,7 +244,7 @@ export function HeroCard({ form }: HeroCardProps) {
       <div
         className="[font-family:var(--f-title)] italic text-[13px] text-text-md leading-relaxed px-4 py-3 relative"
         style={{
-          background: 'oklch(18% 0.03 270/0.6)',
+          background: 'color-mix(in oklab, var(--panel) 60%, transparent)',
           borderLeft: `2px solid ${accent.glow}`,
           borderRadius: '0 3px 3px 0',
         }}
