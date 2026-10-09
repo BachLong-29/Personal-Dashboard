@@ -484,7 +484,7 @@ const envPill =
   'flex shrink-0 items-center gap-1.5 text-[9px] font-bold tracking-[0.12em] text-[var(--mint)] font-[var(--font-title)] bg-[oklch(0.76_0.14_162_/_0.08)] border border-[oklch(0.76_0.14_162_/_0.3)] rounded-[20px] px-2.5 py-1';
 
 const forgeBtn =
-  'flex h-9 w-9 shrink-0 items-center justify-center gap-1.5 rounded-[var(--r-sm)] text-[11px] font-bold font-[var(--font-title)] tracking-[0.08em] text-[#0a0400] bg-[linear-gradient(135deg,oklch(0.68_0.14_82),oklch(0.78_0.16_82))] shadow-[0_0_12px_oklch(0.74_0.17_85_/_0.35)] cursor-pointer transition-all hover:shadow-[0_0_20px_oklch(0.74_0.17_85_/_0.5)] sm:w-auto sm:px-3.5 sm:py-1.5';
+  'flex h-9 w-9 shrink-0 items-center justify-center gap-1.5 rounded-[var(--r-sm)] text-[11px] font-bold font-[var(--font-title)] tracking-[0.08em] text-[var(--on-gold)] bg-[linear-gradient(135deg,oklch(0.68_0.14_82),oklch(0.78_0.16_82))] shadow-[0_0_12px_oklch(0.74_0.17_85_/_0.35)] cursor-pointer transition-all hover:shadow-[0_0_20px_oklch(0.74_0.17_85_/_0.5)] sm:w-auto sm:px-3.5 sm:py-1.5';
 
 const shellBody = 'flex flex-1 min-h-0 overflow-hidden relative';
 

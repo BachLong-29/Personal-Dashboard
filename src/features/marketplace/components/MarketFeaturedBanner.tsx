@@ -103,7 +103,7 @@ const featuredDiscount =
 const featuredCountdown =
   'font-[var(--font-title)] text-[10px] tracking-[0.15em] text-[var(--text-mid)]';
 const featuredBtn =
-  'w-full sm:w-auto justify-center font-[var(--font-title)] text-[11px] tracking-[0.18em] font-bold uppercase bg-[linear-gradient(135deg,var(--gold),var(--violet))] text-[#0a0400] px-5 py-3 rounded-[10px] shadow-[0_0_24px_var(--gold-glow)] transition-all duration-200 hover:-translate-y-px hover:shadow-[0_0_36px_var(--gold-glow)]';
+  'w-full sm:w-auto justify-center font-[var(--font-title)] text-[11px] tracking-[0.18em] font-bold uppercase bg-[linear-gradient(135deg,var(--gold),var(--violet))] text-[var(--on-gold)] px-5 py-3 rounded-[10px] shadow-[0_0_24px_var(--gold-glow)] transition-all duration-200 hover:-translate-y-px hover:shadow-[0_0_36px_var(--gold-glow)]';
 
 const featuredArtWrap = 'relative z-[2] flex items-center justify-center mt-2 lg:mt-0';
 const featuredRarityBadge =

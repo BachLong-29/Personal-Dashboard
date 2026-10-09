@@ -39,7 +39,7 @@ export const RightColumn = memo(function RightColumn({ settings, quote, onOpenWe
 });
 
 const motivationCard =
-  'bg-[linear-gradient(135deg,oklch(0.35_0.15_295_/_0.25),oklch(0.28_0.12_270_/_0.2))] border border-[oklch(0.66_0.22_295_/_0.3)] rounded-[var(--r)] px-[14px] py-3 shrink-0';
+  'bg-[linear-gradient(135deg,var(--violet-glow),transparent)] border border-[oklch(0.66_0.22_295_/_0.3)] rounded-[var(--r)] px-[14px] py-3 shrink-0';
 const motivationLabel =
   'text-[8px] tracking-[0.12em] uppercase text-[var(--violet)] font-[var(--font-title)] mb-[5px]';
 const motivationText = 'text-[11px] text-[var(--text-hi)] leading-[1.6] italic';

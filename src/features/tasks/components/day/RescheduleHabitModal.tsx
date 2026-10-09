@@ -194,4 +194,4 @@ const footerGhostBtn =
 
 const footerConfirmBtn =
   'text-[9px] font-bold px-3 py-1.5 rounded font-[var(--font-title)] tracking-[0.08em] transition-all disabled:opacity-40 disabled:cursor-not-allowed ' +
-  'bg-gradient-to-r from-[oklch(0.74_0.17_85)] to-[oklch(0.68_0.22_60)] text-[oklch(0.1_0_0)] shadow-[0_0_12px_oklch(0.74_0.17_85_/_0.3)] hover:shadow-[0_0_18px_oklch(0.74_0.17_85_/_0.5)]';
+  'bg-gradient-to-r from-[oklch(0.74_0.17_85)] to-[oklch(0.68_0.22_60)] text-[var(--on-mint)] shadow-[0_0_12px_oklch(0.74_0.17_85_/_0.3)] hover:shadow-[0_0_18px_oklch(0.74_0.17_85_/_0.5)]';

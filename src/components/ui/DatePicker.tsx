@@ -304,7 +304,7 @@ export function DatePicker({
                         !isSelected &&
                         'text-[var(--text-md)] hover:bg-[var(--surface-3)] hover:text-[var(--text-hi)]',
                       isToday && !isSelected && 'text-[var(--gold)] font-bold',
-                      isSelected && 'font-bold text-[#0a0400] shadow-[var(--sh-glow-gold)]',
+                      isSelected && 'font-bold text-[var(--on-gold)] shadow-[var(--sh-glow-gold)]',
                     )}
                     style={
                       isSelected

@@ -20,6 +20,7 @@ export const PROFILE_SECTIONS: SectionDef[] = [
   { id: 'badges', label: 'Showcase', glyph: 'VII', subtitle: 'Up to four worn badges' },
   { id: 'prefs', label: 'Quest Behaviour', glyph: 'VIII', subtitle: 'Cadence and difficulty' },
   { id: 'cash-log', label: 'Cash Reminder', glyph: 'IX', subtitle: 'Log what you spent in cash' },
+  { id: 'appearance', label: 'Appearance', glyph: 'X', subtitle: 'Light, dark or system' },
 ];
 
 interface Props {
@@ -35,7 +36,8 @@ export function ProfileSectionNav({ active, onPick, lastSaved }: Props) {
     <nav
       className={navCls}
       style={{
-        background: 'linear-gradient(180deg, oklch(13% 0.03 270/0.7), oklch(10% 0.025 270/0.85))',
+        background:
+          'linear-gradient(180deg, color-mix(in oklab, var(--panel) 70%, transparent), color-mix(in oklab, var(--panel) 85%, transparent))',
         backdropFilter: 'blur(10px)',
       }}
     >

@@ -47,13 +47,13 @@ function Rail() {
     { ico: '⚲', title: 'Locations' },
   ];
   return (
-    <aside className="mr-4 flex flex-col items-center gap-5 rounded-[20px] border border-[#2a2a48] bg-[linear-gradient(180deg,#0f0f1d,#0a0a14)] py-5">
+    <aside className="mr-4 flex flex-col items-center gap-5 rounded-[20px] border border-[var(--border)] bg-[linear-gradient(180deg,var(--bg-2),var(--bg-1))] py-5">
       <div
-        className={`${F_TITLE} flex h-11 w-11 flex-col items-center justify-center rounded-[10px] bg-[linear-gradient(135deg,oklch(0.78_0.16_82),oklch(0.68_0.22_295))] text-[13px] font-black leading-none text-[#0a0400] shadow-[0_0_24px_oklch(0.68_0.22_295_/_0.35),inset_0_0_8px_oklch(1_0_0_/_0.25)]`}
+        className={`${F_TITLE} flex h-11 w-11 flex-col items-center justify-center rounded-[10px] bg-[linear-gradient(135deg,oklch(0.78_0.16_82),oklch(0.68_0.22_295))] text-[13px] font-black leading-none text-[var(--on-gold)] shadow-[0_0_24px_oklch(0.68_0.22_295_/_0.35),inset_0_0_8px_oklch(1_0_0_/_0.25)]`}
       >
         31<small className="text-[8px] tracking-[0.1em] opacity-80">CAL</small>
       </div>
-      <div className="h-px w-7 bg-[#2a2a48]" />
+      <div className="h-px w-7 bg-[var(--border)]" />
       {icons.map((it) => (
         <div
           key={it.title}
@@ -61,7 +61,7 @@ function Rail() {
           className={`relative flex h-11 w-11 cursor-pointer items-center justify-center rounded-[10px] text-[18px] transition-all duration-[180ms] ${
             it.active
               ? 'bg-[oklch(0.68_0.22_295_/_0.12)] text-[oklch(0.68_0.22_295)]'
-              : 'text-[#7676a0] hover:bg-[#1a1a30] hover:text-[#f0eeff]'
+              : 'text-[var(--text-lo)] hover:bg-[var(--surface-2)] hover:text-[var(--text-hi)]'
           }`}
         >
           {it.active && (
@@ -72,7 +72,7 @@ function Rail() {
       ))}
       <div
         title="Settings"
-        className="mt-auto flex h-11 w-11 cursor-pointer items-center justify-center rounded-[10px] text-[18px] text-[#7676a0] transition-all duration-[180ms] hover:bg-[#1a1a30] hover:text-[#f0eeff]"
+        className="mt-auto flex h-11 w-11 cursor-pointer items-center justify-center rounded-[10px] text-[18px] text-[var(--text-lo)] transition-all duration-[180ms] hover:bg-[var(--surface-2)] hover:text-[var(--text-hi)]"
       >
         ⚙
       </div>
@@ -90,7 +90,7 @@ interface EItem {
 function EventListItem({ name, time, repeat, dot }: EItem) {
   const c = DOT[dot];
   return (
-    <div className="relative flex gap-3 overflow-hidden rounded-[14px] border border-[#2a2a48] bg-[#131326] p-4 transition-all duration-[180ms] hover:-translate-y-0.5 hover:border-[#3a3a5e] hover:shadow-[0_4px_12px_oklch(0_0_0_/_0.5)]">
+    <div className="relative flex gap-3 overflow-hidden rounded-[14px] border border-[var(--border)] bg-[var(--surface)] p-4 transition-all duration-[180ms] hover:-translate-y-0.5 hover:border-[var(--border-hi)] hover:shadow-[0_4px_12px_oklch(0_0_0_/_0.5)]">
       <span className="absolute left-0 top-0 bottom-0 w-[3px]" style={{ background: c }} />
       <div className="min-w-0 flex-1">
         <div className="mb-3 flex items-center gap-1.5">
@@ -98,16 +98,20 @@ function EventListItem({ name, time, repeat, dot }: EItem) {
             className="h-[7px] w-[7px] flex-shrink-0 rounded-full"
             style={{ background: c, boxShadow: `0 0 6px ${c}` }}
           />
-          <span className={`${F_TITLE} text-[13px] tracking-[0.03em] text-[#f0eeff]`}>{name}</span>
+          <span className={`${F_TITLE} text-[13px] tracking-[0.03em] text-[var(--text-hi)]`}>
+            {name}
+          </span>
         </div>
-        <div className={`${F_MONO} text-[9px] leading-[1.7] tracking-[0.04em] text-[#7676a0]`}>
+        <div
+          className={`${F_MONO} text-[9px] leading-[1.7] tracking-[0.04em] text-[var(--text-lo)]`}
+        >
           <div>{time}</div>
           <div>
-            <span className="text-[#4a4a6a]">Repeat ·</span> {repeat}
+            <span className="text-[var(--text-dim)]">Repeat ·</span> {repeat}
           </div>
         </div>
       </div>
-      <div className="relative h-[52px] w-[52px] flex-shrink-0 overflow-hidden rounded-[10px] border border-[#3a3a5e]">
+      <div className="relative h-[52px] w-[52px] flex-shrink-0 overflow-hidden rounded-[10px] border border-[var(--border-hi)]">
         <Imgph label="art" />
       </div>
     </div>
@@ -119,16 +123,16 @@ function MiniCalendar() {
   const dotted = [2, 3, 4, 14, 22, 23, 28];
   const cellBase = `${F_MONO} flex aspect-square cursor-pointer items-center justify-center rounded-[3px] text-[10px] transition-all duration-[140ms]`;
   return (
-    <div className="rounded-[14px] border border-[#2a2a48] bg-[#131326] p-4">
+    <div className="rounded-[14px] border border-[var(--border)] bg-[var(--surface)] p-4">
       <div className="mb-3 flex items-center justify-between">
-        <span className={`${F_TITLE} text-[13px] tracking-[0.06em] text-[#f0eeff]`}>
+        <span className={`${F_TITLE} text-[13px] tracking-[0.06em] text-[var(--text-hi)]`}>
           November 2023
         </span>
         <div className="flex gap-1">
           {['ArrowLeft', 'ArrowRight'].map((icon) => (
             <button
               key={icon}
-              className="flex h-6 w-6 items-center justify-center rounded-[6px] border border-[#2a2a48] bg-[#0f0f1d] text-[9px] text-[#7676a0] transition-colors hover:text-[#f0eeff]"
+              className="flex h-6 w-6 items-center justify-center rounded-[6px] border border-[var(--border)] bg-[var(--bg-2)] text-[9px] text-[var(--text-lo)] transition-colors hover:text-[var(--text-hi)]"
             >
               <Icon icon={icon} className="text-[14px]" />
             </button>
@@ -139,13 +143,13 @@ function MiniCalendar() {
         {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((d, i) => (
           <div
             key={`dow-${i}`}
-            className={`${cellBase} cursor-default text-[9px] tracking-[0.05em] text-[#4a4a6a]`}
+            className={`${cellBase} cursor-default text-[9px] tracking-[0.05em] text-[var(--text-dim)]`}
           >
             {d}
           </div>
         ))}
         {[29, 30, 31].map((n) => (
-          <div key={`lead-${n}`} className={`${cellBase} text-[#4a4a6a] opacity-40`}>
+          <div key={`lead-${n}`} className={`${cellBase} text-[var(--text-dim)] opacity-40`}>
             {n}
           </div>
         ))}
@@ -158,7 +162,7 @@ function MiniCalendar() {
               className={`${cellBase} relative ${
                 sel
                   ? 'bg-[linear-gradient(135deg,oklch(0.55_0.20_295),oklch(0.68_0.22_295))] font-bold text-white shadow-[0_0_24px_oklch(0.68_0.22_295_/_0.35)]'
-                  : 'text-[#b4b4d8] hover:bg-[#232340] hover:text-[#f0eeff]'
+                  : 'text-[var(--text-md)] hover:bg-[var(--surface-3)] hover:text-[var(--text-hi)]'
               }`}
             >
               {d}
@@ -169,7 +173,7 @@ function MiniCalendar() {
           );
         })}
         {[1, 2, 3, 4, 5].map((n) => (
-          <div key={`trail-${n}`} className={`${cellBase} text-[#4a4a6a] opacity-40`}>
+          <div key={`trail-${n}`} className={`${cellBase} text-[var(--text-dim)] opacity-40`}>
             {n}
           </div>
         ))}
@@ -181,8 +185,10 @@ function MiniCalendar() {
 // ─── Stat card ──────────────────────────────────────────────────────────────────
 function StatCard({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div className="relative overflow-hidden rounded-[14px] border border-[#2a2a48] bg-[#131326] p-4 hover:border-[#3a3a5e]">
-      <div className={`${F_TITLE} mb-3 text-[15px] tracking-[0.04em] text-[#f0eeff]`}>{label}</div>
+    <div className="relative overflow-hidden rounded-[14px] border border-[var(--border)] bg-[var(--surface)] p-4 hover:border-[var(--border-hi)]">
+      <div className={`${F_TITLE} mb-3 text-[15px] tracking-[0.04em] text-[var(--text-hi)]`}>
+        {label}
+      </div>
       <div className="flex items-baseline gap-1.5 whitespace-nowrap">{children}</div>
     </div>
   );
@@ -193,7 +199,7 @@ const Num = ({ color, children }: { color: string; children: React.ReactNode }) 
   </span>
 );
 const Unit = ({ children }: { children: React.ReactNode }) => (
-  <span className="text-[9px] tracking-[0.04em] text-[#7676a0]">{children}</span>
+  <span className="text-[9px] tracking-[0.04em] text-[var(--text-lo)]">{children}</span>
 );
 
 // ─── Week grid ──────────────────────────────────────────────────────────────────
@@ -271,10 +277,14 @@ function EventBlock({ e }: { e: Evt }) {
           <Imgph />
         </div>
         <div>
-          <div className={`${F_TITLE} ${nameSize} leading-[1.2] tracking-[0.02em] text-[#f0eeff]`}>
+          <div
+            className={`${F_TITLE} ${nameSize} leading-[1.2] tracking-[0.02em] text-[var(--text-hi)]`}
+          >
             {e.name}
           </div>
-          <div className={`${F_MONO} text-[9px] tracking-[0.04em] text-[#b4b4d8]`}>{e.time}</div>
+          <div className={`${F_MONO} text-[9px] tracking-[0.04em] text-[var(--text-md)]`}>
+            {e.time}
+          </div>
         </div>
       </div>
     );
@@ -288,12 +298,14 @@ function EventBlock({ e }: { e: Evt }) {
           <Imgph label={e.thumb} />
         </div>
       )}
-      <div className={`${F_TITLE} ${nameSize} leading-[1.2] tracking-[0.02em] text-[#f0eeff]`}>
+      <div
+        className={`${F_TITLE} ${nameSize} leading-[1.2] tracking-[0.02em] text-[var(--text-hi)]`}
+      >
         {e.name}
       </div>
-      <div className={`${F_MONO} text-[9px] tracking-[0.04em] text-[#b4b4d8]`}>{e.time}</div>
+      <div className={`${F_MONO} text-[9px] tracking-[0.04em] text-[var(--text-md)]`}>{e.time}</div>
       {e.extra && (
-        <div className={`${F_MONO} mt-auto text-[9px] tracking-[0.04em] text-[#b4b4d8]`}>
+        <div className={`${F_MONO} mt-auto text-[9px] tracking-[0.04em] text-[var(--text-md)]`}>
           {e.extra}
         </div>
       )}
@@ -310,25 +322,25 @@ function WeekGrid() {
     { dow: 'Fri', num: '05' },
   ];
   return (
-    <div className="relative flex flex-1 flex-col overflow-hidden rounded-[20px] border border-[#2a2a48] bg-[#131326]">
+    <div className="relative flex flex-1 flex-col overflow-hidden rounded-[20px] border border-[var(--border)] bg-[var(--surface)]">
       {/* Day header row */}
-      <div className="grid grid-cols-[60px_repeat(5,1fr)] border-b border-[#2a2a48] bg-[#0f0f1d]">
-        <div className="border-r border-[#1f1f38]" />
+      <div className="grid grid-cols-[60px_repeat(5,1fr)] border-b border-[var(--border)] bg-[var(--bg-2)]">
+        <div className="border-r border-[var(--border-lo)]" />
         {days.map((d, i) => (
           <div
             key={d.dow}
-            className={`flex flex-col gap-0.5 px-4 py-3 ${i < 4 ? 'border-r border-[#1f1f38]' : ''}`}
+            className={`flex flex-col gap-0.5 px-4 py-3 ${i < 4 ? 'border-r border-[var(--border-lo)]' : ''}`}
           >
             <span
               className={`${F_MONO} text-[9px] uppercase tracking-[0.12em] ${
-                d.today ? 'text-[oklch(0.68_0.22_295)]' : 'text-[#7676a0]'
+                d.today ? 'text-[oklch(0.68_0.22_295)]' : 'text-[var(--text-lo)]'
               }`}
             >
               {d.dow}
             </span>
             <span
               className={`${F_TITLE} text-[22px] font-bold leading-none ${
-                d.today ? 'text-[oklch(0.68_0.22_295)]' : 'text-[#b4b4d8]'
+                d.today ? 'text-[oklch(0.68_0.22_295)]' : 'text-[var(--text-md)]'
               }`}
             >
               {d.num}
@@ -343,12 +355,12 @@ function WeekGrid() {
           {HOURS.flatMap((h, r) => [
             <div
               key={`lbl-${r}`}
-              className={`${F_MONO} border-r border-t border-[#1f1f38] px-2 pt-1 text-right text-[9px] text-[#4a4a6a]`}
+              className={`${F_MONO} border-r border-t border-[var(--border-lo)] px-2 pt-1 text-right text-[9px] text-[var(--text-dim)]`}
             >
               {h}
             </div>,
             ...Array.from({ length: 5 }, (_, c) => (
-              <div key={`slot-${r}-${c}`} className="border-r border-t border-[#1f1f38]" />
+              <div key={`slot-${r}-${c}`} className="border-r border-t border-[var(--border-lo)]" />
             )),
           ])}
           {EVENTS.map((e) => (
@@ -397,12 +409,12 @@ function RightRail() {
             </span>
           </div>
         </div>
-        <div className="relative flex items-center gap-3 rounded-[14px] bg-[#06060d] px-4 py-3">
+        <div className="relative flex items-center gap-3 rounded-[14px] bg-[var(--bg-0)] px-4 py-3">
           <div className={`${F_TITLE} text-[28px] font-black tracking-[0.02em] text-white`}>
             15:00
           </div>
-          <div className="text-[11px] leading-[1.4] text-[#b4b4d8]">
-            <strong className="font-semibold text-[#f0eeff]">Fuyu Matsuri</strong>
+          <div className="text-[11px] leading-[1.4] text-[var(--text-md)]">
+            <strong className="font-semibold text-[var(--text-hi)]">Fuyu Matsuri</strong>
             <br />
             Japan
           </div>
@@ -410,19 +422,20 @@ function RightRail() {
       </div>
 
       {/* Participants */}
-      <div className="rounded-[20px] border border-[#2a2a48] bg-[#131326] p-5">
-        <div className={`${F_TITLE} text-[18px] tracking-[0.04em] text-[#f0eeff]`}>
+      <div className="rounded-[20px] border border-[var(--border)] bg-[var(--surface)] p-5">
+        <div className={`${F_TITLE} text-[18px] tracking-[0.04em] text-[var(--text-hi)]`}>
           Participants
         </div>
-        <div className={`${F_MONO} mt-1 text-[11px] tracking-[0.04em] text-[#7676a0]`}>
-          <b className="text-[#b4b4d8]">35</b> joins · <b className="text-[#b4b4d8]">4</b> rejects ·{' '}
-          <b className="text-[#b4b4d8]">108</b> pending
+        <div className={`${F_MONO} mt-1 text-[11px] tracking-[0.04em] text-[var(--text-lo)]`}>
+          <b className="text-[var(--text-md)]">35</b> joins ·{' '}
+          <b className="text-[var(--text-md)]">4</b> rejects ·{' '}
+          <b className="text-[var(--text-md)]">108</b> pending
         </div>
         <div className="mt-4 flex items-center">
           {avatars.map((a, i) => (
             <div
               key={a.ch}
-              className={`relative h-11 w-11 overflow-hidden rounded-[10px] border-2 border-[#131326] ${a.grad} ${
+              className={`relative h-11 w-11 overflow-hidden rounded-[10px] border-2 border-[var(--surface)] ${a.grad} ${
                 i === 0 ? '' : '-ml-2.5'
               }`}
             >
@@ -434,7 +447,7 @@ function RightRail() {
             </div>
           ))}
           <div
-            className={`${F_MONO} -ml-2.5 flex h-11 w-11 items-center justify-center rounded-[10px] border-2 border-[#131326] bg-[#232340] text-[11px] text-[#b4b4d8]`}
+            className={`${F_MONO} -ml-2.5 flex h-11 w-11 items-center justify-center rounded-[10px] border-2 border-[var(--surface)] bg-[var(--surface-3)] text-[11px] text-[var(--text-md)]`}
           >
             +31
           </div>
@@ -498,17 +511,17 @@ export function Calendar({ embedded = false }: CalendarProps) {
   return (
     <div
       ref={stageRef}
-      className={`flex items-center justify-center overflow-hidden bg-[#06060d] ${
+      className={`flex items-center justify-center overflow-hidden bg-[var(--bg-0)] ${
         embedded ? 'relative h-full w-full' : 'fixed inset-0'
       }`}
     >
       <div ref={scalerRef} className="h-[850px] w-[1340px] flex-shrink-0 origin-center">
-        <div className="grid h-[850px] w-[1340px] grid-cols-[84px_268px_minmax(0,1fr)_326px] gap-0 bg-[#06060d] p-4 text-[#f0eeff]">
+        <div className="grid h-[850px] w-[1340px] grid-cols-[84px_268px_minmax(0,1fr)_326px] gap-0 bg-[var(--bg-0)] p-4 text-[var(--text-hi)]">
           <Rail />
 
           {/* Left — event list */}
           <section className="flex flex-col gap-4 overflow-hidden pr-2">
-            <div className="flex gap-5 border-b border-[#1f1f38] pb-3">
+            <div className="flex gap-5 border-b border-[var(--border-lo)] pb-3">
               {TABS.map((t) => {
                 const active = tab === t.label;
                 return (
@@ -516,12 +529,12 @@ export function Calendar({ embedded = false }: CalendarProps) {
                     key={t.label}
                     onClick={() => setTab(t.label)}
                     className={`${F_TITLE} relative pb-1 text-[13px] tracking-[0.08em] ${
-                      active ? 'text-[oklch(0.68_0.22_295)]' : 'text-[#7676a0]'
+                      active ? 'text-[oklch(0.68_0.22_295)]' : 'text-[var(--text-lo)]'
                     }`}
                   >
                     {t.label}{' '}
                     <span
-                      className={`${F_MONO} ml-1.5 rounded-full bg-[#232340] px-1.5 py-px text-[9px] text-[#b4b4d8]`}
+                      className={`${F_MONO} ml-1.5 rounded-full bg-[var(--surface-3)] px-1.5 py-px text-[9px] text-[var(--text-md)]`}
                     >
                       {t.count}
                     </span>
@@ -548,11 +561,11 @@ export function Calendar({ embedded = false }: CalendarProps) {
             <header className="flex items-center gap-5">
               <div className="flex items-center gap-5">
                 <div>
-                  <div className={`${F_MONO} text-[13px] tracking-[0.2em] text-[#7676a0]`}>
+                  <div className={`${F_MONO} text-[13px] tracking-[0.2em] text-[var(--text-lo)]`}>
                     2023
                   </div>
                   <h1
-                    className={`${F_TITLE} whitespace-nowrap bg-[linear-gradient(135deg,#f0eeff,oklch(0.68_0.22_295))] bg-clip-text text-[36px] font-black leading-none tracking-[0.03em] text-transparent`}
+                    className={`${F_TITLE} whitespace-nowrap bg-[linear-gradient(135deg,var(--text-hi),oklch(0.68_0.22_295))] bg-clip-text text-[36px] font-black leading-none tracking-[0.03em] text-transparent`}
                   >
                     November
                   </h1>
@@ -566,16 +579,16 @@ export function Calendar({ embedded = false }: CalendarProps) {
               </div>
 
               {/* View segment */}
-              <div className="mx-auto inline-flex rounded-full border border-[#2a2a48] bg-[#0f0f1d] p-1">
+              <div className="mx-auto inline-flex rounded-full border border-[var(--border)] bg-[var(--bg-2)] p-1">
                 {VIEWS.map((v, i) => (
                   <span key={v} className="flex items-center">
-                    {i === 2 && <span className="my-1.5 mx-0.5 w-px bg-[#2a2a48]" />}
+                    {i === 2 && <span className="my-1.5 mx-0.5 w-px bg-[var(--border)]" />}
                     <button
                       onClick={() => setView(v)}
                       className={`${F_TITLE} whitespace-nowrap rounded-full px-3 py-1.5 text-[11px] tracking-[0.06em] transition-all duration-[180ms] ${
                         view === v
                           ? 'bg-[linear-gradient(135deg,oklch(0.55_0.20_295),oklch(0.68_0.22_295))] text-white shadow-[0_0_24px_oklch(0.68_0.22_295_/_0.35)]'
-                          : 'text-[#7676a0] hover:text-[#f0eeff]'
+                          : 'text-[var(--text-lo)] hover:text-[var(--text-hi)]'
                       }`}
                     >
                       {v}
@@ -587,13 +600,13 @@ export function Calendar({ embedded = false }: CalendarProps) {
               {/* Tools */}
               <div className="flex flex-shrink-0 items-center gap-2">
                 <span
-                  className={`${F_MONO} inline-flex items-center gap-1.5 rounded-[10px] border border-[#2a2a48] bg-[#1a1a30] px-3 py-[7px] text-[11px] text-[#b4b4d8]`}
+                  className={`${F_MONO} inline-flex items-center gap-1.5 rounded-[10px] border border-[var(--border)] bg-[var(--surface-2)] px-3 py-[7px] text-[11px] text-[var(--text-md)]`}
                 >
                   <span className="text-[oklch(0.68_0.22_295)]">3</span> ◫ invites
                 </span>
-                <button className="relative flex h-[34px] w-[34px] items-center justify-center rounded-[10px] border border-[#2a2a48] bg-[#1a1a30] text-[#b4b4d8] hover:text-[#f0eeff]">
+                <button className="relative flex h-[34px] w-[34px] items-center justify-center rounded-[10px] border border-[var(--border)] bg-[var(--surface-2)] text-[var(--text-md)] hover:text-[var(--text-hi)]">
                   ◷
-                  <span className="absolute right-1.5 top-[5px] h-1.5 w-1.5 rounded-full border border-[#0f0f1d] bg-[oklch(0.78_0.16_82)] shadow-[0_0_6px_oklch(0.78_0.16_82_/_0.35)]" />
+                  <span className="absolute right-1.5 top-[5px] h-1.5 w-1.5 rounded-full border border-[var(--bg-2)] bg-[oklch(0.78_0.16_82)] shadow-[0_0_6px_oklch(0.78_0.16_82_/_0.35)]" />
                 </button>
               </div>
             </header>
@@ -601,9 +614,9 @@ export function Calendar({ embedded = false }: CalendarProps) {
             {/* Stats */}
             <div className="grid grid-cols-4 gap-3">
               <StatCard label="Event">
-                <Num color="#f0eeff">3</Num>
+                <Num color="var(--text-hi)">3</Num>
                 <Unit>Passed</Unit>
-                <span className="text-[#4a4a6a]">·</span>
+                <span className="text-[var(--text-dim)]">·</span>
                 <Num color="oklch(0.74 0.18 5)">29</Num>
                 <Unit>Upcoming</Unit>
               </StatCard>

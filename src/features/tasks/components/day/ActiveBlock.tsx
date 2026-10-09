@@ -219,8 +219,7 @@ function ActiveState({ task, slotMeta, remainingMs, isTimed, now }: ActiveStateP
     <div
       className={activeWrap}
       style={{
-        background:
-          'linear-gradient(135deg, oklch(0.32 0.18 295 / 0.25), oklch(0.32 0.18 82 / 0.18))',
+        background: 'linear-gradient(135deg, var(--violet-glow), var(--gold-glow))',
         border: '1px solid oklch(0.68 0.22 295 / 0.45)',
         boxShadow: '0 0 26px var(--violet-glow), inset 0 0 18px oklch(0.68 0.22 295 / 0.06)',
       }}

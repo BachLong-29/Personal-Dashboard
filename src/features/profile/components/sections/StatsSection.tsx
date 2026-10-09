@@ -38,7 +38,7 @@ export function StatsSection({ stats, pool, onChange }: Props) {
   return (
     <div
       className="border border-border-lo rounded-sm p-5"
-      style={{ background: 'oklch(15% 0.03 270/0.5)' }}
+      style={{ background: 'color-mix(in oklab, var(--panel) 50%, transparent)' }}
     >
       {/* head */}
       <div className="flex justify-between items-center mb-4 pb-3 border-b border-border-lo">

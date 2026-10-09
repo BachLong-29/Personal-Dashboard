@@ -360,7 +360,7 @@ const catTabActive =
   'text-[var(--gold)] bg-[oklch(0.74_0.17_85_/_0.1)] border-[var(--gold)] shadow-[0_0_16px_var(--gold-glow)]';
 const catTabCount =
   'text-[9px] bg-[var(--panel3)] rounded-lg px-1.5 py-[1px] text-[var(--text-mid)]';
-const catTabCountActive = 'bg-[var(--gold)] text-[#0a0400]';
+const catTabCountActive = 'bg-[var(--gold)] text-[var(--on-gold)]';
 
 const rewardsGrid =
   'grid grid-cols-2 gap-3 sm:grid-cols-[repeat(auto-fill,minmax(220px,1fr))] sm:gap-4';

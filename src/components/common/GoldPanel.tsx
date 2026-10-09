@@ -17,7 +17,7 @@ interface GoldPanelProps {
 
 const BACKGROUND_STYLE: CSSProperties = {
   // Scrim (top layer) dims the art without dimming the content.
-  backgroundImage: `linear-gradient(rgba(8,6,16,0.55), rgba(8,6,16,0.55)), url(${mainBackground.src})`,
+  backgroundImage: `linear-gradient(var(--panel-scrim), var(--panel-scrim)), url(${mainBackground.src})`,
   backgroundSize: 'cover, auto 250%',
   backgroundPosition: 'center, center',
   // Wide/short panels (e.g. page headers) are narrower than one zoomed tile of
@@ -60,7 +60,7 @@ export function GoldPanel({
 }
 
 const panelBase =
-  "bg-[var(--panel)] rounded-[var(--r)] overflow-hidden relative before:content-[''] before:absolute before:inset-0 before:pointer-events-none before:rounded-[inherit] before:[background-image:repeating-linear-gradient(0deg,transparent,transparent_28px,oklch(1_0_0_/_0.012)_28px,oklch(1_0_0_/_0.012)_29px),repeating-linear-gradient(90deg,transparent,transparent_28px,oklch(1_0_0_/_0.012)_28px,oklch(1_0_0_/_0.012)_29px)]";
+  "bg-[var(--panel)] rounded-[var(--r)] overflow-hidden relative before:content-[''] before:absolute before:inset-0 before:pointer-events-none before:rounded-[inherit] before:[background-image:repeating-linear-gradient(0deg,transparent,transparent_28px,var(--panel-grid)_28px,var(--panel-grid)_29px),repeating-linear-gradient(90deg,transparent,transparent_28px,var(--panel-grid)_28px,var(--panel-grid)_29px)]";
 
 const panelGold =
   'shadow-[0_0_20px_oklch(0.74_0.17_85_/_0.18),inset_0_0_20px_oklch(0.74_0.17_85_/_0.05)]';

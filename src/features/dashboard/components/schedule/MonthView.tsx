@@ -274,7 +274,7 @@ const dayCellToday = 'bg-[oklch(0.74_0.17_85_/_0.05)] border-[oklch(0.74_0.17_85
 const dayNumRow = 'flex items-center justify-between mb-0.5 shrink-0';
 const dayNumber = 'text-[11px] font-semibold text-[var(--text-mid)] leading-none';
 const dayNumberToday =
-  'w-[18px] h-[18px] rounded-full bg-[var(--gold)] text-[oklch(0.15_0_0)] text-[10px] font-bold flex items-center justify-center leading-none';
+  'w-[18px] h-[18px] rounded-full bg-[var(--gold)] text-[var(--on-gold)] text-[10px] font-bold flex items-center justify-center leading-none';
 const itemCount = 'text-[8px] font-bold text-[var(--text-lo)] tabular-nums leading-none';
 
 const pillList = 'flex flex-col gap-0.5 flex-1 overflow-hidden';

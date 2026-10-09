@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation';
 import { verifyAccessToken } from '@/libs/jwt';
 import { TOKEN_KEYS } from '@/constants/auth';
 import { defaultLocale } from '@/i18n/config';
+import { ThemeSync } from '@/components/providers/ThemeSync';
 import { ToastContainer } from '@/components/common/ToastContainer';
 import { QuickAddTransaction } from '@/features/finance/components/QuickAddTransaction';
 import { QuickCreateFab } from '@/components/common/QuickCreateFab';
@@ -40,6 +41,7 @@ export default async function ProtectedLayout({
 
   return (
     <>
+      <ThemeSync />
       {children}
       <GlobalSearch />
       <ShareAgendaModal />

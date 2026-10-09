@@ -22,7 +22,7 @@ export function FocusSection({ value, onChange }: Props) {
     <div className="grid grid-cols-3 gap-3">
       {HERO_FOCUSES.map((f) => {
         const active = value.includes(f.id);
-        const idx    = value.indexOf(f.id);
+        const idx = value.indexOf(f.id);
 
         const tileCls = cn(
           'relative border rounded-xs p-4 cursor-pointer text-left',
@@ -33,21 +33,24 @@ export function FocusSection({ value, onChange }: Props) {
         );
 
         return (
-          <button
-            key={f.id}
-            className={tileCls}
-            onClick={() => toggle(f.id)}
-            type="button"
-          >
+          <button key={f.id} className={tileCls} onClick={() => toggle(f.id)} type="button">
             {active && (
-              <div className="absolute top-[8px] right-[8px] w-[20px] h-[20px] rounded-full grid place-items-center [font-family:var(--f-mono)] text-[10px] font-bold"
-                   style={{ background: 'var(--gold)', color: 'oklch(15% 0.03 270)' }}>
+              <div
+                className="absolute top-[8px] right-[8px] w-[20px] h-[20px] rounded-full grid place-items-center [font-family:var(--f-mono)] text-[10px] font-bold"
+                style={{ background: 'var(--gold)', color: 'var(--on-gold)' }}
+              >
                 {idx + 1}
               </div>
             )}
-            <div className="[font-family:var(--f-title)] italic text-[24px] text-gold">{f.glyph}</div>
-            <div className="[font-family:var(--f-title)] italic text-[15px] text-text-hi mt-[3px]">{f.name}</div>
-            <div className="[font-family:var(--f-mono)] text-[8px] tracking-[0.16em] uppercase text-text-lo mt-[3px]">{f.blurb}</div>
+            <div className="[font-family:var(--f-title)] italic text-[24px] text-gold">
+              {f.glyph}
+            </div>
+            <div className="[font-family:var(--f-title)] italic text-[15px] text-text-hi mt-[3px]">
+              {f.name}
+            </div>
+            <div className="[font-family:var(--f-mono)] text-[8px] tracking-[0.16em] uppercase text-text-lo mt-[3px]">
+              {f.blurb}
+            </div>
           </button>
         );
       })}

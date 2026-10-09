@@ -71,7 +71,7 @@ export function MarketRewardDetailModal({
       className="!border-[1.5px] !border-[currentColor] !rounded-[16px] animate-[marketplace-detail-in_0.4s_cubic-bezier(0.34,1.56,0.64,1)]"
       containerStyle={{
         color: RARITY_COLOR[reward.rarity],
-        background: 'linear-gradient(180deg,var(--panel),oklch(0.04 0.02 270))',
+        background: 'linear-gradient(180deg,var(--panel),var(--bg-2))',
         boxShadow: `0 0 60px ${RARITY_COLOR[reward.rarity]}, 0 24px 80px oklch(0 0 0 / 0.6)`,
       }}
     >
@@ -190,6 +190,6 @@ const detailActions = 'flex gap-2.5';
 const detailBtn =
   'flex-1 font-[var(--font-title)] text-[12px] tracking-[0.15em] font-bold p-[14px] rounded-lg border cursor-pointer uppercase transition-all duration-200';
 const detailBtnPrimary =
-  'bg-[linear-gradient(135deg,oklch(0.55_0.12_85),var(--gold))] border-[var(--gold)] text-[#0a0400] shadow-[0_0_20px_var(--gold-glow)] hover:-translate-y-0.5 hover:shadow-[0_0_30px_var(--gold-glow)] disabled:bg-[var(--panel3)] disabled:border-[var(--border)] disabled:text-[var(--text-lo)] disabled:shadow-none disabled:cursor-not-allowed disabled:translate-y-0';
+  'bg-[linear-gradient(135deg,oklch(0.55_0.12_85),var(--gold))] border-[var(--gold)] text-[var(--on-gold)] shadow-[0_0_20px_var(--gold-glow)] hover:-translate-y-0.5 hover:shadow-[0_0_30px_var(--gold-glow)] disabled:bg-[var(--panel3)] disabled:border-[var(--border)] disabled:text-[var(--text-lo)] disabled:shadow-none disabled:cursor-not-allowed disabled:translate-y-0';
 const detailBtnSecondary =
   'bg-[var(--panel2)] border-[var(--border)] text-[var(--text-mid)] hover:text-[var(--text-hi)] hover:border-[var(--text-hi)]';
