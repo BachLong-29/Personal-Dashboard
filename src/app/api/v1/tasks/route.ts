@@ -53,6 +53,8 @@ const querySchema = z.object({
    * Omit entirely for the legacy "everything matching the filter" behavior.
    */
   offset: z.coerce.number().int().min(0).optional(),
+  /** Paginated order: by start date (default), or by creation time, newest or oldest first. */
+  sort: z.enum(['startDate', 'createdAt', '-createdAt']).optional(),
 });
 
 /** Overlap filter for tasks whose [startDate, endDate] range intersects [start, end]. */
@@ -151,7 +153,16 @@ export const GET = asyncHandler(async (req: NextRequest) => {
     const offset = query.offset;
 
     const [tasks, total] = await Promise.all([
-      TaskModel.find(filter).sort({ startDate: 1 }).skip(offset).limit(limit),
+      TaskModel.find(filter)
+        .sort(
+          query.sort === 'createdAt'
+            ? { createdAt: 1 }
+            : query.sort === '-createdAt'
+              ? { createdAt: -1 }
+              : { startDate: 1 },
+        )
+        .skip(offset)
+        .limit(limit),
       TaskModel.countDocuments(filter),
     ]);
 
