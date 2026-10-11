@@ -330,3 +330,23 @@ export interface UpdateGoldAccountPayload {
   quantityChi?: number;
   quantityCay?: number;
 }
+
+/** A one-tap transaction offered by the mobile home-screen widget. Shared by web and app. */
+export interface TransactionPreset {
+  id: string;
+  /** Short name shown on the widget button, e.g. "Lunch". */
+  label: string;
+  type: TransactionType;
+  amount: number;
+  walletId: string;
+  categoryId: string;
+  note?: string;
+}
+
+export type CreateTransactionPresetPayload = Omit<TransactionPreset, 'id'>;
+
+export type UpdateTransactionPresetPayload = Partial<Omit<TransactionPreset, 'id' | 'note'>> & {
+  note?: string | null;
+};
+
+export const MAX_TRANSACTION_PRESETS = 4;
