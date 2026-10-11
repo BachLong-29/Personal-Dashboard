@@ -28,6 +28,9 @@ import type {
   GoldPriceResponse,
   GoldAccount,
   UpdateGoldAccountPayload,
+  TransactionPreset,
+  CreateTransactionPresetPayload,
+  UpdateTransactionPresetPayload,
 } from '@/types';
 
 function toQueryString(filters?: TransactionFilters): string {
@@ -53,6 +56,16 @@ export const financeEndpoints = {
     apiClient.patch<ApiResponse<Wallet>>(`/finance/wallets/${id}`, payload),
 
   removeWallet: (id: string) => apiClient.delete<ApiResponse<null>>(`/finance/wallets/${id}`),
+
+  listPresets: () => apiClient.get<ApiResponse<TransactionPreset[]>>('/finance/presets'),
+
+  createPreset: (payload: CreateTransactionPresetPayload) =>
+    apiClient.post<ApiResponse<TransactionPreset>>('/finance/presets', payload),
+
+  updatePreset: (id: string, payload: UpdateTransactionPresetPayload) =>
+    apiClient.patch<ApiResponse<TransactionPreset>>(`/finance/presets/${id}`, payload),
+
+  removePreset: (id: string) => apiClient.delete<ApiResponse<null>>(`/finance/presets/${id}`),
 
   getSepayStatus: (walletId: string) =>
     apiClient.get<ApiResponse<SepayStatus>>(`/finance/wallets/${walletId}/sepay`),

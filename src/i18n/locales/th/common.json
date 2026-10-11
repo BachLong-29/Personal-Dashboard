@@ -1014,6 +1014,21 @@
       "goldEditTitle": "แก้ไขทอง",
       "goldPreviewValue": "มูลค่า"
     },
+    "presets": {
+      "title": "Widget presets",
+      "add": "Add preset",
+      "edit": "Edit preset",
+      "hint": "One-tap transactions for the home-screen widget. Up to {count}.",
+      "empty": "No presets yet.",
+      "name": "Name",
+      "namePlaceholder": "e.g. Lunch",
+      "expense": "Expense",
+      "income": "Income",
+      "amount": "Amount",
+      "wallet": "Wallet",
+      "category": "Category",
+      "note": "Note"
+    },
     "wallet": {
       "newTag": "กระเป๋าเงินใหม่",
       "newTitle": "เพิ่มกระเป๋าเงิน",

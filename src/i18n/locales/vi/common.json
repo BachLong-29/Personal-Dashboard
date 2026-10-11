@@ -1014,6 +1014,21 @@
       "goldEditTitle": "Sửa vàng",
       "goldPreviewValue": "Giá trị"
     },
+    "presets": {
+      "title": "Preset widget",
+      "add": "Thêm preset",
+      "edit": "Sửa preset",
+      "hint": "Giao dịch một chạm cho widget màn hình chính. Tối đa {count}.",
+      "empty": "Chưa có preset nào.",
+      "name": "Tên",
+      "namePlaceholder": "vd. Ăn trưa",
+      "expense": "Chi tiêu",
+      "income": "Thu nhập",
+      "amount": "Số tiền",
+      "wallet": "Ví",
+      "category": "Danh mục",
+      "note": "Ghi chú"
+    },
     "wallet": {
       "newTag": "VÍ MỚI",
       "newTitle": "Thêm ví",

@@ -19,6 +19,7 @@ import { AMOUNT_MASK, formatCurrency } from '../utils';
 import { useFinanceUIStore } from '../stores/finance-ui.store';
 import { FinancePageHeader } from './FinancePageHeader';
 import { GoldAccountFormModal } from './GoldAccountFormModal';
+import { PresetsPanel } from './PresetsPanel';
 import { WalletList } from './WalletList';
 import { WalletFormModal } from './WalletFormModal';
 import { SepayConnectModal } from './SepayConnectModal';
@@ -130,6 +131,8 @@ export function WalletsPage() {
                     goldAccount={goldAccount}
                     onEditGold={() => setEditingGold(true)}
                   />
+
+                  <PresetsPanel />
 
                   {wallets.length === 0 && (
                     <div className="flex flex-col items-center gap-2 rounded-[var(--r-lg)] border border-dashed border-[var(--border)] py-8 text-center">
