@@ -100,18 +100,25 @@ export function EventsPage() {
   // otherwise blank page is noise, so the header one stands down for it.
   const isEmpty = !isLoading && !isError && events.length === 0;
 
-  // Whatever is on right now goes to the top — it is the only row with
-  // anything to do about it. Then repeating rules, the backbone of the week.
-  const sorted = useMemo(
-    () =>
-      [...events].sort(
-        (a, b) =>
-          Number(liveIds.has(b.id)) - Number(liveIds.has(a.id)) ||
-          Number(Boolean(b.recurrence)) - Number(Boolean(a.recurrence)) ||
-          a.startDate.localeCompare(b.startDate),
-      ),
-    [events, liveIds],
-  );
+  // Events that are no longer in play sink below the rest, switched-off ones last of all:
+  // 0 = on and still running, 1 = on but over (a one-off whose day has passed, or a series
+  // past its end date), 2 = switched off or deactivated. Within a tier, whatever is on right
+  // now goes to the top — it is the only row with anything to do about it — then repeating
+  // rules, the backbone of the week.
+  const sorted = useMemo(() => {
+    const tier = (event: (typeof events)[number]) => {
+      if (event.paused || event.active === false) return 2;
+      const lastDay = event.recurrence ? event.endDate : (event.endDate ?? event.startDate);
+      return Boolean(lastDay) && (lastDay as string).slice(0, 10) < today ? 1 : 0;
+    };
+    return [...events].sort(
+      (a, b) =>
+        tier(a) - tier(b) ||
+        Number(liveIds.has(b.id)) - Number(liveIds.has(a.id)) ||
+        Number(Boolean(b.recurrence)) - Number(Boolean(a.recurrence)) ||
+        a.startDate.localeCompare(b.startDate),
+    );
+  }, [events, liveIds, today]);
 
   function openCreate() {
     setEditing(null);
