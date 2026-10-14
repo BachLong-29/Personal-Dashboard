@@ -121,6 +121,15 @@ export function CharacterPanel({ char, settings }: CharacterPanelProps) {
                 <span>{tNav('events')}</span>
               </Link>
               <Link
+                href="/assistant"
+                className={menuItem}
+                role="menuitem"
+                onClick={() => setMenuOpen(false)}
+              >
+                <Icon icon="✨" />
+                <span>{tNav('assistant')}</span>
+              </Link>
+              <Link
                 href="/projects"
                 className={menuItem}
                 role="menuitem"
