@@ -3586,7 +3586,9 @@ body {
   padding: var(--s-5);
   position: relative;
   overflow: hidden;
-  filter: grayscale(0.5) brightness(0.8);
+  /* Drained, not dimmed: dimming the whole card took the text down with it,
+     and by day turned the white panel a muddy grey. */
+  filter: grayscale(0.3);
 }
 .lp-broken-mockup::after {
   content: '';
@@ -3608,7 +3610,7 @@ body {
   font-family: var(--f-title);
   font-size: var(--t-4);
   letter-spacing: 0.1em;
-  color: var(--text-lo);
+  color: var(--text-md);
 }
 .lp-broken-header .stream {
   display: flex;
@@ -3645,7 +3647,7 @@ body {
 .lp-broken-row .name {
   font-family: var(--f-title);
   font-size: var(--t-3);
-  color: var(--text-lo);
+  color: var(--text-md);
   flex: 1;
 }
 .lp-broken-row .tag {
@@ -3661,7 +3663,7 @@ body {
 .lp-broken-row .days {
   font-family: var(--f-mono);
   font-size: var(--t-2);
-  color: var(--text-dim);
+  color: var(--text-lo);
 }
 
 /* ── Ascent section ── */
