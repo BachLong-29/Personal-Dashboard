@@ -149,17 +149,30 @@ function resolveAliasedIcon(name: string): IconFile | null {
   return textAlias ?? null;
 }
 
+/**
+ * `name` with what makes it look right but match nothing taken out: full-width and
+ * compatibility letters are folded to plain ones (NFKC), and invisible format and control
+ * characters (zero-width space, joiners, direction marks…) are dropped.
+ */
+export function cleanIconText(name: string): string {
+  return name
+    .normalize('NFKC')
+    .replace(/[\p{Cf}\p{Cc}]/gu, '')
+    .trim();
+}
+
+function lookupIconFile(name: string): IconFile | null {
+  if (!name) return null;
+  if (isIconFile(name)) return name;
+  return resolveAliasedIcon(name);
+}
+
 function resolveIconFile(name: string | null | undefined): IconFile | null {
   if (!name) return null;
 
-  const normalizedName = normalizeIconName(name);
-  if (!normalizedName) return null;
-
-  if (isIconFile(normalizedName)) {
-    return normalizedName;
-  }
-
-  return resolveAliasedIcon(normalizedName);
+  // As stored first, so emoji sequences are looked up untouched; the cleaned form is the
+  // second chance for a name that arrived with stray characters.
+  return lookupIconFile(normalizeIconName(name)) ?? lookupIconFile(cleanIconText(name));
 }
 
 /**

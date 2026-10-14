@@ -2,7 +2,14 @@ import type { CSSProperties, ReactNode } from 'react';
 
 import { cn } from '@/libs/utils/cn';
 
-import { isUploadedIcon, resolveIconColor, resolveIconSrc } from './icon-registry';
+import { cleanIconText, isUploadedIcon, resolveIconColor, resolveIconSrc } from './icon-registry';
+
+/**
+ * A bare word such as `globe` that matched nothing. Printed as text it reads as a bug, so it is
+ * swapped for a neutral glyph; emoji and symbols are not word-like and still pass through.
+ */
+const NAME_LIKE = /^\p{L}[\p{L}\p{N}_-]{2,}$/u;
+const UNKNOWN_GLYPH = '◆';
 
 interface IconProps {
   /** Icon identifier: a registered `Gi*` name / alias, or a raw value (emoji). */
@@ -104,9 +111,15 @@ export function Icon({
   }
 
   if (icon) {
+    // Tested on the cleaned text, so a word carrying an invisible character is still a word.
+    const wordLike = NAME_LIKE.test(cleanIconText(icon));
+    if (wordLike && process.env.NODE_ENV !== 'production') {
+      const codes = [...icon].map((char) => char.codePointAt(0)?.toString(16)).join(' ');
+      console.warn(`[icon] no icon for ${JSON.stringify(icon)} (code points: ${codes})`);
+    }
     return (
       <span className={className} style={resolvedStyle}>
-        {icon}
+        {wordLike ? UNKNOWN_GLYPH : icon}
       </span>
     );
   }
