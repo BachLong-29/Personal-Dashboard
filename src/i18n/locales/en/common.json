@@ -96,6 +96,8 @@
     "error": "Something went wrong",
     "success": "Success",
     "toggleTheme": "Toggle theme",
+    "themeLight": "Light",
+    "themeDark": "Dark",
     "selectLanguage": "Select language",
     "searchInputPlaceholder": "Search…",
     "emptyState": {

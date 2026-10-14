@@ -50,8 +50,12 @@
   --border-lo: #ebe9f5;
 
   /* Brand — Aetheric */
-  --gold: #a06800;
-  --gold-2: #7d5000;
+  --gold: #8a5a00;
+  --gold-2: #6e4600;
+  /* Bright end of gold gradients — still dark enough for white ink */
+  --gold-hi: #a86f00;
+  --gold-pale: #c08a1a;
+  --violet-pale: #8b5fe0;
   --gold-glow: rgb(232 164 16 / 0.22);
   --gold-border: #e2cf9f;
   --violet: #6f3fd6;
@@ -76,7 +80,7 @@
   --text-hi: #1b1830;
   --text-md: #4a4668;
   --text-lo: #6b6788;
-  --text-dim: #9a97b4;
+  --text-dim: #85819f;
 
   /* Textured panel art: veil over the background image */
   --panel-scrim: rgb(255 255 255 / 0.82);
@@ -180,6 +184,9 @@
   --gold-2: oklch(0.68 0.14 82);
   --gold-glow: oklch(0.78 0.16 82 / 0.35);
   --gold-border: #574f3e;
+  --gold-hi: oklch(0.86 0.16 70);
+  --gold-pale: oklch(0.92 0.08 82);
+  --violet-pale: oklch(0.85 0.12 295);
   --violet: oklch(0.68 0.22 295);
   --violet-2: oklch(0.55 0.2 295);
   --violet-glow: oklch(0.68 0.22 295 / 0.35);
@@ -1411,7 +1418,7 @@ body {
 }
 .rg-c {
   fill: none;
-  stroke: oklch(0.78 0.16 82);
+  stroke: var(--gold);
   stroke-width: 0.6;
   opacity: 0.4;
 }
@@ -1421,7 +1428,7 @@ body {
 }
 .rg-c2 {
   stroke-dasharray: 1 3;
-  stroke: oklch(0.7 0.22 295);
+  stroke: var(--violet);
   opacity: 0.6;
 }
 .rg-c3 {
@@ -1433,7 +1440,7 @@ body {
   opacity: 0.7;
 }
 .rg-tick {
-  stroke: oklch(0.78 0.16 82);
+  stroke: var(--gold);
   stroke-width: 0.6;
   opacity: 0.4;
 }
@@ -1442,33 +1449,33 @@ body {
   opacity: 0.8;
 }
 .rg-text-outer {
-  fill: oklch(0.78 0.16 82);
+  fill: var(--gold);
   font-family: var(--f-title);
   font-size: 9px;
   letter-spacing: 0.2em;
   opacity: 0.55;
 }
 .rg-text-inner {
-  fill: oklch(0.7 0.22 295);
+  fill: var(--violet);
   font-family: var(--f-title);
   font-size: 11px;
   letter-spacing: 0.3em;
   opacity: 0.45;
 }
 .rg-sigil-bg {
-  fill: oklch(0.1 0.05 280);
-  stroke: oklch(0.78 0.16 82);
+  fill: var(--bg-1);
+  stroke: var(--gold);
   stroke-width: 0.6;
 }
 .rg-sigil {
-  fill: oklch(0.78 0.16 82);
+  fill: var(--gold);
   font-size: 11px;
   text-anchor: middle;
   dominant-baseline: middle;
 }
 .rg-hex {
   fill: none;
-  stroke: oklch(0.7 0.22 295);
+  stroke: var(--violet);
   stroke-width: 0.5;
   stroke-dasharray: 3 3;
   opacity: 0.4;
@@ -2617,6 +2624,100 @@ body {
   }
 }
 
+/* ── Auth — light theme ────────────────────────────────────
+   The scene above is drawn for night. By day it turns into a pale dawn: the
+   same aurora, gate and cards, on a lavender sky, with frosted glass where the
+   night has smoked glass — so the token-coloured text keeps its contrast. */
+.light .auth-shell {
+  background-image:
+    radial-gradient(
+      ellipse 60% 50% at 18% 22%,
+      color-mix(in oklab, var(--violet) 16%, transparent) 0%,
+      transparent 60%
+    ),
+    radial-gradient(
+      ellipse 80% 60% at 85% 78%,
+      color-mix(in oklab, var(--rose) 9%, transparent) 0%,
+      transparent 60%
+    ),
+    radial-gradient(
+      ellipse 50% 40% at 60% 5%,
+      color-mix(in oklab, var(--cyan) 12%, transparent) 0%,
+      transparent 60%
+    ),
+    linear-gradient(180deg, var(--bg-0) 0%, var(--bg-3) 100%);
+}
+/* Screen blending vanishes on a light sky; multiply lets the colour show. */
+.light .aurora {
+  mix-blend-mode: multiply;
+  opacity: 0.35;
+}
+.light .auth-horizon {
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    color-mix(in oklab, var(--bg-4) 40%, transparent) 60%,
+    var(--bg-3) 100%
+  );
+}
+.light .auth-star {
+  background: var(--violet);
+  box-shadow: 0 0 4px var(--violet-glow);
+}
+.light .wm-brand {
+  background-image: linear-gradient(135deg, var(--gold) 0%, var(--text-hi) 45%, var(--violet) 100%);
+}
+.light .float-card {
+  background: linear-gradient(
+    180deg,
+    color-mix(in oklab, var(--panel) 82%, transparent),
+    color-mix(in oklab, var(--panel2) 82%, transparent)
+  );
+  border-color: var(--gold-border);
+  box-shadow:
+    var(--sh-3),
+    0 0 24px var(--gold-glow);
+}
+.light .fc-creed {
+  border-color: color-mix(in oklab, var(--violet) 35%, transparent);
+}
+.light .comp-bubble {
+  box-shadow:
+    var(--sh-2),
+    0 0 18px var(--violet-glow);
+}
+.light .auth-side {
+  background: color-mix(in oklab, var(--bg-1) 55%, transparent);
+}
+.light .auth-panel {
+  background: color-mix(in oklab, var(--panel) 88%, transparent);
+  box-shadow:
+    var(--sh-4),
+    0 0 0 1px var(--gold-border);
+}
+.light .mode-toggle,
+.light .auth-field-wrap,
+.light .auth-check-box:not(.checked),
+.light .auth-alert-icon {
+  background: var(--bg-2);
+}
+.light .auth-alert.kind-error {
+  background: color-mix(in oklab, var(--crimson) 8%, var(--panel));
+}
+.light .auth-stone {
+  background: linear-gradient(180deg, var(--panel), var(--bg-2));
+}
+.light .auth-primary-btn {
+  box-shadow:
+    inset 0 0 8px oklch(1 0 0 / 0.25),
+    var(--sh-2);
+}
+.light .auth-primary-btn:hover {
+  box-shadow:
+    inset 0 0 8px oklch(1 0 0 / 0.3),
+    var(--sh-3);
+}
+
 /* ═══════════════════════════════════════════════════════
    LANDING PAGE STYLES
    ═══════════════════════════════════════════════════════ */
@@ -2690,7 +2791,7 @@ body {
   align-items: center;
   gap: var(--s-6);
   padding: 10px var(--s-3) 10px var(--s-5);
-  background: oklch(0.04 0.02 270 / 0.7);
+  background: color-mix(in oklab, var(--bg-1) 72%, transparent);
   backdrop-filter: blur(20px) saturate(140%);
   border: 1px solid var(--border);
   border-radius: var(--r-pill);
@@ -2919,13 +3020,13 @@ body {
   color: var(--text-hi);
 }
 .lp-hero h1 .gold {
-  background: linear-gradient(135deg, oklch(0.92 0.08 82), var(--gold) 50%, oklch(0.55 0.18 82));
+  background: linear-gradient(135deg, var(--gold-pale), var(--gold) 50%, var(--gold-2));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   filter: drop-shadow(0 0 24px oklch(0.78 0.16 82 / 0.35));
 }
 .lp-hero h1 .violet {
-  background: linear-gradient(135deg, var(--violet), oklch(0.85 0.12 295));
+  background: linear-gradient(135deg, var(--violet), var(--violet-pale));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
@@ -2977,7 +3078,7 @@ body {
   text-transform: uppercase;
   padding: 16px 28px;
   border-radius: var(--r-md);
-  background: linear-gradient(135deg, var(--gold-2) 0%, var(--gold) 50%, oklch(0.86 0.16 70) 100%);
+  background: linear-gradient(135deg, var(--gold-2) 0%, var(--gold) 50%, var(--gold-hi) 100%);
   color: var(--on-gold);
   border: 1px solid var(--gold);
   box-shadow:
@@ -3022,7 +3123,7 @@ body {
   text-transform: uppercase;
   padding: 15px 24px;
   border-radius: var(--r-md);
-  background: oklch(0.04 0.02 270 / 0.5);
+  background: color-mix(in oklab, var(--bg-1) 55%, transparent);
   border: 1px solid var(--border-hi);
   color: var(--text-hi);
   transition: all 0.2s;
@@ -3121,7 +3222,11 @@ body {
   box-shadow:
     0 0 60px var(--gold-glow),
     inset 0 0 40px oklch(0.78 0.16 82 / 0.1);
-  background: radial-gradient(circle, oklch(0.06 0.02 270) 60%, oklch(0.06 0.02 270 / 0.4));
+  background: radial-gradient(
+    circle,
+    var(--bg-0) 60%,
+    color-mix(in oklab, var(--bg-0) 40%, transparent)
+  );
 }
 .lp-sigil-tick {
   position: absolute;
@@ -3636,7 +3741,7 @@ body {
 }
 .lp-stage.s1 .day-node {
   border-color: oklch(0.55 0.2 22);
-  color: oklch(0.78 0.18 22);
+  color: var(--crimson);
   box-shadow: 0 0 20px oklch(0.62 0.24 22 / 0.4);
 }
 .lp-stage.s2 .day-node {
@@ -3664,7 +3769,7 @@ body {
   margin-bottom: var(--s-2);
 }
 .lp-stage.s1 .rank-tag {
-  color: oklch(0.78 0.18 22);
+  color: var(--crimson);
 }
 .lp-stage.s2 .rank-tag {
   color: var(--rose);
@@ -4304,12 +4409,12 @@ body {
   border-radius: var(--r-pill);
 }
 .lp-loot.legendary {
-  color: oklch(0.78 0.16 82);
+  color: var(--gold);
   border-color: oklch(0.78 0.16 82 / 0.5);
   box-shadow: 0 0 32px var(--gold-glow);
 }
 .lp-loot.mythic {
-  color: oklch(0.7 0.22 320);
+  color: color-mix(in oklab, oklch(0.7 0.22 320) 80%, var(--text-hi));
   border-color: oklch(0.7 0.22 320 / 0.5);
   box-shadow: 0 0 32px oklch(0.7 0.22 320 / 0.3);
 }
@@ -4458,7 +4563,11 @@ body {
   margin: 100px auto 80px;
   max-width: 1200px;
   padding: var(--s-9) var(--s-7);
-  background: radial-gradient(ellipse at center, oklch(0.18 0.06 270) 0%, oklch(0.06 0.02 270) 80%);
+  background: radial-gradient(
+    ellipse at center,
+    color-mix(in oklab, var(--violet) 14%, var(--bg-1)) 0%,
+    var(--bg-0) 80%
+  );
   border: 1px solid var(--gold);
   border-radius: 24px;
   overflow: hidden;
@@ -4889,7 +4998,7 @@ body {
 }
 .xp-bar > .fill {
   height: 100%;
-  background: linear-gradient(90deg, var(--gold-2), var(--gold) 60%, oklch(0.85 0.18 60));
+  background: linear-gradient(90deg, var(--gold-2), var(--gold) 60%, var(--gold-hi));
   box-shadow:
     0 0 16px var(--gold-glow),
     inset 0 1px 0 oklch(1 0 0 / 0.3);

@@ -565,17 +565,28 @@ export function WeekView({
 
                         if (item.kind === 'event') {
                           const occ = item.item;
+                          const live = isEventLive(occ, now);
                           return (
                             <div
                               key={occ.id}
-                              className={cn('relative', miniTask, miniTaskEvent, miniTaskNoGrab)}
+                              className={cn(
+                                'relative',
+                                miniTask,
+                                miniTaskEvent,
+                                miniTaskNoGrab,
+                                // The flame art is drawn for a night sky. A
+                                // live chip keeps the dark tokens in either
+                                // theme — `.dark` redefines them for this
+                                // subtree alone.
+                                live && 'dark',
+                              )}
                               style={{ borderLeftColor: item.color, borderLeftWidth: 2 }}
                               title={`${item.time ? item.time + ' ' : ''}${occ.title}`}
                               onClick={() => occ.recurring && setCancelling(occ)}
                             >
                               {/* Behind the text, and only while the event is
                                   actually on — the rest keep the plain chip. */}
-                              {isEventLive(occ, now) && <EventFlame />}
+                              {live && <EventFlame />}
 
                               {/* Positioned so it paints over the artwork — an
                                   absolute sibling would otherwise sit on top. */}

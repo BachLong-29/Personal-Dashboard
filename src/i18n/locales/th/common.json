@@ -96,6 +96,8 @@
     "error": "เกิดข้อผิดพลาด",
     "success": "สำเร็จ",
     "toggleTheme": "สลับธีม",
+    "themeLight": "สว่าง",
+    "themeDark": "มืด",
     "selectLanguage": "เลือกภาษา",
     "searchInputPlaceholder": "ค้นหา…",
     "emptyState": {

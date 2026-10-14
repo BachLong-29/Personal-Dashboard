@@ -11,11 +11,13 @@ import { useState } from 'react';
 import { CharacterCard } from '@/components/common/CharacterCard';
 import { CoinIcon } from '@/components/common/CoinIcon';
 import { Icon } from '@/components/common/Icon';
+import { useTheme } from '@/components/providers/ThemeProvider';
 import { findClass, findCompanion, findRank } from '@/constants/hero-data';
 import { useLogout } from '@/features/auth/hooks/useLogout';
 import { useAuthStore } from '@/features/auth/stores/auth.store';
 import { EventMarquee } from '@/features/events/components/EventMarquee';
 import { useProfile } from '@/features/profile/hooks/useProfile';
+import { useUpdateTheme } from '@/features/profile/hooks/useUpdateTheme';
 import { locales, type Locale } from '@/i18n/config';
 import { Link, usePathname, useRouter } from '@/i18n/navigation';
 import { cn } from '@/libs/utils';
@@ -39,6 +41,8 @@ const DashboardTopbar = (props: DashboardTopbarProps) => {
   const router = useRouter();
   const pathname = usePathname();
   const logout = useLogout();
+  const { resolvedTheme, setTheme } = useTheme();
+  const updateTheme = useUpdateTheme();
   const openSearch = useUIStore((s) => s.openSearch);
   const openShareAgenda = useUIStore((s) => s.openShareAgenda);
 
@@ -72,6 +76,14 @@ const DashboardTopbar = (props: DashboardTopbarProps) => {
 
   const handleUserTriggerClick = () => {
     router.push('/dashboard');
+  };
+
+  // Flips what is on screen now — a 'system' preference becomes an explicit
+  // choice, since that is what tapping the button asks for.
+  const handleToggleTheme = () => {
+    const next = resolvedTheme === 'dark' ? 'light' : 'dark';
+    setTheme(next);
+    updateTheme.mutate(next);
   };
 
   const handleToggleLocale = () => {
@@ -321,7 +333,7 @@ const DashboardTopbar = (props: DashboardTopbarProps) => {
             <div className="h-px bg-[var(--border)] mx-4 my-1" />
 
             {/* Secondary actions */}
-            <div className="px-4 pb-3 pt-2 grid grid-cols-2 gap-2">
+            <div className="px-4 pb-3 pt-2 grid grid-cols-3 gap-2">
               <button
                 type="button"
                 className={sheetSecondaryBtn}
@@ -332,6 +344,17 @@ const DashboardTopbar = (props: DashboardTopbarProps) => {
               >
                 <Icon icon="🌐" />
                 <span>{locale.toUpperCase()}</span>
+              </button>
+              {/* Stays open on purpose: the sheet repaints in the new theme,
+                  which is the confirmation. */}
+              <button
+                type="button"
+                className={sheetSecondaryBtn}
+                onClick={handleToggleTheme}
+                aria-label={tCommon('toggleTheme')}
+              >
+                <span className="text-[var(--gold)]">{resolvedTheme === 'dark' ? '☾' : '☀'}</span>
+                <span>{tCommon(resolvedTheme === 'dark' ? 'themeDark' : 'themeLight')}</span>
               </button>
               <button
                 type="button"

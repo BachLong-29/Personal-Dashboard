@@ -5,6 +5,7 @@ import { motion, useAnimationFrame, useMotionValue, useReducedMotion } from 'fra
 import { useTranslations } from 'next-intl';
 
 import { Icon } from '@/components/common/Icon';
+import { useTheme } from '@/components/providers/ThemeProvider';
 import { todayISO } from '@/features/tasks/utils/date.utils';
 import { Link } from '@/i18n/navigation';
 import { cn } from '@/libs/utils';
@@ -103,6 +104,10 @@ export function EventMarquee() {
       ref={shellRef}
       className={cn(
         'relative shrink-0 border-b border-[var(--border)] bg-[var(--panel2)]',
+        // By day the aurora is light on light; a faint violet wash under the
+        // strip gives it something to glow against.
+        anyLive &&
+          'bg-[color-mix(in_oklab,var(--violet)_7%,var(--panel2))] dark:bg-[var(--panel2)]',
         // Without motion the strip cannot carry content past the edge on its
         // own, so it hands scrolling back to the reader.
         reduceMotion ? 'overflow-x-auto' : 'overflow-hidden',
@@ -147,6 +152,9 @@ function EventRun({
           tabIndex={ariaHidden ? -1 : undefined}
           className={cn(
             'flex shrink-0 items-center gap-1.5 px-4 py-1.5 text-[11px] no-underline',
+            // Light only: a halo in the panel colour cuts each word out of the
+            // aurora behind it. Night text already stands off a dark strip.
+            '[text-shadow:0_0_3px_var(--panel),0_0_6px_var(--panel),0_0_10px_var(--panel)] dark:[text-shadow:none]',
             'transition-colors hover:bg-[oklch(0.74_0.17_85_/_0.06)]',
           )}
         >
@@ -157,7 +165,11 @@ function EventRun({
             {occ.allDay ? t('marquee.allDay') : occ.startTime}
           </span>
           <span className="text-[var(--text-dim)]">·</span>
-          <span className="whitespace-nowrap text-[var(--text-mid)]">{occ.title}</span>
+          {/* By day the strip is a busy pastel; mid-grey sinks into it, so the
+              title takes the darkest ink and a little weight. */}
+          <span className="whitespace-nowrap font-medium text-[var(--text-hi)] dark:font-normal dark:text-[var(--text-mid)]">
+            {occ.title}
+          </span>
         </Link>
       ))}
     </div>
@@ -188,6 +200,12 @@ const SPARK_TINTS = ['var(--text-hi)', 'var(--gold)', 'var(--cyan)', 'var(--viol
  * Sparks ride the line on top.
  */
 function AuroraEdge({ reduceMotion }: { reduceMotion: boolean | null }) {
+  // The ribbon is tuned for a night sky. On a light strip the same opacity
+  // washes out, so by day it breathes stronger.
+  const { resolvedTheme } = useTheme();
+  const dark = resolvedTheme === 'dark';
+  const glow = dark ? [0.28, 0.55, 0.28] : [0.4, 0.75, 0.4];
+  const still = dark ? 0.4 : 0.7;
   const flow = (seconds: number) =>
     reduceMotion
       ? {}
@@ -213,7 +231,7 @@ function AuroraEdge({ reduceMotion }: { reduceMotion: boolean | null }) {
           {/* The drawn line — thin and fully saturated, like the ink outline
               around the ribbons. */}
           <motion.span
-            className="block h-[2px] w-full shrink-0 [background-size:200%_100%]"
+            className="block h-[3px] w-full shrink-0 [background-size:200%_100%] dark:h-[2px]"
             style={{ backgroundImage: AURORA }}
             {...flow(9)}
           />
@@ -225,8 +243,8 @@ function AuroraEdge({ reduceMotion }: { reduceMotion: boolean | null }) {
             style={{ backgroundImage: AURORA }}
             animate={
               reduceMotion
-                ? { opacity: 0.4 }
-                : { backgroundPosition: ['200% 50%', '0% 50%'], opacity: [0.28, 0.55, 0.28] }
+                ? { opacity: still }
+                : { backgroundPosition: ['200% 50%', '0% 50%'], opacity: glow }
             }
             transition={
               reduceMotion
