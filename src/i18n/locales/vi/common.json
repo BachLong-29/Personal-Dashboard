@@ -9,6 +9,33 @@
     "home": "Về trang chủ",
     "back": "Quay lại"
   },
+  "assistant": {
+    "title": "Trợ lý",
+    "eyebrow": "Hỗ trợ công việc",
+    "placeholder": "Hỏi hoặc mô tả một công việc…",
+    "send": "Gửi",
+    "thinking": "Đang suy nghĩ…",
+    "emptyTitle": "Hôm nay lên kế hoạch gì?",
+    "emptyMessage": "Hỏi về công việc của bạn, hoặc mô tả một việc để mình đề xuất và bạn xác nhận.",
+    "suggestions": {
+      "today": "Hôm nay mình có gì?",
+      "create": "Tạo task cho ngày mai",
+      "week": "Xem task tuần này"
+    },
+    "proposal": "Đề xuất thay đổi",
+    "confirm": "Xác nhận",
+    "confirmed": "Đã lưu",
+    "dismissed": "Đã bỏ qua",
+    "savePartial": "Một số thay đổi chưa lưu được",
+    "saveFailed": "Không lưu được. Thử lại nhé.",
+    "failed": "Trợ lý chưa trả lời được. Kiểm tra kết nối và thử lại.",
+    "newChat": "Cuộc trò chuyện mới",
+    "newChatTitle": "Bắt đầu cuộc trò chuyện mới?",
+    "newChatMessage": "Thao tác này xoá cuộc trò chuyện trên mọi thiết bị. Các task đã lưu vẫn giữ nguyên.",
+    "newChatConfirm": "Xoá cuộc trò chuyện",
+    "clearFailed": "Không xoá được cuộc trò chuyện. Thử lại nhé.",
+    "retry": "Thử lại"
+  },
   "nav": {
     "home": "Trang chủ",
     "dashboard": "Bảng điều khiển",
@@ -20,6 +47,7 @@
     "vault": "Kho báu",
     "search": "Tìm kiếm",
     "events": "Sự kiện",
+    "assistant": "Trợ lý",
     "achievements": "Thành tựu"
   },
   "search": {

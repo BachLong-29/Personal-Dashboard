@@ -9,6 +9,33 @@
     "home": "Return to base",
     "back": "Go back"
   },
+  "assistant": {
+    "title": "Assistant",
+    "eyebrow": "Task helper",
+    "placeholder": "Ask or describe a task…",
+    "send": "Send",
+    "thinking": "Thinking…",
+    "emptyTitle": "What should we plan?",
+    "emptyMessage": "Ask about your tasks, or describe one and I will propose it for you to confirm.",
+    "suggestions": {
+      "today": "What do I have today?",
+      "create": "Create a task for tomorrow",
+      "week": "Show my tasks this week"
+    },
+    "proposal": "Proposed change",
+    "confirm": "Confirm",
+    "confirmed": "Saved",
+    "dismissed": "Dismissed",
+    "savePartial": "Some changes could not be saved",
+    "saveFailed": "Could not save. Try again.",
+    "failed": "The assistant could not answer. Check your connection and try again.",
+    "newChat": "New chat",
+    "newChatTitle": "Start a new chat?",
+    "newChatMessage": "This clears the conversation on all your devices. Tasks already saved stay as they are.",
+    "newChatConfirm": "Clear chat",
+    "clearFailed": "Could not clear the chat. Try again.",
+    "retry": "Try again"
+  },
   "nav": {
     "home": "Home",
     "dashboard": "Dashboard",
@@ -20,6 +47,7 @@
     "vault": "Vault",
     "search": "Search",
     "events": "Events",
+    "assistant": "Assistant",
     "achievements": "Achievements"
   },
   "search": {

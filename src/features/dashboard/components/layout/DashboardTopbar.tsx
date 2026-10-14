@@ -310,6 +310,12 @@ const DashboardTopbar = (props: DashboardTopbarProps) => {
                 </span>
                 <span>{tNav('events')}</span>
               </Link>
+              <Link href="/assistant" className={sheetItem} onClick={closeSheet}>
+                <span className={sheetItemIcon}>
+                  <Icon icon="✨" />
+                </span>
+                <span>{tNav('assistant')}</span>
+              </Link>
               <Link href="/projects" className={sheetItem} onClick={closeSheet}>
                 <span className={sheetItemIcon}>
                   <Icon icon="🚀" />
