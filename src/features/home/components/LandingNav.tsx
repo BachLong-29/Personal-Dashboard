@@ -6,6 +6,7 @@ import { useLocale } from 'next-intl';
 import { useTranslations } from 'next-intl';
 import { Link, usePathname, useRouter } from '@/i18n/navigation';
 import { localeLabels, locales, type Locale } from '@/i18n/config';
+import { ThemeChip } from '@/components/common/ThemeChip';
 
 export function LandingNav() {
   const t = useTranslations('landing.nav');
@@ -82,12 +83,14 @@ export function LandingNav() {
       </div>
 
       <div className="flex items-center gap-2">
+        <ThemeChip />
+
         {/* Language switcher */}
         <div ref={langRef} className="relative">
           <button
             onClick={() => setLangOpen((o) => !o)}
             aria-label="Switch language"
-            className="flex items-center gap-1.5 rounded-md border border-white/10 bg-white/5 px-2.5 py-1.5 font-mono text-[11px] tracking-widest text-white/60 transition hover:border-white/20 hover:bg-white/10 hover:text-white/90"
+            className="flex items-center gap-1.5 rounded-md border border-[var(--border)] bg-[var(--bg-2)] px-2.5 py-1.5 font-mono text-[11px] tracking-widest text-[var(--text-md)] transition hover:border-[var(--border-hi)] hover:bg-[var(--bg-3)] hover:text-[var(--text-hi)]"
           >
             <svg
               width="12"
@@ -106,7 +109,7 @@ export function LandingNav() {
           </button>
 
           {langOpen && (
-            <div className="absolute right-0 top-full mt-1.5 min-w-[120px] overflow-hidden rounded-md border border-white/10 bg-[oklch(0.12_0.02_250)] py-1 shadow-xl">
+            <div className="absolute right-0 top-full mt-1.5 min-w-[120px] overflow-hidden rounded-md border border-[var(--border)] bg-[var(--panel)] py-1 shadow-xl">
               {locales.map((loc) => (
                 <button
                   key={loc}
@@ -114,8 +117,8 @@ export function LandingNav() {
                   className={[
                     'flex w-full items-center gap-2 px-3 py-1.5 text-left font-mono text-[11px] tracking-widest transition',
                     loc === locale
-                      ? 'bg-white/10 text-white'
-                      : 'text-white/50 hover:bg-white/5 hover:text-white/80',
+                      ? 'bg-[var(--bg-3)] text-[var(--text-hi)]'
+                      : 'text-[var(--text-lo)] hover:bg-[var(--bg-2)] hover:text-[var(--text-hi)]',
                   ].join(' ')}
                 >
                   {loc === locale && <span className="text-[var(--gold)]">◆</span>}

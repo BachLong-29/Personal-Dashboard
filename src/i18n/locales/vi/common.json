@@ -96,6 +96,8 @@
     "error": "Đã có lỗi xảy ra",
     "success": "Thành công",
     "toggleTheme": "Chuyển giao diện",
+    "themeLight": "Sáng",
+    "themeDark": "Tối",
     "selectLanguage": "Chọn ngôn ngữ",
     "searchInputPlaceholder": "Tìm kiếm…",
     "emptyState": {

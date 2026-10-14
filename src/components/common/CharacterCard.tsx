@@ -3,6 +3,11 @@
 import Image from 'next/image';
 import { Icon } from '@/components/common/Icon';
 
+// Imported rather than referenced by path: Next fingerprints each file, so
+// redrawing a frame changes its URL and no cached copy is served in its place.
+import frameDark from '../../../public/BG_Avatart.png';
+import frameLight from '../../../public/BG_Avatart_light.png';
+
 interface CharacterCardProps {
   /** Hero display name (profile.heroName ?? char.name). */
   name: string;
@@ -60,18 +65,24 @@ export function CharacterCard({
         flexShrink: 0,
       }}
     >
-      {/* Frame background — sets the aspect ratio */}
+      {/* Frame background — sets the aspect ratio. Each theme has its own
+          frame: the night one is a dark plate, the day one parchment. */}
       <Image
-        src="/BG_Avatart.png"
+        src={frameLight}
         alt=""
-        width={620}
-        height={220}
         priority
-        className="block w-full h-auto select-none pointer-events-none"
+        className="block dark:hidden w-full h-auto select-none pointer-events-none"
+      />
+      <Image
+        src={frameDark}
+        alt=""
+        priority
+        className="hidden dark:block w-full h-auto select-none pointer-events-none"
       />
 
       {/* Avatar — rounded frame */}
       <span
+        className="bg-[var(--bg-3)] border-[var(--gold)] shadow-[0_0_1.5cqw_var(--gold-glow)] dark:bg-[#1a0f2e] dark:border-[#F8D886]"
         style={{
           position: 'absolute',
           left: '3%',
@@ -81,9 +92,8 @@ export function CharacterCard({
           aspectRatio: '110 / 103',
           borderRadius: '22%',
           overflow: 'hidden',
-          background: '#1a0f2e',
-          border: '0.6cqw solid #F8D886',
-          boxShadow: '0 0 1.5cqw rgba(248,216,134,0.3)',
+          borderWidth: '0.6cqw',
+          borderStyle: 'solid',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
@@ -107,6 +117,9 @@ export function CharacterCard({
 
       {/* Identity block — rank + name, stacked */}
       <span
+        // Day: the theme's deep gold, which holds on parchment. Night keeps the
+        // pale gold the dark frame was drawn for.
+        className="text-[var(--gold-2)] dark:text-[#F8D886]"
         style={{
           position: 'absolute',
           left: '36%',
@@ -117,17 +130,16 @@ export function CharacterCard({
           gap: '1.5cqw',
           maxWidth: '42%',
           fontFamily: "var(--font-bento), 'Sora', var(--font-body, sans-serif)",
-          color: '#F8D886',
           textAlign: 'left',
         }}
       >
         <span
+          className="dark:[text-shadow:0_0_2cqw_rgba(248,216,134,0.55)]"
           style={{
             fontSize: '5.5cqw',
             fontWeight: 700,
             lineHeight: 1,
             letterSpacing: '0.06em',
-            textShadow: '0 0 2cqw rgba(248,216,134,0.55)',
             textTransform: 'uppercase',
             whiteSpace: 'nowrap',
             overflow: 'hidden',
@@ -170,11 +182,13 @@ export function CharacterCard({
           top: '50%',
           width: '5.5%',
           opacity: 0.8,
-          filter:
-            'drop-shadow(0 0 0.6cqw rgba(248,216,134,0.6)) drop-shadow(0 0 1.4cqw rgba(248,216,134,0.35))',
         }}
+        className="dark:[filter:drop-shadow(0_0_0.6cqw_rgba(248,216,134,0.6))_drop-shadow(0_0_1.4cqw_rgba(248,216,134,0.35))]"
       >
-        <Icon icon="chevron" className="w-[10px] h-[10px] text-[#F8D886]" />
+        <Icon
+          icon="chevron"
+          className="w-[10px] h-[10px] text-[var(--gold-2)] dark:text-[#F8D886]"
+        />
       </span>
     </button>
   );
