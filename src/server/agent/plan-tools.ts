@@ -76,7 +76,16 @@ const planScheduleArgs = z.object({
     .describe(`Gap kept around commitments, default ${DEFAULT_BREAK_MINUTES}`),
 });
 
+const listUnscheduledArgs = z.object({
+  limit: z.number().int().min(1).max(50).optional().describe('Max tasks, default 30'),
+});
+
 export const PLAN_READ_TOOLS = {
+  list_unscheduled: {
+    description:
+      'List the open tasks that have no session booked yet, i.e. not planned into the calendar. One call answers "which tasks are not planned?"; no need to check each task\'s sessions.',
+    schema: listUnscheduledArgs,
+  },
   get_free_time: {
     description:
       "List the free gaps in the user's calendar per day inside working hours. Use it to answer when they are free.",
@@ -180,7 +189,43 @@ export async function runPlanReadTool(
   userId: string,
   ctx: PlanContext,
 ): Promise<unknown> {
-  const parsed = PLAN_READ_TOOLS[name].schema.safeParse(rawArgs);
+  if (name === 'list_unscheduled') {
+    const parsedList = PLAN_READ_TOOLS.list_unscheduled.schema.safeParse(rawArgs);
+    if (!parsedList.success) {
+      return { error: parsedList.error.issues.map((i) => i.message).join('; ') };
+    }
+
+    const booked = await ScheduleBlockModel.distinct('sourceId', {
+      userId,
+      sourceType: 'task',
+      status: 'planned',
+    });
+    const filter = {
+      userId,
+      active: true,
+      status: { $ne: 'done' as const },
+      _id: { $nin: booked },
+    };
+    const [tasks, total] = await Promise.all([
+      TaskModel.find(filter)
+        .sort({ startDate: 1, createdAt: 1 })
+        .limit(parsedList.data.limit ?? MAX_AUTO_TASKS),
+      TaskModel.countDocuments(filter),
+    ]);
+    return {
+      total,
+      tasks: tasks.map((task) => ({
+        id: task._id.toString(),
+        name: task.name,
+        status: task.status,
+        startDate: ymdOf(task.startDate),
+        endDate: ymdOf(task.endDate),
+        duration: task.duration,
+      })),
+    };
+  }
+
+  const parsed = PLAN_READ_TOOLS.get_free_time.schema.safeParse(rawArgs);
   if (!parsed.success) return { error: parsed.error.issues.map((i) => i.message).join('; ') };
 
   const args = parsed.data;
