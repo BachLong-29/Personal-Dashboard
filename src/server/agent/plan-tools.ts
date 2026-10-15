@@ -10,6 +10,7 @@ import {
   planPlacements,
   toMinutes,
   toTime,
+  type DayLoad,
   type Interval,
   type PlanTask,
   type Placement,
@@ -206,6 +207,7 @@ type PlanQuery = z.infer<typeof planScheduleArgs>;
 export type PlanOutcome = {
   placed: Placement[];
   unplaced: Unplaced[];
+  days: DayLoad[];
   window: { from: string; to: string; dayStart: string; dayEnd: string };
 };
 
@@ -314,6 +316,7 @@ export async function planSchedule(
   return {
     placed: result.placed,
     unplaced: [...unplaced, ...result.unplaced],
+    days: result.days,
     window: {
       from: resolved.from,
       to: resolved.to,

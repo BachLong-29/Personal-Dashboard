@@ -44,7 +44,7 @@ export const POST = asyncHandler(async (req: NextRequest) => {
 
     const items = await appendItems(user.sub, [
       { kind: 'user', text: data.message },
-      { kind: 'assistant', text: result.reply },
+      { kind: 'assistant', text: result.reply, choices: result.choices },
       ...(result.pendingActions.length > 0
         ? [{ kind: 'proposal' as const, actions: result.pendingActions, state: 'open' as const }]
         : []),

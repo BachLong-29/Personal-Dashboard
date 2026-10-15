@@ -229,7 +229,55 @@ function spec(name: string, tool: { description: string; schema: z.ZodType }): T
   return { type: 'function', function: { name, description: tool.description, parameters } };
 }
 
+/** The one tool that is neither a read nor a write: it ends the turn with a question. */
+export const ASK_USER_TOOL = 'ask_user';
+
+const askUserArgs = z.object({
+  question: z.string().trim().min(1).max(240).describe('One short question'),
+  options: z
+    .array(z.string().trim().min(1).max(60))
+    .min(2)
+    .max(5)
+    .describe('2 to 5 short answers the user can tap, e.g. ["Tomorrow", "Friday"]'),
+});
+
+const ASK_USER_SPEC: ToolSpec = spec(ASK_USER_TOOL, {
+  description:
+    'Ask the user one short question with quick-reply buttons. Use it instead of guessing when a detail is ambiguous, two readings are possible, or the user sounds unsure (for example "tomorrow or Friday?"). The turn ends and the chosen option comes back as their next message.',
+  schema: askUserArgs,
+});
+
+/** Longest quick reply kept, and the most buttons shown. */
+const MAX_CHOICE_CHARS = 60;
+const MAX_CHOICES = 5;
+
+/**
+ * Validates an `ask_user` call. Lenient on the options on purpose: blanks, repeats and
+ * over-long entries are cleaned rather than failing the whole question, which a small model
+ * would otherwise repeat until the turn runs out.
+ */
+export function parseAskUser(
+  rawArgs: unknown,
+): { question: string; choices: string[] } | { error: string } {
+  const parsed = z
+    .object({ question: z.string().trim().min(1), options: z.array(z.string()) })
+    .safeParse(rawArgs);
+  if (!parsed.success) return { error: 'Give a question and a list of options.' };
+
+  const choices = [
+    ...new Set(
+      parsed.data.options
+        .map((option) => option.trim().slice(0, MAX_CHOICE_CHARS))
+        .filter((option) => option.length > 0),
+    ),
+  ].slice(0, MAX_CHOICES);
+  if (choices.length < 2) return { error: 'Give at least two different options.' };
+
+  return { question: parsed.data.question.slice(0, 240), choices };
+}
+
 export const TOOL_SPECS: ToolSpec[] = [
+  ASK_USER_SPEC,
   ...Object.entries(READ_TOOLS).map(([name, tool]) => spec(name, tool)),
   ...Object.entries(HABIT_READ_TOOLS).map(([name, tool]) => spec(name, tool)),
   ...Object.entries(PLAN_READ_TOOLS).map(([name, tool]) => spec(name, tool)),
@@ -563,6 +611,8 @@ export async function proposeActions(
       status: actions.length > 0 ? 'proposed' : 'nothing_placed',
       note: actions.length > 0 ? 'Waiting for the user to confirm.' : undefined,
       window: plan.window,
+      // How full each day is: lets the assistant say why a day has nothing new on it.
+      days: plan.days,
       placements,
       unplaced,
     },

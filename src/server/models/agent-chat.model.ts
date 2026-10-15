@@ -16,6 +16,8 @@ export interface IAgentChatItem {
   kind: AgentChatItemKind;
   /** `user` and `assistant` items. */
   text?: string;
+  /** `assistant` items that ask a question: the quick replies offered with it. */
+  choices?: string[];
   /** `proposal` items: the changes waiting on a yes. */
   actions?: IAgentChatAction[];
   state?: AgentProposalState;
@@ -35,6 +37,7 @@ const itemSchema = new Schema<IAgentChatItem>(
   {
     kind: { type: String, enum: ['user', 'assistant', 'proposal'], required: true },
     text: { type: String, maxlength: 4000 },
+    choices: { type: [String], default: undefined },
     actions: [
       new Schema(
         {

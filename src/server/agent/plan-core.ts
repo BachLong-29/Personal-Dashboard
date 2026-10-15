@@ -98,12 +98,31 @@ const byUrgency = (a: PlanTask, b: PlanTask) =>
   b.duration - a.duration ||
   a.name.localeCompare(b.name);
 
+/** How full each day of the window ended up, so an empty day can be explained. */
+export type DayLoad = {
+  date: string;
+  /** Minutes already in the calendar that day. */
+  bookedMinutes: number;
+  /** Minutes this plan adds. */
+  addedMinutes: number;
+};
+
 /**
- * Greedy first fit: most urgent task first, on the earliest day it is allowed on that has
- * a gap long enough and room under the daily ceilings. Deterministic, so the same calendar
- * and the same tasks always give the same plan.
+ * Most urgent task first. Where a task goes depends on what kind it is:
+ *
+ * - **Dated, single-day** (its own start date) or **overdue**: the earliest day it may use,
+ *   so a task the user dated keeps to that day and a late one is not pushed back.
+ * - **Undated** or **spanning several days**: the least loaded day it may use, earliest on
+ *   a tie, so a week is spread across its days instead of filled from Monday.
+ *
+ * Either way a day needs a gap long enough and room under the daily ceilings. Deterministic:
+ * the same calendar and the same tasks always give the same plan.
  */
-export function planPlacements(input: PlanInput): { placed: Placement[]; unplaced: Unplaced[] } {
+export function planPlacements(input: PlanInput): {
+  placed: Placement[];
+  unplaced: Unplaced[];
+  days: DayLoad[];
+} {
   const { days, busyByDay, loadByDay, workday, breakMinutes, maxNewPerDay, dailyLimit } = input;
 
   // What this plan itself has added per day: it blocks time and counts toward the ceilings.
@@ -113,11 +132,18 @@ export function planPlacements(input: PlanInput): { placed: Placement[]; unplace
   const placed: Placement[] = [];
   const unplaced: Unplaced[] = [];
 
+  const loadOf = (day: string) => (loadByDay.get(day) ?? 0) + (addedMinutes.get(day) ?? 0);
+
   for (const task of [...input.tasks].sort(byUrgency)) {
-    const allowed = days.filter(
+    const usable = days.filter(
       (day) =>
         (!task.notBefore || day >= task.notBefore) && (!task.notAfter || day <= task.notAfter),
     );
+    // Dated single-day and overdue tasks keep the earliest-first order `days` already has.
+    const balanced = !task.overdue && (task.multiDay || !task.notBefore);
+    const allowed = balanced
+      ? [...usable].sort((a, b) => loadOf(a) - loadOf(b) || a.localeCompare(b))
+      : usable;
     if (allowed.length === 0) {
       unplaced.push({ task, reason: 'none of its days fall inside the planning window' });
       continue;
@@ -158,5 +184,13 @@ export function planPlacements(input: PlanInput): { placed: Placement[]; unplace
     }
   }
 
-  return { placed, unplaced };
+  return {
+    placed,
+    unplaced,
+    days: days.map((date) => ({
+      date,
+      bookedMinutes: loadByDay.get(date) ?? 0,
+      addedMinutes: addedMinutes.get(date) ?? 0,
+    })),
+  };
 }
