@@ -2,9 +2,19 @@ import { z } from 'zod';
 
 import { CategoryModel } from '@/server/models/category.model';
 import { ScheduleBlockModel } from '@/server/models/schedule-block.model';
+import type { IScheduleBlock } from '@/server/models/schedule-block.model';
 import { TaskModel } from '@/server/models/task.model';
 import type { ITask } from '@/server/models/task.model';
 
+import {
+  HABIT_READ_TOOLS,
+  HABIT_WRITE_TOOLS,
+  executeHabitAction,
+  proposeHabitAction,
+  runHabitReadTool,
+  type HabitReadToolName,
+  type HabitWriteToolName,
+} from './habit-tools';
 import type { ToolSpec } from './llm';
 
 const ymd = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Use YYYY-MM-DD');
@@ -54,6 +64,80 @@ const completeTaskArgs = z.object({
   id: z.string().min(1).describe('Task id from list_tasks'),
 });
 
+/** Statuses the assistant may set through an edit. Done goes through complete_task. */
+const EDIT_STATUSES = ['todo', 'in_progress', 'pending', 'waiting'] as const;
+
+const updateTaskArgs = z
+  .object({
+    id: z.string().min(1).describe('Task id from list_tasks'),
+    name: z.string().min(1).max(100).optional().describe('New title'),
+    tagId: z.string().optional().describe('New category id from list_categories'),
+    startDate: ymd.optional().describe('New start day, YYYY-MM-DD'),
+    endDate: ymd
+      .nullable()
+      .optional()
+      .describe('New last day, YYYY-MM-DD. null makes it a single-day task.'),
+    startTime: z
+      .string()
+      .regex(TIME_RE, 'Use 24-hour HH:MM')
+      .optional()
+      .describe(
+        'New time of day, 24-hour HH:MM. Single-day tasks only: their sessions move to this time, or one is booked if there is none. For a multi-day task use update_session.',
+      ),
+    duration: z
+      .number()
+      .int()
+      .min(1)
+      .max(1440)
+      .nullable()
+      .optional()
+      .describe(
+        'New length in minutes. null clears it. On a single-day task its sessions take it too.',
+      ),
+    status: z
+      .enum(EDIT_STATUSES)
+      .optional()
+      .describe('New status. To finish a task use complete_task instead.'),
+    note: z.string().max(500).nullable().optional().describe('New note. null clears it.'),
+  })
+  .refine(
+    (args) =>
+      Object.keys(args).some((key) => key !== 'id' && args[key as keyof typeof args] !== undefined),
+    { message: 'Give at least one field to change' },
+  );
+
+const deleteTaskArgs = z.object({
+  id: z.string().min(1).describe('Task id from list_tasks'),
+});
+
+const listSessionsArgs = z.object({
+  taskId: z.string().min(1).describe('Task id from list_tasks'),
+});
+
+const minutesArg = z.number().int().min(1).max(1440);
+
+const createSessionArgs = z.object({
+  taskId: z.string().min(1).describe('Task id from list_tasks'),
+  date: ymd.describe('Day of the session, YYYY-MM-DD, within the task range'),
+  startTime: z.string().regex(TIME_RE, 'Use 24-hour HH:MM').describe('24-hour HH:MM'),
+  duration: minutesArg.optional().describe('Minutes, default the task duration or 60'),
+});
+
+const updateSessionArgs = z
+  .object({
+    id: z.string().min(1).describe('Session id from list_sessions'),
+    date: ymd.optional().describe('New day, YYYY-MM-DD, within the task range'),
+    startTime: z.string().regex(TIME_RE, 'Use 24-hour HH:MM').optional().describe('New HH:MM'),
+    duration: minutesArg.optional().describe('New length in minutes'),
+  })
+  .refine((a) => a.date !== undefined || a.startTime !== undefined || a.duration !== undefined, {
+    message: 'Give at least one field to change',
+  });
+
+const deleteSessionArgs = z.object({
+  id: z.string().min(1).describe('Session id from list_sessions'),
+});
+
 const noArgs = z.object({});
 
 const DEFAULT_COLOR = 'gold';
@@ -69,6 +153,11 @@ const READ_TOOLS = {
     description: "List the user's task categories (id and name). Call before create_task.",
     schema: noArgs,
   },
+  list_sessions: {
+    description:
+      'List the sessions (booked time slots) of one task: id, date, startTime, duration, status.',
+    schema: listSessionsArgs,
+  },
 } as const;
 
 /** Tools that change data. The assistant only proposes them; the user confirms. */
@@ -81,10 +170,37 @@ const WRITE_TOOLS = {
     description: 'Propose marking a single-day task as done. The user must confirm.',
     schema: completeTaskArgs,
   },
+  update_task: {
+    description:
+      'Propose editing a task: only the fields passed change. The user must confirm before it is saved.',
+    schema: updateTaskArgs,
+  },
+  delete_task: {
+    description:
+      'Propose deleting a task and the sessions booked for it. The user must confirm. Only when the user clearly asks to delete.',
+    schema: deleteTaskArgs,
+  },
+  create_session: {
+    description:
+      'Propose booking one more session for a task on a day inside its range. The user must confirm.',
+    schema: createSessionArgs,
+  },
+  update_session: {
+    description:
+      'Propose moving or resizing one session (from list_sessions). The user must confirm.',
+    schema: updateSessionArgs,
+  },
+  delete_session: {
+    description: 'Propose removing one session of a task. The user must confirm.',
+    schema: deleteSessionArgs,
+  },
 } as const;
 
-export type ReadToolName = keyof typeof READ_TOOLS;
-export type WriteToolName = keyof typeof WRITE_TOOLS;
+export type ReadToolName = keyof typeof READ_TOOLS | HabitReadToolName;
+export type WriteToolName = keyof typeof WRITE_TOOLS | HabitWriteToolName;
+
+const isHabitRead = (name: string): name is HabitReadToolName => name in HABIT_READ_TOOLS;
+const isHabitWrite = (name: string): name is HabitWriteToolName => name in HABIT_WRITE_TOOLS;
 
 export type PendingAction = {
   tool: WriteToolName;
@@ -103,15 +219,17 @@ function spec(name: string, tool: { description: string; schema: z.ZodType }): T
 
 export const TOOL_SPECS: ToolSpec[] = [
   ...Object.entries(READ_TOOLS).map(([name, tool]) => spec(name, tool)),
+  ...Object.entries(HABIT_READ_TOOLS).map(([name, tool]) => spec(name, tool)),
   ...Object.entries(WRITE_TOOLS).map(([name, tool]) => spec(name, tool)),
+  ...Object.entries(HABIT_WRITE_TOOLS).map(([name, tool]) => spec(name, tool)),
 ];
 
 export function isReadTool(name: string): name is ReadToolName {
-  return name in READ_TOOLS;
+  return name in READ_TOOLS || isHabitRead(name);
 }
 
 export function isWriteTool(name: string): name is WriteToolName {
-  return name in WRITE_TOOLS;
+  return name in WRITE_TOOLS || isHabitWrite(name);
 }
 
 function brief(task: ITask) {
@@ -136,6 +254,8 @@ export async function runReadTool(
   rawArgs: unknown,
   userId: string,
 ): Promise<unknown> {
+  if (isHabitRead(name)) return runHabitReadTool(name, rawArgs, userId);
+
   const parsed = READ_TOOLS[name].schema.safeParse(rawArgs);
   if (!parsed.success) return { error: parsed.error.issues.map((i) => i.message).join('; ') };
 
@@ -144,14 +264,24 @@ export async function runReadTool(
     return categories.map((c) => ({ id: c._id.toString(), name: c.name }));
   }
 
+  if (name === 'list_sessions') {
+    const { taskId } = parsed.data as z.infer<typeof listSessionsArgs>;
+    const task = await findTask(taskId, userId);
+    if (!task) return { error: 'Task not found. Look it up with list_tasks.' };
+    return (await sessionsOf(task._id, userId)).map(sessionBrief);
+  }
+
   const args = parsed.data as z.infer<typeof listTasksArgs>;
   const filter: Record<string, unknown> = { userId, active: true };
   if (args.q) filter.name = { $regex: escapeRegex(args.q), $options: 'i' };
-  if (args.start || args.end) {
-    const range: Record<string, Date> = {};
-    if (args.start) range.$gte = new Date(args.start);
-    if (args.end) range.$lt = new Date(new Date(args.end).getTime() + 86_400_000);
-    filter.startDate = range;
+  // A task belongs to the range if any of its days fall in it — a multi-day
+  // task that began last week is still on this week's list.
+  if (args.end) {
+    filter.startDate = { $lt: new Date(new Date(args.end).getTime() + 86_400_000) };
+  }
+  if (args.start) {
+    const from = new Date(args.start);
+    filter.$or = [{ endDate: { $gte: from } }, { endDate: null, startDate: { $gte: from } }];
   }
   const tasks = await TaskModel.find(filter)
     .sort({ startDate: 1 })
@@ -159,11 +289,90 @@ export async function runReadTool(
   return tasks.map(brief);
 }
 
-/** Validates a proposed write and turns it into something the user can confirm. */
-export function proposeAction(
+const ymdOf = (date?: Date | null) => date?.toISOString().slice(0, 10);
+
+/** The caller's live task, or null — a bad id from the model is just "not found". */
+function findTask(id: string, userId: string) {
+  return TaskModel.findOne({ _id: id, userId, active: true }).catch(() => null);
+}
+
+/** A task's sessions, in time order. */
+function sessionsOf(taskId: ITask['_id'], userId: string) {
+  return ScheduleBlockModel.find({ userId, sourceType: 'task', sourceId: taskId }).sort({
+    date: 1,
+    startTime: 1,
+  });
+}
+
+function sessionBrief(block: IScheduleBlock) {
+  return {
+    id: block._id.toString(),
+    date: ymdOf(block.date),
+    startTime: block.startTime,
+    duration: block.duration,
+    status: block.status,
+  };
+}
+
+/** A session of the caller's, with the live task it belongs to. */
+async function findSession(id: string, userId: string) {
+  const block = await ScheduleBlockModel.findOne({ _id: id, userId, sourceType: 'task' }).catch(
+    () => null,
+  );
+  if (!block) return null;
+  const task = await findTask(block.sourceId.toString(), userId);
+  return task ? { block, task } : null;
+}
+
+/** The days a session may sit on: the task's range, or anywhere when it has no date. */
+function outsideRange(task: ITask, date: string): string | null {
+  const start = ymdOf(task.startDate);
+  if (!start) return null;
+  const end = ymdOf(task.endDate) ?? start;
+  if (date < start || date > end) {
+    return start === end
+      ? `The session must be on ${start}, the task's day.`
+      : `The session must fall between ${start} and ${end}.`;
+  }
+  return null;
+}
+
+const isMultiDay = (start?: string | null, end?: string | null) =>
+  Boolean(start && end && end > start);
+
+const slot = (block: IScheduleBlock) => `${ymdOf(block.date)} ${block.startTime}`;
+
+/** What an edit changes, in words, for the confirm card. */
+function describeEdit(args: z.infer<typeof updateTaskArgs>): string {
+  const parts: string[] = [];
+  if (args.name !== undefined) parts.push(`rename to "${args.name}"`);
+  if (args.startDate !== undefined) parts.push(`start ${args.startDate}`);
+  if (args.endDate !== undefined) parts.push(args.endDate ? `end ${args.endDate}` : 'single day');
+  if (args.startTime !== undefined) parts.push(`at ${args.startTime}`);
+  if (args.duration !== undefined) {
+    parts.push(args.duration ? `${args.duration} min` : 'no duration');
+  }
+  if (args.status !== undefined) parts.push(`status ${args.status}`);
+  if (args.tagId !== undefined) parts.push('new category');
+  if (args.note !== undefined) parts.push(args.note ? 'new note' : 'clear note');
+  return parts.join(', ');
+}
+
+/**
+ * Validates a proposed write and turns it into something the user can confirm.
+ * Writes on an existing task look it up, so the card can name it and a bad id
+ * goes back to the model instead of reaching the user.
+ */
+export async function proposeAction(
   name: WriteToolName,
   rawArgs: unknown,
-): PendingAction | { error: string } {
+  userId: string,
+): Promise<PendingAction | { error: string }> {
+  if (isHabitWrite(name)) {
+    const proposal = await proposeHabitAction(name, rawArgs, userId);
+    return 'error' in proposal ? proposal : { tool: name, ...proposal };
+  }
+
   const parsed = WRITE_TOOLS[name].schema.safeParse(rawArgs);
   if (!parsed.success) return { error: parsed.error.issues.map((i) => i.message).join('; ') };
 
@@ -179,8 +388,82 @@ export function proposeAction(
     return { tool: name, args, summary: `Create "${args.name}"${day}${at}${length}` };
   }
 
-  const args = parsed.data as z.infer<typeof completeTaskArgs>;
-  return { tool: name, args, summary: 'Mark the task as done' };
+  if (name === 'update_task') {
+    const args = parsed.data as z.infer<typeof updateTaskArgs>;
+    const task = await findTask(args.id, userId);
+    if (!task) return { error: 'Task not found. Look it up with list_tasks.' };
+
+    // Check the range the task will end up with, not just the fields passed.
+    const start = args.startDate ?? ymdOf(task.startDate);
+    const end = args.endDate === undefined ? ymdOf(task.endDate) : args.endDate;
+    if (start && end && end < start) return { error: 'endDate must not be before startDate' };
+    if (args.startTime && isMultiDay(start, end)) {
+      return { error: 'This task spans several days; change its sessions with update_session.' };
+    }
+    if (args.startTime && !start) return { error: 'startDate is required when startTime is given' };
+
+    let sessions = '';
+    if (!isMultiDay(start, end) && start) {
+      const planned = await ScheduleBlockModel.countDocuments({
+        userId,
+        sourceType: 'task',
+        sourceId: task._id,
+        status: 'planned',
+      });
+      if (planned > 0)
+        sessions = `; sessions → ${start}${args.startTime ? ` ${args.startTime}` : ''}`;
+      else if (args.startTime) sessions = `; book ${start} ${args.startTime}`;
+    }
+
+    return { tool: name, args, summary: `Edit "${task.name}": ${describeEdit(args)}${sessions}` };
+  }
+
+  if (name === 'create_session') {
+    const args = parsed.data as z.infer<typeof createSessionArgs>;
+    const task = await findTask(args.taskId, userId);
+    if (!task) return { error: 'Task not found. Look it up with list_tasks.' };
+    const wrongDay = outsideRange(task, args.date);
+    if (wrongDay) return { error: wrongDay };
+    const minutes = args.duration ?? task.duration ?? DEFAULT_SESSION_MINUTES;
+    return {
+      tool: name,
+      args,
+      summary: `Book "${task.name}" on ${args.date} at ${args.startTime} (${minutes} min)`,
+    };
+  }
+
+  if (name === 'update_session' || name === 'delete_session') {
+    const args = parsed.data as z.infer<typeof updateSessionArgs | typeof deleteSessionArgs>;
+    const found = await findSession(args.id, userId);
+    if (!found) return { error: 'Session not found. Look it up with list_sessions.' };
+    const { block, task } = found;
+
+    if (name === 'delete_session') {
+      return { tool: name, args, summary: `Remove "${task.name}" session ${slot(block)}` };
+    }
+
+    const edit = args as z.infer<typeof updateSessionArgs>;
+    if (edit.date) {
+      const wrongDay = outsideRange(task, edit.date);
+      if (wrongDay) return { error: wrongDay };
+    }
+    const to = `${edit.date ?? ymdOf(block.date)} ${edit.startTime ?? block.startTime}`;
+    const length = edit.duration ?? block.duration;
+    return {
+      tool: name,
+      args,
+      summary: `Move "${task.name}" session ${slot(block)} → ${to} (${length} min)`,
+    };
+  }
+
+  const args = parsed.data as z.infer<typeof completeTaskArgs | typeof deleteTaskArgs>;
+  const task = await findTask(args.id, userId);
+  if (!task) return { error: 'Task not found. Look it up with list_tasks.' };
+
+  if (name === 'delete_task') {
+    return { tool: name, args, summary: `Delete "${task.name}"` };
+  }
+  return { tool: name, args, summary: `Mark "${task.name}" as done` };
 }
 
 export type ExecuteResult = { ok: boolean; message: string };
@@ -193,8 +476,10 @@ export async function executeAction(
 ): Promise<ExecuteResult> {
   if (!isWriteTool(name)) return { ok: false, message: `Unknown action: ${name}` };
 
-  const proposal = proposeAction(name, rawArgs);
+  const proposal = await proposeAction(name, rawArgs, userId);
   if ('error' in proposal) return { ok: false, message: proposal.error };
+
+  if (isHabitWrite(name)) return executeHabitAction(name, proposal.args, userId);
 
   if (name === 'create_task') {
     const args = proposal.args as z.infer<typeof createTaskArgs>;
@@ -249,9 +534,143 @@ export async function executeAction(
     };
   }
 
-  const args = proposal.args as z.infer<typeof completeTaskArgs>;
-  const task = await TaskModel.findOne({ _id: args.id, userId, active: true }).catch(() => null);
+  if (name === 'update_task') {
+    const args = proposal.args as z.infer<typeof updateTaskArgs>;
+    const set: Record<string, unknown> = {};
+    const unset: Record<string, 1> = {};
+    // null clears a field, the same way PATCH /tasks/:id treats it.
+    const put = (key: string, value: unknown) => {
+      if (value === null) unset[key] = 1;
+      else if (value !== undefined) set[key] = value;
+    };
+    put('name', args.name);
+    put('note', args.note);
+    put('status', args.status);
+    put('duration', args.duration);
+    put('startDate', args.startDate ? new Date(args.startDate) : undefined);
+    put(
+      'endDate',
+      args.endDate === null ? null : args.endDate ? new Date(args.endDate) : undefined,
+    );
+
+    if (args.tagId !== undefined) {
+      const tag = await CategoryModel.findOne({ _id: args.tagId, userId }).catch(() => null);
+      if (!tag) return { ok: false, message: 'That category was not found.' };
+      set.tagId = tag._id.toString();
+    }
+
+    const update: Record<string, unknown> = {};
+    if (Object.keys(set).length > 0) update.$set = set;
+    if (Object.keys(unset).length > 0) update.$unset = unset;
+
+    const task = await TaskModel.findOneAndUpdate({ _id: args.id, userId, active: true }, update, {
+      new: true,
+    }).catch(() => null);
+    if (!task) return { ok: false, message: 'Task not found.' };
+
+    const start = ymdOf(task.startDate);
+    const end = ymdOf(task.endDate);
+
+    if (isMultiDay(start, end)) {
+      // Several days, several sessions: which one goes where is the user's
+      // call, made session by session. Only point out the ones now stranded.
+      const stray = (await sessionsOf(task._id, userId)).filter((b) =>
+        outsideRange(task, ymdOf(b.date) ?? ''),
+      ).length;
+      const note = stray > 0 ? ` ${stray} session(s) now fall outside its days.` : '';
+      return { ok: true, message: `Updated "${task.name}".${note}` };
+    }
+
+    if (!start) return { ok: true, message: `Updated "${task.name}".` };
+
+    // One day only: every planned session belongs on it. Done and missed ones
+    // are history and stay where they happened.
+    const sessionSet: Record<string, unknown> = { date: new Date(start) };
+    if (args.startTime) sessionSet.startTime = args.startTime;
+    if (args.duration) sessionSet.duration = args.duration;
+    const moved = await ScheduleBlockModel.updateMany(
+      { userId, sourceType: 'task', sourceId: task._id, status: 'planned' },
+      { $set: sessionSet },
+    );
+
+    if (moved.matchedCount > 0) {
+      const at = args.startTime ? ` at ${args.startTime}` : '';
+      return {
+        ok: true,
+        message: `Updated "${task.name}" and moved ${moved.matchedCount} session(s) to ${start}${at}.`,
+      };
+    }
+
+    if (args.startTime) {
+      const minutes = args.duration ?? task.duration ?? DEFAULT_SESSION_MINUTES;
+      await ScheduleBlockModel.create({
+        userId,
+        sourceType: 'task',
+        sourceId: task._id,
+        date: new Date(start),
+        startTime: args.startTime,
+        duration: minutes,
+      });
+      return {
+        ok: true,
+        message: `Updated "${task.name}" and booked ${args.startTime} on ${start} (${minutes} min).`,
+      };
+    }
+    return { ok: true, message: `Updated "${task.name}".` };
+  }
+
+  if (name === 'create_session') {
+    const args = proposal.args as z.infer<typeof createSessionArgs>;
+    const task = await findTask(args.taskId, userId);
+    if (!task) return { ok: false, message: 'Task not found.' };
+    const minutes = args.duration ?? task.duration ?? DEFAULT_SESSION_MINUTES;
+    await ScheduleBlockModel.create({
+      userId,
+      sourceType: 'task',
+      sourceId: task._id,
+      date: new Date(args.date),
+      startTime: args.startTime,
+      duration: minutes,
+    });
+    return {
+      ok: true,
+      message: `Booked "${task.name}" on ${args.date} at ${args.startTime} (${minutes} min).`,
+    };
+  }
+
+  if (name === 'update_session' || name === 'delete_session') {
+    const args = proposal.args as z.infer<typeof updateSessionArgs | typeof deleteSessionArgs>;
+    const found = await findSession(args.id, userId);
+    if (!found) return { ok: false, message: 'Session not found.' };
+    const { block, task } = found;
+
+    if (name === 'delete_session') {
+      await block.deleteOne();
+      return { ok: true, message: `Removed the ${slot(block)} session of "${task.name}".` };
+    }
+
+    const edit = args as z.infer<typeof updateSessionArgs>;
+    if (edit.date) block.date = new Date(edit.date);
+    if (edit.startTime) block.startTime = edit.startTime;
+    if (edit.duration) block.duration = edit.duration;
+    await block.save();
+    return {
+      ok: true,
+      message: `Moved the "${task.name}" session to ${slot(block)} (${block.duration} min).`,
+    };
+  }
+
+  const args = proposal.args as z.infer<typeof completeTaskArgs | typeof deleteTaskArgs>;
+  const task = await findTask(args.id, userId);
   if (!task) return { ok: false, message: 'Task not found.' };
+
+  if (name === 'delete_task') {
+    // Same as DELETE /tasks/:id: a soft delete, and the task's sessions go with it.
+    task.active = false;
+    await task.save();
+    await ScheduleBlockModel.deleteMany({ userId, sourceType: 'task', sourceId: task._id });
+    return { ok: true, message: `Deleted "${task.name}".` };
+  }
 
   const multiDay =
     task.startDate && task.endDate && task.endDate.getTime() > task.startDate.getTime();

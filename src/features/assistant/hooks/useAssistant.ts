@@ -43,7 +43,14 @@ export function useDecideProposal() {
     },
     onSuccess: (result, { decision }) => {
       if (decision !== 'confirm' || result.state !== 'done') return;
+      // The assistant now writes tasks, their sessions and habits; anything
+      // drawn from those is stale after a confirm.
       qc.invalidateQueries({ queryKey: ['tasks'] });
+      qc.invalidateQueries({ queryKey: queryKeys.scheduleBlocks.all });
+      qc.invalidateQueries({ queryKey: ['habits'] });
+      qc.invalidateQueries({ queryKey: ['habit-logs'] });
+      qc.invalidateQueries({ queryKey: queryKeys.quests.all });
+      qc.invalidateQueries({ queryKey: ['calendar-day'] });
       qc.invalidateQueries({ queryKey: queryKeys.calendar.all });
       qc.invalidateQueries({ queryKey: queryKeys.profile.all });
     },
