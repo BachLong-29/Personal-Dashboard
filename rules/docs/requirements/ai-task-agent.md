@@ -5,7 +5,7 @@ An assistant that reads the user's tasks and proposes creating, editing, complet
 ## Flow
 
 1. Client sends the new message to `POST /api/v1/agent` with its local `today` (`YYYY-MM-DD`) and `timezone`. Earlier turns are read from the stored conversation, not sent by the client.
-2. The server runs a tool-use loop (max 6 steps) against an OpenAI-compatible LLM.
+2. The server runs a tool-use loop (max 8 steps; if it runs out, one last call without tools makes the model answer from what the tools already returned, instead of failing) against an OpenAI-compatible LLM.
 3. **Read tools** (`list_tasks`, `list_categories`, `list_sessions`, `list_habits`) run immediately, scoped to the caller.
 4. **Write tools** (`create_task`, `update_task`, `complete_task`, `delete_task`, `create_session`, `update_session`, `delete_session`, `create_habit`, `update_habit`, `set_habit_active`, `delete_habit`) never write. They are stored as a `proposal` item with a one-line `summary` for the confirm card.
 5. The user decides with `POST /api/v1/agent/execute { proposalId, decision }`. The actions are read from the stored proposal, never from the request, so a client cannot run anything the assistant did not propose. The claim is atomic: a proposal is decided once.
@@ -59,7 +59,7 @@ When a detail is ambiguous or the user sounds unsure ("tomorrow or Friday?"), th
 
 ## Planner (day / week)
 
-`plan_schedule { from, to, taskIds?, dayStart?, dayEnd?, breakMinutes? }` places tasks into the free time of the calendar and proposes every placement at once, as ordinary `update_task` (single-day or undated task: new `startDate` + `startTime`) or `create_session` (multi-day task, inside its range) actions. `get_free_time { from, to }` is the read-only view of the same gaps.
+`plan_schedule { from, to, taskIds?, dayStart?, dayEnd?, breakMinutes? }` places tasks into the free time of the calendar and proposes every placement at once, as ordinary `update_task` (single-day or undated task: new `startDate` + `startTime`) or `create_session` (multi-day task, inside its range) actions. `get_free_time { from, to }` is the read-only view of the same gaps. `list_unscheduled` returns the open tasks with no planned session in one call (the answer to "which tasks are not planned?").
 
 - **Placement is deterministic** (`plan-core.ts`, pure, no database): most urgent task first (overdue, then earliest end date, then start date, then longest). The same calendar and tasks always give the same plan.
 - **Which day:** a task with its own start date, or an overdue one, takes the earliest day it may use. An undated task, or one spanning several days, takes the **least loaded** allowed day (earliest on a tie), so a week is spread rather than filled from Monday.

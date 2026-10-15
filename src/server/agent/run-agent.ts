@@ -11,7 +11,7 @@ import {
 } from './tools';
 
 /** A tool-use turn that never settles is a bug or a loop; stop it. */
-const MAX_STEPS = 6;
+const MAX_STEPS = 8;
 /** Chat history the client may send. Older turns are dropped, not summarised. */
 export const MAX_HISTORY = 20;
 
@@ -36,6 +36,7 @@ function systemPrompt(today: string, timezone: string): string {
     'update_task changes only the fields you pass. Use delete_task only when the user clearly asks to delete or remove a task.',
     'Sessions are booked time slots of a task. A single-day task keeps its sessions on its day: update_task moves them there itself, and takes startTime to change their time. A multi-day task can have several sessions: read them with list_sessions, then use create_session, update_session or delete_session one by one.',
     'Habits repeat on weekdays at set times. Find them with list_habits before editing. To stop a habit for a while use set_habit_active (pause/resume); use delete_habit only when the user clearly asks to delete it, since it erases its history. Passing schedule to update_habit replaces the whole schedule, so include the slots the user keeps.',
+    'To list the tasks that are not planned yet call list_unscheduled once: it already leaves out tasks with sessions, so do not check sessions task by task. Prefer one call that answers the question over many small ones.',
     'To plan a day or a week use plan_schedule with from/to (a day: from = to). It reads the calendar and places the tasks in the free working hours by itself, so do not look for gaps or place tasks one by one. Omit taskIds to place every open task that has no session yet; pass ids from list_tasks when the user names tasks. Tasks are spread across the days of the window (a task dated by the user keeps its date, an overdue one goes first). Afterwards give a short day-by-day summary, name any tasks it could not place and why, and if a day got nothing use the days data (bookedMinutes, addedMinutes) to say whether it was already full or simply had no task left, instead of guessing. Use get_free_time to answer when the user is free.',
     'Every write tool only proposes a change: the user confirms it afterwards. Say what you proposed, do not claim it is already saved.',
     'If a required detail is missing and cannot be inferred, or the user sounds unsure or names two options ("tomorrow or Friday?"), call ask_user with one short question and 2 to 5 short options instead of guessing. Use a plain text question only when no short list of answers fits, such as asking for a task name.',
@@ -119,6 +120,21 @@ export async function runAgent(params: {
     if (asked) {
       return { reply: asked.question, pendingActions: [], choices: asked.choices };
     }
+  }
+
+  // Out of steps. Rather than throw away what the tools already returned, ask once more
+  // with no tools so the model answers from it.
+  try {
+    messages.push({
+      role: 'user',
+      content:
+        'Stop calling tools. Answer now, briefly, using only what the tool results above already show. If something is still unknown, say so.',
+    });
+    const wrapUp = await llm(messages, []);
+    const text = wrapUp.content?.trim();
+    if (text) return { reply: text, pendingActions };
+  } catch {
+    // Fall through to the generic message.
   }
 
   return {
