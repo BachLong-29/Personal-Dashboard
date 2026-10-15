@@ -16,6 +16,15 @@ import {
   type HabitWriteToolName,
 } from './habit-tools';
 import type { ToolSpec } from './llm';
+import {
+  PLAN_READ_TOOLS,
+  PLAN_WRITE_TOOLS,
+  planSchedule,
+  runPlanReadTool,
+  type PlanContext,
+  type PlanReadToolName,
+  type PlanWriteToolName,
+} from './plan-tools';
 
 const ymd = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Use YYYY-MM-DD');
 
@@ -196,8 +205,11 @@ const WRITE_TOOLS = {
   },
 } as const;
 
-export type ReadToolName = keyof typeof READ_TOOLS | HabitReadToolName;
-export type WriteToolName = keyof typeof WRITE_TOOLS | HabitWriteToolName;
+export type ReadToolName = keyof typeof READ_TOOLS | HabitReadToolName | PlanReadToolName;
+export type WriteToolName = keyof typeof WRITE_TOOLS | HabitWriteToolName | PlanWriteToolName;
+
+const isPlanRead = (name: string): name is PlanReadToolName => name in PLAN_READ_TOOLS;
+const isPlanWrite = (name: string): name is PlanWriteToolName => name in PLAN_WRITE_TOOLS;
 
 const isHabitRead = (name: string): name is HabitReadToolName => name in HABIT_READ_TOOLS;
 const isHabitWrite = (name: string): name is HabitWriteToolName => name in HABIT_WRITE_TOOLS;
@@ -217,19 +229,69 @@ function spec(name: string, tool: { description: string; schema: z.ZodType }): T
   return { type: 'function', function: { name, description: tool.description, parameters } };
 }
 
+/** The one tool that is neither a read nor a write: it ends the turn with a question. */
+export const ASK_USER_TOOL = 'ask_user';
+
+const askUserArgs = z.object({
+  question: z.string().trim().min(1).max(240).describe('One short question'),
+  options: z
+    .array(z.string().trim().min(1).max(60))
+    .min(2)
+    .max(5)
+    .describe('2 to 5 short answers the user can tap, e.g. ["Tomorrow", "Friday"]'),
+});
+
+const ASK_USER_SPEC: ToolSpec = spec(ASK_USER_TOOL, {
+  description:
+    'Ask the user one short question with quick-reply buttons. Use it instead of guessing when a detail is ambiguous, two readings are possible, or the user sounds unsure (for example "tomorrow or Friday?"). The turn ends and the chosen option comes back as their next message.',
+  schema: askUserArgs,
+});
+
+/** Longest quick reply kept, and the most buttons shown. */
+const MAX_CHOICE_CHARS = 60;
+const MAX_CHOICES = 5;
+
+/**
+ * Validates an `ask_user` call. Lenient on the options on purpose: blanks, repeats and
+ * over-long entries are cleaned rather than failing the whole question, which a small model
+ * would otherwise repeat until the turn runs out.
+ */
+export function parseAskUser(
+  rawArgs: unknown,
+): { question: string; choices: string[] } | { error: string } {
+  const parsed = z
+    .object({ question: z.string().trim().min(1), options: z.array(z.string()) })
+    .safeParse(rawArgs);
+  if (!parsed.success) return { error: 'Give a question and a list of options.' };
+
+  const choices = [
+    ...new Set(
+      parsed.data.options
+        .map((option) => option.trim().slice(0, MAX_CHOICE_CHARS))
+        .filter((option) => option.length > 0),
+    ),
+  ].slice(0, MAX_CHOICES);
+  if (choices.length < 2) return { error: 'Give at least two different options.' };
+
+  return { question: parsed.data.question.slice(0, 240), choices };
+}
+
 export const TOOL_SPECS: ToolSpec[] = [
+  ASK_USER_SPEC,
   ...Object.entries(READ_TOOLS).map(([name, tool]) => spec(name, tool)),
   ...Object.entries(HABIT_READ_TOOLS).map(([name, tool]) => spec(name, tool)),
+  ...Object.entries(PLAN_READ_TOOLS).map(([name, tool]) => spec(name, tool)),
   ...Object.entries(WRITE_TOOLS).map(([name, tool]) => spec(name, tool)),
   ...Object.entries(HABIT_WRITE_TOOLS).map(([name, tool]) => spec(name, tool)),
+  ...Object.entries(PLAN_WRITE_TOOLS).map(([name, tool]) => spec(name, tool)),
 ];
 
 export function isReadTool(name: string): name is ReadToolName {
-  return name in READ_TOOLS || isHabitRead(name);
+  return name in READ_TOOLS || isHabitRead(name) || isPlanRead(name);
 }
 
 export function isWriteTool(name: string): name is WriteToolName {
-  return name in WRITE_TOOLS || isHabitWrite(name);
+  return name in WRITE_TOOLS || isHabitWrite(name) || isPlanWrite(name);
 }
 
 function brief(task: ITask) {
@@ -253,8 +315,10 @@ export async function runReadTool(
   name: ReadToolName,
   rawArgs: unknown,
   userId: string,
+  ctx: PlanContext,
 ): Promise<unknown> {
   if (isHabitRead(name)) return runHabitReadTool(name, rawArgs, userId);
+  if (isPlanRead(name)) return runPlanReadTool(name, rawArgs, userId, ctx);
 
   const parsed = READ_TOOLS[name].schema.safeParse(rawArgs);
   if (!parsed.success) return { error: parsed.error.issues.map((i) => i.message).join('; ') };
@@ -368,6 +432,10 @@ export async function proposeAction(
   rawArgs: unknown,
   userId: string,
 ): Promise<PendingAction | { error: string }> {
+  if (isPlanWrite(name)) {
+    return { error: 'plan_schedule expands into other actions; use proposeActions.' };
+  }
+
   if (isHabitWrite(name)) {
     const proposal = await proposeHabitAction(name, rawArgs, userId);
     return 'error' in proposal ? proposal : { tool: name, ...proposal };
@@ -466,6 +534,91 @@ export async function proposeAction(
   return { tool: name, args, summary: `Mark "${task.name}" as done` };
 }
 
+/** Everything one write call turns into, plus what to tell the model about it. */
+export type ProposedActions = { actions: PendingAction[]; note: unknown } | { error: string };
+
+/**
+ * `proposeAction` for one call. Almost every write is one action; `plan_schedule` is the
+ * exception: it works out where a set of tasks go and proposes each placement, so the
+ * user confirms the whole plan in one go.
+ */
+export async function proposeActions(
+  name: WriteToolName,
+  rawArgs: unknown,
+  userId: string,
+  ctx: PlanContext,
+): Promise<ProposedActions> {
+  if (!isPlanWrite(name)) {
+    const proposal = await proposeAction(name, rawArgs, userId);
+    if ('error' in proposal) return proposal;
+    return {
+      actions: [proposal],
+      note: { status: 'proposed', note: 'Waiting for the user to confirm.' },
+    };
+  }
+
+  const plan = await planSchedule(rawArgs, userId, ctx);
+  if ('error' in plan) return plan;
+
+  const actions: PendingAction[] = [];
+  const placements: { task: string; date: string; startTime: string; minutes: number }[] = [];
+  const unplaced = plan.unplaced.map((entry) => ({
+    task: entry.task.name,
+    reason: entry.reason,
+  }));
+
+  for (const placed of plan.placed) {
+    // A multi-day task keeps its range and gets a session; anything else is dated to the slot.
+    const tool: WriteToolName = placed.task.multiDay ? 'create_session' : 'update_task';
+    const args = placed.task.multiDay
+      ? {
+          taskId: placed.task.id,
+          date: placed.date,
+          startTime: placed.startTime,
+          duration: placed.minutes,
+        }
+      : {
+          id: placed.task.id,
+          startDate: placed.date,
+          // A task that already ends on its own start day would otherwise end before it
+          // starts once moved; `null` keeps it a plain single-day task.
+          endDate: null,
+          startTime: placed.startTime,
+          duration: placed.minutes,
+        };
+
+    const proposal = await proposeAction(tool, args, userId);
+    if ('error' in proposal) {
+      unplaced.push({ task: placed.task.name, reason: proposal.error });
+      continue;
+    }
+
+    actions.push({
+      ...proposal,
+      summary: `Plan "${placed.task.name}" -> ${placed.date} ${placed.startTime} (${placed.minutes} min)`,
+    });
+    placements.push({
+      task: placed.task.name,
+      date: placed.date,
+      startTime: placed.startTime,
+      minutes: placed.minutes,
+    });
+  }
+
+  return {
+    actions,
+    note: {
+      status: actions.length > 0 ? 'proposed' : 'nothing_placed',
+      note: actions.length > 0 ? 'Waiting for the user to confirm.' : undefined,
+      window: plan.window,
+      // How full each day is: lets the assistant say why a day has nothing new on it.
+      days: plan.days,
+      placements,
+      unplaced,
+    },
+  };
+}
+
 export type ExecuteResult = { ok: boolean; message: string };
 
 /** Performs a confirmed write. Everything is re-validated and scoped to `userId`. */
@@ -474,7 +627,9 @@ export async function executeAction(
   rawArgs: unknown,
   userId: string,
 ): Promise<ExecuteResult> {
-  if (!isWriteTool(name)) return { ok: false, message: `Unknown action: ${name}` };
+  if (!isWriteTool(name) || isPlanWrite(name)) {
+    return { ok: false, message: `Unknown action: ${name}` };
+  }
 
   const proposal = await proposeAction(name, rawArgs, userId);
   if ('error' in proposal) return { ok: false, message: proposal.error };

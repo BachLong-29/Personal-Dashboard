@@ -49,6 +49,27 @@ All need the Bearer token like every other `/api/v1` route.
 - Writes on an existing task look it up while proposing, so the confirm card names the task and a bad id goes back to the model as an error instead of reaching the user.
 - Task names and notes are data to the model, never instructions (stated in the system prompt).
 
+## Asking back (`ask_user`)
+
+When a detail is ambiguous or the user sounds unsure ("tomorrow or Friday?"), the model calls `ask_user { question, options[2..5] }` instead of guessing. The turn ends there: the question is stored as an `assistant` item with `choices`, and any change lined up in the same turn is dropped so a question and a proposal never appear together.
+
+- Options are cleaned, not rejected: blanks and repeats are removed, entries cut to 60 characters, at most 5 kept; fewer than 2 distinct options goes back to the model as an error.
+- Clients show the choices as buttons under the question **only while it is the last message**; tapping one sends its text as an ordinary user message, so there is no extra endpoint. Typing instead works the same.
+- Plain-text questions remain for open answers such as a task name.
+
+## Planner (day / week)
+
+`plan_schedule { from, to, taskIds?, dayStart?, dayEnd?, breakMinutes? }` places tasks into the free time of the calendar and proposes every placement at once, as ordinary `update_task` (single-day or undated task: new `startDate` + `startTime`) or `create_session` (multi-day task, inside its range) actions. `get_free_time { from, to }` is the read-only view of the same gaps.
+
+- **Placement is deterministic** (`plan-core.ts`, pure, no database): most urgent task first (overdue, then earliest end date, then start date, then longest). The same calendar and tasks always give the same plan.
+- **Which day:** a task with its own start date, or an overdue one, takes the earliest day it may use. An undated task, or one spanning several days, takes the **least loaded** allowed day (earliest on a tie), so a week is spread rather than filled from Monday.
+- **Busy time** comes from `buildCalendar`: sessions, habits, quests and events with a start time. Events marked free are ignored. Every block is widened by `breakMinutes` (default 15).
+- **Rules:** quarter-hour starts; working hours 09:00–18:00 by default; nothing before now today; a task never moves earlier than its own start date; a multi-day task stays inside its range.
+- **Ceilings:** at most 240 new minutes per day and 480 in total, so a week is spread rather than front-loaded.
+- **Which tasks:** `taskIds` when given, otherwise every open task with no planned session (up to 30). Tasks that do not fit are returned as `unplaced` with a reason and are never forced in.
+- The result carries `days` (`bookedMinutes`, `addedMinutes` per day) so the assistant can say whether an empty day was already full or simply had no task left.
+- Window is capped at 14 days and days before today are skipped. Placements are computed when proposed; the calendar can change before the user confirms.
+
 ## Adding a tool
 
 Add its zod schema and description to `READ_TOOLS` or `WRITE_TOOLS` in `tools.ts` (habit tools: `HABIT_READ_TOOLS` / `HABIT_WRITE_TOOLS` in `habit-tools.ts`), and its name to `AgentPendingAction['tool']` in `types/agent.ts`. A write tool also needs a branch in `executeAction`. The JSON schema sent to the model is generated from the zod schema.

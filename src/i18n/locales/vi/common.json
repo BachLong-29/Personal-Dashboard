@@ -34,6 +34,7 @@
     "newChatMessage": "Thao tác này xoá cuộc trò chuyện trên mọi thiết bị. Các task đã lưu vẫn giữ nguyên.",
     "newChatConfirm": "Xoá cuộc trò chuyện",
     "clearFailed": "Không xoá được cuộc trò chuyện. Thử lại nhé.",
+    "quickReplies": "Trả lời nhanh",
     "retry": "Thử lại"
   },
   "nav": {

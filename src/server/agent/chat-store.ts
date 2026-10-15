@@ -13,7 +13,8 @@ import type { PendingAction } from './tools';
 export const MAX_CHAT_ITEMS = 100;
 
 export type ChatItemDTO =
-  | { id: string; kind: 'user' | 'assistant'; text: string; createdAt: string }
+  | { id: string; kind: 'user'; text: string; createdAt: string }
+  | { id: string; kind: 'assistant'; text: string; choices?: string[]; createdAt: string }
   | {
       id: string;
       kind: 'proposal';
@@ -24,7 +25,8 @@ export type ChatItemDTO =
 
 /** An item not yet saved. Its id is made here so callers know it before the write. */
 export type NewChatItem =
-  | { kind: 'user' | 'assistant'; text: string }
+  | { kind: 'user'; text: string }
+  | { kind: 'assistant'; text: string; choices?: string[] }
   | { kind: 'proposal'; actions: PendingAction[]; state: 'open' };
 
 export function toDTO(item: IAgentChatItem): ChatItemDTO {
@@ -37,7 +39,16 @@ export function toDTO(item: IAgentChatItem): ChatItemDTO {
       state: item.state ?? 'open',
     };
   }
-  return { ...base, kind: item.kind, text: item.text ?? '' };
+  if (item.kind === 'assistant') {
+    const choices = item.choices ?? [];
+    return {
+      ...base,
+      kind: 'assistant',
+      text: item.text ?? '',
+      ...(choices.length > 0 ? { choices } : {}),
+    };
+  }
+  return { ...base, kind: 'user', text: item.text ?? '' };
 }
 
 export async function loadItems(userId: string): Promise<IAgentChatItem[]> {

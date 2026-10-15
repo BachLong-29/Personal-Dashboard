@@ -34,6 +34,7 @@
     "newChatMessage": "This clears the conversation on all your devices. Tasks already saved stay as they are.",
     "newChatConfirm": "Clear chat",
     "clearFailed": "Could not clear the chat. Try again.",
+    "quickReplies": "Quick replies",
     "retry": "Try again"
   },
   "nav": {
