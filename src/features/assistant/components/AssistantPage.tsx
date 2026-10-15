@@ -20,6 +20,7 @@ import {
   useDecideProposal,
 } from '../hooks/useAssistant';
 import { ChatBubble } from './ChatBubble';
+import { QuickReplies } from './QuickReplies';
 import { ProposalCard, type ProposalState } from './ProposalCard';
 
 /**
@@ -27,7 +28,8 @@ import { ProposalCard, type ProposalState } from './ProposalCard';
  * a proposal while it is being confirmed, and the line saying a send failed.
  */
 type Entry =
-  | { id: string; kind: 'user' | 'assistant' | 'error'; text: string }
+  | { id: string; kind: 'user' | 'error'; text: string }
+  | { id: string; kind: 'assistant'; text: string; choices?: string[] }
   | { id: string; kind: 'proposal'; actions: AgentPendingAction[]; state: ProposalState };
 
 const MAX_INPUT_LENGTH = 2000;
@@ -41,7 +43,9 @@ const newLocalId = () => `local-${(localId += 1)}`;
 function fromItem(item: AgentChatItem): Entry {
   return item.kind === 'proposal'
     ? { id: item.id, kind: 'proposal', actions: item.actions, state: item.state }
-    : { id: item.id, kind: item.kind, text: item.text };
+    : item.kind === 'assistant'
+      ? { id: item.id, kind: 'assistant', text: item.text, choices: item.choices }
+      : { id: item.id, kind: 'user', text: item.text };
 }
 
 /**
@@ -275,6 +279,23 @@ export function AssistantPage() {
                       <Button variant="ghost" size="sm" onClick={retry}>
                         {t('retry')}
                       </Button>
+                    )}
+                  </div>
+                );
+              }
+              if (entry.kind === 'assistant' && entry.choices && entry.choices.length > 0) {
+                // Buttons only while the question is the last thing said: once the user has
+                // answered (by tapping or typing) they would be stale.
+                const live = index === entries.length - 1 && !thinking;
+                return (
+                  <div key={entry.id} className="flex flex-col items-start gap-2">
+                    <ChatBubble role="assistant" text={entry.text} />
+                    {live && (
+                      <QuickReplies
+                        choices={entry.choices}
+                        label={t('quickReplies')}
+                        onPick={send}
+                      />
                     )}
                   </div>
                 );

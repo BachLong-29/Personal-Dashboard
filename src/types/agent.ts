@@ -22,7 +22,15 @@ export type AgentProposalState = 'open' | 'done' | 'dismissed';
 
 /** One entry of the stored conversation, as the API returns it. */
 export type AgentChatItem =
-  | { id: string; kind: 'user' | 'assistant'; text: string; createdAt: string }
+  | { id: string; kind: 'user'; text: string; createdAt: string }
+  | {
+      id: string;
+      kind: 'assistant';
+      text: string;
+      /** Quick replies for a question the assistant asked. */
+      choices?: string[];
+      createdAt: string;
+    }
   | {
       id: string;
       kind: 'proposal';
