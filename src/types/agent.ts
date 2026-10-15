@@ -1,6 +1,17 @@
 /** A change the assistant proposed. Nothing is saved until the user confirms it. */
 export interface AgentPendingAction {
-  tool: 'create_task' | 'complete_task';
+  tool:
+    | 'create_task'
+    | 'complete_task'
+    | 'update_task'
+    | 'delete_task'
+    | 'create_session'
+    | 'update_session'
+    | 'delete_session'
+    | 'create_habit'
+    | 'update_habit'
+    | 'set_habit_active'
+    | 'delete_habit';
   args: Record<string, unknown>;
   /** One line for the confirm card, e.g. `Create "Study" on 2026-10-16`. */
   summary: string;
