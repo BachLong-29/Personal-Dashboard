@@ -11,6 +11,7 @@ import DashboardTopbar from '@/features/dashboard/components/layout/DashboardTop
 import { buildEmptyChar, profileToCharacter } from '@/features/dashboard/utils/character.utils';
 import { useProfile } from '@/features/profile/hooks/useProfile';
 import { todayISO } from '@/features/tasks/utils/date.utils';
+import { useUIStore } from '@/stores/ui.store';
 import type { AgentChatItem, AgentPendingAction } from '@/types';
 
 import {
@@ -81,6 +82,7 @@ export function AssistantPage() {
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const hydrated = useRef(false);
+  const takeHandoffRef = useRef<() => void>(() => {});
   const timezone = useMemo(() => Intl.DateTimeFormat().resolvedOptions().timeZone, []);
 
   // Load the stored conversation once, when it arrives.
@@ -88,6 +90,8 @@ export function AssistantPage() {
     if (hydrated.current || !history.data) return;
     hydrated.current = true;
     setEntries(history.data.map(fromItem));
+    // Deferred so the history is on screen before the handed-over message joins it.
+    queueMicrotask(() => takeHandoffRef.current());
   }, [history.data]);
 
   // Keep the newest message in view as the chat grows.
@@ -140,16 +144,41 @@ export function AssistantPage() {
     [sendChat, t, timezone],
   );
 
-  const send = (text: string) => {
+  /** Sends `text`; false when there was nothing to send or a reply is still pending. */
+  const send = (text: string): boolean => {
     const message = text.trim();
-    if (!message || thinking || history.isLoading) return;
+    if (!message || thinking || history.isLoading) return false;
 
     const pendingId = newLocalId();
     setEntries((prev) => [...prev, { id: pendingId, kind: 'user', text: message }]);
     setDraft('');
     setNotice(null);
     submit(message, pendingId);
+    return true;
   };
+
+  // A message handed over from the Ctrl+K palette is sent once, and only after the stored
+  // conversation is in place so it lands after it. Read straight from the store and cleared
+  // only once it went out: the check can fire more than once (StrictMode, a re-render
+  // before `thinking` flips), and only the first may find it there.
+  const sendRef = useRef(send);
+  useEffect(() => {
+    sendRef.current = send;
+  });
+  const takeHandoff = useCallback(() => {
+    if (!hydrated.current) return;
+    const store = useUIStore.getState();
+    const prompt = store.pendingAssistantPrompt;
+    if (prompt && sendRef.current(prompt)) store.setPendingAssistantPrompt(null);
+  }, []);
+  useEffect(() => {
+    takeHandoffRef.current = takeHandoff;
+    return useUIStore.subscribe(takeHandoff);
+  }, [takeHandoff]);
+  // Handed over while a reply was still coming: it waited, so send it now.
+  useEffect(() => {
+    if (!thinking) takeHandoffRef.current();
+  }, [thinking]);
 
   const retry = () => {
     if (thinking) return;

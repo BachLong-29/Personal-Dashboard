@@ -64,7 +64,11 @@
       "events": "Events"
     },
     "hint": "Type to search tasks, habits, quests, projects, pages…",
-    "empty": "No results for \"{query}\""
+    "empty": "No results for \"{query}\"",
+    "askAssistant": {
+      "group": "Assistant",
+      "label": "Ask Assistant: \"{query}\""
+    }
   },
   "auth": {
     "login": "Login",

@@ -161,12 +161,36 @@ export function GlobalSearch() {
           }))
       : [];
 
-    return pageItems.length > 0
-      ? [...apiGroups, { label: t('pagesLabel'), items: pageItems }]
-      : apiGroups;
+    const groups =
+      pageItems.length > 0
+        ? [...apiGroups, { label: t('pagesLabel'), items: pageItems }]
+        : apiGroups;
+
+    // Whatever was typed can also go to the assistant as a message. Built from
+    // the live query, not the debounced one, so it never sends a stale half.
+    const typed = query.trim();
+    if (!typed) return groups;
+    return [
+      ...groups,
+      {
+        label: t('askAssistant.group'),
+        items: [
+          {
+            key: 'assistant:ask',
+            icon: '✨',
+            label: t('askAssistant.label', { query: typed }),
+            onSelect: () => {
+              useUIStore.getState().setPendingAssistantPrompt(typed);
+              handleClose();
+              router.push('/assistant');
+            },
+          },
+        ],
+      },
+    ];
     // select/router/handleClose are stable enough; recompute only when results/pages/query change.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [result, t, pages, debounced]);
+  }, [result, t, pages, debounced, query]);
 
   const emptyLabel = debounced.trim() ? t('empty', { query: debounced.trim() }) : t('hint');
 
