@@ -5,7 +5,7 @@ import Image from 'next/image';
 
 import { useTranslations } from 'next-intl';
 
-import { cn, firstLine } from '@/libs/utils';
+import { cn } from '@/libs/utils';
 
 import { ProjectBadge } from '@/components/common/ProjectBadge';
 import { SessionPlanner, type PlannerTask } from '@/features/schedule/components/SessionPlanner';
@@ -13,7 +13,7 @@ import { useTaskBlocks } from '@/features/schedule/hooks/useScheduleBlocks';
 import { useOnClickOutside } from '@/hooks';
 
 import { catOf, fmtEst, COLOR_VAR, type UITask } from '../../data/mock';
-import { diffColors, qcxBtnGhost, qcxBtnPrimary } from './styles';
+import { qcxBtnGhost, qcxBtnPrimary } from './styles';
 import { Icon } from '@/components/common/Icon';
 
 // ─── Session helpers ────────────────────────────────────────────────────────────
@@ -93,6 +93,14 @@ export function QuestCard({
   const canDeleteQuest = !!onDeleteQuest && task.source === 'quest';
   const hasQuickActions = canMoveToNextDay || canClone || canEdit || canDeleteQuest;
 
+  // A saga or a moved habit keeps its own look; every other card takes the quest's colour.
+  const plainCard = !task.saga && !task.cancelled;
+
+  // "13:30 · 1h": when it starts and how long it takes, above the title.
+  const timeLine = [task.startTime, task.est > 0 ? fmtEst(task.est) : null]
+    .filter(Boolean)
+    .join(' · ');
+
   return (
     <article
       className={cn(
@@ -103,39 +111,36 @@ export function QuestCard({
         isOverlay && 'shadow-[0_8px_32px_oklch(0_0_0_/_0.5)] scale-[1.02] cursor-grabbing',
         'group',
       )}
-      style={{ borderLeftColor: catColor, borderLeftWidth: 3 }}
+      style={plainCard ? tint(catColor) : undefined}
     >
       {/* ── Collapsed main row ────────────────────────────────────────────────── */}
       <div
-        className="flex items-start gap-1.5 w-full cursor-pointer"
+        className="flex w-full cursor-pointer items-center gap-3"
         onClick={!isOverlay ? onExpand : undefined}
       >
-        {/* Content: 2 rows */}
-        <div className="flex-1 min-w-0">
-          {/* Row 1: checkbox + icon + title + status badges */}
-          <div className="flex items-center gap-1.5 min-w-0">
-            <button
-              type="button"
+        {/* The icon leads the row: it is what the eye scans for. */}
+        {task.icon && (
+          <span
+            className="flex w-[30px] shrink-0 items-center justify-center text-[26px] leading-none select-none"
+            style={{ color: catColor }}
+          >
+            <Icon icon={task.icon} />
+          </span>
+        )}
+
+        <div className="min-w-0 flex-1">
+          {timeLine && (
+            <div
               className={cn(
-                checkBtn,
-                !task.isMultiDay && task.done && checkBtnDone,
-                task.isMultiDay && task.loggedToday && checkBtnLogged,
+                'mb-1 truncate text-[11px] leading-none tabular-nums text-[var(--text-mid)]',
+                task.done && 'text-[var(--mint)]',
               )}
-              onClick={(e) => {
-                e.stopPropagation();
-                onToggleDone?.(task.id);
-              }}
-              aria-label={task.isMultiDay ? 'Log today' : 'Toggle complete'}
             >
-              {task.isMultiDay ? (task.loggedToday ? '✓' : '') : task.done ? '✓' : ''}
-            </button>
+              {timeLine}
+            </div>
+          )}
 
-            {task.icon && (
-              <span className="text-[13px] leading-none shrink-0 select-none">
-                <Icon icon={task.icon} />
-              </span>
-            )}
-
+          <div className="flex min-w-0 items-center gap-1.5">
             <span
               className={cn(
                 titleText,
@@ -166,44 +171,30 @@ export function QuestCard({
                 {task.loggedToday ? '✓' : `${task.totalDays}D`}
               </span>
             ) : null}
-          </div>
-
-          {/* Row 2: rank + overdue + note */}
-          <div className="flex items-center gap-1.5 mt-[3px] pl-[28px] sm:pl-[26px] min-w-0">
-            <span className="text-[7px] font-bold tracking-[0.12em] uppercase text-[var(--text-lo)] font-[var(--font-title)] shrink-0">
-              Rank
-            </span>
-            <div className={cn(diffBadge, diffColors[task.diff] ?? diffBadgeFallback)}>
-              {task.diff || '–'}
-            </div>
 
             {task.overdueLevel &&
               task.overdueLevel !== 'failed' &&
               !task.done &&
               !task.cancelled &&
               (task.overdueLevel === 'critical' ? (
-                <span className="text-[7px] font-bold px-1 py-px rounded border tracking-[0.06em] font-[var(--font-title)] bg-[oklch(0.72_0.18_5_/_0.12)] border-[oklch(0.72_0.18_5_/_0.3)] text-[var(--rose)] animate-pulse">
+                <span className="text-[9px] font-bold px-1 py-px rounded border tracking-[0.06em] font-[var(--font-title)] bg-[oklch(0.72_0.18_5_/_0.12)] border-[oklch(0.72_0.18_5_/_0.3)] text-[var(--rose)] animate-pulse">
                   !
                 </span>
               ) : (
-                <span className="text-[7px] font-bold px-1 py-px rounded border tracking-[0.06em] font-[var(--font-title)] bg-[oklch(0.74_0.17_85_/_0.1)] border-[oklch(0.74_0.17_85_/_0.3)] text-[var(--gold)]">
+                <span className="text-[9px] font-bold px-1 py-px rounded border tracking-[0.06em] font-[var(--font-title)] bg-[oklch(0.74_0.17_85_/_0.1)] border-[oklch(0.74_0.17_85_/_0.3)] text-[var(--gold)]">
                   ⚠
                 </span>
               ))}
-
-            {task.desc && !task.done && !task.cancelled && (
-              <span className="text-[9px] text-[var(--text-lo)] truncate" title={task.desc}>
-                {firstLine(task.desc)}
-              </span>
-            )}
           </div>
         </div>
 
-        {/* Right: quick actions + chevron */}
+        {/* Quick actions. Desktop reveals them on hover; mobile has no hover, so its menu
+            stays — it is also the only place a quest can be deleted from a phone. The rest of
+            the details (rank, reward, note, actions) sit in the panel the card opens. */}
         {!isOverlay && (
-          <div className="flex items-center gap-0.5 shrink-0 self-center ml-auto">
+          <div className="flex shrink-0 items-center gap-0.5">
             {/* Desktop: hover-reveal quick actions (hover doesn't exist on touch) */}
-            <div className="hidden sm:flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity duration-150">
+            <div className="hidden items-center gap-0.5 sm:group-hover:flex">
               {canMoveToNextDay && (
                 <button
                   type="button"
@@ -273,10 +264,30 @@ export function QuestCard({
                 onEdit={onEdit}
               />
             )}
-
-            <span className={cn(chevron, expanded && chevronOpen)}>›</span>
           </div>
         )}
+
+        {/* The state closes the row, so a check never reads as its subject. */}
+        <button
+          type="button"
+          className={cn(
+            checkBtn,
+            !task.isMultiDay && task.done && checkBtnDone,
+            task.isMultiDay && task.loggedToday && checkBtnLogged,
+          )}
+          style={
+            (task.isMultiDay ? task.loggedToday : task.done)
+              ? undefined
+              : { borderColor: `color-mix(in oklab, ${catColor} 60%, transparent)` }
+          }
+          onClick={(e) => {
+            e.stopPropagation();
+            onToggleDone?.(task.id);
+          }}
+          aria-label={task.isMultiDay ? 'Log today' : 'Toggle complete'}
+        >
+          {task.isMultiDay ? (task.loggedToday ? '✓' : '') : task.done ? '✓' : ''}
+        </button>
       </div>
 
       {/* ── Expanded detail panel ─────────────────────────────────────────────── */}
@@ -791,23 +802,25 @@ function QuestCardActionsMenu({
 // ─── Style constants ──────────────────────────────────────────────────────────
 
 const cardBase =
-  'flex flex-col gap-0 px-2.5 py-2.5 sm:py-2 bg-[var(--panel2)] border border-[var(--border)] rounded-[var(--r-sm)] mb-2 sm:mb-1.5 cursor-grab hover:border-[oklch(0.74_0.17_85_/_0.3)] hover:bg-[oklch(0.74_0.17_85_/_0.03)] transition-all duration-150 active:cursor-grabbing';
+  'flex flex-col gap-0 px-3 py-3 bg-[var(--panel2)] border border-[var(--border)] rounded-[var(--r-lg,14px)] mb-2 cursor-grab hover:brightness-[0.97] transition-all duration-150 active:cursor-grabbing';
+
+/** The card takes its quest's colour: a soft fill and edge, so colour tells rows apart. */
+const tint = (color: string) => ({
+  backgroundColor: `color-mix(in oklab, ${color} 12%, transparent)`,
+  borderColor: `color-mix(in oklab, ${color} 28%, transparent)`,
+});
 const cardDone = 'opacity-50';
 const cardSaga = 'border-[oklch(0.74_0.17_85_/_0.35)] bg-[oklch(0.74_0.17_85_/_0.04)]';
 const cardCancelled =
   'opacity-40 border-dashed border-[oklch(0.72_0.18_5_/_0.35)] bg-[oklch(0.72_0.18_5_/_0.03)]';
 
 const checkBtn =
-  'w-[22px] h-[22px] sm:w-[18px] sm:h-[18px] rounded-full border border-[var(--border)] flex items-center justify-center text-[10px] sm:text-[9px] font-bold transition-all hover:border-[var(--mint)] shrink-0';
+  'w-[28px] h-[28px] rounded-full border-[1.5px] border-[var(--border)] flex items-center justify-center text-[14px] font-extrabold transition-all hover:border-[var(--mint)] shrink-0';
 const checkBtnDone = 'bg-[var(--mint)] border-[var(--mint)] text-[var(--on-mint)]';
 const checkBtnLogged = 'bg-[var(--cyan)] border-[var(--cyan)] text-[var(--on-mint)]';
 
-const diffBadge =
-  'min-w-[17px] h-[17px] px-1 rounded-sm flex items-center justify-center text-[9px] font-black font-[var(--font-title)] border border-[var(--border)] shrink-0';
-const diffBadgeFallback = 'bg-[var(--panel3)] text-[var(--text-mid)]';
-
 const titleText =
-  'text-[12px] sm:text-[11px] font-semibold text-[var(--text-hi)] leading-[1.3] truncate flex-1';
+  'text-[15px] font-bold text-[var(--text-hi)] leading-[1.25] truncate [font-family:var(--font-title)]';
 
 const moreActionsBtn =
   'w-[26px] h-[26px] flex items-center justify-center text-[15px] leading-none text-[var(--text-lo)] rounded hover:text-[var(--text-hi)] hover:bg-[var(--panel3)] transition-colors cursor-pointer';
@@ -821,7 +834,3 @@ const inlineBadge =
 
 const actionBtn =
   'w-[18px] h-[18px] flex items-center justify-center text-[11px] text-[var(--text-lo)] rounded hover:text-[var(--text-hi)] hover:bg-[var(--panel3)] transition-colors cursor-pointer';
-
-const chevron =
-  'text-[10px] text-[var(--text-lo)] transition-transform duration-150 leading-none select-none';
-const chevronOpen = 'rotate-90';

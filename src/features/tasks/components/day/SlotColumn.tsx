@@ -261,13 +261,6 @@ function DraggableCard({
       {...attributes}
       {...listeners}
     >
-      {/* Time — outside the card */}
-      <div className="w-[34px] shrink-0 text-right pt-[10px]">
-        <span className="text-[9px] font-mono leading-none text-[var(--text-lo)] tabular-nums">
-          {task.startTime ?? '--:--'}
-        </span>
-      </div>
-
       <div className="flex-1 min-w-0">
         <QuestCard
           task={task}
