@@ -6,8 +6,8 @@ An assistant that reads the user's tasks and proposes creating, editing, complet
 
 1. Client sends the new message to `POST /api/v1/agent` with its local `today` (`YYYY-MM-DD`) and `timezone`. Earlier turns are read from the stored conversation, not sent by the client.
 2. The server runs a tool-use loop (max 8 steps; if it runs out, one last call without tools makes the model answer from what the tools already returned, instead of failing) against an OpenAI-compatible LLM.
-3. **Read tools** (`list_tasks`, `list_categories`, `list_sessions`, `list_habits`) run immediately, scoped to the caller.
-4. **Write tools** (`create_task`, `update_task`, `complete_task`, `delete_task`, `create_session`, `update_session`, `delete_session`, `create_habit`, `update_habit`, `set_habit_active`, `delete_habit`) never write. They are stored as a `proposal` item with a one-line `summary` for the confirm card.
+3. **Read tools** (`list_tasks`, `list_categories`, `list_sessions`, `list_habits`, `list_notes`) run immediately, scoped to the caller.
+4. **Write tools** (`create_task`, `update_task`, `complete_task`, `delete_task`, `create_session`, `update_session`, `delete_session`, `create_habit`, `update_habit`, `set_habit_active`, `delete_habit`, `create_note`) never write. They are stored as a `proposal` item with a one-line `summary` for the confirm card.
 5. The user decides with `POST /api/v1/agent/execute { proposalId, decision }`. The actions are read from the stored proposal, never from the request, so a client cannot run anything the assistant did not propose. The claim is atomic: a proposal is decided once.
 
 ## Conversation storage
@@ -44,6 +44,7 @@ All need the Bearer token like every other `/api/v1` route.
 - `update_task` changes only the fields passed; `null` clears `endDate`, `duration` or `note`. It cannot set `done` (that is `complete_task`).
 - Sessions after `update_task`: a **single-day** task's `planned` sessions are forced onto its `startDate` (and onto `startTime` / `duration` when given); with none booked, a `startTime` books one. `done` / `missed` sessions stay where they happened. A **multi-day** task's sessions are not moved — the result counts any now outside its days — and are edited one by one with `list_sessions` + `create_session` / `update_session` / `delete_session`, which keep each session inside the task's range.
 - `list_tasks` with a range returns every task with a day in it (date overlap), so a multi-day task begun earlier still shows.
+- Note tools live in `note-tools.ts`: only `list_notes` (open by default — no `archivedAt`) and `create_note` (the user's words, unedited). Editing, deleting and marking notes done stay out, as decided in [quick-notes.md](quick-notes.md).
 - Habit tools live in `habit-tools.ts`. `update_habit` with `schedule` replaces the whole schedule. `set_habit_active` pauses/resumes (history kept; paused habits drop out of quests and stats). `delete_habit` is the same hard delete as `DELETE /habits/:id`, logs included — the prompt steers "stop for a while" to pause instead.
 - `delete_task` is the same soft delete as `DELETE /tasks/:id`: `active: false`, and the task's `ScheduleBlock`s are removed.
 - Writes on an existing task look it up while proposing, so the confirm card names the task and a bad id goes back to the model as an error instead of reaching the user.

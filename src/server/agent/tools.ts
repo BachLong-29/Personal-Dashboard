@@ -17,6 +17,15 @@ import {
 } from './habit-tools';
 import type { ToolSpec } from './llm';
 import {
+  NOTE_READ_TOOLS,
+  NOTE_WRITE_TOOLS,
+  executeNoteAction,
+  proposeNoteAction,
+  runNoteReadTool,
+  type NoteReadToolName,
+  type NoteWriteToolName,
+} from './note-tools';
+import {
   PLAN_READ_TOOLS,
   PLAN_WRITE_TOOLS,
   planSchedule,
@@ -205,14 +214,24 @@ const WRITE_TOOLS = {
   },
 } as const;
 
-export type ReadToolName = keyof typeof READ_TOOLS | HabitReadToolName | PlanReadToolName;
-export type WriteToolName = keyof typeof WRITE_TOOLS | HabitWriteToolName | PlanWriteToolName;
+export type ReadToolName =
+  | keyof typeof READ_TOOLS
+  | HabitReadToolName
+  | PlanReadToolName
+  | NoteReadToolName;
+export type WriteToolName =
+  | keyof typeof WRITE_TOOLS
+  | HabitWriteToolName
+  | PlanWriteToolName
+  | NoteWriteToolName;
 
 const isPlanRead = (name: string): name is PlanReadToolName => name in PLAN_READ_TOOLS;
 const isPlanWrite = (name: string): name is PlanWriteToolName => name in PLAN_WRITE_TOOLS;
 
 const isHabitRead = (name: string): name is HabitReadToolName => name in HABIT_READ_TOOLS;
 const isHabitWrite = (name: string): name is HabitWriteToolName => name in HABIT_WRITE_TOOLS;
+const isNoteRead = (name: string): name is NoteReadToolName => name in NOTE_READ_TOOLS;
+const isNoteWrite = (name: string): name is NoteWriteToolName => name in NOTE_WRITE_TOOLS;
 
 export type PendingAction = {
   tool: WriteToolName;
@@ -281,17 +300,19 @@ export const TOOL_SPECS: ToolSpec[] = [
   ...Object.entries(READ_TOOLS).map(([name, tool]) => spec(name, tool)),
   ...Object.entries(HABIT_READ_TOOLS).map(([name, tool]) => spec(name, tool)),
   ...Object.entries(PLAN_READ_TOOLS).map(([name, tool]) => spec(name, tool)),
+  ...Object.entries(NOTE_READ_TOOLS).map(([name, tool]) => spec(name, tool)),
   ...Object.entries(WRITE_TOOLS).map(([name, tool]) => spec(name, tool)),
   ...Object.entries(HABIT_WRITE_TOOLS).map(([name, tool]) => spec(name, tool)),
   ...Object.entries(PLAN_WRITE_TOOLS).map(([name, tool]) => spec(name, tool)),
+  ...Object.entries(NOTE_WRITE_TOOLS).map(([name, tool]) => spec(name, tool)),
 ];
 
 export function isReadTool(name: string): name is ReadToolName {
-  return name in READ_TOOLS || isHabitRead(name) || isPlanRead(name);
+  return name in READ_TOOLS || isHabitRead(name) || isPlanRead(name) || isNoteRead(name);
 }
 
 export function isWriteTool(name: string): name is WriteToolName {
-  return name in WRITE_TOOLS || isHabitWrite(name) || isPlanWrite(name);
+  return name in WRITE_TOOLS || isHabitWrite(name) || isPlanWrite(name) || isNoteWrite(name);
 }
 
 function brief(task: ITask) {
@@ -319,6 +340,7 @@ export async function runReadTool(
 ): Promise<unknown> {
   if (isHabitRead(name)) return runHabitReadTool(name, rawArgs, userId);
   if (isPlanRead(name)) return runPlanReadTool(name, rawArgs, userId, ctx);
+  if (isNoteRead(name)) return runNoteReadTool(name, rawArgs, userId);
 
   const parsed = READ_TOOLS[name].schema.safeParse(rawArgs);
   if (!parsed.success) return { error: parsed.error.issues.map((i) => i.message).join('; ') };
@@ -438,6 +460,11 @@ export async function proposeAction(
 
   if (isHabitWrite(name)) {
     const proposal = await proposeHabitAction(name, rawArgs, userId);
+    return 'error' in proposal ? proposal : { tool: name, ...proposal };
+  }
+
+  if (isNoteWrite(name)) {
+    const proposal = proposeNoteAction(name, rawArgs);
     return 'error' in proposal ? proposal : { tool: name, ...proposal };
   }
 
@@ -635,6 +662,7 @@ export async function executeAction(
   if ('error' in proposal) return { ok: false, message: proposal.error };
 
   if (isHabitWrite(name)) return executeHabitAction(name, proposal.args, userId);
+  if (isNoteWrite(name)) return executeNoteAction(name, proposal.args, userId);
 
   if (name === 'create_task') {
     const args = proposal.args as z.infer<typeof createTaskArgs>;

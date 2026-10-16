@@ -11,7 +11,8 @@ export interface AgentPendingAction {
     | 'create_habit'
     | 'update_habit'
     | 'set_habit_active'
-    | 'delete_habit';
+    | 'delete_habit'
+    | 'create_note';
   args: Record<string, unknown>;
   /** One line for the confirm card, e.g. `Create "Study" on 2026-10-16`. */
   summary: string;
