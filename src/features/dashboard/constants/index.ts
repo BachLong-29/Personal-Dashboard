@@ -55,7 +55,8 @@ export const ESCALATIONS: Escalation[] = [
 ];
 
 export const DEFAULT_SETTINGS: DashboardSettings = {
-  showGuildPanel: true,
+  // The "This Week" panel is off: its room goes to Projects. Flip to bring it back.
+  showGuildPanel: false,
   timerDuration: 25,
   characterName: 'Aria Solveig',
   animationsEnabled: true,

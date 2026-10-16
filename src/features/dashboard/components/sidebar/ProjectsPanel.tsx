@@ -74,7 +74,10 @@ const panelBase =
   "bg-[var(--panel)] border border-[var(--border)] rounded-[var(--r)] overflow-hidden relative before:content-[''] before:absolute before:inset-0 before:pointer-events-none before:rounded-[inherit] before:[background-image:repeating-linear-gradient(0deg,transparent,transparent_28px,oklch(1_0_0_/_0.012)_28px,oklch(1_0_0_/_0.012)_29px),repeating-linear-gradient(90deg,transparent,transparent_28px,oklch(1_0_0_/_0.012)_28px,oklch(1_0_0_/_0.012)_29px)]";
 const panelBorder =
   'border-[oklch(0.66_0.22_295_/_0.35)] shadow-[0_0_20px_oklch(0.66_0.22_295_/_0.06),inset_0_0_20px_oklch(0.66_0.22_295_/_0.03)]';
-const projectsPanel = 'shrink-0 flex flex-col max-h-[320px]';
+// Taller than it was: up to 480px in a stacked layout, and in the wide right column it
+// takes whatever height the column has left, scrolling its list inside.
+const projectsPanel =
+  'shrink-0 flex flex-col max-h-[480px] xl:shrink xl:flex-1 xl:min-h-[320px] xl:max-h-none';
 
 const panelHeader =
   'flex items-center gap-2 px-[14px] pt-[10px] pb-[8px] border-b border-[var(--border)] shrink-0';
