@@ -64,7 +64,11 @@
       "events": "Sự kiện"
     },
     "hint": "Gõ để tìm task, habit, quest, dự án, trang…",
-    "empty": "Không có kết quả cho \"{query}\""
+    "empty": "Không có kết quả cho \"{query}\"",
+    "askAssistant": {
+      "group": "Trợ lý",
+      "label": "Hỏi Trợ lý: \"{query}\""
+    }
   },
   "auth": {
     "login": "Đăng nhập",

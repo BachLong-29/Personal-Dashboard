@@ -34,6 +34,13 @@ interface UIState {
   /** Task ID to restore + edit after a "Quest Failed" notification click */
   pendingRestoreTaskId: string | null;
   pendingScheduleNav: PendingScheduleNav | null;
+  /**
+   * A message handed to the assistant from elsewhere (the Ctrl+K palette). The
+   * assistant page sends it once on arrival. Kept here rather than in the URL
+   * so a reload does not send it a second time.
+   */
+  pendingAssistantPrompt: string | null;
+  setPendingAssistantPrompt: (prompt: string | null) => void;
   addToast: (toast: Omit<Toast, 'id'>) => void;
   removeToast: (id: string) => void;
   toggleSidebar: () => void;
@@ -70,6 +77,7 @@ export const useUIStore = create<UIState>()(
       notesOpen: false,
       pendingRestoreTaskId: null,
       pendingScheduleNav: null,
+      pendingAssistantPrompt: null,
       setProjectViewMode: (mode) => set({ projectViewMode: mode }),
       toggleHideEmptyKanbanColumns: () =>
         set((state) => ({ hideEmptyKanbanColumns: !state.hideEmptyKanbanColumns })),
@@ -87,6 +95,7 @@ export const useUIStore = create<UIState>()(
       closeShareAgenda: () => set({ shareAgendaOpen: false }),
       setPendingRestoreTaskId: (id) => set({ pendingRestoreTaskId: id }),
       setPendingScheduleNav: (nav) => set({ pendingScheduleNav: nav }),
+      setPendingAssistantPrompt: (prompt) => set({ pendingAssistantPrompt: prompt }),
       addToast: (toast) =>
         set((state) => ({
           toasts: [...state.toasts, { ...toast, id: crypto.randomUUID() }],
