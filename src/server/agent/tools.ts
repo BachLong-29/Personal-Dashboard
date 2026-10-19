@@ -15,6 +15,15 @@ import {
   type HabitReadToolName,
   type HabitWriteToolName,
 } from './habit-tools';
+import {
+  EVENT_READ_TOOLS,
+  EVENT_WRITE_TOOLS,
+  executeEventAction,
+  proposeEventAction,
+  runEventReadTool,
+  type EventReadToolName,
+  type EventWriteToolName,
+} from './event-tools';
 import type { ToolSpec } from './llm';
 import {
   NOTE_READ_TOOLS,
@@ -218,18 +227,22 @@ export type ReadToolName =
   | keyof typeof READ_TOOLS
   | HabitReadToolName
   | PlanReadToolName
-  | NoteReadToolName;
+  | NoteReadToolName
+  | EventReadToolName;
 export type WriteToolName =
   | keyof typeof WRITE_TOOLS
   | HabitWriteToolName
   | PlanWriteToolName
-  | NoteWriteToolName;
+  | NoteWriteToolName
+  | EventWriteToolName;
 
 const isPlanRead = (name: string): name is PlanReadToolName => name in PLAN_READ_TOOLS;
 const isPlanWrite = (name: string): name is PlanWriteToolName => name in PLAN_WRITE_TOOLS;
 
 const isHabitRead = (name: string): name is HabitReadToolName => name in HABIT_READ_TOOLS;
 const isHabitWrite = (name: string): name is HabitWriteToolName => name in HABIT_WRITE_TOOLS;
+const isEventRead = (name: string): name is EventReadToolName => name in EVENT_READ_TOOLS;
+const isEventWrite = (name: string): name is EventWriteToolName => name in EVENT_WRITE_TOOLS;
 const isNoteRead = (name: string): name is NoteReadToolName => name in NOTE_READ_TOOLS;
 const isNoteWrite = (name: string): name is NoteWriteToolName => name in NOTE_WRITE_TOOLS;
 
@@ -301,18 +314,32 @@ export const TOOL_SPECS: ToolSpec[] = [
   ...Object.entries(HABIT_READ_TOOLS).map(([name, tool]) => spec(name, tool)),
   ...Object.entries(PLAN_READ_TOOLS).map(([name, tool]) => spec(name, tool)),
   ...Object.entries(NOTE_READ_TOOLS).map(([name, tool]) => spec(name, tool)),
+  ...Object.entries(EVENT_READ_TOOLS).map(([name, tool]) => spec(name, tool)),
   ...Object.entries(WRITE_TOOLS).map(([name, tool]) => spec(name, tool)),
   ...Object.entries(HABIT_WRITE_TOOLS).map(([name, tool]) => spec(name, tool)),
   ...Object.entries(PLAN_WRITE_TOOLS).map(([name, tool]) => spec(name, tool)),
   ...Object.entries(NOTE_WRITE_TOOLS).map(([name, tool]) => spec(name, tool)),
+  ...Object.entries(EVENT_WRITE_TOOLS).map(([name, tool]) => spec(name, tool)),
 ];
 
 export function isReadTool(name: string): name is ReadToolName {
-  return name in READ_TOOLS || isHabitRead(name) || isPlanRead(name) || isNoteRead(name);
+  return (
+    name in READ_TOOLS ||
+    isHabitRead(name) ||
+    isPlanRead(name) ||
+    isNoteRead(name) ||
+    isEventRead(name)
+  );
 }
 
 export function isWriteTool(name: string): name is WriteToolName {
-  return name in WRITE_TOOLS || isHabitWrite(name) || isPlanWrite(name) || isNoteWrite(name);
+  return (
+    name in WRITE_TOOLS ||
+    isHabitWrite(name) ||
+    isPlanWrite(name) ||
+    isNoteWrite(name) ||
+    isEventWrite(name)
+  );
 }
 
 function brief(task: ITask) {
@@ -341,6 +368,7 @@ export async function runReadTool(
   if (isHabitRead(name)) return runHabitReadTool(name, rawArgs, userId);
   if (isPlanRead(name)) return runPlanReadTool(name, rawArgs, userId, ctx);
   if (isNoteRead(name)) return runNoteReadTool(name, rawArgs, userId);
+  if (isEventRead(name)) return runEventReadTool(name, rawArgs, userId);
 
   const parsed = READ_TOOLS[name].schema.safeParse(rawArgs);
   if (!parsed.success) return { error: parsed.error.issues.map((i) => i.message).join('; ') };
@@ -465,6 +493,11 @@ export async function proposeAction(
 
   if (isNoteWrite(name)) {
     const proposal = proposeNoteAction(name, rawArgs);
+    return 'error' in proposal ? proposal : { tool: name, ...proposal };
+  }
+
+  if (isEventWrite(name)) {
+    const proposal = await proposeEventAction(name, rawArgs, userId);
     return 'error' in proposal ? proposal : { tool: name, ...proposal };
   }
 
@@ -663,6 +696,7 @@ export async function executeAction(
 
   if (isHabitWrite(name)) return executeHabitAction(name, proposal.args, userId);
   if (isNoteWrite(name)) return executeNoteAction(name, proposal.args, userId);
+  if (isEventWrite(name)) return executeEventAction(name, proposal.args, userId);
 
   if (name === 'create_task') {
     const args = proposal.args as z.infer<typeof createTaskArgs>;

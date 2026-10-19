@@ -50,6 +50,7 @@ export function useDecideProposal() {
       qc.invalidateQueries({ queryKey: ['habits'] });
       qc.invalidateQueries({ queryKey: ['habit-logs'] });
       qc.invalidateQueries({ queryKey: ['notes'] });
+      qc.invalidateQueries({ queryKey: queryKeys.events.all });
       qc.invalidateQueries({ queryKey: queryKeys.quests.all });
       qc.invalidateQueries({ queryKey: ['calendar-day'] });
       qc.invalidateQueries({ queryKey: queryKeys.calendar.all });
