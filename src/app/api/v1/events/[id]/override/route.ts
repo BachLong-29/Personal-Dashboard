@@ -4,6 +4,7 @@ import type { NextRequest } from 'next/server';
 import { connectDB } from '@/libs/mongodb';
 import { getAuthUser } from '@/server/helpers/get-auth-user';
 import { EventModel } from '@/server/models/event.model';
+import { applyEventOverride } from '@/server/services/event-override';
 import {
   asyncHandler,
   errorResponse,
@@ -45,23 +46,8 @@ export const POST = asyncHandler(async (req: NextRequest, ctx) => {
     return errorResponse('Only a repeating event has occurrences to override', 400);
   }
 
-  // One override per occurrence — amending the same day again replaces it.
-  const event = await EventModel.findOneAndUpdate(
-    { userId: user.sub, seriesRef: series._id, overrideDate: new Date(data.date) },
-    {
-      $set: {
-        userId: user.sub,
-        seriesRef: series._id,
-        overrideDate: new Date(data.date),
-        startDate: new Date(data.newDate ?? data.date),
-        cancelled: data.cancelled,
-        // Display fields stay on the series so a rename reaches this occurrence.
-        ...(data.startTime !== undefined && { startTime: data.startTime }),
-        ...(data.duration !== undefined && { duration: data.duration }),
-      },
-    },
-    { new: true, upsert: true, runValidators: true },
-  );
+  const event = await applyEventOverride(user.sub, series._id, data);
+  if (!event) return notFoundResponse('Event not found');
 
   return successResponse(
     serialize(event),
