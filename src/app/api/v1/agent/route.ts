@@ -40,7 +40,12 @@ export const POST = asyncHandler(async (req: NextRequest) => {
       userId: user.sub,
       today: data.today ?? new Date().toISOString().slice(0, 10),
       timezone: data.timezone ?? 'UTC',
+      signal: req.signal,
     });
+
+    // Stopped while the model was still answering: the client is gone and chose not to have
+    // this turn, so it is not kept.
+    if (req.signal.aborted) return errorResponse('The request was cancelled.', 499);
 
     const items = await appendItems(user.sub, [
       { kind: 'user', text: data.message },

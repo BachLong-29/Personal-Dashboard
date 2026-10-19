@@ -15,6 +15,8 @@
     "placeholder": "Hỏi hoặc mô tả một công việc…",
     "send": "Gửi",
     "thinking": "Đang suy nghĩ…",
+    "retrying": "Trợ lý đang bận — tự thử lại ({attempt}/{max})…",
+    "stop": "Dừng",
     "emptyTitle": "Hôm nay lên kế hoạch gì?",
     "emptyMessage": "Hỏi về công việc của bạn, hoặc mô tả một việc để mình đề xuất và bạn xác nhận.",
     "suggestions": {

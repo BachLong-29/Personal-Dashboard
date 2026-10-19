@@ -20,6 +20,7 @@ import {
   useClearAgentChat,
   useDecideProposal,
 } from '../hooks/useAssistant';
+import { isChatCancelled } from '../utils/chat-retry';
 import { ChatBubble } from './ChatBubble';
 import { QuickReplies } from './QuickReplies';
 import { ProposalCard, type ProposalState } from './ProposalCard';
@@ -75,7 +76,7 @@ export function AssistantPage() {
   const [confirmingClear, setConfirmingClear] = useState(false);
 
   const history = useAgentHistory();
-  const { mutate: sendChat, isPending: thinking } = useAgentChat();
+  const { mutate: sendChat, isPending: thinking, stop, retrying } = useAgentChat();
   const { mutate: decide } = useDecideProposal();
   const { mutate: clearChat, isPending: clearing } = useClearAgentChat();
 
@@ -135,7 +136,14 @@ export function AssistantPage() {
               ...items.map(fromItem),
             ]);
           },
-          onError: () => {
+          onError: (error) => {
+            if (isChatCancelled(error)) {
+              // Stopped on purpose: nothing was saved, so the message goes back to the box to
+              // be edited or sent again — unless something new is already being typed.
+              setEntries((prev) => prev.filter((e) => e.id !== pendingId));
+              setDraft((current) => current || message);
+              return;
+            }
             setEntries((prev) => [...prev, { id: newLocalId(), kind: 'error', text: t('failed') }]);
           },
         },
@@ -343,7 +351,14 @@ export function AssistantPage() {
                   <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[var(--gold)] [animation-delay:150ms]" />
                   <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[var(--gold)] [animation-delay:300ms]" />
                 </span>
-                {t('thinking')}
+                <span className="min-w-0 flex-1">
+                  {retrying
+                    ? t('retrying', { attempt: retrying.attempt, max: retrying.max })
+                    : t('thinking')}
+                </span>
+                <Button variant="ghost" size="sm" onClick={stop}>
+                  ■ {t('stop')}
+                </Button>
               </div>
             )}
           </div>

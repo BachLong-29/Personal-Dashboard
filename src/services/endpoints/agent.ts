@@ -13,9 +13,10 @@ export const agentEndpoints = {
   history: () => apiClient.get<ApiResponse<{ items: AgentChatItem[] }>>('/agent/history'),
 
   /** One assistant turn. Returns the items it added: the user's message, the reply, any proposal. */
-  chat: (payload: AgentChatPayload) =>
+  chat: (payload: AgentChatPayload, signal?: AbortSignal) =>
     apiClient.post<ApiResponse<{ items: AgentChatItem[] }>>('/agent', payload, {
       timeout: AGENT_TIMEOUT_MS,
+      signal,
     }),
 
   /** Confirms or dismisses a proposal. The server holds the actions; only the id travels. */

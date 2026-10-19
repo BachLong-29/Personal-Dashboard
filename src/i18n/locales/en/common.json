@@ -15,6 +15,8 @@
     "placeholder": "Ask or describe a task…",
     "send": "Send",
     "thinking": "Thinking…",
+    "retrying": "Assistant is busy — trying again ({attempt}/{max})…",
+    "stop": "Stop",
     "emptyTitle": "What should we plan?",
     "emptyMessage": "Ask about your tasks, or describe one and I will propose it for you to confirm.",
     "suggestions": {
