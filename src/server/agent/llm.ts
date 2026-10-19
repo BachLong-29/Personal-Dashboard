@@ -45,7 +45,12 @@ const DEFAULT_MODEL = 'gemini-3.8-flash';
 const DEFAULT_FALLBACKS = ['gemini-3.6-flash', 'gemini-3.5-flash-lite'];
 const TIMEOUT_MS = 30_000;
 
-export type LlmCall = (messages: ChatMessage[], tools: ToolSpec[]) => Promise<LlmReply>;
+/** `signal` aborts the call when the client gave up — stop, or the tab closed. */
+export type LlmCall = (
+  messages: ChatMessage[],
+  tools: ToolSpec[],
+  signal?: AbortSignal,
+) => Promise<LlmReply>;
 
 /** Statuses worth another attempt: the provider is busy, not the request wrong. */
 const RETRYABLE = new Set([429, 500, 502, 503, 504]);
@@ -61,6 +66,7 @@ async function post(
   model: string,
   messages: ChatMessage[],
   tools: ToolSpec[],
+  signal?: AbortSignal,
 ): Promise<Response> {
   try {
     return await fetch(`${baseUrl}/chat/completions`, {
@@ -71,14 +77,16 @@ async function post(
         messages,
         ...(tools.length > 0 ? { tools, tool_choice: 'auto' } : {}),
       }),
-      signal: AbortSignal.timeout(TIMEOUT_MS),
+      signal: signal
+        ? AbortSignal.any([signal, AbortSignal.timeout(TIMEOUT_MS)])
+        : AbortSignal.timeout(TIMEOUT_MS),
     });
   } catch {
     throw new LlmError('The AI assistant did not answer in time. Try again.', 504);
   }
 }
 
-export const chatCompletion: LlmCall = async (messages, tools) => {
+export const chatCompletion: LlmCall = async (messages, tools, signal) => {
   const apiKey = process.env.LLM_API_KEY ?? process.env.GEMINI_API_KEY;
   if (!apiKey) throw new LlmError('The AI assistant is not configured on this server.', 503);
 
@@ -98,7 +106,9 @@ export const chatCompletion: LlmCall = async (messages, tools) => {
   for (const model of models) {
     for (let attempt = 0; attempt <= BACKOFF_MS.length; attempt++) {
       if (attempt > 0) await sleep(BACKOFF_MS[attempt - 1] ?? 1_000);
-      res = await post(baseUrl, apiKey, model, messages, tools);
+      // No point trying the next attempt or model once nobody is waiting.
+      if (signal?.aborted) throw new LlmError('The request was cancelled.', 499);
+      res = await post(baseUrl, apiKey, model, messages, tools, signal);
       if (res.ok || !RETRYABLE.has(res.status)) break;
       console.warn(`[agent] ${model} answered ${res.status}, attempt ${attempt + 1}`);
     }
@@ -107,11 +117,10 @@ export const chatCompletion: LlmCall = async (messages, tools) => {
 
   if (!res) throw new LlmError('The AI assistant is unavailable right now.', 502);
 
+  // Busy is always 429, whatever the provider said: 503 is kept for "not configured", so a
+  // client can retry the one and not the other.
   if (res.status === 429 || res.status === 503) {
-    throw new LlmError(
-      'The AI assistant is busy right now. Please try again in a moment.',
-      res.status,
-    );
+    throw new LlmError('The AI assistant is busy right now. Please try again in a moment.', 429);
   }
   if (!res.ok) {
     console.error('[agent] LLM error', res.status, await res.text().catch(() => ''));

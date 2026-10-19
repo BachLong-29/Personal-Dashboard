@@ -1,10 +1,13 @@
 'use client';
 
+import { useCallback, useRef, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { agentEndpoints } from '@/services/endpoints/agent';
 import { queryKeys } from '@/constants/query-keys';
 import type { AgentChatPayload } from '@/types';
+
+import { sendWithRetry } from '../utils/chat-retry';
 
 const HISTORY_KEY = ['agent', 'history'] as const;
 
@@ -18,12 +21,38 @@ export function useAgentHistory() {
   });
 }
 
-/** One assistant turn. Not cached: every send is a fresh question. */
+/**
+ * One assistant turn. Not cached: every send is a fresh question.
+ *
+ * When the assistant is busy or unreachable the same message is sent again on its own, a few
+ * times, with a growing wait. `stop` cancels the request in flight (and the server's model call
+ * with it) or the wait between tries. `retrying` says which try is next, for the status line.
+ */
 export function useAgentChat() {
-  return useMutation({
-    mutationFn: async (payload: AgentChatPayload) =>
-      (await agentEndpoints.chat(payload)).data.data?.items ?? [],
+  const controller = useRef<AbortController | null>(null);
+  const [retrying, setRetrying] = useState<{ attempt: number; max: number } | null>(null);
+
+  const mutation = useMutation({
+    mutationFn: async (payload: AgentChatPayload) => {
+      const abort = new AbortController();
+      controller.current = abort;
+      try {
+        return await sendWithRetry(
+          (signal) =>
+            agentEndpoints.chat(payload, signal).then((res) => res.data.data?.items ?? []),
+          abort.signal,
+          (attempt, max) => setRetrying({ attempt, max }),
+        );
+      } finally {
+        controller.current = null;
+        setRetrying(null);
+      }
+    },
   });
+
+  const stop = useCallback(() => controller.current?.abort(), []);
+
+  return { ...mutation, stop, retrying };
 }
 
 /** Confirm or dismiss a proposal; a confirm refreshes everything a task shows on. */

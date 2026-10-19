@@ -37,7 +37,7 @@ All need the Bearer token like every other `/api/v1` route.
 ## Constraints
 
 - The key stays on the server; never expose it to a client bundle.
-- Provider errors map to friendly statuses: 429 busy, 504 timeout, 502 other, 503 not configured.
+- Provider errors map to friendly statuses: 429 busy (a provider 503 is reported as 429 too, so 503 only ever means not configured), 504 timeout, 502 other, 503 not configured.
 - Free tiers may use submitted content to improve the provider's models. Task names, dates and categories are sent; notes are only sent when the user types them.
 - `create_task` with `startTime` (24-hour `HH:MM`, requires `startDate`) also books a session on that day at that hour, the same `ScheduleBlock` record `POST /schedule-blocks` writes. Length is `duration`, default 60 min; without a time only the task is created.
 - `complete_task` refuses multi-day tasks: those are ticked per day through task logs in the app.
@@ -90,4 +90,6 @@ Route `/assistant` (`src/app/[locale]/(protected)/assistant/page.tsx`), reached 
 
 - Mobile-first: one centred column (`max-w-2xl`), input pinned to the bottom, equal-width buttons.
 - Enter sends, Shift+Enter adds a line. The stored conversation loads on open; "New chat" clears it (with a confirm).
+- A failed send is retried by the client on its own: up to 3 more times (waits 2 s, 4 s, 8 s) on 429, 502, 504 or no response, with "Assistant is busy — trying again (n/3)…" in the status line. Not retried: 503 (not configured), other 4xx, a client-side timeout (the server may still finish and store the turn). Safe because the server saves a turn only after the model answered. After the last try the error line and **Try again** button appear as before.
+- **Stop** (■ in the status line) aborts the request or the wait between tries; the abort reaches the model call (`req.signal` → `LlmCall`) and nothing is stored. The message returns to the input box unless something new is being typed.
 - After a confirm the task, session, habit, quest, calendar and profile queries are invalidated.

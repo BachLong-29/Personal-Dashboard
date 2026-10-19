@@ -53,8 +53,10 @@ export async function runAgent(params: {
   timezone: string;
   /** Swappable so the loop can be exercised without a network. */
   llm?: LlmCall;
+  /** Fires when the client stopped waiting; the model call is cut short with it. */
+  signal?: AbortSignal;
 }): Promise<AgentResult> {
-  const { history, userId, today, timezone, llm = chatCompletion } = params;
+  const { history, userId, today, timezone, llm = chatCompletion, signal } = params;
 
   const messages: ChatMessage[] = [
     { role: 'system', content: systemPrompt(today, timezone) },
@@ -65,7 +67,7 @@ export async function runAgent(params: {
   const pendingActions: PendingAction[] = [];
 
   for (let step = 0; step < MAX_STEPS; step++) {
-    const reply = await llm(messages, TOOL_SPECS);
+    const reply = await llm(messages, TOOL_SPECS, signal);
 
     if (reply.toolCalls.length === 0) {
       return { reply: reply.content?.trim() || 'Done.', pendingActions };
@@ -132,7 +134,7 @@ export async function runAgent(params: {
       content:
         'Stop calling tools. Answer now, briefly, using only what the tool results above already show. If something is still unknown, say so.',
     });
-    const wrapUp = await llm(messages, []);
+    const wrapUp = await llm(messages, [], signal);
     const text = wrapUp.content?.trim();
     if (text) return { reply: text, pendingActions };
   } catch {
