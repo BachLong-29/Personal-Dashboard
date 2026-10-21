@@ -23,6 +23,19 @@ export interface AgentPendingAction {
   summary: string;
 }
 
+/**
+ * What a confirmed change touched, so the chat can offer a way to it. A kind and an id rather
+ * than a URL: the web and the app each know where that kind lives.
+ */
+export interface AgentTarget {
+  kind: 'task' | 'habit' | 'event' | 'note';
+  id: string;
+  /** The name as saved, for a page that can only search for it. */
+  label: string;
+  /** `YYYY-MM-DD` the change is about, when it is about one day. */
+  date?: string;
+}
+
 /** `open` waits on the user; the other two are final. */
 export type AgentProposalState = 'open' | 'done' | 'dismissed';
 
@@ -42,6 +55,8 @@ export type AgentChatItem =
       kind: 'proposal';
       actions: AgentPendingAction[];
       state: AgentProposalState;
+      /** Once done: what the changes touched. Deletions leave nothing to open. */
+      targets?: AgentTarget[];
       createdAt: string;
     };
 
@@ -56,12 +71,15 @@ export interface AgentChatPayload {
 export interface AgentActionResult {
   ok: boolean;
   message: string;
+  target?: AgentTarget;
 }
 
 export interface AgentDecisionResult {
   /** `open` again when nothing went through, so the user can retry. */
   state: AgentProposalState;
   results: AgentActionResult[];
+  /** When done: what the changes touched, deduplicated. */
+  targets?: AgentTarget[];
   /** Items the decision added to the conversation (the outcome message). */
   items: AgentChatItem[];
 }

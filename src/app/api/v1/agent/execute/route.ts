@@ -3,7 +3,12 @@ import type { NextRequest } from 'next/server';
 
 import { connectDB } from '@/libs/mongodb';
 import { getAuthUser } from '@/server/helpers/get-auth-user';
-import { appendItems, claimProposal, reopenProposal } from '@/server/agent/chat-store';
+import {
+  appendItems,
+  claimProposal,
+  reopenProposal,
+  setProposalTargets,
+} from '@/server/agent/chat-store';
 import { executeAction } from '@/server/agent/tools';
 import { asyncHandler, errorResponse, successResponse, unauthorizedResponse } from '@/server';
 import { validateBody } from '@/server/validate';
@@ -48,9 +53,20 @@ export const POST = asyncHandler(async (req: NextRequest) => {
     return successResponse({ state: 'open' as const, results, items: [] });
   }
 
+  // The same thing touched twice (edit, then book) is one place to go.
+  const seen = new Set<string>();
+  const targets = results.flatMap((result) => {
+    if (!result.ok || !result.target) return [];
+    const key = `${result.target.kind}:${result.target.id}`;
+    if (seen.has(key)) return [];
+    seen.add(key);
+    return [result.target];
+  });
+  await setProposalTargets(user.sub, data.proposalId, targets);
+
   // Said in the chat as well, so the model knows the change really happened.
   const items = await appendItems(user.sub, [
     { kind: 'assistant', text: results.map((result) => result.message).join('\n') },
   ]);
-  return successResponse({ state: 'done' as const, results, items });
+  return successResponse({ state: 'done' as const, results, targets, items });
 });

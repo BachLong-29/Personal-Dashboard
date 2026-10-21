@@ -37,7 +37,17 @@
     "newChatConfirm": "Clear chat",
     "clearFailed": "Could not clear the chat. Try again.",
     "quickReplies": "Quick replies",
-    "retry": "Try again"
+    "retry": "Try again",
+    "open": {
+      "task": "View task",
+      "tasks": "View tasks",
+      "event": "View event",
+      "events": "View events",
+      "habit": "View habit",
+      "habits": "View habits",
+      "note": "View notes",
+      "notes": "View notes"
+    }
   },
   "nav": {
     "home": "Home",

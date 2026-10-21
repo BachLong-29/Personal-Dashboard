@@ -37,7 +37,17 @@
     "newChatConfirm": "Xoá cuộc trò chuyện",
     "clearFailed": "Không xoá được cuộc trò chuyện. Thử lại nhé.",
     "quickReplies": "Trả lời nhanh",
-    "retry": "Thử lại"
+    "retry": "Thử lại",
+    "open": {
+      "task": "Xem task",
+      "tasks": "Xem các task",
+      "event": "Xem sự kiện",
+      "events": "Xem các sự kiện",
+      "habit": "Xem thói quen",
+      "habits": "Xem các thói quen",
+      "note": "Xem ghi chú",
+      "notes": "Xem ghi chú"
+    }
   },
   "nav": {
     "home": "Trang chủ",

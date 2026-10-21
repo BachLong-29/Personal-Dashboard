@@ -24,6 +24,8 @@ import {
   type EventReadToolName,
   type EventWriteToolName,
 } from './event-tools';
+import type { AgentTarget } from '@/types/agent';
+
 import type { ToolSpec } from './llm';
 import {
   NOTE_READ_TOOLS,
@@ -679,7 +681,12 @@ export async function proposeActions(
   };
 }
 
-export type ExecuteResult = { ok: boolean; message: string };
+/** Where a confirmed task change can be opened from the chat. */
+function taskTarget(task: { _id: unknown; name: string }, date?: string): AgentTarget {
+  return { kind: 'task', id: String(task._id), label: task.name, ...(date ? { date } : {}) };
+}
+
+export type ExecuteResult = { ok: boolean; message: string; target?: AgentTarget };
 
 /** Performs a confirmed write. Everything is re-validated and scoped to `userId`. */
 export async function executeAction(
@@ -724,7 +731,7 @@ export async function executeAction(
     });
 
     if (!args.startTime || !args.startDate || !minutes) {
-      return { ok: true, message: `Created "${task.name}".` };
+      return { ok: true, message: `Created "${task.name}".`, target: taskTarget(task) };
     }
 
     // Same record `POST /schedule-blocks` writes: this is what puts the task on the day's
@@ -748,6 +755,7 @@ export async function executeAction(
     return {
       ok: true,
       message: `Created "${task.name}" and booked ${args.startTime} on ${args.startDate} (${minutes} min).`,
+      target: taskTarget(task, args.startDate),
     };
   }
 
@@ -795,10 +803,10 @@ export async function executeAction(
         outsideRange(task, ymdOf(b.date) ?? ''),
       ).length;
       const note = stray > 0 ? ` ${stray} session(s) now fall outside its days.` : '';
-      return { ok: true, message: `Updated "${task.name}".${note}` };
+      return { ok: true, message: `Updated "${task.name}".${note}`, target: taskTarget(task) };
     }
 
-    if (!start) return { ok: true, message: `Updated "${task.name}".` };
+    if (!start) return { ok: true, message: `Updated "${task.name}".`, target: taskTarget(task) };
 
     // One day only: every planned session belongs on it. Done and missed ones
     // are history and stay where they happened.
@@ -815,6 +823,7 @@ export async function executeAction(
       return {
         ok: true,
         message: `Updated "${task.name}" and moved ${moved.matchedCount} session(s) to ${start}${at}.`,
+        target: taskTarget(task, start),
       };
     }
 
@@ -831,9 +840,10 @@ export async function executeAction(
       return {
         ok: true,
         message: `Updated "${task.name}" and booked ${args.startTime} on ${start} (${minutes} min).`,
+        target: taskTarget(task, start),
       };
     }
-    return { ok: true, message: `Updated "${task.name}".` };
+    return { ok: true, message: `Updated "${task.name}".`, target: taskTarget(task) };
   }
 
   if (name === 'create_session') {
@@ -852,6 +862,7 @@ export async function executeAction(
     return {
       ok: true,
       message: `Booked "${task.name}" on ${args.date} at ${args.startTime} (${minutes} min).`,
+      target: taskTarget(task, args.date),
     };
   }
 
@@ -874,6 +885,7 @@ export async function executeAction(
     return {
       ok: true,
       message: `Moved the "${task.name}" session to ${slot(block)} (${block.duration} min).`,
+      target: taskTarget(task, ymdOf(block.date)),
     };
   }
 
@@ -898,5 +910,5 @@ export async function executeAction(
 
   task.status = 'done';
   await task.save();
-  return { ok: true, message: `Marked "${task.name}" as done.` };
+  return { ok: true, message: `Marked "${task.name}" as done.`, target: taskTarget(task) };
 }

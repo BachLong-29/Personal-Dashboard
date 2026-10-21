@@ -2,6 +2,7 @@ import { z } from 'zod';
 
 import { NoteModel } from '@/server/models/note.model';
 import type { INote } from '@/server/models/note.model';
+import type { AgentTarget } from '@/types/agent';
 
 /**
  * Quick-note tools for the assistant: read the notes, and capture a new one.
@@ -104,8 +105,12 @@ export async function executeNoteAction(
   name: NoteWriteToolName,
   args: Record<string, unknown>,
   userId: string,
-): Promise<{ ok: boolean; message: string }> {
+): Promise<{ ok: boolean; message: string; target?: AgentTarget }> {
   const { content } = args as z.infer<typeof createNoteArgs>;
-  await NoteModel.create({ userId, content });
-  return { ok: true, message: `Saved note "${preview(content)}".` };
+  const note = await NoteModel.create({ userId, content });
+  return {
+    ok: true,
+    message: `Saved note "${preview(content)}".`,
+    target: { kind: 'note', id: note._id.toString(), label: preview(content) },
+  };
 }

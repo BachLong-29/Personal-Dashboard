@@ -12,7 +12,7 @@ import { buildEmptyChar, profileToCharacter } from '@/features/dashboard/utils/c
 import { useProfile } from '@/features/profile/hooks/useProfile';
 import { todayISO } from '@/features/tasks/utils/date.utils';
 import { useUIStore } from '@/stores/ui.store';
-import type { AgentChatItem, AgentPendingAction } from '@/types';
+import type { AgentChatItem, AgentPendingAction, AgentTarget } from '@/types';
 
 import {
   useAgentChat,
@@ -32,7 +32,13 @@ import { ProposalCard, type ProposalState } from './ProposalCard';
 type Entry =
   | { id: string; kind: 'user' | 'error'; text: string }
   | { id: string; kind: 'assistant'; text: string; choices?: string[] }
-  | { id: string; kind: 'proposal'; actions: AgentPendingAction[]; state: ProposalState };
+  | {
+      id: string;
+      kind: 'proposal';
+      actions: AgentPendingAction[];
+      state: ProposalState;
+      targets?: AgentTarget[];
+    };
 
 const MAX_INPUT_LENGTH = 2000;
 /** Taller than this and the box scrolls instead of pushing the chat off screen. */
@@ -44,7 +50,13 @@ const newLocalId = () => `local-${(localId += 1)}`;
 
 function fromItem(item: AgentChatItem): Entry {
   return item.kind === 'proposal'
-    ? { id: item.id, kind: 'proposal', actions: item.actions, state: item.state }
+    ? {
+        id: item.id,
+        kind: 'proposal',
+        actions: item.actions,
+        state: item.state,
+        targets: item.targets,
+      }
     : item.kind === 'assistant'
       ? { id: item.id, kind: 'assistant', text: item.text, choices: item.choices }
       : { id: item.id, kind: 'user', text: item.text };
@@ -114,10 +126,12 @@ export function AssistantPage() {
     el.style.overflowY = wanted > MAX_INPUT_HEIGHT ? 'auto' : 'hidden';
   }, [draft]);
 
-  const patchProposal = (id: string, state: ProposalState) =>
+  const patchProposal = (id: string, state: ProposalState, targets?: AgentTarget[]) =>
     setEntries((prev) =>
       prev.map((entry) =>
-        entry.id === id && entry.kind === 'proposal' ? { ...entry, state } : entry,
+        entry.id === id && entry.kind === 'proposal'
+          ? { ...entry, state, ...(targets ? { targets } : {}) }
+          : entry,
       ),
     );
 
@@ -203,7 +217,7 @@ export function AssistantPage() {
       { proposalId: id, decision: 'confirm' },
       {
         onSuccess: (result) => {
-          patchProposal(id, result.state === 'open' ? 'open' : 'done');
+          patchProposal(id, result.state === 'open' ? 'open' : 'done', result.targets);
           if (result.items.length > 0) {
             setEntries((prev) => [...prev, ...result.items.map(fromItem)]);
           }
@@ -303,6 +317,7 @@ export function AssistantPage() {
                     key={entry.id}
                     actions={entry.actions}
                     state={entry.state}
+                    targets={entry.targets}
                     onConfirm={() => confirm(entry.id)}
                     onDismiss={() => dismiss(entry.id)}
                   />
