@@ -4,6 +4,7 @@ import { cn } from '@/libs/utils';
 import type { Task } from '@/types';
 
 import { COLOR_CSS, STATUS_COLUMNS } from '../constants';
+import { Icon } from '@/components/common/Icon';
 
 interface Props {
   tasks: Task[];
@@ -56,7 +57,9 @@ export function ProjectTaskList({ tasks, onToggleDone, onEdit, filtered }: Props
               className="w-1 h-5 rounded-full shrink-0"
               style={{ background: COLOR_CSS[t.color] }}
             />
-            <span className="text-[14px] leading-none">{t.icon}</span>
+            <span className="text-[14px] leading-none">
+              <Icon icon={t.icon} />
+            </span>
             <span
               className={cn(
                 'flex-1 min-w-0 truncate text-[13px]',

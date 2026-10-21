@@ -621,7 +621,9 @@ export function WeekView({
                             onClick={() => onNavigateTab?.('habits')}
                           >
                             <div className="flex items-center gap-1 w-full min-w-0">
-                              <span className={miniTaskIcon}>{h.icon}</span>
+                              <span className={miniTaskIcon}>
+                                <Icon icon={h.icon} />
+                              </span>
                               <span className={miniTaskName}>{h.name}</span>
                               {done && <span className={miniDone}>✓</span>}
                             </div>

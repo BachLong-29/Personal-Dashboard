@@ -138,6 +138,35 @@
     "emptyState": {
       "title": "Nothing Here"
     },
+    "iconPicker": {
+      "search": "Search icons and emoji…",
+      "upload": "Upload image",
+      "uploading": "Uploading…",
+      "quest": "Quest",
+      "emoji": "Emoji",
+      "noResults": "No icons match.",
+      "loading": "Loading emoji…",
+      "uploaded": "Uploaded image",
+      "uploadedHint": "Uploaded image — shown at icon size, so keep it simple.",
+      "removeFromLibrary": "Remove from your images",
+      "change": "Change icon",
+      "pick": "Pick icon",
+      "uploadError": {
+        "type": "Use a JPG, PNG, WebP or GIF.",
+        "size": "Image must be under 5 MB.",
+        "failed": "Upload failed. Try again."
+      },
+      "categories": {
+        "people": "Smileys & people",
+        "nature": "Animals & nature",
+        "foods": "Food & drink",
+        "activity": "Activities",
+        "places": "Travel & places",
+        "objects": "Objects",
+        "symbols": "Symbols",
+        "flags": "Flags"
+      }
+    },
     "modal": {
       "close": "Close"
     },

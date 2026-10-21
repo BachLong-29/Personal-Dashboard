@@ -52,6 +52,8 @@ export interface IUserSetting extends Document {
   compactMode: boolean;
   schedule: IScheduleSettings;
   cashLog: ICashLogSettings;
+  /** Uploaded icon images kept for reuse in the icon picker, newest first. */
+  iconLibrary: string[];
   createdAt: Date;
   updatedAt: Date;
 }
@@ -114,6 +116,7 @@ const userSettingSchema = new Schema<IUserSetting>(
       default: 'dark',
     },
     compactMode: { type: Boolean, default: false },
+    iconLibrary: { type: [String], default: [] },
     schedule: {
       dailyCapacityMinutes: { type: Number, default: 600, min: 60, max: 1440 },
       minBreakMinutes: { type: Number, default: 15, min: 0, max: 240 },

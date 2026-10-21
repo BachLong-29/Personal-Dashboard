@@ -6,6 +6,7 @@ import { ProjectBadge } from '@/components/common/ProjectBadge';
 
 import { catOf, fmtEst, priOf, COLOR_VAR, type UITask } from '../../data/mock';
 import { qcxBtnPrimary, qcxBtnGhost } from '../shared/styles';
+import { Icon } from '@/components/common/Icon';
 
 interface QuestCardMiniProps {
   task: UITask;
@@ -41,7 +42,7 @@ function HabitRow({ task, expanded, onExpand, onToggleDone }: QuestCardMiniProps
           className="text-[12px] w-4 shrink-0 text-center leading-none"
           style={{ color: catColor }}
         >
-          {icon}
+          <Icon icon={icon} />
         </span>
 
         <span

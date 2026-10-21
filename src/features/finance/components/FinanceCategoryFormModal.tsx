@@ -2,9 +2,8 @@
 
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
-import data from '@emoji-mart/data';
-import Picker from '@emoji-mart/react';
 
+import { IconPickerSheet } from '@/components/common/IconPickerSheet';
 import { Button } from '@/components/ui/Button';
 import { Switch } from '@/components/ui/Switch';
 import { Modal, ModalHead, ModalBody, ModalFoot } from '@/components/ui/Modal';
@@ -163,7 +162,8 @@ export function FinanceCategoryFormModal({
           <div className="flex items-center gap-3">
             <button
               type="button"
-              onClick={() => setShowPicker((v) => !v)}
+              onClick={() => setShowPicker(true)}
+              aria-haspopup="dialog"
               className={cn(
                 'flex h-11 w-11 items-center justify-center rounded-[var(--r-sm)] border text-[22px] transition-all',
                 showPicker
@@ -174,20 +174,16 @@ export function FinanceCategoryFormModal({
               {icon}
             </button>
           </div>
+          {/* Emoji only: category icons are printed as text in selects, labels and CSV. */}
           {showPicker && (
-            <div className="relative z-50 mt-1">
-              <Picker
-                data={data}
-                theme="dark"
-                previewPosition="none"
-                skinTonePosition="none"
-                perLine={9}
-                onEmojiSelect={(emoji: { native: string }) => {
-                  setIcon(emoji.native);
-                  setShowPicker(false);
-                }}
-              />
-            </div>
+            <IconPickerSheet
+              title={t('categories.icon')}
+              value={icon}
+              onChange={setIcon}
+              onClose={() => setShowPicker(false)}
+              allowQuest={false}
+              allowUpload={false}
+            />
           )}
         </div>
 

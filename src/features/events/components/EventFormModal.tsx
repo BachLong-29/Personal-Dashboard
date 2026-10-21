@@ -1,10 +1,9 @@
 'use client';
 
-import { useRef, useState } from 'react';
-import data from '@emoji-mart/data';
-import Picker from '@emoji-mart/react';
+import { useState } from 'react';
 
 import { Icon } from '@/components/common/Icon';
+import { IconPickerSheet } from '@/components/common/IconPickerSheet';
 import { isUploadedIcon } from '@/components/common/icon-registry';
 import { Button } from '@/components/ui/Button';
 import { DatePicker } from '@/components/ui/DatePicker';
@@ -14,8 +13,6 @@ import { Select } from '@/components/ui/Select';
 import { Switch } from '@/components/ui/Switch';
 import { useCategories } from '@/features/dashboard/hooks/useCategories';
 import { COLOR_CSS, COLOR_OPTIONS } from '@/features/projects/constants';
-import { ICON_UPLOAD_TYPES } from '@/constants/upload';
-import { useIconUpload } from '@/hooks/useIconUpload';
 import { cn } from '@/libs/utils';
 import type { EventDTO, EventFrequency, TaskColor } from '@/types';
 import type { HabitDay } from '@/types/habit';
@@ -59,9 +56,6 @@ export function EventFormModal({ open, onClose, event }: Props) {
   const [color, setColor] = useState<TaskColor>('violet');
   const [icon, setIcon] = useState(DEFAULT_EVENT_ICON);
   const [showPicker, setShowPicker] = useState(false);
-  const fileRef = useRef<HTMLInputElement>(null);
-  const { upload, uploading } = useIconUpload();
-  const [uploadError, setUploadError] = useState<string | null>(null);
   const [allDay, setAllDay] = useState(false);
   const [startTime, setStartTime] = useState('09:00');
   const [duration, setDuration] = useState('60');
@@ -88,7 +82,6 @@ export function EventFormModal({ open, onClose, event }: Props) {
       setColor(event?.color ?? 'violet');
       setIcon(event?.icon ?? DEFAULT_EVENT_ICON);
       setShowPicker(false);
-      setUploadError(null);
       setAllDay(event?.allDay ?? false);
       setStartTime(event?.startTime ?? '09:00');
       setDuration(event?.duration ? String(event.duration) : '60');
@@ -103,23 +96,6 @@ export function EventFormModal({ open, onClose, event }: Props) {
       setErrors({});
       setSaveFailed(false);
     }
-  }
-
-  async function handleIconFile(file: File) {
-    const result = await upload(file);
-    if ('url' in result) {
-      setIcon(result.url);
-      setShowPicker(false);
-      setUploadError(null);
-      return;
-    }
-    setUploadError(
-      result.error === 'type'
-        ? 'Use a JPG, PNG, WebP or GIF.'
-        : result.error === 'size'
-          ? 'Image must be under 5 MB.'
-          : 'Upload failed. Try again.',
-    );
   }
 
   const clearError = (field: keyof FormErrors) =>
@@ -205,9 +181,9 @@ export function EventFormModal({ open, onClose, event }: Props) {
           <div className="flex items-center gap-2">
             <button
               type="button"
-              onClick={() => setShowPicker((v) => !v)}
-              disabled={saving || uploading}
-              aria-expanded={showPicker}
+              onClick={() => setShowPicker(true)}
+              disabled={saving}
+              aria-haspopup="dialog"
               className={cn(
                 'flex h-11 w-11 items-center justify-center text-[22px] transition-all duration-150',
                 'rounded-[var(--r-md)] border bg-[var(--bg-2)]',
@@ -218,51 +194,19 @@ export function EventFormModal({ open, onClose, event }: Props) {
             >
               <Icon icon={icon} />
             </button>
-            <Button
-              size="sm"
-              variant="ghost"
-              disabled={saving || uploading}
-              onClick={() => fileRef.current?.click()}
-            >
-              {uploading ? '…' : 'Upload image'}
-            </Button>
-            <input
-              ref={fileRef}
-              type="file"
-              accept={ICON_UPLOAD_TYPES.join(',')}
-              className="hidden"
-              onChange={(e) => {
-                const file = e.target.files?.[0];
-                // Reset so picking the same file twice still fires a change.
-                e.target.value = '';
-                if (file) handleIconFile(file);
-              }}
-            />
           </div>
-          {uploadError && (
-            <p role="alert" className="text-[10px] text-[var(--rose)]">
-              {uploadError}
-            </p>
-          )}
           {isUploadedIcon(icon) && (
             <p className="text-[9px] text-[var(--text-lo)]">
               Uploaded image — shown at icon size, so keep it simple.
             </p>
           )}
           {showPicker && (
-            <div className="relative z-50 mt-1">
-              <Picker
-                data={data}
-                theme="dark"
-                previewPosition="none"
-                skinTonePosition="none"
-                perLine={9}
-                onEmojiSelect={(emoji: { native: string }) => {
-                  setIcon(emoji.native);
-                  setShowPicker(false);
-                }}
-              />
-            </div>
+            <IconPickerSheet
+              title="Icon"
+              value={icon}
+              onChange={setIcon}
+              onClose={() => setShowPicker(false)}
+            />
           )}
         </Field>
 

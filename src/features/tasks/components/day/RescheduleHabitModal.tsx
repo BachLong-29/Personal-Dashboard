@@ -6,6 +6,7 @@ import { cn } from '@/libs/utils';
 import { Modal, ModalBody, ModalFoot, ModalHead } from '@/components/ui/Modal';
 
 import type { UITask } from '../../data/mock';
+import { Icon } from '@/components/common/Icon';
 
 // ─── Slot presets ──────────────────────────────────────────────────────────────
 
@@ -72,7 +73,9 @@ export function RescheduleHabitModal({
         <div className="flex flex-col gap-4">
           {/* Habit identity */}
           <div className="flex items-center gap-2 p-2.5 bg-[var(--panel2)] border border-[var(--border)] rounded-[var(--r-sm)]">
-            <span className="text-[20px] leading-none shrink-0">{task.icon}</span>
+            <span className="text-[20px] leading-none shrink-0">
+              <Icon icon={task.icon} />
+            </span>
             <div className="flex-1 min-w-0">
               <div className="text-[11px] font-bold text-[var(--text-hi)] truncate">
                 {habitName}

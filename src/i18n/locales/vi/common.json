@@ -138,6 +138,35 @@
     "emptyState": {
       "title": "Chưa có gì ở đây"
     },
+    "iconPicker": {
+      "search": "Tìm icon và emoji…",
+      "upload": "Tải ảnh lên",
+      "uploading": "Đang tải lên…",
+      "quest": "Quest",
+      "emoji": "Emoji",
+      "noResults": "Không có icon phù hợp.",
+      "loading": "Đang tải emoji…",
+      "uploaded": "Ảnh đã tải lên",
+      "uploadedHint": "Ảnh tải lên hiển thị bằng cỡ icon, nên chọn ảnh đơn giản.",
+      "removeFromLibrary": "Gỡ khỏi ảnh của bạn",
+      "change": "Đổi icon",
+      "pick": "Chọn icon",
+      "uploadError": {
+        "type": "Dùng ảnh JPG, PNG, WebP hoặc GIF.",
+        "size": "Ảnh phải nhỏ hơn 5 MB.",
+        "failed": "Tải lên thất bại. Thử lại nhé."
+      },
+      "categories": {
+        "people": "Mặt cười & con người",
+        "nature": "Động vật & thiên nhiên",
+        "foods": "Đồ ăn & thức uống",
+        "activity": "Hoạt động",
+        "places": "Du lịch & địa điểm",
+        "objects": "Đồ vật",
+        "symbols": "Ký hiệu",
+        "flags": "Cờ"
+      }
+    },
     "modal": {
       "close": "Đóng"
     },
