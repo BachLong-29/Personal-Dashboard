@@ -27,7 +27,7 @@ import { TaskAllView } from './all/TaskAllView';
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-export function TaskManagement() {
+export function TaskManagement({ initialSearch = '' }: { initialSearch?: string } = {}) {
   const router = useRouter();
   const params = useParams<{ locale: string }>();
 
@@ -133,7 +133,7 @@ export function TaskManagement() {
   const { data: categories = [] } = useCategories();
   const [filterCat, setFilterCat] = useState<string>('all');
   const [filterDiff, setFilterDiff] = useState<TaskDiff | 'all'>('all');
-  const [search, setSearch] = useState('');
+  const [search, setSearch] = useState(initialSearch);
   const [splitMode, setSplitMode] = useState<'week' | 'month'>('week');
   const [expandedId, setExpandedId] = useState<string | null>(null);
 

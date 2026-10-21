@@ -11,6 +11,14 @@ export interface IAgentChatAction {
   summary: string;
 }
 
+/** What a confirmed action touched — see `AgentTarget` in `@/types/agent`. */
+export interface IAgentChatTarget {
+  kind: 'task' | 'habit' | 'event' | 'note';
+  id: string;
+  label: string;
+  date?: string;
+}
+
 export interface IAgentChatItem {
   _id: mongoose.Types.ObjectId;
   kind: AgentChatItemKind;
@@ -21,6 +29,8 @@ export interface IAgentChatItem {
   /** `proposal` items: the changes waiting on a yes. */
   actions?: IAgentChatAction[];
   state?: AgentProposalState;
+  /** `proposal` items once done: what the changes touched, so the chat can link to them. */
+  targets?: IAgentChatTarget[];
   createdAt: Date;
 }
 
@@ -49,6 +59,20 @@ const itemSchema = new Schema<IAgentChatItem>(
       ),
     ],
     state: { type: String, enum: ['open', 'done', 'dismissed'] },
+    targets: {
+      type: [
+        new Schema(
+          {
+            kind: { type: String, enum: ['task', 'habit', 'event', 'note'], required: true },
+            id: { type: String, required: true },
+            label: { type: String, required: true, maxlength: 200 },
+            date: { type: String },
+          },
+          { _id: false },
+        ),
+      ],
+      default: undefined,
+    },
   },
   { timestamps: { createdAt: true, updatedAt: false } },
 );

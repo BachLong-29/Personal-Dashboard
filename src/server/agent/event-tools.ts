@@ -5,6 +5,7 @@ import { EventModel } from '@/server/models/event.model';
 import type { IEvent } from '@/server/models/event.model';
 import { expandEvents } from '@/server/services/event-expand';
 import { applyEventOverride } from '@/server/services/event-override';
+import type { AgentTarget } from '@/types/agent';
 import type { EventRecurrence } from '@/types/event';
 
 /**
@@ -160,7 +161,14 @@ export type EventReadToolName = keyof typeof EVENT_READ_TOOLS;
 export type EventWriteToolName = keyof typeof EVENT_WRITE_TOOLS;
 
 type Proposal = { args: Record<string, unknown>; summary: string } | { error: string };
-type Result = { ok: boolean; message: string };
+type Result = { ok: boolean; message: string; target?: AgentTarget };
+
+const eventTarget = (event: { _id: unknown; title?: string }, date?: string): AgentTarget => ({
+  kind: 'event',
+  id: String(event._id),
+  label: event.title ?? '',
+  ...(date ? { date } : {}),
+});
 
 /** A rule as the model writes it — `interval` may be left out and means every one. */
 type RuleLike = Omit<EventRecurrence, 'interval'> & { interval?: number };
@@ -427,6 +435,7 @@ export async function executeEventAction(
     return {
       ok: true,
       message: `Created event "${event.title}" on ${input.startDate}, ${describeWhen({ startTime: event.startTime, duration: event.duration, allDay })}.`,
+      target: eventTarget(event, input.startDate),
     };
   }
 
@@ -443,7 +452,11 @@ export async function executeEventAction(
         cancelled: true,
         newDate: input.date,
       });
-      return { ok: true, message: `Skipped "${series.title}" on ${input.date}.` };
+      return {
+        ok: true,
+        message: `Skipped "${series.title}" on ${input.date}.`,
+        target: eventTarget(series, input.date),
+      };
     }
     await applyEventOverride(userId, series._id, {
       date: found.originalDate,
@@ -453,7 +466,11 @@ export async function executeEventAction(
       duration: input.duration,
     });
     const to = [input.newDate ?? input.date, input.startTime].filter(Boolean).join(' ');
-    return { ok: true, message: `Moved "${series.title}" from ${input.date} to ${to}.` };
+    return {
+      ok: true,
+      message: `Moved "${series.title}" from ${input.date} to ${to}.`,
+      target: eventTarget(series, input.newDate ?? input.date),
+    };
   }
 
   const { id } = args as { id: string };
@@ -528,5 +545,9 @@ export async function executeEventAction(
   if (input.recurrence === null) {
     await EventModel.updateMany({ userId, seriesRef: id }, { $set: { active: false } });
   }
-  return { ok: true, message: `Updated event "${event.title}".` };
+  return {
+    ok: true,
+    message: `Updated event "${event.title}".`,
+    target: eventTarget(event, ymdOf(event.startDate)),
+  };
 }

@@ -4,6 +4,7 @@ import {
   AgentChatModel,
   type AgentProposalState,
   type IAgentChatItem,
+  type IAgentChatTarget,
 } from '@/server/models/agent-chat.model';
 
 import type { AgentTurn } from './run-agent';
@@ -20,6 +21,7 @@ export type ChatItemDTO =
       kind: 'proposal';
       actions: PendingAction[];
       state: AgentProposalState;
+      targets?: IAgentChatTarget[];
       createdAt: string;
     };
 
@@ -37,6 +39,7 @@ export function toDTO(item: IAgentChatItem): ChatItemDTO {
       kind: 'proposal',
       actions: (item.actions ?? []) as PendingAction[],
       state: item.state ?? 'open',
+      ...(item.targets?.length ? { targets: item.targets } : {}),
     };
   }
   if (item.kind === 'assistant') {
@@ -109,6 +112,19 @@ export async function claimProposal(
 
   const found = chat?.items.find((item) => item._id.toString() === proposalId);
   return (found as IAgentChatItem | undefined) ?? null;
+}
+
+/** Records what a done proposal touched, so the card can still link to it after a reload. */
+export async function setProposalTargets(
+  userId: string,
+  proposalId: string,
+  targets: IAgentChatTarget[],
+): Promise<void> {
+  if (targets.length === 0) return;
+  await AgentChatModel.updateOne(
+    { userId, 'items._id': proposalId },
+    { $set: { 'items.$.targets': targets } },
+  );
 }
 
 /** Puts a proposal back to `open`, e.g. when every action in it failed. */

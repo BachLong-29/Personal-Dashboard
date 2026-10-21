@@ -4,6 +4,7 @@ import { CategoryModel } from '@/server/models/category.model';
 import { HabitModel } from '@/server/models/habit.model';
 import { HabitLogModel } from '@/server/models/habit-log.model';
 import type { IHabit } from '@/server/models/habit.model';
+import type { AgentTarget } from '@/types/agent';
 
 /**
  * Habit tools for the assistant. Same contract as the task tools in `tools.ts`:
@@ -110,7 +111,13 @@ export type HabitReadToolName = keyof typeof HABIT_READ_TOOLS;
 export type HabitWriteToolName = keyof typeof HABIT_WRITE_TOOLS;
 
 type Proposal = { args: Record<string, unknown>; summary: string } | { error: string };
-type Result = { ok: boolean; message: string };
+type Result = { ok: boolean; message: string; target?: AgentTarget };
+
+const habitTarget = (habit: { _id: unknown; name: string }): AgentTarget => ({
+  kind: 'habit',
+  id: String(habit._id),
+  label: habit.name,
+});
 
 const NOT_FOUND = 'Habit not found. Look it up with list_habits.';
 
@@ -230,7 +237,7 @@ export async function executeHabitAction(
       color: DEFAULT_COLOR,
       icon: DEFAULT_ICON,
     });
-    return { ok: true, message: `Created habit "${habit.name}".` };
+    return { ok: true, message: `Created habit "${habit.name}".`, target: habitTarget(habit) };
   }
 
   const { id } = args as { id: string };
@@ -263,7 +270,7 @@ export async function executeHabitAction(
       new: true,
     }).catch(() => null);
     if (!habit) return { ok: false, message: 'Habit not found.' };
-    return { ok: true, message: `Updated habit "${habit.name}".` };
+    return { ok: true, message: `Updated habit "${habit.name}".`, target: habitTarget(habit) };
   }
 
   if (name === 'set_habit_active') {
@@ -274,7 +281,11 @@ export async function executeHabitAction(
       { new: true },
     ).catch(() => null);
     if (!habit) return { ok: false, message: 'Habit not found.' };
-    return { ok: true, message: `${active ? 'Resumed' : 'Paused'} habit "${habit.name}".` };
+    return {
+      ok: true,
+      message: `${active ? 'Resumed' : 'Paused'} habit "${habit.name}".`,
+      target: habitTarget(habit),
+    };
   }
 
   // Same as DELETE /habits/:id: gone for good, and its logs with it.
