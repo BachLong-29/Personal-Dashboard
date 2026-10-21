@@ -1,9 +1,16 @@
 'use client';
 
 import type { CSSProperties, ReactNode } from 'react';
-import { useEffect } from 'react';
+import { useEffect, useId, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { useTranslations } from 'next-intl';
 import { cn } from '@/libs/utils';
+
+/**
+ * Open modals, oldest first. A modal opened from inside another (an icon sheet over a form)
+ * must be the only one Escape closes, so each listener checks it is on top.
+ */
+const openModals: string[] = [];
 
 export interface ModalProps {
   open: boolean;
@@ -92,19 +99,30 @@ export function Modal({
   bottomSheet,
 }: ModalProps) {
   const t = useTranslations('common');
+  const id = useId();
+  // Read through a ref: callers pass inline functions, and re-running the effect below on every
+  // render would move this modal back to the top of the stack.
+  const onCloseRef = useRef(onClose);
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  }, [onClose]);
 
   useEffect(() => {
     if (!open) return;
+    openModals.push(id);
     const handleKeyDown = (e: globalThis.KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
+      if (e.key === 'Escape' && openModals[openModals.length - 1] === id) onCloseRef.current();
     };
     document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [open, onClose]);
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+      openModals.splice(openModals.lastIndexOf(id), 1);
+    };
+  }, [id, open]);
 
   if (!open) return null;
 
-  return (
+  const modal = (
     <div
       className={cn(
         'fixed inset-0 z-[1000] flex justify-center',
@@ -149,4 +167,8 @@ export function Modal({
       </div>
     </div>
   );
+
+  // Portalled so `fixed` covers the viewport even when this modal is opened from inside another,
+  // whose open animation leaves a transform that would otherwise become the containing block.
+  return typeof document === 'undefined' ? modal : createPortal(modal, document.body);
 }

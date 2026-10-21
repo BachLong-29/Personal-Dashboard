@@ -301,7 +301,8 @@ export function habitToUITask(h: Habit, log?: HabitLog, cancelled = false, forDa
     id: `habit-${h.id}`,
     sourceId: h.id,
     source: 'habit',
-    title: `${h.icon} ${h.name}`,
+    // The icon travels in `icon`; a quest name or image URL in the title would print as text.
+    title: h.name,
     desc: h.note ?? '',
     cat: 'habit',
     diff: 'C',

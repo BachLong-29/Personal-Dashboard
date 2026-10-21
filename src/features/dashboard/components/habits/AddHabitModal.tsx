@@ -1,10 +1,10 @@
 'use client';
 
 import { useState } from 'react';
-import data from '@emoji-mart/data';
-import Picker from '@emoji-mart/react';
 import { useTranslations } from 'next-intl';
 
+import { Icon } from '@/components/common/Icon';
+import { IconPickerSheet } from '@/components/common/IconPickerSheet';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui';
 import { Modal, ModalBody, ModalFoot, ModalHead } from '@/components/ui/Modal';
@@ -421,11 +421,14 @@ export function AddHabitModal({ editing, onClose, onSaved }: AddHabitModalProps)
           <button
             type="button"
             disabled={isPending}
-            onClick={() => setShowPicker((p) => !p)}
+            onClick={() => setShowPicker(true)}
+            aria-haspopup="dialog"
             className={cn(iconPreviewBtn, icon && iconPreviewBtnSelected)}
           >
             {icon ? (
-              <span style={{ fontSize: 22, lineHeight: 1 }}>{icon}</span>
+              <span style={{ fontSize: 22, lineHeight: 1 }}>
+                <Icon icon={icon} />
+              </span>
             ) : (
               <span style={{ fontSize: 18, opacity: 0.4 }}>+</span>
             )}
@@ -436,19 +439,12 @@ export function AddHabitModal({ editing, onClose, onSaved }: AddHabitModalProps)
             </span>
           </button>
           {showPicker && (
-            <div style={{ marginTop: 8 }}>
-              <Picker
-                data={data}
-                theme="dark"
-                previewPosition="none"
-                skinTonePosition="none"
-                perLine={10}
-                onEmojiSelect={(emoji: { native: string }) => {
-                  setIcon(emoji.native);
-                  setShowPicker(false);
-                }}
-              />
-            </div>
+            <IconPickerSheet
+              title={tDash('addHabitModal.fields.icon')}
+              value={icon}
+              onChange={setIcon}
+              onClose={() => setShowPicker(false)}
+            />
           )}
         </div>
 

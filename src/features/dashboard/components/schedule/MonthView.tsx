@@ -12,6 +12,7 @@ import { useTasks } from '../../hooks/useTasks';
 import type { CenterTab, Habit, HabitColor, Quest, Task, TaskColor } from '../../types';
 import type { ScheduleDisplayOptions } from '../../hooks/useScheduleState';
 import { todayISO } from '@/features/tasks/utils/date.utils';
+import { iconAsText } from '@/components/common/icon-registry';
 
 interface MonthViewProps {
   year: number;
@@ -191,7 +192,7 @@ export function MonthView({
                       key={task.id}
                       className={cn(taskPill, isDone && taskPillDone)}
                       style={{ borderLeftColor: color }}
-                      title={`${task.icon} ${task.name}${task.note ? ` — ${task.note}` : ''}`}
+                      title={`${[iconAsText(task.icon), task.name].filter(Boolean).join(' ')}${task.note ? ` — ${task.note}` : ''}`}
                     >
                       <span className={pillIcon}>
                         <Icon icon={task.icon} />
@@ -234,7 +235,9 @@ export function MonthView({
                         onNavigateTab?.('habits');
                       }}
                     >
-                      <span className={pillIcon}>{h.icon}</span>
+                      <span className={pillIcon}>
+                        <Icon icon={h.icon} />
+                      </span>
                       <span className={cn(pillName, done && pillNameDone)}>{h.name}</span>
                       {done && <span className={pillCheck}>✓</span>}
                     </div>

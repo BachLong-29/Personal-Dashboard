@@ -2,6 +2,8 @@
 
 import { useState } from 'react';
 
+import { Icon } from '@/components/common/Icon';
+import { IconPickerSheet } from '@/components/common/IconPickerSheet';
 import { Modal, ModalHead, ModalBody, ModalFoot } from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
 import { DatePicker } from '@/components/ui/DatePicker';
@@ -50,6 +52,7 @@ export function ProjectFormModal({ open, onClose, project, onSaved }: Props) {
   const [name, setName] = useState(project?.name ?? '');
   const [description, setDescription] = useState(project?.description ?? '');
   const [icon, setIcon] = useState(project?.icon ?? DEFAULT_ICON);
+  const [showPicker, setShowPicker] = useState(false);
   const [color, setColor] = useState<TaskColor>(project?.color ?? 'gold');
   const [priority, setPriority] = useState<ProjectPriority>(project?.priority ?? 'medium');
   const [deadline, setDeadline] = useState(project?.deadline ?? '');
@@ -128,23 +131,28 @@ export function ProjectFormModal({ open, onClose, project, onSaved }: Props) {
 
         {/* Icon */}
         <Field label="Icon">
-          <div className="flex flex-wrap gap-1.5">
-            {PROJECT_ICONS.map((ic) => (
-              <button
-                key={ic}
-                type="button"
-                onClick={() => setIcon(ic)}
-                className={cn(
-                  'w-9 h-9 rounded-[var(--r-sm)] border text-[18px] flex items-center justify-center transition-all',
-                  icon === ic
-                    ? 'border-[var(--gold)] bg-[oklch(0.74_0.17_85_/_0.12)]'
-                    : 'border-[var(--border)] hover:border-[var(--border-hi)]',
-                )}
-              >
-                {ic}
-              </button>
-            ))}
-          </div>
+          <button
+            type="button"
+            onClick={() => setShowPicker(true)}
+            aria-haspopup="dialog"
+            className={cn(
+              'flex h-11 w-11 items-center justify-center text-[22px] transition-all duration-150',
+              'rounded-[var(--r-md)] border bg-[var(--bg-2)]',
+              showPicker
+                ? 'border-[var(--gold)] shadow-[0_0_10px_oklch(0.74_0.17_85_/_0.3)]'
+                : 'border-[var(--border)] hover:border-[var(--border-hi)] hover:bg-[var(--bg-3)]',
+            )}
+          >
+            <Icon icon={icon} />
+          </button>
+          {showPicker && (
+            <IconPickerSheet
+              title="Icon"
+              value={icon}
+              onChange={setIcon}
+              onClose={() => setShowPicker(false)}
+            />
+          )}
         </Field>
 
         {/* Color */}

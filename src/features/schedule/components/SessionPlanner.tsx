@@ -20,6 +20,7 @@ import {
   useTaskBlocks,
 } from '../hooks/useScheduleBlocks';
 import { DayTimeline, type TimelineSegment } from './DayTimeline';
+import { Icon } from '@/components/common/Icon';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -298,7 +299,14 @@ export function SessionPlanner({ open, task, onClose }: SessionPlannerProps) {
 
   return (
     <Modal open={open} onClose={onClose} maxWidth="760px" bottomSheet scrollable>
-      <ModalHead tag={t('sessionPlanner.tag')} title={`${task.icon ?? '❖'} ${task.name}`} />
+      <ModalHead
+        tag={t('sessionPlanner.tag')}
+        title={
+          <>
+            <Icon icon={task.icon} fallback="❖" /> {task.name}
+          </>
+        }
+      />
       <ModalBody scrollable className="flex flex-col gap-4 px-4 sm:px-6">
         {/* Allocation bar — task estimate coverage */}
         <div>

@@ -13,6 +13,7 @@ import { cn } from '@/libs/utils';
 
 import type { OverdueItem } from '../../hooks/useOverdueReview';
 import { SessionUpdatePrompt, type SessionUpdateTarget } from './SessionUpdatePrompt';
+import { Icon } from '@/components/common/Icon';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -111,7 +112,9 @@ function OverdueRow({ item, onRemove, onNeedsScheduleUpdate }: OverdueRowProps) 
     >
       {/* Task info row */}
       <div className="flex items-start gap-2">
-        <span className="text-[18px] leading-none shrink-0 mt-0.5">{item.icon}</span>
+        <span className="text-[18px] leading-none shrink-0 mt-0.5">
+          <Icon icon={item.icon} />
+        </span>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1.5 flex-wrap mb-0.5">
             <span className="text-[12px] font-semibold text-[var(--text-hi)] truncate">

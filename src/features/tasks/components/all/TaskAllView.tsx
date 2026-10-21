@@ -323,7 +323,9 @@ export function TaskAllView({ tasks, onEdit, pagination }: TaskAllViewProps) {
                   marginBottom: 12,
                 }}
               >
-                <span style={{ fontSize: 18 }}>{deletingTask.icon}</span>
+                <span style={{ fontSize: 18 }}>
+                  <Icon icon={deletingTask.icon} />
+                </span>
                 <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-hi)' }}>
                   {deletingTask.title}
                 </span>

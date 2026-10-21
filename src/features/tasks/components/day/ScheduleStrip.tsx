@@ -7,6 +7,7 @@ import { cn } from '@/libs/utils';
 
 import type { UITask, TaskSlot } from '../../data/mock';
 import { sidePanel, panelHead, panelEyebrow, panelTitle } from '../shared/styles';
+import { iconAsText } from '@/components/common/icon-registry';
 
 // ─── Slot config ──────────────────────────────────────────────────────────────
 
@@ -130,7 +131,7 @@ function buildActivity(
       items.push({
         icon: '✓',
         text: translate('scheduleStrip.activityCleared', {
-          title: `${task.icon ? `${task.icon} ` : ''}${task.title}`,
+          title: [iconAsText(task.icon), task.title].filter(Boolean).join(' '),
         }),
         ts: translate('scheduleStrip.activityToday'),
         kind: 'done',
