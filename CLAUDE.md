@@ -1,119 +1,118 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+Guidance for Claude Code (claude.ai/code) when working in this repository.
 
-## Important: Next.js Version Warning
+## Project Overview
 
-This project uses **Next.js 16**, which has breaking changes from earlier versions. APIs, conventions, and file structure may differ from training data. Before writing any Next.js-specific code, check `node_modules/next/dist/docs/` for current behavior.
+**Aetheria** is a gamified personal dashboard: tasks, habits and events are played as quests that
+pay out XP and coins, alongside a finance module (wallets, budgets, gold, SePay bank sync), goals,
+a reward marketplace and an AI task assistant. One Next.js app serves both the web UI and the
+`/api/v1` REST API.
 
-## Commands
+The API also serves the sibling mobile app (`../Dashboard-app`, Expo). It authenticates with a
+Bearer token, not cookies — never make a route depend on cookies alone.
+
+## Tech Stack
+
+| Layer        | Technology                                                                  |
+| ------------ | --------------------------------------------------------------------------- |
+| Framework    | Next.js 16.2 (App Router), React 19.2                                       |
+| Language     | TypeScript 5                                                                |
+| Styling      | Tailwind CSS v4 + design tokens in `src/app/globals.css`                    |
+| Server state | TanStack React Query 5                                                      |
+| Client state | Zustand 5 (`src/stores/`, UI-only state)                                    |
+| Forms        | React Hook Form 7 + Zod 4                                                   |
+| Database     | MongoDB via Mongoose 9                                                      |
+| Auth         | JWT access + refresh tokens (`jsonwebtoken`), Google ID-token login         |
+| i18n         | next-intl 4 — locales `en`, `vi`, `th`                                      |
+| Uploads      | Cloudinary                                                                  |
+| AI assistant | OpenAI-compatible chat API (Gemini by default) in `src/server/agent/llm.ts` |
+| Tooling      | ESLint 9, Prettier 3, Husky + lint-staged, commitlint                       |
+
+## Dev Commands
 
 ```bash
-npm run dev          # Start dev server
-npm run build        # Production build
-npm run lint         # ESLint check
-npm run lint:fix     # ESLint auto-fix
-npm run format       # Prettier format
-npm run format:check # Check formatting
-npm run type-check   # TypeScript check (no emit)
+npm install
+npm run dev          # dev server on :3000
+npm run build        # production build
+npm run lint         # ESLint        (lint:fix to fix)
+npm run format       # Prettier      (format:check to check)
+npm run type-check   # tsc --noEmit
 ```
 
-Commits must follow Conventional Commits (`feat:`, `fix:`, `chore:`, etc.) — enforced by commitlint + Husky pre-commit hooks.
+Environment lives in `.env`: `MONGODB_URI`, `AUTH_SECRET`, `ACCESS_TOKEN_EXPIRY`,
+`REFRESH_TOKEN_EXPIRY`, `NEXT_PUBLIC_APP_URL`, `NEXT_PUBLIC_API_URL`, `NEXT_PUBLIC_GOOGLE_CLIENT_ID`,
+`CLOUDINARY_*`, `LLM_API_KEY` (+ optional `LLM_MODEL`, `LLM_FALLBACK_MODEL`), `SEPAY_WEBHOOK_BASE_URL`.
 
-## Architecture
-
-**Gamified personal dashboard** — users complete tasks/habits as quests, earn rewards, and manage a hero profile. Full-stack: Next.js App Router handles both frontend and API routes, with MongoDB as the data layer.
-
-### Routing
-
-```
-src/app/
-├── api/v1/              # REST API — auth, tasks, habits, quests, rewards, profile, stats
-└── [locale]/            # All UI routes wrapped in locale segment (next-intl)
-    ├── (protected)/     # Auth-required pages: dashboard, tasks, habits, rewards, profile
-    └── (public)/        # Login, register pages
-```
-
-Auth is enforced in [src/proxy.ts](src/proxy.ts) (Next.js middleware): strips locale prefix, checks JWT access token from cookies, redirects to login if missing.
-
-### Feature Layout
+## Architecture Summary
 
 ```
 src/
-├── features/            # Page-level feature modules (auth, dashboard, tasks, habits, rewards, profile)
-├── components/          # Shared UI (common/, forms/, layouts/, providers/, ui/)
-├── server/
-│   ├── models/          # Mongoose models: User, UserProfile, UserSetting, Task, Habit, Quest, Reward, Category, Stats
-│   ├── async-handler.ts # Wraps API route handlers with try/catch
-│   ├── validate.ts      # Zod request validation helper
-│   └── response.ts      # Standardized API response formatter
-├── services/endpoints/  # Axios API clients (frontend → /api/v1/*)
-├── stores/              # Zustand stores (ui.store.ts for client UI state)
-├── hooks/               # Custom React hooks
-└── i18n/                # next-intl config, routing, locale JSON files
+├── app/api/v1/        REST API — one folder per resource (tasks, habits, events, finance, agent…)
+├── app/[locale]/      every page sits under the locale segment: (public)/login|register, (protected)/…
+├── features/<domain>/ page-level modules: components/, hooks/, utils/
+├── components/        shared UI (ui/ primitives, common/, providers/)
+├── server/            models/ (Mongoose), agent/ (assistant), services/, helpers/
+├── services/endpoints Axios clients for /api/v1
+├── hooks/ stores/ libs/ constants/ types/ i18n/
 ```
 
-### Data & State
+- **Auth:** the web keeps tokens in cookies; `src/proxy.ts` guards pages and refreshes the pair
+  during navigation; the Axios client sends `Authorization: Bearer`. API routes read only the
+  Bearer header through `getAuthUser` (`src/server/helpers/get-auth-user.ts`).
+- **API shape:** handlers wrap in `asyncHandler`, validate with `validateBody` /
+  `validateSearchParams` (Zod), and answer through `successResponse` / `errorResponse`.
+- **Scheduling core:** tasks and quests are placed on the calendar by `ScheduleBlock` sessions;
+  habits come from their own weekly schedule; events expand from a series plus overrides. See `schedule-block.md`, `block-driven-scheduling.md`
+  and `event.md` before touching calendar code.
+- **Theme:** light/dark/system, resolved from a cookie on the server. Colours come from CSS tokens
+  only; filled gold surfaces use `--gold-fill*`, not `--gold` (see `theme.md`).
 
-- **Database:** MongoDB via Mongoose. All models live in `src/server/models/`.
-- **Server state:** TanStack React Query (data fetching, caching, mutations).
-- **Client state:** Zustand (`src/stores/`) — lightweight UI-only state.
-- **Forms:** React Hook Form + Zod validation.
-- **Auth:** JWT access + refresh token rotation. Tokens stored in cookies. `/api/v1/auth/refresh` handles rotation.
+## Key Constraints
 
-### i18n
+- **Read the Next.js 16 docs first.** It has breaking changes from what you may know; check
+  `node_modules/next/dist/docs/` before writing Next-specific code (see `AGENTS.md`).
+- **Branches:** never commit to `master`. Features on `feature/<desc>`, fixes on `bug/<desc>`.
+- **Commits:** Conventional Commits (`feat:`, `fix:`, `chore:`…), enforced by commitlint + Husky.
+- **Responsive:** every new page or feature is mobile-first and must work at phone, tablet and
+  desktop widths (Tailwind `sm:` / `md:` / `lg:`). Verify small viewports before calling it done.
+- **i18n:** user-facing text goes through next-intl and must exist in `en`, `vi` and `th`.
+- **Keep the mobile app working:** changing an `/api/v1` response shape breaks `../Dashboard-app`.
+  Add fields; don't rename or remove them without updating the app.
+- **Mongoose in dev:** models are cached across hot reloads, so a new schema field is silently
+  dropped until the dev server restarts.
+- **Docs:** files under `rules/docs/` stay at or under 150 lines. A feature that changes behaviour
+  updates its spec in `rules/docs/requirements/` in the same branch.
 
-All pages must sit under `src/app/[locale]/`. Use `next-intl` hooks (`useTranslations`, `useLocale`). Translation files are in `src/i18n/locales/`.
+## Additional Documentation
 
-### Path Aliases
+**Frontend rules — `rules/fe/`.** Read the ones that match the change:
+[general](rules/fe/general.md) · [react](rules/fe/react.md) · [nextjs](rules/fe/nextjs.md) ·
+[typescript](rules/fe/typescript.md) · [naming](rules/fe/naming.md) ·
+[folder-structure](rules/fe/folder-structure.md) · [tailwind](rules/fe/tailwind.md) ·
+[ui-components](rules/fe/ui-components.md) · [forms](rules/fe/forms.md) ·
+[state-management](rules/fe/state-management.md) · [data-fetching](rules/fe/data-fetching.md) ·
+[api](rules/fe/api.md) · [accessibility](rules/fe/accessibility.md) ·
+[performance](rules/fe/performance.md) · [security](rules/fe/security.md) ·
+[testing](rules/fe/testing.md) · [code-review](rules/fe/code-review.md)
 
-```
-@/*          → src/*
-@/components → src/components
-@/features   → src/features
-@/services   → src/services
-@/stores     → src/stores
-@/hooks      → src/hooks
-@/libs       → src/libs
-@/constants  → src/constants
-@/configs    → src/configs
-@/types      → src/types
-@/i18n       → src/i18n
-@/server     → src/server
-```
+**Architecture — `rules/docs/architecture/`:**
+[overview](rules/docs/architecture/README.md) ·
+[api-conventions](rules/docs/architecture/api-conventions.md) ·
+[auth](rules/docs/architecture/auth.md) · [data-flow](rules/docs/architecture/data-flow.md) ·
+[database](rules/docs/architecture/database.md) ·
+[mongodb-connection](rules/docs/architecture/mongodb-connection.md)
 
-### Environment Variables
+**Feature specs — `rules/docs/requirements/`:** start from the
+[index](rules/docs/requirements/README.md), which lists every spec by domain. Read the spec of
+the feature you are changing before you change it.
 
-Copy `.env.example` to `.env.local`. Required vars:
+**Known bugs — `rules/bugs/`:** one file per bug, indexed in
+[rules/bugs/README.md](rules/bugs/README.md). Check it before touching an area, and mark a bug
+fixed there (with the commit) when you fix it.
 
-- `MONGODB_URI` — MongoDB connection string
-- `AUTH_SECRET` — JWT signing secret (min 32 chars)
-- `ACCESS_TOKEN_EXPIRY` / `REFRESH_TOKEN_EXPIRY` — e.g. `15m` / `7d`
-- `NEXT_PUBLIC_APP_URL` / `NEXT_PUBLIC_API_URL`
-
-Include exactly these sections in CLAUDE.md in this order:
-
-1. Project Overview: what Goal stack does in 2–3 sentences.
-
-2. Tech Stack: list with versions where relevant.
-
-3. Dev Commands: how to install, run the dev server, and build.
-
-4. Core Logic Summary: brief mention of the weight calculation.
-
-5. Key Constraints: things Claude must never change or assume.
-
-6. Additional Documentation: direct links pointing to the specific domain files created in the `rules/docs/requirements` folder.
-
-Structure of docs and requirements.
-<role></role>
-<context></context>
-<task></task>
-<requirement></requirement>
-<tone></tone>
-
-- Limit 150 rows each file .md in folder rules/docs
-
-- **Branch Management**: Before adding any features or fix bugs, always work on a new git branch. Never commit directly on main. Bug branches must follow naming convention bug/[desc], feature branches follow naming convention feature/[desc]
-
-- **Responsive UI**: Every new feature or new page MUST be responsive across mobile, tablet, and desktop. Build mobile-first with Tailwind responsive prefixes (`sm:` / `md:` / `lg:`); never ship a layout that only works at desktop width. Verify the page reflows correctly at small viewports before considering the work done.
+**Workflow:** [feature development guideline](rules/docs/feature_development_guideline.md) ·
+[React component standards](rules/docs/react-component-standards.md) · commands
+[/new-feature](rules/commands/new-feature.md), [/fix-bug](rules/commands/fix-bug.md),
+[/translation](rules/commands/translation.md) · product context
+[vision](rules/context/product-vision.md), [target users](rules/context/target-users.md)

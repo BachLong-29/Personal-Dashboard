@@ -1,91 +1,88 @@
-# Schedule Notifications Integration
+# Schedule Notifications — thông báo tự sinh từ lịch
 
-<role>Engine tự sinh thông báo từ lịch (reminder, deadline, overload, conflict).</role>
+<role>Engine sinh reminder, deadline, overload, conflict cho Notification Center</role>
 
 <context>
-[notification.model.ts](../../../src/server/models/notification.model.ts) đã có bảng + Notification
-Center UI ([notification-center](./notification-center.md)), nhưng **không có cơ chế tự sinh** thông
-báo từ lịch. Spec [schedule-engine](./schedule-engine.md) mục 15 yêu cầu 5 loại cảnh báo.
+[notification-center](./notification-center.md) có bảng + panel nhưng không tự biết lịch. Engine
+này đọc lịch hôm nay qua `buildCalendar` + [conflict-capacity](./conflict-capacity.md) rồi upsert
+notification còn thiếu. Không có cron: chạy **lazy** khi client đọc danh sách notification. Gốc:
+[schedule-engine](./schedule-engine.md) §15.
 </context>
 
 <task>
-Thêm generator tạo Notification từ [calendar-item](./calendar-item.md) +
-[conflict-capacity](./conflict-capacity.md) insights.
+`generateScheduleNotifications(userId)` trong `src/server/services/schedule-notifications.ts`, gọi
+từ `GET /api/v1/notifications`.
 </task>
 
----
+<requirement>
 
-## 5 loại cảnh báo (mục 15)
+## Kích hoạt — không chặn request
 
-| Loại             | Khi nào                           | Nguồn              |
-| ---------------- | --------------------------------- | ------------------ |
-| Habit Reminder   | trước giờ habit X phút            | CalendarItem habit |
-| Quest Reminder   | trước giờ quest block             | CalendarItem quest |
-| Deadline Warning | quest/task gần hoặc quá `dueDate` | dueDate            |
-| Overload Warning | ngày `overloaded`                 | DayCapacity        |
-| Conflict Warning | có hard conflict                  | ScheduleConflict   |
+1. `GET /notifications` gọi `generateScheduleNotifications` (try/catch riêng, lỗi chỉ log), rồi
+   `generateCashLogNotifications` (try/catch riêng — xem [cash-log-reminder](./cash-log-reminder.md)).
+2. **Throttle 5 phút, lưu DB** (`NotificationGenStateModel`, unique `userId`): claim slot bằng
+   upsert `{lastGeneratedAt < now-5'}`; trùng key (11000) = request khác đang giữ slot → bỏ qua.
+   Map in-memory không dùng được vì các invocation serverless không chung process.
+3. Claim được → việc dựng lịch + upsert chạy trong `after()` của Next — **sau khi response đã
+   gửi**. Trước đây list chờ dựng xong cả calendar mới trả, mỗi lần mark-read/dismiss lại invalidate
+   vào đúng đường chậm đó.
 
----
+Hệ quả: notification mới sinh hiện ở lần đọc **kế tiếp**, không phải lần đang gọi.
 
-## Mở rộng NotificationType
+## Các loại
 
-```typescript
-type NotificationType =
-  | 'planning'
-  | 'monthly-plan'
-  | 'reminder'
-  | 'system'
-  | 'reward' // hiện có
-  | 'deadline'
-  | 'overload'
-  | 'conflict'; // thêm
-```
+Cửa sổ: hôm nay → hôm nay + `deadlineWarningDays`.
 
-(Reminder habit/quest dùng chung type `reminder`, phân biệt bằng nội dung/meta.)
+| Type       | Khi nào                                                              | dedupeKey                              |
+| ---------- | -------------------------------------------------------------------- | -------------------------------------- |
+| `reminder` | item habit/quest/event hôm nay, `planned`, có giờ, chưa tới giờ      | `reminder:<itemId>`                    |
+| `deadline` | item task (mọi loại) hoặc quest deadline-only chưa done trong cửa sổ | `deadline:<today>:<source>:<sourceId>` |
+| `overload` | capacity hôm nay `overloaded`                                        | `overload:<today>`                     |
+| `conflict` | mỗi **hard** conflict hôm nay                                        | `conflict:<today>:<aId>:<bId>`         |
 
----
+Tất cả `expiresAt` = 23:59:59 hôm nay. Deadline có `entityId = sourceId`. Deadline key gắn ngày để
+tạo lại mỗi ngày, thay vì sinh một lần rồi biến mất khi hết hạn ngày đầu.
 
-## Cơ chế sinh
+`habitReminderLead` / `questReminderLead` chỉ được **in trong message** ("nhắc trước N phút"); chúng
+không quyết định lúc nào reminder xuất hiện — reminder sinh ngay ở lần chạy đầu tiên trong ngày cho
+mọi item chưa tới giờ.
 
-MVP đơn giản, **không cần cron real-time** ban đầu:
+## Ghi
 
-1. **Lazy on-read** — khi client gọi `GET /api/v1/notifications`, engine kiểm tra lịch hôm nay +
-   insights → upsert notification còn thiếu (idempotent theo key).
-2. **Dedupe key** — `${type}:${sourceId}:${date}` để không tạo trùng.
-3. Phase sau: chuyển sang scheduled job (Sunday-planning đã có tiền lệ
-   [sunday-planning-reminder](./sunday-planning-reminder.md)).
+`updateOne({userId, dedupeKey}, {$setOnInsert: …}, {upsert:true})` — idempotent, không bao giờ ghi
+đè row đã có. Xong gọi `enforceNotificationCap` (cap 60/user, xoá row đã đọc cũ nhất trước, rồi tới
+row chưa đọc cũ nhất).
 
----
+## Dismiss phải bám
 
-## Ngưỡng (UserSetting)
+`DELETE /notifications/:id` **không xoá** mà set `dismissedAt`. Vì sao: generator upsert theo
+`dedupeKey`, row đã xoá sẽ được tạo lại ở lần chạy sau vài phút. Row đã dismiss vẫn khớp filter
+upsert nên `$setOnInsert` không làm gì. List và `unread-count` đều lọc `dismissedAt: {$exists:false}`.
 
-| Setting             | Default              |
-| ------------------- | -------------------- |
-| habitReminderLead   | 15 phút trước        |
-| questReminderLead   | 30 phút trước        |
-| deadlineWarningDays | 1 ngày trước dueDate |
+Client (`useNotificationActions.ts`) cập nhật panel **optimistic** trước, có snapshot để rollback nếu
+ghi lỗi — không chờ round-trip mới cho row biến mất.
 
----
+## Bấm notification
 
-## Nội dung mẫu
+`NotificationPanel.tsx`: `deadline` / `overload` / `conflict` → tab Schedule, sub-tab `day`, ngày hôm
+nay. (`reminder` không có điều hướng riêng.)
 
-```txt
-[Habit Reminder]  ⏰ Gym lúc 19:00 (còn 15 phút)
-[Deadline Warning] ⚠ "Làm báo cáo" đến hạn ngày mai
-[Overload Warning] 🔥 Hôm nay đã lên 12h / 10h khả dụng
-[Conflict Warning] ✕ Gym (19:00) trùng giờ Meeting (19:30)
-```
+## Nội dung
 
----
+Chuỗi do generator viết **cứng tiếng Việt** (`⏰ <title>`, `⚠ Đến hạn: …`, `🔥 Ngày quá tải`,
+`✕ Trùng lịch`), không qua i18n.
 
-## API
+## Edge cases
 
-Không thêm endpoint — tái dùng `GET /api/v1/notifications` (generator chạy trong handler).
-Mỗi notification có `expiresAt` để TTL tự dọn (index đã có sẵn).
+- Cap sweeper xoá thật, nên row đã dismiss bị cap đẩy ra có thể sinh lại. 3/4 key gắn ngày nên chỉ
+  sống trong ngày đó — giữ rủi ro hẹp. `reminder:<itemId>` thì itemId đã chứa ngày.
+- Event `busy:false` vẫn góp vào overload/conflict (xem conflict-capacity).
 
----
+## Open questions
 
-## Trạng thái hiện tại
+- Reminder có nên chỉ sinh khi `now ≥ start − lead` như tên setting gợi ý?
+- Chuyển nội dung sang i18n (en/vi/th) như luật repo?
 
-🟡 Một phần: model + Notification Center UI + Sunday-planning reminder. ❌ Chưa có: generator cho
-habit/quest reminder, deadline/overload/conflict warning; các type mới; ngưỡng trong UserSetting.
+</requirement>
+
+<tone>Kỹ thuật, giải thích vì sao throttle và dismiss làm như vậy.</tone>

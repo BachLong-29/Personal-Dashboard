@@ -1,158 +1,131 @@
-# Auth Flow
+# Auth — JWT hai tầng, dùng chung cho web và app Expo
 
-Hệ thống xác thực dùng JWT hai tầng (access token + refresh token). Đây là single-user web app nên không có email verification hay password recovery phức tạp.
+<role>Fullstack engineer giữ cho một hệ JWT tự viết chạy được trên cả web lẫn mobile client</role>
 
----
+<context>
+Không dùng NextAuth. Đăng nhập (email/password hoặc Google — xem `google-login.md`) trả về cặp
+access + refresh token; web giữ chúng trong cookie, app Expo giữ ở phía nó. Mọi API route đọc
+token từ header `Authorization: Bearer`, **không** đọc cookie — đó là điều cho phép cùng một API
+phục vụ cả hai client.
+</context>
 
-## User Model
+<task>
+Mô tả auth như đang chạy: model, token, các route, cách guard trang, cách giữ phiên khi access
+token hết hạn, và những gì chưa có.
+</task>
 
-```typescript
-{
-  email:    string    // lowercase, unique, required
-  name:     string    // tối thiểu 2 ký tự
-  password: string    // bcrypt hash (cost 12)
-  role:     'user' | 'admin' | 'moderator'  // default: 'user'
-  avatar?:  string    // URL ảnh đại diện (optional, chưa dùng)
-}
-```
+<requirement>
 
----
+## User model — `src/server/models/user.model.ts`
 
-## JWT Token Design
+| Field      | Ghi chú                                                                                    |
+| ---------- | ------------------------------------------------------------------------------------------ |
+| `email`    | unique, lowercase, trim                                                                    |
+| `name`     | required, trim (register yêu cầu ≥2 ký tự)                                                 |
+| `password` | bcrypt cost 12; **chỉ required khi `provider === 'local'`**                                |
+| `provider` | `'local' \| 'google'`, default `'local'`                                                   |
+| `googleId` | `sub` của Google, unique + sparse                                                          |
+| `role`     | `'user' \| 'admin' \| 'moderator'`, default `'user'` — chưa route nào phân quyền theo role |
+| `avatar`   | URL — xem `avatar-upload.md`                                                               |
 
-### Access Token
+## Token — `src/libs/jwt/index.ts`
 
-- **Payload:** `{ sub: userId, email, role }`
-- **Expiry:** `ACCESS_TOKEN_EXPIRY` env var (default `15m`)
-- **Dùng để:** Xác thực mọi API request (đọc từ cookie)
+- Access: payload `{ sub, email, role }`, hạn `ACCESS_TOKEN_EXPIRY` (default `15m`).
+- Refresh: payload `{ sub }`, hạn `REFRESH_TOKEN_EXPIRY` (default `7d`).
+- Cả hai ký HS256 bằng `AUTH_SECRET`. Refresh token **không lưu DB** → không revoke được trước
+  hạn; chấp nhận được cho app một người dùng.
+- `TOKEN_MAX_AGE` trong `src/constants/auth.ts` (15 phút / 7 ngày) phải khớp hai env trên — cookie
+  hết trước token hay ngược lại đều gây đăng xuất khó hiểu.
 
-### Refresh Token
+## API — `src/app/api/v1/auth/*`
 
-- **Payload:** `{ sub: userId }`
-- **Expiry:** `REFRESH_TOKEN_EXPIRY` env var (default `7d`)
-- **Dùng để:** Lấy access token mới khi hết hạn
+| Route                 | Body                                     | Kết quả                                                     |
+| --------------------- | ---------------------------------------- | ----------------------------------------------------------- |
+| `POST /auth/register` | `name, email, password, confirmPassword` | `201` user (không kèm token); `409` nếu email đã có         |
+| `POST /auth/login`    | `email, password`                        | `{ user, tokens: { accessToken, refreshToken } }`           |
+| `POST /auth/refresh`  | `refreshToken`                           | cặp token **mới** (rotation); `401` nếu token hỏng/user mất |
+| `POST /auth/google`   | `credential`                             | giống `/auth/login` — xem `google-login.md`                 |
+| `GET /users/me`       | header Bearer                            | user hiện tại (không password)                              |
 
-Cả hai token dùng chung `AUTH_SECRET` (HMAC-SHA256 via `jsonwebtoken`).
+- Login: email lowercase trước khi tìm. Sai email, sai password, hoặc tài khoản Google-only (không
+  có `password`) đều trả cùng `401 Invalid credentials` — không lộ email nào tồn tại.
+- Register **không** tự đăng nhập: `useRegister` chuyển về `/login`.
+- Password theo `passwordSchema` (`src/libs/validations/common.ts`): ≥8 ký tự, có chữ hoa, có số.
 
-**Lưu ý quan trọng:** Hiện tại refresh token **không được lưu vào DB** — không thể revoke token trước khi hết hạn. Đây là trade-off đơn giản chấp nhận được cho single-user app.
+## Xác thực API — `src/server/helpers/get-auth-user.ts`
 
----
+`getAuthUser(req)` chỉ đọc `Authorization: Bearer <token>` và verify access token; trả payload
+hoặc `null` (route tự trả `401`). Cookie không bao giờ được đọc ở API.
 
-## API Routes
+**Vì sao Bearer chứ không phải cookie:** app Expo không có cookie của domain web. Web client
+(`src/libs/axios/instance.ts`) tự đọc cookie bằng `document.cookie` rồi gắn header — nên cookie
+token **cố ý không `httpOnly`**; bật `httpOnly` là web tự đăng xuất khỏi chính API của nó.
 
-### `POST /api/v1/auth/register`
+**CORS** (`next.config.ts`, `headers()` trên `/api/:path*`): cho phép đúng một origin
+`http://localhost:8081` (dev server Expo), methods `GET,POST,PUT,PATCH,DELETE,OPTIONS`, headers
+`Content-Type, Authorization`. Không dùng `*` và không `Allow-Credentials`: client gửi token qua
+header nên không cần cookie, và wildcard sẽ bị trình duyệt từ chối nếu có credentials.
 
-```typescript
-// Request
-{
-  name: string; // min 2 ký tự
-  email: string; // valid email
-  password: string; // theo passwordSchema (xem validation)
-  confirmPassword: string; // phải khớp password
-}
+## Lưu token phía web
 
-// Response 201
-{
-  (id, email, name, role, createdAt, updatedAt);
-}
-```
+| Cookie          | Max-Age | Thuộc tính                                   |
+| --------------- | ------- | -------------------------------------------- |
+| `access_token`  | 15 phút | `path=/`, `SameSite=Strict`, `Secure` ở prod |
+| `refresh_token` | 7 ngày  | như trên                                     |
 
-- Trả `409` nếu email đã tồn tại.
-- Password được hash bcrypt cost 12 trước khi lưu.
-- Không tự động login sau register — user phải login riêng.
+Ghi bởi `setTokens()` (client) và `writeTokenCookies()` trong `src/proxy.ts` (server) — **hai nơi
+phải cùng thuộc tính**, lệch `path` hay `sameSite` là trình duyệt giữ hai cookie trùng tên.
+User info lưu thêm ở Zustand `useAuthStore` (persist key `auth-storage`) để vẽ UI không cần fetch.
 
-### `POST /api/v1/auth/login`
+## Giữ phiên — hai lớp refresh
 
-```typescript
-// Request
-{ email: string, password: string }
+1. **Trong SPA** — interceptor axios: gặp `401` thì gọi `/auth/refresh` một lần, xếp hàng các
+   request đang chờ, retry. Refresh fail hoặc không có refresh token → `clearTokens()` và
+   `window.location.href = '/login'`.
+2. **Khi điều hướng full-page** — `src/proxy.ts`. Cookie access chết sau 15 phút trong khi cookie
+   refresh còn nhiều ngày; proxy chạy trước mọi JS client nên interceptor không kịp ra tay. Trước
+   đây mỗi phiên kết thúc đúng phút 15 ở cú click link đầu tiên (fix `c6bb64c`). Nay:
+   - Không có access cookie + vào protected route + có refresh cookie → proxy `fetch`
+     `POST /api/v1/auth/refresh` (matcher bỏ qua `/api` nên không đệ quy).
+   - Thành công: ghi token mới vào **cả request** (để layout protected đọc `cookies()` ngay trong
+     render này) **và response** (để không phải refresh lại ở mọi điều hướng tiếp theo).
+   - Thất bại hoặc lỗi mạng: không crash, rơi xuống nhánh redirect login.
 
-// Response 200
-{
-  user:   { id, email, name, role, avatar, createdAt, updatedAt },
-  tokens: { accessToken, refreshToken }
-}
-```
+## Guard trang — `src/proxy.ts` + `(protected)/layout.tsx`
 
-- Email không phân biệt hoa thường (lowercase trước khi tìm).
-- Sai email hoặc password → `401 Invalid credentials` (không phân biệt để tránh user enumeration).
+- Proxy bỏ prefix locale (`localePrefix: 'as-needed'`) rồi so với `PROTECTED_ROUTES`
+  (`/dashboard`, `/marketplace`, `/projects` — so theo `startsWith`).
+- Protected mà không có token → redirect `/{locale}/login?callbackUrl=<pathname>`.
+- Vào `/login` khi đã có token → redirect `/dashboard`. (`/register` không bị chặn.)
+- Còn lại giao cho middleware `next-intl`. Matcher: `/((?!api|_next|_vercel|.*\\..*).*)`.
+- Lớp thứ hai: `src/app/[locale]/(protected)/layout.tsx` verify access cookie phía server; không
+  hợp lệ → `redirect('/login')` (không kèm `callbackUrl`).
 
-### `POST /api/v1/auth/refresh`
+## Logout — `src/features/auth/hooks/useLogout.ts`
 
-```typescript
-// Request
-{ refreshToken: string }
+Chỉ phía client: `clearTokens()` → `clearAuth()` → `queryClient.clear()` → push `/login`.
+Không có API logout; refresh token cũ vẫn hợp lệ tới hết hạn.
 
-// Response 200
-{ accessToken: string, refreshToken: string }
-```
+## Trang login
 
-- Verify refresh token bằng `AUTH_SECRET`.
-- Tìm user theo `sub` — nếu user bị xóa → `401`.
-- Trả về **cặp token mới** (rotation): access token mới + refresh token mới.
+`AuthScene.tsx` làm tròn toạ độ tính từ `Math.cos/sin` về độ chính xác cố định: Node và trình
+duyệt có thể lệch bit cuối, sinh chuỗi SVG khác nhau → hydration mismatch (fix `0a8bd8e`).
+`AuthPanel` có `ThemeChip` (xem `theme.md`) và chuỗi đã i18n.
 
----
+## Chưa có
 
-## Middleware (proxy.ts)
+API logout / revoke refresh token · quên mật khẩu (`AUTH_ROUTES.FORGOT_PASSWORD` có hằng nhưng
+không có trang) · xác minh email · phân quyền theo `role` · origin CORS lấy từ env.
 
-Next.js middleware chạy trước mọi request, xử lý 2 việc:
+## Câu hỏi mở
 
-1. **i18n routing** — delegate sang `next-intl` middleware.
-2. **Auth guard:**
+- `/tasks`, `/profile`, `/finance`, `/manage`, `/achievements`, `/assistant` nằm trong
+  `(protected)` nhưng **không** có trong `PROTECTED_ROUTES` → proxy không refresh cho chúng; hết
+  access token mà điều hướng full-page vào đó thì layout redirect thẳng về login. Có nên thêm vào
+  danh sách?
+- `(protected)/layout.tsx` redirect mà không giữ `callbackUrl`; login cũng luôn push `/dashboard`
+  chứ không đọc `callbackUrl` — tham số này hiện không được dùng.
 
-```
-Request vào protected route
-  │
-  ├─ Có cookie accessToken?
-  │    └─ Cho qua → next-intl xử lý
-  │
-  └─ Không có token → redirect /login?callbackUrl=<current_path>
+</requirement>
 
-Request vào /login
-  │
-  ├─ Đã có token → redirect /dashboard
-  └─ Chưa có    → cho qua
-```
-
-**Protected routes:** tất cả routes trong `src/app/[locale]/(protected)/` — `/dashboard`, `/tasks`, `/habits`, `/profile`, `/marketplace`, `/rewards`.
-
-**Public routes:** `/login`, `/register`.
-
-**Matcher:** Middleware chỉ chạy trên UI routes, bỏ qua `/api/**`, `/_next/**`, files tĩnh.
-
----
-
-## Token Storage
-
-Tokens được lưu trong **HTTP cookies** (set từ client sau khi login thành công):
-
-| Cookie         | Nội dung          |
-| -------------- | ----------------- |
-| `accessToken`  | JWT access token  |
-| `refreshToken` | JWT refresh token |
-
-Middleware đọc `accessToken` từ cookie để kiểm tra auth. Client cũng lưu user info vào Zustand `authStore` (persist localStorage) để hiển thị UI mà không cần re-fetch.
-
----
-
-## Validation Rules
-
-| Field      | Rule                                                         |
-| ---------- | ------------------------------------------------------------ |
-| `email`    | valid email format                                           |
-| `password` | theo `passwordSchema` trong `src/libs/validations/common.ts` |
-| `name`     | min 2 ký tự                                                  |
-
----
-
-## Trạng thái hiện tại
-
-✅ Đã implement: register, login, refresh, middleware auth guard.
-
-🟡 Chưa làm:
-
-- Logout API (chỉ clear cookie client-side).
-- Refresh token revocation / blacklist.
-- Password reset / forgot password.
-- Email verification khi register.
-- Token tự động refresh khi access token hết hạn (client-side interceptor).
+<tone>Ngắn, nêu lý do. Đổi bất cứ thuộc tính cookie nào thì đổi ở cả `proxy.ts` lẫn `libs/cookies`.</tone>

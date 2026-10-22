@@ -1,112 +1,103 @@
-# Quest System
+# Quests — thử thách gói gọn trong một ngày
 
-Quests là đơn vị công việc cơ bản hàng ngày. Mỗi quest thuộc một ngày cụ thể (`dueDate`) và đem lại XP + coins khi hoàn thành.
+<role>Fullstack engineer giữ entity Quest và các chỗ hiển thị nó trên lịch</role>
 
----
+<context>
+Quest là thử thách gamified gắn với **một ngày** (`dueDate`), thưởng theo độ khó. Khác Task
+(có status, có thể kéo nhiều ngày, có session — xem [tasks](./tasks.md)). Quest được đọc ở bốn chỗ:
+schedule engine (`src/server/services/schedule-engine.ts`), adapter day view
+(`questToUITask` trong `src/features/tasks/data/adapters.ts`), mapping riêng của week view
+(`WeekView.tsx`) và penalty flow. Thay đổi field nào cũng phải tới đủ cả bốn.
+</context>
 
-## Quest Types
+<task>
+Mô tả model, API, luồng tạo / hoàn thành / dời / xoá quest và daily rollover như đang chạy.
+</task>
 
-| Type      | Icon | Ý nghĩa                        |
-| --------- | ---- | ------------------------------ |
-| `focus`   | 🎯   | Deep work, học tập, dự án      |
-| `habit`   | ⚡   | Liên kết với Habit system      |
-| `reflect` | 📖   | Viết nhật ký, review           |
-| `admin`   | 📬   | Công việc hành chính, việc vặt |
-| `create`  | ✨   | Nghệ thuật, âm nhạc, viết lách |
-| `health`  | 🌿   | Tập thể dục, ngủ, ăn uống      |
-| `break`   | ☕   | Nghỉ ngơi, phục hồi            |
+<requirement>
 
----
+## Dữ liệu — `Quest` (`src/server/models/quest.model.ts`)
 
-## Difficulty & Rewards
+| Field         | Kiểu                   | Ghi chú                                                 |
+| ------------- | ---------------------- | ------------------------------------------------------- |
+| `title`       | string ≤100, bắt buộc  |                                                         |
+| `desc`        | string ≤300            | Default `"Complete this quest"`                         |
+| `type`        | `QuestType`            | `focus·habit·reflect·admin·create·health·break`         |
+| `difficulty`  | `S·A·B·C·D`            |                                                         |
+| `xp`, `coins` | number                 | **Tính sẵn lúc tạo** từ `XP_MAP`/`COIN_MAP`, lưu vào DB |
+| `done`        | boolean, default false | `completedAt` set/clear theo `done`                     |
+| `tags`        | string[]               | Default `[type]`                                        |
+| `dueDate`     | Date, bắt buộc         | Default = lúc tạo                                       |
+| `dueTime`     | `"HH:MM"`?             | **Mới** — vắng = "trong ngày, không giờ cụ thể"         |
 
-| Difficulty | XP  | Coins | Ý nghĩa                            |
-| ---------- | --- | ----- | ---------------------------------- |
-| S          | 150 | 40    | Cực kỳ khó, đòi hỏi nhiều công sức |
-| A          | 120 | 30    | Khó, cần tập trung cao             |
-| B          | 90  | 25    | Trung bình khó                     |
-| C          | 60  | 15    | Bình thường                        |
-| D          | 50  | 12    | Dễ, task nhanh                     |
+| Difficulty | S   | A   | B   | C   | D   |
+| ---------- | --- | --- | --- | --- | --- |
+| XP         | 150 | 120 | 90  | 60  | 50  |
+| Coins      | 40  | 30  | 25  | 15  | 12  |
 
-XP và coins được tính từ difficulty map và lưu trực tiếp vào DB khi tạo quest.
+**Vì sao `dueTime` là field riêng, không nhét giờ vào `dueDate`:** row cũ nằm ở UTC midnight =
+07:00 giờ VN, nên không có cách kiểm tra midnight nào (local hay UTC) phân biệt được "trong ngày"
+với "đúng 07:00" mà không đọc sai toàn bộ quest cũ. Chuỗi `HH:MM` riêng cũng là cách habit và
+schedule block đang mang giờ. Khi có `dueTime`, nó quyết định cả giờ hiển thị lẫn slot trong day
+view (quest buổi chiều không còn bị xếp vào "deep work"), và schedule engine dùng nó làm
+`startTime`/`endTime` của calendar item.
 
-**Bonus:** Quest difficulty S thêm 5 gems khi hoàn thành.
+## API
 
----
+| Method   | Endpoint                                 | Ghi chú                                                   |
+| -------- | ---------------------------------------- | --------------------------------------------------------- |
+| `GET`    | `/api/v1/quests?date=YYYY-MM-DD&dateTo=` | Lọc `dueDate` trong [date, dateTo]; vắng `date` = hôm nay |
+| `POST`   | `/api/v1/quests`                         | `dueTime` optional, regex `HH:MM` 24h                     |
+| `PATCH`  | `/api/v1/quests/:id`                     | **Chỉ** `done` và/hoặc `dueDate` (`YYYY-MM-DD`)           |
+| `DELETE` | `/api/v1/quests/:id`                     | **Hard delete** + xoá ScheduleBlock của quest             |
+| `POST`   | `/api/v1/quests/rollover`                | Dời quest chưa xong có `dueDate < hôm nay` → hôm nay      |
 
-## Quest Data Model
+Không có cách sửa title/desc/type/difficulty/dueTime sau khi tạo — vì vậy **xoá** là lối duy nhất
+để sửa một lần gõ nhầm.
 
-```typescript
-{
-  title:      string      // tối đa 100 ký tự
-  desc:       string      // mô tả, tối đa 300 ký tự
-  type:       QuestType
-  difficulty: Difficulty
-  xp:         number      // precomputed từ difficulty
-  coins:      number      // precomputed từ difficulty
-  done:       boolean     // false by default
-  tags:       string[]    // categories/labels
-  dueDate:    Date        // ngày của quest
-  completedAt?: Date      // set khi mark done
-}
-```
+**Vì sao xoá cứng:** Quest không có cờ `active` như Task/Event, và bốn chỗ đọc quest đều phải học
+cách lọc nếu xoá mềm — không đáng cho việc gỡ một lỗi gõ. Block trỏ tới quest bị xoá cùng: mồ côi
+thì `buildCalendar` không vẽ nhưng vẫn ăn capacity của ngày.
 
----
+## UI
 
-## CRUD Operations
+- **Tạo** — `AddQuestModal` (`src/features/dashboard/components/schedule/`): title, desc, type
+  (default `focus`), difficulty (default `B`), ngày (default hôm nay), giờ (optional, trống =
+  hành vi cũ). Mở từ nút Forge Quest ở `/tasks` và menu tạo của dashboard schedule.
+  `useCreateQuest` invalidate `quests` + `calendar` — trước đây thiếu nên quest mới vô hình đến
+  khi reload (day/week view đọc query cache, không đọc mảng local).
+- **Card trong day view** — `QuestCard.tsx`, style giống app mobile: nền tint theo màu category,
+  icon dẫn đầu hàng, dòng `giờ · thời lượng` phía trên title đậm, vòng tick bên phải. Rank,
+  thưởng và các action nằm trong panel mở rộng; cột giờ bên cạnh card đã bỏ.
+- **Hoàn thành** (dashboard day panel, qua `useScheduleDayTasks.onToggleDone`): tick lạc quan →
+  `PATCH { done }` → thưởng `quest.xp`/`quest.coins` qua `onReward`. Bỏ tick PATCH `done:false`,
+  **không thu hồi** thưởng (cố ý).
+- **Week view**: quest kéo-thả sang ngày khác → `PATCH { dueDate }` (`useMoveQuest`); bấm vào
+  quest → modal xác nhận xoá.
+- **Xoá** có modal xác nhận ở week view, dashboard day panel và quick-action của `QuestCard`
+  (desktop: hàng hover; mobile: menu "⋯", vì hover không có trên cảm ứng).
 
-| Action        | API                                  | Notes                   |
-| ------------- | ------------------------------------ | ----------------------- |
-| Xem danh sách | `GET /api/v1/quests?date=YYYY-MM-DD` | Filter theo dueDate     |
-| Tạo mới       | `POST /api/v1/quests`                |                         |
-| Cập nhật      | `PATCH /api/v1/quests/:id`           | Cập nhật bất kỳ field   |
-| Xoá           | `DELETE /api/v1/quests/:id`          | Hard delete             |
-| Rollover      | `POST /api/v1/quests/rollover`       | Move unfinished → today |
+## Daily rollover
 
----
+`useDailyInit` (dashboard): nếu `localStorage['aetheria_quest_rollover_date'] !== hôm nay` →
+`POST /quests/rollover`; thành công mới ghi key. Nếu có quest bị dời, danh sách được chuyển cho
+penalty flow ([penalty](./penalty.md)). Route idempotent: gọi lại không còn gì để dời.
 
-## Completion Flow
+## Quest, habit, task trên cùng một danh sách ngày
 
-```
-User toggle quest "done"
-  │
-  ├─ Lần đầu (chưa skip confirm):
-  │    └─ ConfirmQuestModal → user confirm
-  │
-  └─ Sau khi confirm (hoặc skipConfirm = true):
-       ├─ setQuests: đánh dấu quest done trong local state
-       ├─ awardProgress(xp, coins, gems)
-       │    ├─ Tăng XP: nếu xp >= xpNext → level up
-       │    └─ PUT /api/v1/profile { xp, coins, level, gems, ... }
-       ├─ setBurst: particle animation tại vị trí click
-       └─ setToast: XP popup notification
-```
+| Loại  | Nguồn            | Done khi                                                     |
+| ----- | ---------------- | ------------------------------------------------------------ |
+| Quest | Quest collection | `done === true`                                              |
+| Habit | Habit + HabitLog | HabitLog ngày đó `done`                                      |
+| Task  | Task (+TaskLog)  | `status === 'done'` (single-day) hoặc có TaskLog (multi-day) |
 
-**Undo:** User có thể click lại để un-complete. XP không bị thu hồi (intentional design).
+## Open questions
 
-**Skip Confirm:** Sau khi confirm lần đầu, user có thể chọn "Don't ask again today". Preference lưu vào localStorage (`aetheria_skip_quest_confirm`) với date, reset mỗi ngày.
+- `ConfirmQuestModal` + "Don't ask again today" (`aetheria_skip_quest_confirm`) và thưởng **+5 gems
+  cho quest S** chỉ chạy qua `handleToggleQuest` của `useQuestOrchestration`, nhưng
+  `MainDashboard` không gọi hàm đó. Luồng đang dùng (day panel) không hỏi xác nhận và không cho
+  gems. Bỏ hẳn luồng cũ, hay nối lại?
+- `startOfDay` của route quests dùng giờ local của server, còn Task dùng UTC midnight. Server chạy
+  ở UTC thì không sao — có cần thống nhất không?
 
----
-
-## Daily Rollover
-
-Cơ chế đảm bảo quests chưa xong không bị mất:
-
-- **Trigger:** App load, nếu `localStorage['aetheria_quest_rollover_date'] !== today`
-- **Action:** `POST /api/v1/quests/rollover` → move tất cả quests `done: false, dueDate < today` sang `dueDate = today`
-- **Side effect:** Nếu có quests bị rollover → auto-create PenaltyLog (xem [penalty.md](./penalty.md))
-- **Idempotent:** API safe để gọi nhiều lần (không tạo duplicate penalty nếu đã có pending)
-
----
-
-## Quest vs Habit Quest vs Task Quest
-
-Dashboard hiển thị 3 loại items trong QuestPanel, tất cả được coi là "quests":
-
-| Loại        | Source           | ID prefix    | Done condition                                                        |
-| ----------- | ---------------- | ------------ | --------------------------------------------------------------------- |
-| Quest       | Quest collection | `<mongo_id>` | `quest.done === true`                                                 |
-| Habit Quest | Habit + HabitLog | `habit-<id>` | HabitLog cho hôm nay `done: true`                                     |
-| Task Quest  | Task collection  | `task-<id>`  | TaskLog cho hôm nay (multi-day) hoặc `status === 'done'` (single-day) |
-
-Khi toggle một item trong QuestPanel, hệ thống check prefix để route đến đúng handler.
+</requirement>

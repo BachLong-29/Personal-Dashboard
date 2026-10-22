@@ -1,73 +1,70 @@
-# WeekStats Panel
+# WeekStats Panel — dải thống kê tuần (đang không được mount)
 
-Panel tổng kết thống kê tuần hiển thị phía trên WeekView trong trang Tasks.
+<role>Engineer quyết định số phận một component UI đã tách khỏi màn đang chạy</role>
 
----
+<context>
+`WeekStats` là dải 5 thẻ thống kê đặt trên grid 7 cột của `TaskWeekView`
+(`src/features/tasks/components/week/`). Từ commit `5b8026c` (2026-06-24) trang Tasks thôi render
+`TaskWeekView`; Week View thật giờ là `src/features/dashboard/components/schedule/WeekView.tsx`
+([week-view-rescheduling](./week-view-rescheduling.md)) và **không** có dải thống kê.
 
-## Mục tiêu
+Nghĩa là `WeekStats.tsx` hiện **không xuất hiện ở đâu trên app** — chỉ `TaskWeekView` (cũng không
+được mount) import nó.
+</context>
 
-Cung cấp cái nhìn nhanh về hiệu suất trong tuần hiện tại: số quest hoàn thành, XP kiếm được, và các chỉ số phụ.
+<task>
+Ghi lại component như đang có, để quyết định nối lại hay xoá — không mô tả nó như tính năng sống.
+</task>
 
----
+<requirement>
 
-## Vị trí
+## Component — `src/features/tasks/components/week/WeekStats.tsx`
 
-Nằm ở đầu **TaskWeekView** (`src/features/tasks/components/week/`), hiển thị trước grid 7 cột của tuần.
+Prop duy nhất `tasks: UITask[]`.
 
----
+| Stat           | Giá trị                  | Màu    | Nguồn thật?            |
+| -------------- | ------------------------ | ------ | ---------------------- |
+| Quests Cleared | `done/total`             | gold   | ✅ đếm từ `tasks` prop |
+| XP Earned      | `+Σ xp` item done        | violet | ✅ từ `tasks` prop     |
+| Combo          | `×3`, sub "active"       | cyan   | ❌ hardcode            |
+| Streak         | `14d`, sub "best 21d"    | rose   | ❌ hardcode            |
+| Focus Hours    | `16.5h`, sub "this week" | mint   | ❌ hardcode            |
 
-## Thống kê hiển thị
-
-| Stat           | Label        | Màu    | Dữ liệu                                               |
-| -------------- | ------------ | ------ | ----------------------------------------------------- |
-| Quests Cleared | `done/total` | gold   | Từ tasks/habits/quests của tuần đang xem              |
-| XP Earned      | `+{xp}`      | violet | Tổng XP từ các items đã done trong tuần               |
-| Combo          | `×N`         | cyan   | Số ngày liên tiếp có ít nhất 1 item done (trong tuần) |
-| Streak         | `Nd`         | rose   | Streak hiện tại của user (từ profile)                 |
-| Focus Hours    | `{h}h`       | mint   | Tổng thời gian focus timer trong tuần                 |
-
-**Lưu ý:** Combo, Streak, Focus Hours hiện tại là **hardcode mock** (`×3`, `14d`, `16.5h`) — chưa có data thực.
-
----
+Label viết cứng tiếng Anh, không qua i18n.
 
 ## Layout
 
-### Desktop (≥ md breakpoint)
+- **≥ md:** 5 `StatCard` một hàng — label uppercase nhỏ, số lớn `font-title` theo màu stat,
+  sub-label tuỳ chọn, border-top 2px màu stat.
+- **< md:** hàng 1 là 2 `StatCard` (Quests Cleared + XP Earned), hàng 2 là 3 `StatPill` gọn
+  (border-left thay border-top).
 
-5 StatCard hiển thị ngang hàng, mỗi card có:
+## Số thật đã có ở chỗ khác
 
-- Label nhỏ phía trên (uppercase, tracking)
-- Giá trị lớn ở giữa (font-title, màu theo stat)
-- Sub-label nhỏ phía dưới (optional)
-- Border-top 2px màu của stat
+Ba stat hardcode giờ đã có dữ liệu thật, nhưng ở `AnalyticsPanel`
+(`src/features/dashboard/components/analytics/AnalyticsPanel.tsx`), không ở đây:
 
-### Mobile (< md)
+| Stat ở WeekStats | Tương đương thật                                                                                                           |
+| ---------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| Streak           | thẻ **Day Streak** = `stats.character.streak` (UserProfile)                                                                |
+| Focus Hours      | thẻ **Focus Time** = `stats.schedule.completedMinutes` (7 ngày gần nhất — [schedule-statistics](./schedule-statistics.md)) |
+| Combo            | không có — chưa có định nghĩa/nguồn                                                                                        |
 
-2 hàng:
+## Nếu nối lại
 
-- **Hàng 1:** 2 StatCard lớn (Quests Cleared + XP Earned)
-- **Hàng 2:** 3 StatPill nhỏ ngang (Combo + Streak + Focus Hours) — layout compact với border-left thay border-top
+Không mount như cũ — sẽ in số giả lên màn đang chạy. Tối thiểu cần:
 
----
+1. Streak và Focus Hours lấy từ `useStats()` thay vì hardcode.
+2. Bỏ hoặc định nghĩa Combo (ví dụ: số ngày liên tiếp trong tuần có ≥1 item done).
+3. Focus Hours theo **tuần đang xem** sẽ cần API nhận range — `/stats` hiện cố định 7 ngày gần
+   nhất.
+4. Chuỗi qua next-intl (en/vi/th).
 
-## Data Source
+## Open questions
 
-| Stat                      | Nguồn thực tế                                                             |
-| ------------------------- | ------------------------------------------------------------------------- |
-| Quests Cleared, XP Earned | Tính từ `tasks` prop được truyền vào (`UITask[]`), filter `done === true` |
-| Combo                     | Chưa có — cần tính từ task logs của 7 ngày trong tuần                     |
-| Streak                    | Chưa có — cần lấy từ `UserProfile.streak`                                 |
-| Focus Hours               | Chưa có — cần tích lũy từ FocusTimer sessions                             |
+- Xoá `WeekStats` cùng `TaskWeekView`, `WeekColumn`, `WeekDropDialog`, `HabitEditScopeDialog`
+  (tất cả không được mount), hay nối `WeekStats` lên đầu dashboard `WeekView`?
 
----
+</requirement>
 
-## Trạng thái hiện tại
-
-✅ Đã implement: component UI đầy đủ, responsive, 2 layout (desktop card / mobile pill).
-
-🟡 Chưa làm:
-
-- Combo tính từ data thực (ngày liên tiếp có done item trong tuần).
-- Streak lấy từ profile API thay vì hardcode.
-- Focus Hours tích lũy từ FocusTimer (hiện timer không lưu sessions).
-- Dữ liệu phạm vi tuần (tuần đang xem) chứ không phải tuần hiện tại cố định.
+<tone>Thẳng: đây là code không chạy, ghi đủ để quyết định.</tone>

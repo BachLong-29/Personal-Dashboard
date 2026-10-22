@@ -1,104 +1,80 @@
-<role>Engineer adding image attachments to the task create/edit form</role>
+# Task Attachments — tối đa 3 ảnh đính kèm một task
+
+<role>Fullstack engineer giữ phần ảnh đính kèm trong form tạo / sửa task</role>
 
 <context>
-Task form (TaskForm.tsx) dùng chung cho create và edit mode. Task model hiện chưa có field attachments. Upload component đã có trong design system tại src/components/ui/Upload.tsx — có drop zone, progress bar, remove. Avatar upload endpoint đã có tại /api/v1/upload/avatar làm reference.
+`TaskForm.tsx` dùng chung cho create và edit. Ảnh lưu trên Cloudinary, task chỉ giữ URL. Route
+upload này cũng là route mà **icon ảnh** dùng (`useIconUpload`, `IconPickerSheet`) — giới hạn file
+vì thế nằm chung ở `src/constants/upload.ts`.
 </context>
 
 <task>
-Cho user upload tối đa 3 ảnh trong task form (create và edit). Hiển thị preview dạng ô vuông 150×150. Ảnh lưu trên Cloudinary, URL lưu vào Task.attachments.
+User đính kèm tới 3 ảnh khi tạo hoặc sửa task, xem lại ảnh cỡ lớn, và xoá được trên cả điện thoại.
 </task>
 
 <requirement>
 
-## API
+## Dữ liệu
 
-| Method | Endpoint                    | Mô tả                                   |
-| ------ | --------------------------- | --------------------------------------- |
-| `POST` | `/api/v1/upload/attachment` | Upload 1 ảnh lên Cloudinary, trả về URL |
+`Task.attachments: string[]` — default `[]`, model validate `length <= 3`.
 
-### POST /api/v1/upload/attachment
+| Route                     | Schema                                      | Ghi chú                                 |
+| ------------------------- | ------------------------------------------- | --------------------------------------- |
+| `POST /api/v1/tasks`      | `attachments: z.array(url).max(3)` optional | `AddTaskModal` gửi `undefined` khi rỗng |
+| `PATCH /api/v1/tasks/:id` | `attachments: z.array(url).max(3)` optional | **Thay cả mảng**, không merge           |
 
-- Accept: `multipart/form-data`, field tên `file`
-- Chỉ accept: `image/jpeg`, `image/png`, `image/webp`, `image/gif`
-- Max size: 5 MB mỗi ảnh
-- Upload lên Cloudinary folder `attachments/`, public_id ngẫu nhiên (dùng timestamp + userId)
-- Response: `{ url: string }`
-- Lỗi: 400 nếu sai type / quá size; 401 nếu không có auth
+## API upload — `POST /api/v1/upload/attachment`
 
-## Task Model
+`src/app/api/v1/upload/attachment/route.ts`
 
-Thêm field vào ITask và taskSchema:
+- `multipart/form-data`, field `file`. Cần auth (401 nếu không có).
+- Type: `image/jpeg · image/png · image/webp · image/gif`. Size ≤ **5 MB**. Sai → 400.
+- Upload Cloudinary folder `attachments/`, `public_id = <userId>_<timestamp>`, `overwrite:false`.
+- Response `{ url }` (secure URL).
+- Không có endpoint xoá: bỏ ảnh khỏi task **không** xoá file trên Cloudinary.
 
-```
-attachments: string[]   // max 3 URLs, default []
-```
+## Component — `TaskAttachmentsField`
 
-## Task API routes
+`src/features/tasks/components/shared/TaskAttachmentsField.tsx`, props `{ value, onChange }`.
+Render trong `TaskForm` ngay sau Note, nhãn "optional · max 3".
 
-- `POST /api/v1/tasks` — thêm `attachments?: string[]` vào createSchema, lưu vào task
-- `PATCH /api/v1/tasks/[id]` — thêm `attachments?: string[]` vào updateSchema, merge (replace toàn bộ mảng)
+**Drop zone** — `<Upload multiple maxSizeMb={5} files={[]}>` (truyền `files=[]` để ẩn list mặc
+định của Upload). Hint là số chỗ còn lại (`attachmentsField.remaining`). **Ẩn hẳn** khi đã đủ 3
+(tính cả ảnh đang upload). Dưới `sm` drop zone là một hàng icon + chữ gọn; từ `sm` trở lên giữ
+khối cao như cũ — khối to chiếm quá nhiều chiều cao form trên điện thoại.
 
-## Types
+**Lưới ảnh** — `grid grid-cols-3`, mỗi ô `aspect-square`. Không dùng ô cố định 150px nữa: với
+flex-wrap, ảnh thứ 3 rơi xuống một hàng lẻ trên màn hẹp; 3 cột luôn nằm đều một hàng ở mọi độ
+rộng.
 
-- `CreateTaskPayload` — thêm `attachments?: string[]`
-- `UpdateTaskPayload` — thêm `attachments?: string[]`
-- `Task` (response type) — thêm `attachments: string[]`
+**Nút xoá ×** — **luôn hiện** (không còn `group-hover`), vì hover không bao giờ xảy ra trên cảm
+ứng, nghĩa là trước đây mobile không xoá được ảnh. Xoá là bỏ URL khỏi `value` ngay lập tức.
 
-## Frontend: TaskAttachmentsField Component
+**Preview** — chạm ảnh mở lightbox toàn màn (`z-[2000]`, `object-contain`, bấm nền hoặc × để
+đóng), cùng pattern lightbox ảnh của `QuestCard`.
 
-Vị trí: `src/features/tasks/components/shared/TaskAttachmentsField.tsx`
+## Luồng upload
 
-### Layout
+1. Chọn / thả nhiều file → chỉ lấy đủ số chỗ còn trống (snapshot lúc bắt đầu batch).
+2. Mỗi file hiện placeholder từ `URL.createObjectURL` mờ đi + spinner.
+3. Upload song song; xong file nào bỏ placeholder file đó và revoke object URL.
+4. Cả batch xong → gọi `onChange` **một lần** với các URL thành công.
+5. Lỗi → placeholder giữ lại với chữ "upload failed" và nút × để gỡ. Không toast.
 
-```
-[Drop zone — Upload component]  ← dùng nguyên, truyền files=[] để ẩn list mặc định
-[Preview grid]                   ← custom 150×150 squares bên dưới
-```
+## Hiển thị ngoài form
 
-### Drop zone
+Chỉ `QuestCard` (day view, gồm cả day panel của dashboard) hiện ảnh — mục "📎 Đính kèm (n)" trong
+panel mở rộng, chạm mở lightbox. All view và week view không hiện ảnh.
 
-- Dùng `<Upload accept="image/*" maxSizeMb={5} files={[]} hint="Max 3 images · 5 MB each" />`
-- Ẩn (hide / disable) khi đã có đủ 3 ảnh (không render Upload nữa)
+## Không có
 
-### Preview grid
+Reorder, caption, crop/resize, xoá file trên Cloudinary.
 
-- Hiển thị các ảnh đã chọn dưới dạng `flex gap-2 flex-wrap`
-- Mỗi ảnh: ô vuông `w-[150px] h-[150px]` với `object-cover`, bo góc `var(--r-md)`
-- Overlay loading: spinner khi đang upload
-- Overlay remove: icon `×` góc trên phải, click để xóa
-- Ảnh đã xóa khỏi list ngay lập tức (optimistic)
+## Open questions
 
-### Upload flow
-
-1. User drop/chọn file → validate type/size ở client → upload ngay lên `/api/v1/upload/attachment`
-2. Trong lúc upload: hiện placeholder 150×150 với spinner
-3. Upload xong: thay bằng `<Image>` thật với URL từ Cloudinary
-4. Error: hiện toast / inline text, remove placeholder
-
-### Props
-
-```typescript
-interface TaskAttachmentsFieldProps {
-  value: string[]; // current attachment URLs
-  onChange: (urls: string[]) => void;
-}
-```
-
-### Tích hợp vào TaskForm.tsx
-
-- Thêm `attachments: string[]` vào `TaskFormValues` (default `[]`)
-- Render `<TaskAttachmentsField>` trong form, sau field Note
-- Truyền `attachments` vào payload khi submit (create + edit)
-
-## Constraints
-
-- Max 3 ảnh — không allow thêm khi đã đủ 3
-- Không crop/resize UI
-- `cloudinary` package: server-side only
-- Reuse `/api/v1/upload/avatar` pattern làm reference implementation
+- Ảnh mồ côi trên Cloudinary (bị gỡ khỏi task, hoặc upload xong rồi huỷ form) không bao giờ được
+  dọn. Chấp nhận hay cần job dọn?
 
 </requirement>
 
-<tone>
-Đơn giản, không over-engineer. Không cần reorder hay caption ảnh.
-</tone>
+<tone>Đơn giản, không over-engineer.</tone>

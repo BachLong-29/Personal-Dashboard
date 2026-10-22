@@ -1,112 +1,104 @@
-# Schedule Block
+# Schedule Block — một phiên ngồi làm của Task/Quest
 
-<role>Domain model & API cho phiên làm việc cụ thể của Task/Quest.</role>
+<role>Fullstack engineer giữ model + API cho "phiên làm việc" — nguồn sự thật duy nhất về giờ của task</role>
 
 <context>
-Hiện tại Task chỉ có **1** `startTime` duy nhất → không thể chia một task lớn (estimate 16h)
-thành nhiều phiên làm việc qua nhiều ngày. Spec [schedule-engine](./schedule-engine.md) mục 7
-yêu cầu mỗi task/quest có thể sinh nhiều **Schedule Block** — mỗi block là một lần ngồi làm.
+Task chỉ là mục tiêu (ngày bắt đầu/kết thúc + estimate), không có giờ. Một task 16h cần được chia
+thành nhiều lần ngồi làm qua nhiều ngày — mỗi lần là một `ScheduleBlock`. Từ khi bỏ
+`task.startTime` ([block-driven-scheduling](./block-driven-scheduling.md)), block là thứ **duy nhất**
+đặt task vào một giờ trên Day/Week View và vào capacity của ngày.
+
+Habit **không** sinh block (sinh thẳng Calendar Item từ `habit.schedule`); Event cũng không
+(tự expand — xem [event](./event.md)). Tổng quan engine: [schedule-engine](./schedule-engine.md).
 </context>
 
 <task>
-Thêm model `ScheduleBlock` + API CRUD, và tính **Task Progress** dựa trên tổng thời lượng block đã hoàn thành.
+Model `ScheduleBlock`, CRUD API, cascade khi nguồn bị xoá, và progress tính từ block gắn vào task.
 </task>
 
----
+<requirement>
 
-## Mục tiêu
+## Dữ liệu — `src/server/models/schedule-block.model.ts`
 
-- Một Task `Build Dashboard` (estimate 16h) được chia thành nhiều block:
+| Field        | Kiểu                              | Ghi chú                              |
+| ------------ | --------------------------------- | ------------------------------------ |
+| `userId`     | ObjectId                          | index                                |
+| `sourceType` | `'task' \| 'quest'`               | habit/event không có block           |
+| `sourceId`   | ObjectId                          | ref Task hoặc Quest                  |
+| `date`       | Date                              | ngày của phiên; API trả `YYYY-MM-DD` |
+| `startTime`  | string `HH:MM` 24h                | bắt buộc — block luôn có giờ         |
+| `duration`   | number phút, 1..1440              |                                      |
+| `status`     | `'planned' \| 'done' \| 'missed'` | default `planned`                    |
 
-| Ngày  | Giờ   | Thời lượng |
-| ----- | ----- | ---------- |
-| 03/06 | 08:00 | 2h         |
-| 04/06 | 08:00 | 2h         |
-| 05/06 | 08:00 | 4h         |
+Index `{userId, date}` (đọc theo khoảng ngày) và `{userId, sourceType, sourceId}` (đọc theo task).
+`endTime` **không lưu** — luôn tính `startTime + duration` (clamp 23:59) ở engine.
 
-- Habit **không** sinh Schedule Block (sinh trực tiếp Calendar Item — xem [calendar-item](./calendar-item.md)).
+## API — `src/app/api/v1/schedule-blocks/`
 
----
+| Method + path                 | Việc                                                                                               |
+| ----------------------------- | -------------------------------------------------------------------------------------------------- |
+| `GET /schedule-blocks`        | Query tuỳ chọn `from`, `to` (bao trọn ngày `to`), `sourceType`, `sourceId`; sort `date, startTime` |
+| `POST /schedule-blocks`       | `{sourceType, sourceId, date, startTime, duration}` — 404 nếu nguồn không thuộc user               |
+| `PATCH /schedule-blocks/:id`  | Đổi bất kỳ `date`, `startTime`, `duration`, `status`                                               |
+| `DELETE /schedule-blocks/:id` | Xoá cứng                                                                                           |
 
-## Data Model — `schedule_blocks`
+Zod qua `validateBody` / `validateSearchParams`. Client hooks ở
+`src/features/schedule/hooks/useScheduleBlocks.ts` (`useScheduleBlocks`, `useTaskBlocks`, create/
+update/delete). Mỗi mutation invalidate **cả ba**: `scheduleBlocks`, `calendar` và `['tasks']` — vì
+task list mang progress, calendar mang giờ; thiếu một cái là một màn hình hiện số cũ.
 
-```typescript
-interface IScheduleBlock {
-  _id: ObjectId;
-  userId: ObjectId; // index
-  sourceType: 'task' | 'quest'; // habit không tạo block
-  sourceId: ObjectId; // ref Task hoặc Quest
-  date: Date; // ngày local midnight
-  startTime: string; // "HH:MM" 24h
-  duration: number; // phút (min 1, max 1440)
-  status: 'planned' | 'done' | 'missed';
-  createdAt: Date;
-  updatedAt: Date;
-}
-```
+## Cascade
 
-Index: `{ userId, date }`, `{ userId, sourceType, sourceId }`.
+| Hành động                                        | Block                                                     |
+| ------------------------------------------------ | --------------------------------------------------------- |
+| `DELETE /tasks/:id` (soft delete `active:false`) | xoá hết block của task                                    |
+| `DELETE /quests/:id` (xoá cứng)                  | xoá hết block của quest — block mồ côi vẫn chiếm capacity |
+| Archive project                                  | xoá block của mọi task con                                |
+| `PATCH /tasks/:id {active:false}`                | **không** xoá — xem edge case                             |
 
-**Quy tắc:**
+## Task Progress — `src/server/helpers/schedule-block.helpers.ts`
 
-- `endTime` không lưu — tính từ `startTime + duration`.
-- Khi `sourceId` (task/quest) bị xóa/archive → cascade xóa các block của nó.
-- `status: missed` set khi `date < hôm nay` mà chưa `done` (job hoặc tính lazy lúc đọc).
-
----
-
-## Task Progress
-
-```txt
-progress = Σ(duration block status=done) / task.duration (estimate)
-```
-
-- Trả về trong response của Task (field tính toán, không lưu): `{ plannedMinutes, completedMinutes, progressPct }`.
-- Nếu task không có `duration` → progress = null (không hiển thị %).
-
----
-
-## API
+Gắn vào mỗi task trong `GET /api/v1/tasks` (field tính, không lưu):
 
 ```txt
-GET    /api/v1/schedule-blocks?from=YYYY-MM-DD&to=YYYY-MM-DD   # list theo range
-POST   /api/v1/schedule-blocks                                 # tạo block
-PATCH  /api/v1/schedule-blocks/:id                             # đổi date/startTime/duration/status
-DELETE /api/v1/schedule-blocks/:id
+plannedMinutes   = Σ duration mọi block của task
+completedMinutes = Σ duration block status = 'done'
+progressPct      = min(100, round(completed / task.duration × 100)) — null nếu không có estimate
 ```
 
-POST body:
+Aggregation tự cast id sang ObjectId — `$match` của aggregate không qua schema casting.
 
-```jsonc
-{
-  "sourceType": "task",
-  "sourceId": "<taskId>",
-  "date": "2026-06-03",
-  "startTime": "08:00",
-  "duration": 120,
-}
-```
+## Ai tạo block
 
-Validation: Zod qua `src/server/validate.ts`. Block phải thuộc task/quest của chính user.
+- **SessionPlanner** (`src/features/schedule/components/SessionPlanner.tsx`) — thêm/sửa/xoá phiên,
+  auto-fill. Giờ mặc định của phiên mới là **giờ hiện tại** (đọc lại mỗi lần mở planner, vì planner
+  mounted sẵn khi đóng — chỉ dùng lazy init sẽ ra giờ lúc app load). Auto-fill chia `remaining`
+  đều theo ngày của task (làm tròn 15'), mọi ngày bắt đầu cùng giờ hiện tại; phần dư đặt vào ngày
+  cuối, **bắt đầu ngay sau block trước** để không tự chồng giờ.
+- Kéo task vào slot ở Day View — xem [block-driven-scheduling](./block-driven-scheduling.md).
+- `SessionUpdatePrompt` (`src/features/tasks/components/shared/`) sau khi đổi ngày task — dời mọi
+  block sang `startDate` mới.
+- AI assistant (`src/server/agent/tools.ts`) — xem [ai-task-agent](./ai-task-agent.md).
 
----
+## Edge cases
 
-## Quan hệ với schema Task hiện tại
+- Overdue auto-archive và "Abandon" dùng `PATCH {active:false}` nên block **còn lại** trong DB.
+  Calendar/Week View lọc task `active` nên không hiện, nhưng
+  [task-suggestion](./task-suggestion.md) đọc block theo ngày không lọc nguồn.
+- Không UI nào set `status: 'done' | 'missed'` cho block. Calendar suy `done` từ `task.status`,
+  `missed` từ ngày đã qua — nên `completedMinutes` của progress hiện gần như luôn 0.
+- Không chặn block nằm ngoài `[startDate, endDate]` của task; planner hiển thị chúng bình thường.
 
-- Giữ nguyên `Task.startTime` (legacy single-session) — coi như task có **0 hoặc 1** block ngầm.
-- Khi task có ≥1 ScheduleBlock thật → `startTime` legacy bị bỏ qua, dùng block làm nguồn sự thật.
-- Migration: không bắt buộc — task cũ vẫn chạy với `startTime`.
+## Ngoài phạm vi
 
----
+Hiển thị (→ [calendar-item](./calendar-item.md)), trùng giờ/quá tải
+(→ [conflict-capacity](./conflict-capacity.md)), block cho quest từ UI (API cho phép, chưa có UI).
 
-## Out of scope (file này)
+## Open questions
 
-- Hiển thị block trên Day/Week View → thuộc [calendar-item](./calendar-item.md).
-- Phát hiện 2 block trùng giờ → thuộc [conflict-detection](./conflict-capacity.md).
-- Tự động chia block (auto time-blocking) → Phase sau (AI Planner).
+- Có nên cascade block khi `PATCH active:false` (archive/abandon) như `DELETE`?
+- Block `done` nên được set khi tick task xong, hay bỏ hẳn `completedMinutes` khỏi progress?
 
----
+</requirement>
 
-## Trạng thái hiện tại
-
-❌ Chưa có model, API, hay khái niệm "phiên làm việc". Task chỉ có 1 `startTime`.
+<tone>Ngắn, chỉ ra nguồn sự thật và lý do cascade.</tone>

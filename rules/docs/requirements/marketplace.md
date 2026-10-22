@@ -1,144 +1,100 @@
-# Marketplace & Rewards
+# Marketplace & Reward Forge — tiêu coins cho phần thưởng tự đặt
 
-Route: `/marketplace` (view), `/rewards` (manage)
+<role>Fullstack engineer + game designer cho gamified personal dashboard</role>
 
-Marketplace là nơi user dùng coins và gems kiếm được để "mua" phần thưởng cho bản thân — có thể là bất kỳ thứ gì (cà phê, game time, buổi nghỉ...).
+<context>
+Coins/gems kiếm từ quest, habit, task (xem `character.md`) cần chỗ tiêu: phần thưởng user tự
+đặt cho mình — ly cà phê, một tối chơi game. Có hai trang:
 
----
+| Route             | Component                                              | Dữ liệu                               |
+| ----------------- | ------------------------------------------------------ | ------------------------------------- |
+| `/marketplace`    | `src/features/marketplace/components/MarketPlace.tsx`  | **Mock** (`marketplace/data/mock.ts`) |
+| `/manage/rewards` | `src/features/rewards/components/RewardManagement.tsx` | **Thật** — `Reward` qua API           |
 
-## Reward Properties
+Hai bên **chưa nối với nhau**: reward tạo ở Forge không hiện ở storefront, và đổi thưởng ở
+storefront không trừ coin thật. Route cũ `/rewards` không còn.
+</context>
 
-```typescript
-{
-  name:        string         // tối đa 100 ký tự
-  description: string?        // tối đa 500 ký tự
-  icon:        string?        // emoji, tối đa 10 ký tự
-  color:       RewardColor    // cùng palette với Habit/Task
-  rarity:      RewardRarity   // ảnh hưởng visual display
-  status:      RewardStatus   // tình trạng availability
-  coinCost:    number?        // giá tính bằng coins
-  gemCost:     number?        // giá tính bằng gems
-  unlockCondition?: {
-    minLevel?: number         // level tối thiểu
-    minRank?:  string         // rank tối thiểu (F/E/D/C/B/A/S)
-  }
-  stock:       number?        // undefined = unlimited
-  active:      boolean        // soft delete
-}
-```
+<task>
+Mô tả model Reward + API, trang quản lý Reward Forge, và storefront như đang chạy.
+</task>
 
----
+<requirement>
 
-## Rarity System
+## Model `Reward` — `src/server/models/reward.model.ts`
 
-| Rarity    | Màu         | Ý nghĩa                   |
-| --------- | ----------- | ------------------------- |
-| Common    | Gray        | Phần thưởng thông thường  |
-| Uncommon  | Green       | Hơi đặc biệt              |
-| Rare      | Blue        | Khó kiếm / tốn nhiều coin |
-| Epic      | Purple      | Phần thưởng xịn           |
-| Legendary | Gold + Glow | Phần thưởng đặc biệt nhất |
+| Field                 | Kiểu                                                      | Ghi chú               |
+| --------------------- | --------------------------------------------------------- | --------------------- |
+| `name`                | string ≤100, bắt buộc                                     |                       |
+| `description`         | string ≤500                                               |                       |
+| `icon`                | string ≤10                                                | Emoji                 |
+| `color`               | `gold \| mint \| violet \| cyan \| rose \| amber \| blue` | Mặc định `gold`       |
+| `rarity`              | `common \| uncommon \| rare \| epic \| legendary`         | Mặc định `common`     |
+| `status`              | `active \| inactive \| limited \| sold_out`               | Mặc định `active`     |
+| `coinCost`, `gemCost` | int ≥0, optional                                          |                       |
+| `unlockCondition`     | `{ minLevel?: int≥1, minRank?: string }`                  |                       |
+| `stock`               | int ≥0, optional                                          | Vắng = không giới hạn |
+| `active`              | boolean                                                   | `false` = đã xoá      |
 
-Rarity ảnh hưởng visual styling của card (border, glow, badge).
+## API
 
----
+| Method   | Endpoint              | Ghi chú                                                                                                                                                                                             |
+| -------- | --------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `GET`    | `/api/v1/rewards`     | `search` (regex name/description), `rarity`, `status`, `sortBy` (`name \| coinCost \| gemCost \| createdAt \| rarity`), `order`, `page`, `limit ≤100` → `{ items, total, page, limit, totalPages }` |
+| `POST`   | `/api/v1/rewards`     | Tạo                                                                                                                                                                                                 |
+| `PATCH`  | `/api/v1/rewards/:id` | Field nullable (`description, icon, coinCost, gemCost, unlockCondition, stock`) gửi `null` → `$unset`                                                                                               |
+| `DELETE` | `/api/v1/rewards/:id` | Soft delete                                                                                                                                                                                         |
 
-## Status
+Không có `GET /:id` và **không có endpoint mua/đổi thưởng**. `null` → `$unset` (không set
+`null`) để "không giới hạn stock" vẫn là _vắng field_, đúng nghĩa ở schema.
 
-| Status     | Ý nghĩa             |
-| ---------- | ------------------- |
-| `active`   | Có thể mua          |
-| `inactive` | Ẩn khỏi marketplace |
-| `limited`  | Limited-time offer  |
-| `sold_out` | Hết stock           |
+`scripts/seed-marketplace-rewards.js` đổ catalog mock vào `Reward` thật cho một user: `mythic`
+→ `legendary`, `currency` → `coinCost`/`gemCost`, `reqLevel` → `minLevel`, có stock → `limited`.
 
----
+## Reward Forge — `/manage/rewards`
 
-## Unlock Conditions
+- **Header chung**: `DashboardTopbar` + page header cùng mẫu với các trang khác (tiêu đề "Reward
+  Forge", ô search, nút "Forge New Reward" — dưới `sm` chỉ còn icon).
+- **KPI strip** (Active Rewards, Legendary Tier, Limited Edition, Total Coin Pool) — **ẩn trên
+  mobile**.
+- **Sidebar lọc** (`RewardSidebar`) theo rarity/status kèm số đếm. Từ `lg:` là cột tĩnh; dưới
+  `lg:` là drawer off-canvas trái mở bằng nút Filters, có backdrop.
+- List: toggle **Grid** (`RewardCard`) ↔ **Table** (`RewardTable`); sort Recent / Rarity / Coin
+  Cost / Gem Cost / Name, asc/desc. Load một lần `limit: 100`.
+- Nút hành động trên card **luôn hiện** — bản cũ chỉ hiện khi hover, không bấm được trên cảm ứng.
+- **Inspector** (`RewardInspector`): chọn reward → copy vào `draft`; tab Edit ↔ Preview; Discard
+  (chỉ bật khi dirty) và Publish (PATCH). Từ `lg:` là cột phải; dưới `lg:` là overlay toàn màn,
+  chỉ mount khi đã chọn, có nút back.
+- **Forge modal** (`RewardForgeModal`): tạo mới; xong tự chọn reward vừa tạo.
+- Xoá qua modal xác nhận "Delete Reward". Toast ok/err 2.6s.
 
-Reward có thể bị lock nếu user chưa đủ điều kiện:
+## Storefront — `/marketplace`
 
-```typescript
-unlockCondition: {
-  minLevel: 10,    // phải đạt level 10
-  minRank: 'B',    // phải đạt rank B
-}
-```
+- Header chung như trên; stat LV / gems / coins đọc **profile thật** (`useProfile` →
+  `profileToCharacter`). Nút "Manage Rewards" → `/manage/rewards` (dưới `sm` chỉ icon).
+- Featured banner, **battle pass** (catalog mock; `claimed`/`current` suy từ level thật), tab
+  category **All / Real-World / In-Game** (In-Game gộp `cosmetic | game | booster | quest`).
+- Lưới card: 2 cột trên mobile, `auto-fill minmax(220px)` từ `sm`. Phân trang client 12/trang,
+  đổi tab về trang 1. Rarity mock có thêm `mythic` (viền holo — phải là vòng viền, không tô đặc).
+- Bấm card → `MarketRewardDetailModal` liệt kê điều kiện (level, giá, stock).
 
-User dưới điều kiện → thấy reward nhưng không thể mua (locked state).
+**Đổi thưởng (`handleRedeem`) chạy hoàn toàn trên state cục bộ**: chặn khi `locked`, thiếu
+level, thiếu tiền, hết stock; đủ thì trừ tiền ở `player`, giảm stock, flash màu rarity, toast
+"✦ X ACQUIRED ✦". Không gọi API — reload là khôi phục.
 
----
+## Edge cases
 
-## CRUD Operations
+- Check đủ tiền/level dùng `player` **mock** (level 24, 1248 coins), trong khi header hiện số thật
+  — user có thể "mua" được thứ mà số dư thật không đủ, và ngược lại.
+- `minRank` là chuỗi tự do (≤50), không validate theo `F…S`.
 
-| Action        | API                          | Ai làm được                      |
-| ------------- | ---------------------------- | -------------------------------- |
-| Xem danh sách | `GET /api/v1/rewards`        | User (chỉ thấy rewards của mình) |
-| Tạo reward    | `POST /api/v1/rewards`       | User                             |
-| Cập nhật      | `PATCH /api/v1/rewards/:id`  | Owner                            |
-| Xoá (soft)    | `DELETE /api/v1/rewards/:id` | Owner                            |
+## Câu hỏi mở
 
----
+- Nối storefront với `GET /api/v1/rewards` và thêm `POST /rewards/:id/redeem` (trừ coins/gems,
+  giảm stock, kiểm `unlockCondition` server-side)? Khi đó category/`mythic`/`achievement` mock
+  không có chỗ trong schema — bỏ hay thêm field?
+- Battle pass có thành tính năng thật không?
 
-## Reward Management Page (`/rewards`)
+</requirement>
 
-Admin-like view để user quản lý rewards của mình:
-
-- **RewardTable:** Danh sách dạng bảng với filter + search
-- **RewardSidebar:** Filter theo rarity, status, cost range
-- **RewardForgeModal:** Form tạo / chỉnh sửa reward
-- **RewardInspector:** Detail view của một reward
-
-### RewardForgeModal Fields
-
-- Name (required)
-- Description (optional)
-- Icon (emoji picker)
-- Color (palette selector)
-- Rarity (dropdown)
-- Status (dropdown)
-- Coin cost (number input)
-- Gem cost (number input)
-- Unlock conditions (level, rank)
-- Stock (number hoặc unlimited)
-
----
-
-## Marketplace View (`/marketplace`)
-
-Grid display của tất cả active rewards:
-
-- Filter theo rarity
-- Search theo tên
-- Hiển thị cost (coins/gems)
-- Locked indicator nếu chưa đủ điều kiện
-- Mua button (deducts coins/gems from profile)
-
----
-
-## Purchasing Flow
-
-```
-User click "Redeem" reward
-  │
-  ├─ Check: user.coins >= reward.coinCost?
-  ├─ Check: user.gems >= reward.gemCost?
-  ├─ Check: user.level >= unlockCondition.minLevel?
-  ├─ Check: rank_index(user.rank) >= rank_index(minRank)?
-  │
-  ├─ Nếu đủ điều kiện:
-  │    ├─ Trừ coins/gems từ UserProfile
-  │    ├─ Giảm stock (nếu có)
-  │    └─ Thông báo thành công
-  │
-  └─ Nếu không đủ:
-       └─ Hiển thị message cần thêm coins/level/rank
-```
-
----
-
-## Colors
-
-Cùng palette với Habit và Task:
-
-`gold` | `mint` | `violet` | `cyan` | `rose` | `amber` | `blue`
+<tone>Concise, technical. Gamified language phù hợp aesthetic của app.</tone>

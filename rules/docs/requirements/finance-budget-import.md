@@ -32,7 +32,10 @@ và **không có gì báo lỗi**.
 Template sinh từ **chính category của người dùng**, nên tên khớp **theo cấu trúc** chứ không nhờ
 thuật toán đoán. Rủi ro chỉ quay lại với dòng gõ tay — và dòng đó hiện `+ new` ở xem trước.
 
-Template có đủ **mọi** category expense, **số tiền để trống**. Vì vậy "bỏ qua dòng trống" là hành
+Template (`buildBudgetTemplate`, `src/features/finance/budget-csv.ts`) có header `Month,YYYY-MM` +
+`Recurring,yes|no`, cột `#,Khoản chi,Số tiền,Lặp`, rồi **mọi** category expense dạng
+`{icon} {name}` — **trừ category `excludeFromTotals`** (không bao giờ tích chi tiêu, hạn mức trên nó
+sẽ 0% mãi) — và một dòng `Tổng` cuối. **Số tiền để trống**. Vì vậy "bỏ qua dòng trống" là hành
 vi cốt lõi chứ không phải ngoại lệ: tải về 21 dòng, điền 16.
 
 CSV **phải có BOM UTF-8**. Thiếu nó Excel trên Windows đọc `Ăn trưa` thành `Ä‚n trÆ°a`.
@@ -55,22 +58,33 @@ dưới dạng `5.000.000₫`, đọc là thấy ngay.
 ## Tháng và lặp — ba tầng ưu tiên
 
 ```
-cột Lặp từng dòng  →  header Recurring  →  lựa chọn trên màn
-header Month       →  lựa chọn trên màn  →  tháng hiện tại
+cột Lặp từng dòng  →  header Recurring  →  mặc định: có lặp
+header Month       →  lựa chọn trên màn  →  tháng trang đang xem
 ```
 
 File thắng UI. Có vậy template mới thực sự "mang theo cấu hình", mà parser vẫn chịu được bảng
-dán tay không có header.
+dán tay không có header. Header nhận cả `Month/Tháng`, `Recurring/Lặp`. Lặp **không có** lựa chọn
+trên màn: thiếu cả cột lẫn header thì mặc định **có** — một bảng ngân sách thường là kế hoạch cho
+các tháng sau, không phải một lần.
 
 Tháng quá khứ bị chặn ở **cả hai chỗ**: nút Import trên trang, và trong modal — vì file có thể
 mang tháng riêng, khác tháng trang đang xem.
 
 ## Các luật còn lại
 
-- Dòng `Tổng` → **ngân sách tổng tháng** (`categoryId` bỏ trống, model đỡ sẵn)
+- Dòng `Tổng` / `Tong` / `Total` / `Sum` → **ngân sách tổng tháng** (`categoryId` bỏ trống, model đỡ sẵn)
 - Cùng một category xuất hiện hai lần → **lấy dòng cuối**
 - Category chưa có → tạo mới, **icon lấy từ emoji đầu tên**, màu random trong 7 màu hợp lệ
 - Trùng ngân sách đã có → hiện ở xem trước, **tick từng dòng** mới ghi đè; mặc định không ghi
+
+## Tháng đã có giao dịch — hỏi lần hai
+
+Import **không** đụng transaction nào (`spent` là suy ra), nhưng nó dời thước đo dưới những con
+số đã ghi: phần trăm và Monthly Report của tháng tính lại, mà cảnh báo vượt ngân sách chỉ bắn
+**một lần mỗi tháng** — siết limit giữa tháng có thể trôi qua im lặng. Nên tháng đã có transaction
+thì mở modal xác nhận với checkbox "I understand — import anyway".
+
+Đồng ý được lưu **dưới dạng tháng** (`ackedMonth`), không phải boolean: đổi tháng là tự rút lại.
 
 ## Parse ở client, không ở server
 
@@ -79,7 +93,10 @@ hơn nghìn lần. Xem trước tốn một vòng mạng mỗi lần sửa là x
 
 Dán text và chọn file đều cho ra **một chuỗi**, nên một parser lo cả hai lối vào của Q1.
 
-Server vẫn validate lại toàn bộ: tháng, `limit ≥ 1`, quyền sở hữu category.
+Server vẫn validate lại toàn bộ: tháng, `limit ≥ 1`, tối đa 200 dòng, quyền sở hữu category.
+Dòng có `categoryId` của user thì dùng thẳng; không thì ghép theo tên **chuẩn hoá** (trim +
+lowercase, `  ăn trưa` = `Ăn Trưa`) trên category expense hiện có; vẫn không khớp mới tạo mới.
+Response `{ budgets, importedCount, createdCategories }`.
 
 ## Vì sao có endpoint riêng
 

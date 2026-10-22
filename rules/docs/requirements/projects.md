@@ -1,132 +1,111 @@
-# Projects
+# Projects — gom task về một mục tiêu, xong hết thì nhận thưởng
 
 <role>Fullstack engineer + product designer cho gamified personal dashboard</role>
 
 <context>
-Task hiện tại là đơn vị rời rạc theo ngày. Project là tầng gom nhóm: một "đợt việc" gồm
-nhiều task con cùng phục vụ một mục tiêu (VD: "Ra mắt landing page", "Dọn nhà cuối năm").
-Project CHỈ chứa task — không có habit, không có quest. Project độc lập hoàn toàn với Goal
-(không link, không gộp). Project chưa tồn tại trong codebase.
+Task là đơn vị rời rạc. Project là tầng gom: một "đợt việc" nhiều task cùng phục vụ một đích
+("Ra mắt landing page", "Dọn nhà cuối năm"). Project **chỉ chứa task** — không habit, không
+quest — và **độc lập với Goal** (không link, không gộp). Hoàn thành project trả XP/coins do
+user tự đặt lúc tạo.
 </context>
 
 <task>
-Xây dựng Project feature: model mới, gắn `projectId` vào Task, API CRUD, trang danh sách
-`/projects` và trang chi tiết `/projects/[id]` (toggle Kanban ↔ List). Hoàn thành project
-thưởng XP/coins riêng.
+Mô tả model, API, trang `/projects` + `/projects/[id]` và panel dashboard như đang chạy.
 </task>
 
 <requirement>
 
-## Model: Project
+## Dữ liệu — `src/server/models/project.model.ts`
 
-```
-Project {
-  userId: ObjectId
-  name: string             // max 100, required
-  description?: string     // max 500
-  color: TaskColor         // reuse TASK_COLORS
-  icon: string             // emoji
-  status: 'active' | 'completed' | 'archived'   // default 'active'
-  priority: 'high' | 'medium' | 'low'           // default 'medium'
-  startDate?: Date
-  deadline?: Date
-  xp: number               // reward khi complete, min 0
-  coins: number            // reward khi complete, min 0
-  progress: number         // 0..1, DERIVED từ task con (không nhập tay)
-  completedDate?: Date
-  active: boolean          // soft-delete / archive flag, default true
-  createdAt / updatedAt
-}
-```
+| Field                   | Kiểu                              | Ghi chú                                          |
+| ----------------------- | --------------------------------- | ------------------------------------------------ |
+| `name`                  | string ≤100, bắt buộc             |                                                  |
+| `description`           | string ≤500                       |                                                  |
+| `color`                 | `TaskColor` (7 màu)               |                                                  |
+| `icon`                  | string, bắt buộc                  | Chọn bằng `IconPickerSheet`                      |
+| `status`                | `active \| completed \| archived` | Mặc định `active`                                |
+| `priority`              | `high \| medium \| low`           | Mặc định `medium`                                |
+| `startDate`, `deadline` | Date?                             | API nhận ISO hoặc `YYYY-MM-DD`; trả `YYYY-MM-DD` |
+| `xp`, `coins`           | int ≥0                            | Thưởng khi complete                              |
+| `completedDate`         | Date?                             |                                                  |
+| `active`                | boolean                           | `false` = đã archive/xoá                         |
 
-## Thay đổi Task Model
+Task có `projectId?` (ref `Project`, index `{ userId, projectId }`); một task thuộc tối đa một
+project, không có `projectId` = task độc lập. Task API nhận `projectId` (nullable).
 
-```
-projectId?: ObjectId   // ref 'Project', optional, indexed
-```
-
-- Task không có `projectId` = task độc lập (giữ nguyên hành vi cũ).
-- Một task thuộc tối đa 1 project.
-- Index: `{ userId: 1, projectId: 1 }`
-
-## Tính progress & auto-complete
-
-- `progress = số task con (status='done') / tổng task con active`. Tổng = 0 → progress = 0.
-- Tính server-side khi đọc project hoặc khi task con đổi status.
-- Khi mọi task con `done` (progress = 1) → KHÔNG tự complete; hiện nút "Complete Project"
-  để user xác nhận nhận thưởng (tránh complete ngoài ý muốn).
+**`progress` không lưu** — serializer tính `done / total` trên task con `active` (0 khi chưa có
+task), kèm `doneTasks`, `totalTasks`. Lưu thì phải đồng bộ mỗi lần task đổi status ở bất kỳ đâu.
 
 ## API
 
-- `GET /api/v1/projects` — list project `active` của user, kèm `progress` + `{done, total}`.
-- `POST /api/v1/projects` — tạo project.
-- `GET /api/v1/projects/[id]` — chi tiết project + danh sách task con (active).
-- `PUT /api/v1/projects/[id]` — update name, description, color, icon, priority, deadline, xp, coins.
-- `PATCH /api/v1/projects/[id]/archive` — **archive cùng nhau**: set project
-  `status='archived'`, `active=false` VÀ set tất cả task con `active=false`.
-- `POST /api/v1/projects/[id]/complete` — set `status='completed'` + `completedDate`,
-  cộng `xp`/`coins` vào Stats, tạo notification `reward`. Chỉ cho phép khi progress = 1.
-- Task API (`POST`/`PATCH /api/v1/tasks`) nhận thêm `projectId` (optional, nullable).
+| Method   | Endpoint                        | Hành vi                                                                                   |
+| -------- | ------------------------------- | ----------------------------------------------------------------------------------------- |
+| `GET`    | `/api/v1/projects?status=`      | Project `active: true` của user (lọc thêm theo status), mới nhất trước                    |
+| `POST`   | `/api/v1/projects`              | Tạo                                                                                       |
+| `GET`    | `/api/v1/projects/:id`          | Chi tiết + `tasks[]` (task con active)                                                    |
+| `PUT`    | `/api/v1/projects/:id`          | Sửa field; `description/startDate/deadline` nhận `null` để xoá                            |
+| `PATCH`  | `/api/v1/projects/:id/archive`  | `status='archived'`, `active=false`; ẩn **mọi** task con và xoá `ScheduleBlock` của chúng |
+| `POST`   | `/api/v1/projects/:id/complete` | Nhận thưởng — luật dưới                                                                   |
+| `DELETE` | `/api/v1/projects/:id`          | Như archive nhưng **không** xoá ScheduleBlock                                             |
 
-## UI — Routing
+**Complete:** 409 nếu đã completed; 400 nếu chưa có task hoặc còn task chưa `done`. Đổi status
+bằng `findOneAndUpdate({ status: { $ne: 'completed' } })` nguyên tử — double-submit chỉ một
+request thắng, nên thưởng không bị cộng hai lần. Sau đó `$inc` `xp`/`coins` vào `UserProfile` và
+tạo notification `reward` "🚀 Project Complete — name +X XP, +Y coins".
 
-```
-src/app/[locale]/(protected)/projects/
-├── page.tsx          // danh sách project
-└── [id]/page.tsx     // chi tiết project
-```
+**Không tự complete khi progress = 1** — user phải bấm Complete: tick nhầm task cuối không được
+tự động phát thưởng không rút lại được.
 
-Thêm mục "Projects" vào sidebar/nav (protected).
+## Trang danh sách — `ProjectsList.tsx`
 
-## UI — ProjectsListPage
+- Tab lọc **Active** (mặc định) / **Completed** / **All**; nút "＋ New Project" mở `ProjectFormModal`.
+- Dưới `sm` header xếp dọc: tiêu đề → tab lọc full-width → nút New full-width. Bản `flex-wrap`
+  cũ để title co về 0 nên h1 tràn xuống đè lên tab.
+- `ProjectCard`: icon, tên, badge priority, thanh progress theo `color`, `done/total`, thưởng,
+  deadline. Completed: viền gold + ✓. Quá deadline mà chưa xong: accent đỏ.
 
-Grid các ProjectCard:
+## Trang chi tiết — `ProjectDetail.tsx`
 
-```
-┌──────────────────────────────┐
-│ 🚀 Ra mắt Landing  · High    │
-│ [========     ] 6/10         │
-│ ✦ 200 XP · 50c  · 30/06      │
-└──────────────────────────────┘
-```
+- **Header**: tên, progress `done/total · %`, XP, coins, deadline; nút **Edit** · **Archive**
+  (ẩn khi completed, hỏi `confirm` vì kéo theo task) · **✓ Complete** (chỉ bật khi
+  `totalTasks > 0 && progress >= 1`, tooltip "Claim reward" / "Finish all tasks first"; lỗi →
+  `alert`).
+- **Toolbar** (ẩn khi project completed): search, lọc tag, toggle Kanban ↔ List, "Hide empty",
+  "+ Add Task" (mở `AddTaskModal` gắn sẵn `projectId`). Bấm task → `EditTaskModal`.
+- **Kanban** (`ProjectTaskBoard`): cột `To Do · In Progress · Pending · Waiting · Done`, kéo-thả
+  đổi status rồi refetch project. Tên task wrap 2 dòng (`line-clamp-2`) trước khi cắt.
+- **Hide empty columns**: ẩn cột không có task (sau khi lọc). Nếu không còn task nào thì vẫn hiện
+  đủ cột — một board trống trơn trông như lỗi chứ không như "chưa có gì".
+- **List** (`ProjectTaskList`): checkbox toggle done; rỗng thì "No tasks yet." hoặc "No tasks match
+  your filters." khi đang lọc.
+- **Search & tag filter** (client-side, `project.tasks` đã load đủ): substring không phân biệt hoa
+  thường trên `name` + `note`; dropdown tag **chỉ liệt kê category mà task của project đang dùng**
+  — liệt kê cả DB thì đa số lựa chọn ra kết quả rỗng. Lọc áp cho cả Kanban lẫn List; **không**
+  đổi progress ở header.
+- `projectViewMode` và `hideEmptyKanbanColumns` ở `src/stores/ui.store.ts` (devtools, không
+  persist — reload về Kanban, không ẩn).
 
-- Progress bar theo `color`. Badge priority. Reward + deadline.
-- Project `completed`: border gold + ✓. Quá `deadline` chưa xong: accent đỏ.
-- Click card → `/projects/[id]`. Nút "+ New Project" mở modal tạo.
+## Form — `ProjectFormModal.tsx`
 
-## UI — ProjectDetailPage
+Name · Description · Icon (`IconPickerSheet`) · Color · Priority · **Deadline (optional)** dùng
+`@/components/ui/DatePicker` có nút clear — không dùng date input native để đồng bộ giao diện ·
+XP Reward · Coin Reward. Form không có field `startDate`.
 
-- Header: tên, icon, progress bar, reward (xp/coins), deadline, nút Edit / Archive /
-  Complete (Complete chỉ enable khi progress = 1).
-- **View toggle Kanban ↔ List** (lưu lựa chọn ở ui.store).
-  - **Kanban**: cột theo TaskStatus (`todo / in_progress / pending / waiting / done`),
-    kéo-thả task đổi status (reuse TaskCard). Cập nhật progress sau mỗi lần đổi.
-  - **List**: list task có checkbox toggle done + progress bar tổng.
-- Nút "+ Add Task" tạo task với `projectId` gắn sẵn (reuse modal task hiện có).
-- **Search & Filter task con** (client-side, không thêm API — `project.tasks` đã load hết):
-  - Search theo `name` + `note` (case-insensitive, substring).
-  - Filter theo `tagId` (dropdown, load từ `useCategories()`).
-  - Kết quả lọc áp dụng cho cả Kanban lẫn List. Ẩn khi project đã `completed`
-    (toolbar không hiện) — không ảnh hưởng `progress`/`doneTasks`/`totalTasks` ở header
-    (luôn tính trên toàn bộ task, không theo filter).
-  - Component: `ProjectTaskFilters.tsx`.
+## Dashboard — `ProjectsPanel.tsx`
 
-## Reuse / Types
+Cột phải dashboard, liệt kê project `active` kèm progress và `done/total tasks`, mỗi dòng link
+tới `/projects/[id]`; rỗng → "No active projects."
 
-| File                              | Thay đổi                                                |
-| --------------------------------- | ------------------------------------------------------- |
-| `src/server/models/task.model.ts` | thêm `projectId?` + index                               |
-| `src/types/task.ts`               | `Task.projectId?`, payload `projectId?: string \| null` |
-| `src/types/project.ts` (mới)      | `Project`, `ProjectStatus`, `ProjectPriority`, payloads |
-| `src/services/endpoints/`         | client `projects.ts`                                    |
-| `src/stores/ui.store.ts`          | `projectViewMode: 'kanban' \| 'list'`                   |
-| i18n `src/i18n/locales/`          | strings cho projects                                    |
+## Edge cases
 
-## Notification & Stats
+- Archive/xoá ẩn cả task đã `done`; khôi phục project không có (không có route unarchive).
+- `$inc` XP phía server không xét level-up và có thể bị dashboard đè — xem `character.md`.
 
-- Complete project → notification type `reward`: "🚀 Project Complete — [name]".
-- Cộng `xp`/`coins` vào Stats như các nguồn thưởng khác.
+## Câu hỏi mở
+
+- `DELETE` có nên xoá ScheduleBlock như archive không? Hiện block của task ẩn vẫn còn trên lịch.
+- Có cần unarchive / reopen project completed?
 
 </requirement>
 
-<tone>Concise, technical. Không over-engineer — Project là lớp gom task, giữ nhẹ.</tone>
+<tone>Concise, technical. Project là lớp gom task — giữ nhẹ.</tone>
