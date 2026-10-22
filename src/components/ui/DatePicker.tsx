@@ -304,11 +304,15 @@ export function DatePicker({
                         !isSelected &&
                         'text-[var(--text-md)] hover:bg-[var(--surface-3)] hover:text-[var(--text-hi)]',
                       isToday && !isSelected && 'text-[var(--gold)] font-bold',
-                      isSelected && 'font-bold text-[var(--on-gold)] shadow-[var(--sh-glow-gold)]',
+                      isSelected &&
+                        'font-bold text-[var(--on-gold-fill)] shadow-[var(--sh-glow-gold)]',
                     )}
                     style={
                       isSelected
-                        ? { background: 'linear-gradient(135deg, var(--gold-2), var(--gold))' }
+                        ? {
+                            background:
+                              'linear-gradient(135deg, var(--gold-fill-2), var(--gold-fill))',
+                          }
                         : undefined
                     }
                   >

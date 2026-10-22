@@ -66,7 +66,7 @@ function SegRadio({
           onClick={() => onChange(o.id)}
           className={
             value === o.id
-              ? 'px-3 py-[5px] rounded-xs bg-gold text-[var(--on-gold)] [font-family:var(--f-body)] text-[11px] font-semibold tracking-[0.04em] cursor-pointer border-none'
+              ? 'px-3 py-[5px] rounded-xs bg-[var(--gold-fill)] text-[var(--on-gold-fill)] [font-family:var(--f-body)] text-[11px] font-semibold tracking-[0.04em] cursor-pointer border-none'
               : 'px-3 py-[5px] rounded-xs bg-transparent text-text-md [font-family:var(--f-body)] text-[11px] tracking-[0.04em] cursor-pointer border-none hover:text-text-hi transition-colors'
           }
         >

@@ -57,12 +57,12 @@ export function Checkbox({
           indeterminate
             ? 'bg-[var(--gold)] border-[var(--gold)] text-transparent'
             : checked
-              ? 'bg-gradient-to-br from-[var(--gold-2)] to-[var(--gold)] border-[var(--gold)] text-[var(--on-gold)] shadow-[var(--sh-glow-gold)]'
+              ? 'bg-gradient-to-br from-[var(--gold-fill-2)] to-[var(--gold-fill)] border-[var(--gold-fill)] text-[var(--on-gold-fill)] shadow-[var(--sh-glow-gold)]'
               : 'border-[var(--border-hi)] text-transparent',
         )}
       >
         {indeterminate ? (
-          <span className="w-2 h-0.5 bg-[var(--on-gold)] block" />
+          <span className="w-2 h-0.5 bg-[var(--on-gold-fill)] block" />
         ) : checked ? (
           '✓'
         ) : null}

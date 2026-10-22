@@ -217,7 +217,7 @@ export function ProjectDetail({ id }: { id: string }) {
               className={cn(
                 'px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.06em] [font-family:var(--f-title)] rounded-[var(--r-sm)] border transition-all',
                 canComplete
-                  ? 'bg-gradient-to-br from-[var(--gold-2)] to-[var(--gold)] text-[var(--on-gold)] border-[var(--gold)] hover:-translate-y-px'
+                  ? 'bg-gradient-to-br from-[var(--gold-fill-2)] to-[var(--gold-fill)] text-[var(--on-gold-fill)] border-[var(--gold-fill)] hover:-translate-y-px'
                   : 'border-[var(--border)] text-[var(--text-lo)] opacity-50 cursor-not-allowed',
               )}
               title={canComplete ? 'Claim reward' : 'Finish all tasks first'}
@@ -271,7 +271,7 @@ export function ProjectDetail({ id }: { id: string }) {
                     className={cn(
                       'w-3 h-3 flex items-center justify-center rounded-[3px] border shrink-0',
                       hideEmptyColumns
-                        ? 'bg-[var(--gold)] border-[var(--gold)] text-[var(--on-gold)]'
+                        ? 'bg-[var(--gold-fill)] border-[var(--gold-fill)] text-[var(--on-gold-fill)]'
                         : 'border-[var(--border-hi)]',
                     )}
                   >

@@ -18,7 +18,7 @@ const variantStyles: Record<BadgeVariant, string> = {
   rose: 'bg-[oklch(0.74_0.18_5_/_0.12)] text-[var(--rose)] border-[oklch(0.74_0.18_5_/_0.4)]',
   crimson:
     'bg-[oklch(0.62_0.24_22_/_0.12)] text-[var(--crimson)] border-[oklch(0.62_0.24_22_/_0.4)]',
-  solid: 'bg-[var(--gold)] text-[var(--on-gold)] border-[var(--gold)]',
+  solid: 'bg-[var(--gold-fill)] text-[var(--on-gold-fill)] border-[var(--gold-fill)]',
 };
 
 export function Badge({ children, variant = 'gold', className }: BadgeProps) {

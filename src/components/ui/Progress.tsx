@@ -15,7 +15,7 @@ export interface ProgressProps {
 }
 
 const barStyles: Record<ProgressVariant, string> = {
-  gold: 'bg-gradient-to-r from-[var(--gold-2)] to-[var(--gold)] shadow-[0_0_12px_var(--gold-glow)]',
+  gold: 'bg-gradient-to-r from-[var(--gold-fill-2)] to-[var(--gold-fill)] shadow-[0_0_12px_var(--gold-glow)]',
   violet:
     'bg-gradient-to-r from-[var(--violet-2)] to-[var(--violet)] shadow-[0_0_12px_var(--violet-glow)]',
   cyan: 'bg-gradient-to-r from-[oklch(0.55_0.16_205)] to-[var(--cyan)] shadow-[0_0_12px_var(--cyan-glow)]',

@@ -190,6 +190,6 @@ const detailActions = 'flex gap-2.5';
 const detailBtn =
   'flex-1 font-[var(--font-title)] text-[12px] tracking-[0.15em] font-bold p-[14px] rounded-lg border cursor-pointer uppercase transition-all duration-200';
 const detailBtnPrimary =
-  'bg-[linear-gradient(135deg,oklch(0.55_0.12_85),var(--gold))] border-[var(--gold)] text-[var(--on-gold)] shadow-[0_0_20px_var(--gold-glow)] hover:-translate-y-0.5 hover:shadow-[0_0_30px_var(--gold-glow)] disabled:bg-[var(--panel3)] disabled:border-[var(--border)] disabled:text-[var(--text-lo)] disabled:shadow-none disabled:cursor-not-allowed disabled:translate-y-0';
+  'bg-[linear-gradient(135deg,var(--gold-fill-deep),var(--gold-fill))] border-[var(--gold-fill)] text-[var(--on-gold-fill)] shadow-[0_0_20px_var(--gold-glow)] hover:-translate-y-0.5 hover:shadow-[0_0_30px_var(--gold-glow)] disabled:bg-[var(--panel3)] disabled:border-[var(--border)] disabled:text-[var(--text-lo)] disabled:shadow-none disabled:cursor-not-allowed disabled:translate-y-0';
 const detailBtnSecondary =
   'bg-[var(--panel2)] border-[var(--border)] text-[var(--text-mid)] hover:text-[var(--text-hi)] hover:border-[var(--text-hi)]';
