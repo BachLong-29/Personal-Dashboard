@@ -1,115 +1,94 @@
-# Category System
+# Category — nhãn dùng chung cho Habit, Task và Event
 
-Category (tag) là nhãn phân loại dùng chung cho Habits và Tasks. Mỗi user có một danh sách categories riêng, tự quản lý.
+<role>Fullstack engineer giữ một danh sách nhãn nhỏ, riêng cho từng user</role>
 
----
+<context>
+Category (trong code là `tagId`) là nhãn để nhóm và lọc theo chủ đề ("Work", "Health"…). Mỗi user
+tự quản lý danh sách của mình. Nó **chỉ có tên** — màu và icon thuộc về từng Habit/Task/Event, nên
+cùng một category có thể mang nhiều màu.
 
-## Mục tiêu
+Không nhầm với finance category (`FinanceCategory`, xem `finance-categories.md`) — model và API khác hẳn.
+</context>
 
-Cho phép user gắn nhãn (tag) vào habits và tasks để nhóm và lọc theo chủ đề (ví dụ: "Work", "Health", "Learning").
+<task>
+Mô tả model, API, cách seed mặc định, ràng buộc xoá và UI quản lý.
+</task>
 
----
+<requirement>
 
-## Data Model
+## Model — `src/server/models/category.model.ts`
 
-```typescript
-{
-  userId: ObjectId; // chủ sở hữu
-  name: string; // tối đa 50 ký tự, trim, unique per user
-  createdAt: Date;
-  updatedAt: Date;
-}
-```
+| Field      | Ghi chú                   |
+| ---------- | ------------------------- |
+| `userId`   | ref User, index           |
+| `name`     | required, trim, ≤50 ký tự |
+| timestamps | `createdAt`, `updatedAt`  |
 
-**Ràng buộc:**
+- Index unique `(userId, name)` — không trùng tên trong cùng user (phân biệt hoa thường theo
+  collation mặc định).
+- Không soft delete.
 
-- `(userId, name)` là unique — không thể có 2 categories trùng tên trong cùng một user.
-- Không có soft delete — xóa là xóa hẳn.
-- Category không có màu sắc hay icon riêng (màu/icon thuộc về Habit/Task).
+## Quan hệ
 
----
+| Entity | Field   | Ghi chú                                 |
+| ------ | ------- | --------------------------------------- |
+| Habit  | `tagId` | string id                               |
+| Task   | `tagId` | string id                               |
+| Event  | `tagId` | required ở dòng series (xem `event.md`) |
 
-## Default Categories
+`tagId` lưu dạng string, không phải ObjectId ref — không có populate, client tự tra tên từ
+`useCategories()`.
 
-Khi user lần đầu gọi `GET /api/v1/categories` mà chưa có category nào, hệ thống tự seed 3 categories mặc định:
+## API — `src/app/api/v1/categories`
 
-```
-Morning Routine
-Healthy Lifestyle
-Work
-```
+| Action  | Route                    | Ghi chú                                                              |
+| ------- | ------------------------ | -------------------------------------------------------------------- |
+| List    | `GET /categories`        | Của user, sort `createdAt` asc. **Rỗng thì seed mặc định**           |
+| Tạo     | `POST /categories`       | `{ name }` (1–50, trim) → `201`                                      |
+| Đổi tên | `PATCH /categories/:id`  | `{ name }`; chỉ owner, không thấy → `404`                            |
+| Xoá     | `DELETE /categories/:id` | Hard delete; `409` nếu còn **habit active** dùng; không thấy → `404` |
 
-Seed chỉ xảy ra một lần duy nhất (khi danh sách rỗng).
+Body sai → `400` (Zod). Mọi route cần Bearer (`getAuthUser`), thiếu → `401`.
 
----
+**Seed:** `Morning Routine`, `Healthy Lifestyle`, `Work` được tạo **mỗi khi** `GET` thấy danh sách
+rỗng — không phải chỉ một lần. Xoá hết category thì lần GET sau chúng quay lại. Lý do giữ vậy: form
+Task/Habit/Event đều cần ít nhất một category để chọn.
 
-## Quan hệ với các entities khác
+**Ràng buộc xoá** chỉ kiểm `HabitModel.exists({ tagId, active: true })`. Task và Event đang dùng
+category vẫn xoá được → chúng còn giữ `tagId` mồ côi.
 
-| Entity | Field             | Kiểu quan hệ                |
-| ------ | ----------------- | --------------------------- |
-| Habit  | `tagId: ObjectId` | nhiều habits → một category |
-| Task   | `tagId: ObjectId` | nhiều tasks → một category  |
+## Ai dùng
 
-**Delete constraint:** Không thể xóa category nếu còn ít nhất một **Habit active** (`active: true`) đang dùng nó.  
-Hiện tại Task không được kiểm tra khi xóa (behavior này có thể được bổ sung sau).
+- Hooks ở `src/features/dashboard/hooks/`: `useCategories` (query key `['categories']`),
+  `useCreateCategory`, `useUpdateCategory`, `useDeleteCategory`.
+- `TaskForm`: `Select` có ô tìm kiếm (`searchable`, `21ea8e5`) thay cho hàng chip — danh sách dài
+  dần đã chiếm ba dòng và có scroll lồng nuốt thao tác cuộn của form. Có luồng "+ NEW" thêm category
+  ngay trong form. Category mặc định: cái tên `task` (không phân biệt hoa thường), không có thì cái
+  đầu tiên.
+- `AddHabitModal`, `EventFormModal`, `EventsPage`, `ProjectDetail`, `TaskAllView`, `TaskManagement`
+  đọc danh sách để chọn hoặc hiện tên.
+- AI assistant (`src/server/agent/habit-tools.ts`): tool `list_categories`; tạo habit không có
+  `tagId` thì lấy category đầu tiên.
 
----
+## UI quản lý — `CategoryModal`
 
-## CRUD Operations
+`src/features/dashboard/components/habits/CategoryModal.tsx`, **chỉ mở từ `HabitPanel`**. Dùng
+`Modal` chung (`maxWidth 440px`).
 
-| Action    | API                             | Notes                                                                  |
-| --------- | ------------------------------- | ---------------------------------------------------------------------- |
-| Danh sách | `GET /api/v1/categories`        | Chỉ categories của user, sort theo `createdAt` asc. Auto-seed nếu rỗng |
-| Tạo mới   | `POST /api/v1/categories`       | `{ name }` — trả 409 nếu tên đã tồn tại                                |
-| Đổi tên   | `PATCH /api/v1/categories/:id`  | `{ name }` — chỉ owner mới update được                                 |
-| Xóa       | `DELETE /api/v1/categories/:id` | Hard delete. Trả 409 nếu đang được dùng bởi habit active               |
+- Ô "Add Category" + nút Add; `Enter` cũng tạo.
+- Mỗi dòng: tên, `✎`, `✕`.
+- `✎` → sửa inline; `Enter` lưu, `Escape` huỷ.
+- `✕` → xoá ngay, không confirm. API `409` → thông báo lỗi ngay dưới dòng đó.
+- Danh sách cuộn riêng, `maxHeight: 300px`.
+- Đóng bằng nút Close, Escape, hoặc click backdrop (hành vi của `Modal`).
 
----
+## Câu hỏi mở
 
-## UI — CategoryModal
+- **Tên trùng trả `500`, không phải `409`.** `POST`/`PATCH` không kiểm trùng trước; lỗi
+  duplicate key (`E11000`) của Mongo rơi vào `asyncHandler` và thành `500` với message thô của Mongo.
+- Ràng buộc xoá có nên kiểm cả Task và Event (đang mồ côi `tagId`)?
+- Seed lại khi danh sách rỗng có phải hành vi mong muốn, hay nên chỉ seed một lần cho user mới?
 
-Mở từ HabitPanel (và TaskForm). Là một modal đơn giản cho phép user quản lý toàn bộ danh sách categories.
+</requirement>
 
-**Layout:**
-
-```
-┌─────────────────────────────┐
-│  ◈ Manage Categories        │
-├─────────────────────────────┤
-│  Add Category               │
-│  [input................] [+ Add] │
-├─────────────────────────────┤
-│  Morning Routine   [✎] [✕]  │
-│  Healthy Lifestyle [✎] [✕]  │
-│  Work              [✎] [✕]  │
-├─────────────────────────────┤
-│                    [Close]  │
-└─────────────────────────────┘
-```
-
-**Behaviors:**
-
-- Nhấn `Enter` trong input → tạo category.
-- Click `✎` → inline edit (input thay thế text, `Enter` = save, `Escape` = cancel).
-- Click `✕` → xóa ngay (không confirm). Nếu API trả 409 → hiển thị error message ngay dưới row đó.
-- List scroll độc lập nếu có nhiều items (max-height 300px).
-- Backdrop click → đóng modal.
-
----
-
-## Validation
-
-| Field  | Rule                                  |
-| ------ | ------------------------------------- |
-| `name` | required, 1–50 ký tự, trim whitespace |
-
-Server trả `400` nếu thiếu hoặc quá dài.  
-Server trả `409` nếu tên đã tồn tại (unique constraint) hoặc xóa category đang được dùng.
-
----
-
-## Trạng thái hiện tại
-
-✅ Đã implement đầy đủ: model, 4 API routes, CategoryModal UI, 4 React Query hooks (`useCategories`, `useCreateCategory`, `useUpdateCategory`, `useDeleteCategory`).
-
-🟡 Chưa làm: delete constraint cho Task (chỉ kiểm tra Habit hiện tại).
+<tone>Ngắn. Category cố ý chỉ có tên — thêm màu/icon vào đây là chồng chéo với Habit/Task.</tone>

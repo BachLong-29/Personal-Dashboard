@@ -1,91 +1,70 @@
-# Task Dependencies
+# Task Dependencies — task B chỉ làm được khi task A xong
 
-Task có thể phụ thuộc vào một hoặc nhiều task khác. Task phụ thuộc không nên được bắt đầu cho đến khi tất cả dependencies đã hoàn thành.
+<role>Fullstack engineer giữ quan hệ phụ thuộc giữa các task</role>
 
----
+<context>
+User cần mô hình hoá thứ tự làm việc. Hiện quan hệ này chỉ là **dữ liệu + gợi ý hiển thị**: không
+có gì tự đổi status, server không kiểm tra gì ngoài kiểu dữ liệu.
+</context>
 
-## Mục tiêu
+<task>
+Lưu danh sách task phải xong trước, cho chọn trong form, và dùng nó ở week view và gợi ý backlog.
+</task>
 
-Cho phép user mô hình hóa thứ tự thực hiện công việc: task B không thể làm trước khi task A xong.
+<requirement>
 
----
+## Dữ liệu
 
-## Data Model
+`Task.dependencies: ObjectId[]` (ref `Task`), rỗng = không phụ thuộc. Không có endpoint riêng —
+gửi cùng task:
 
-Trường `dependencies` trên Task model:
+- `POST /api/v1/tasks` — `dependencies: string[]`, default `[]`.
+- `PATCH /api/v1/tasks/:id` — `dependencies: string[]`, **thay cả mảng**.
 
-```typescript
-{
-  dependencies: ObjectId[]   // danh sách task IDs phải done trước
-}
-```
+Server **không** kiểm tra: id có tồn tại, có cùng user, có vòng lặp. Client cũng không chặn vòng
+lặp — chỉ loại chính task đang sửa khỏi danh sách chọn.
 
-- Array rỗng = không có dependency.
-- Chỉ tham chiếu task của cùng user (không cross-user).
-- Không validate circular dependency ở server (client nên ngăn).
+## Status `waiting`
 
----
+`waiting` là một giá trị status bình thường, **user tự đặt** trong dropdown Status (chỉ có ở chế
+độ edit). Không có logic tự chuyển `todo → waiting` khi thêm phụ thuộc, cũng không tự chuyển về
+`todo` khi các phụ thuộc xong.
 
-## Trạng thái `waiting`
+## UI — picker trong `TaskForm`
 
-Khi một task có dependency chưa hoàn thành, status của nó nên là `waiting`:
+`src/features/tasks/components/shared/TaskForm.tsx`, mục "Dependencies (optional)" cuối form,
+có dòng help "This task will be blocked until all selected tasks are done."
 
-```
-todo ──► in_progress ──► done
- │
- └──► waiting   ← bị block bởi dependency chưa done
-       │
-       └──► todo  (khi tất cả dependencies đã done)
-```
+- Ô search → `useTaskSearch(q, 10, editingId)`: debounce 300ms, gọi `GET /tasks?limit=10&q=`.
+  Ô trống → **10 task tạo gần nhất**. Kết quả lọc bỏ `editingId` ở client.
+- Danh sách là các hàng **checkbox** (icon · tên · `startDate`), cao tối đa 130px, cuộn được.
+  Không có chip. Kết quả **gồm cả task đã done** — không lọc theo status.
+- Task đã chọn nhưng không nằm trong kết quả search hiện tại → dòng "✓ N more selected (search
+  to view)", để user biết lựa chọn không bị mất khi đổi từ khoá.
 
-Chuyển từ `waiting` → `todo` xảy ra khi tất cả tasks trong `dependencies[]` đạt `status: 'done'`. Hiện tại logic này chưa được tự động hóa — user tự đổi status thủ công.
+## Nơi phụ thuộc có tác dụng
 
----
+| Chỗ                                                     | Hành vi                                                                         |
+| ------------------------------------------------------- | ------------------------------------------------------------------------------- |
+| Dashboard week view (`WeekView.tsx`)                    | Task **`status === 'todo'`** có phụ thuộc chưa done → mờ + 🔒                   |
+| Gợi ý backlog ([task-suggestion](./task-suggestion.md)) | Còn phụ thuộc chưa done → **loại hẳn**; mọi phụ thuộc đã done → +10 `unblocked` |
+| Clone task (`/tasks`)                                   | Bản sao giữ nguyên `dependencies`                                               |
 
-## UI — Dependency Picker
+`isBlocked` ở week view chỉ xét task có trong tập `allTasks` đã tải; một phụ thuộc không có trong
+tập đó bị coi là **chưa done** (lock hiện). Task ở status khác `todo` (kể cả `waiting`) **không**
+hiện lock.
 
-Trong **AddTaskModal** và **EditTaskModal**, có phần chọn dependencies:
+## Chưa làm
 
-- Hiển thị danh sách tasks của user (active, chưa done).
-- User chọn một hoặc nhiều task làm prerequisite.
-- Các task đã được chọn hiển thị dưới dạng chips có thể remove.
+- Tự chuyển status theo trạng thái phụ thuộc.
+- Kiểm tra vòng lặp (server hoặc client).
+- Liệt kê tên task đang chặn (tooltip / panel), hiển thị "blocked" ở day view, All view.
+- Đồ thị chuỗi phụ thuộc.
 
-**Validation client-side:**
+## Open questions
 
-- Không cho phép chọn chính task đang edit làm dependency của chính nó.
-- Không cho phép chọn task đã phụ thuộc ngược lại (tránh circular — best-effort, không enforce sâu).
+- Lock ở week view bỏ qua task `waiting` — trạng thái đúng nghĩa "bị chặn". Có nên xét
+  `todo | waiting` thay vì chỉ `todo`?
+- Picker cho chọn cả task đã done làm phụ thuộc; có nên ẩn chúng?
 
----
-
-## Hiển thị trong Task Views
-
-Khi một task đang ở trạng thái `waiting`:
-
-- Task card hiển thị indicator "Blocked" hoặc lock icon.
-- Tooltip hoặc expanded view liệt kê tên các tasks đang block nó.
-
-Hiện tại dependency chain visualization (graph/tree) là **planned feature**, chưa implement.
-
----
-
-## API
-
-Không có endpoint riêng cho dependencies — chúng được update cùng task qua:
-
-```
-PATCH /api/v1/tasks/:id
-Body: { dependencies: string[] }
-```
-
----
-
-## Trạng thái hiện tại
-
-✅ Đã implement: field `dependencies: ObjectId[]` trong model, dependency picker UI trong TaskForm.
-
-🟡 Chưa làm:
-
-- Tự động chuyển status `waiting` → `todo` khi dependencies cleared.
-- Dependency chain visualization (graph/tree view).
-- Server-side validation circular dependency.
-- Hiển thị "blocked by" trên task card trong WeekView / DayView.
+</requirement>

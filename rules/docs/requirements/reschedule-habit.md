@@ -1,110 +1,95 @@
-# Reschedule Habit → Task
+# Reschedule Habit → Task — dời một lần xuất hiện của habit
 
-Cơ chế cho phép user dời một lần xuất hiện của habit sang giờ khác mà không thay đổi lịch gốc của habit.
+<role>Fullstack engineer cho phép dời giờ một buổi habit mà không đụng lịch gốc</role>
 
----
+<context>
+Habit có lịch tuần cố định (T2-4-6 lúc 07:00 — xem [habits](./habits.md)). Thỉnh thoảng user muốn
+làm buổi **hôm nay** sớm hoặc muộn hơn mà các ngày khác giữ nguyên. Sửa schedule của habit là
+sai công cụ — nó đổi mọi tuần.
 
-## Mục tiêu
+Cơ chế này cũng là tiền lệ cho override của [event](./event.md): bản ghi thay thế trỏ ngược về
+nguồn gốc, thay vì một collection override riêng.
+</context>
 
-Habit có lịch cố định (Mon/Wed/Fri lúc 07:00). Đôi khi user muốn thực hiện habit đó sớm hơn hoặc muộn hơn trong một ngày cụ thể mà không ảnh hưởng các ngày khác.
+<task>
+Từ Day view, dời một occurrence habit sang giờ khác bằng cách sinh một Task có `habitRef` và một
+ScheduleBlock mang giờ mới.
+</task>
 
----
+<requirement>
 
 ## Cơ chế
 
-Khi reschedule một habit occurrence:
+1. Tạo **Task** qua `POST /api/v1/tasks` (không có endpoint riêng):
 
-1. Tạo một **Task** mới với `habitRef: habit._id` trỏ về habit gốc.
-2. Task mới có `startDate = ngày đó`, `startTime = giờ mới`, `endDate = null` (single-day).
-3. Ngày đó, task log thay thế habit log — không double count XP/coins.
-4. Lịch gốc của habit không bị ảnh hưởng — các ngày khác vẫn chạy bình thường.
+   | Field                      | Giá trị                                    |
+   | -------------------------- | ------------------------------------------ |
+   | `name`                     | tên habit (xem câu hỏi mở về cách lấy tên) |
+   | `icon` · `color` · `tagId` | của habit (`tagId` fallback `'habit'`)     |
+   | `startDate`                | **hôm nay** (`todayStr`)                   |
+   | `duration`                 | `habit.duration`, mặc định 15              |
+   | `habitRef`                 | `habit._id`                                |
 
-**Quan hệ:**
+2. Tạo xong → `POST` ScheduleBlock `{ sourceType: 'task', sourceId, date: hôm nay, startTime:
+giờ mới, duration: est ?? 30 }`. **Task không còn trường giờ** — giờ chỉ nằm trên block
+   ([schedule-block](./schedule-block.md)), nên spec cũ "task có `startTime`" đã sai.
+3. Lịch gốc của habit không đổi; các ngày khác chạy bình thường.
 
 ```
 Habit (schedule gốc)
-  └─ Task (habitRef → habit._id, startDate = ngày cụ thể, startTime = giờ mới)
+  └─ Task (habitRef → habit._id, startDate = hôm nay)
+       └─ ScheduleBlock (date = hôm nay, startTime = giờ mới)
 ```
 
----
+Code: `onRescheduleHabit` trong `src/features/dashboard/hooks/useScheduleDayTasks.ts`.
 
-## UI — RescheduleHabitModal ("Reschedule Ritual")
+## Chống double count
 
-Mở khi user click vào một habit occurrence trong **DayView** (Tasks page).
+- **Server** (`buildCalendar`): task có `habitRef` + `startDate` = D → bỏ occurrence habit ngày D.
+- **Client** (`useScheduleDayTasks`, `useWeekTasks`): habit có task `habitRef` cùng **hôm nay**
+  → card habit mang `cancelled: true`.
+- Ngày đó task là nguồn sự thật: tick task → `status: 'done'` → **60 XP + 15 coin** (thưởng của
+  task, không phải 30/10 của habit). Không tạo HabitLog.
 
-### Slot Presets
+## UI
 
-Modal cung cấp 4 preset nhanh:
+**Lối vào:** nút `⏱ Reschedule` trong phần mở rộng của `QuestCard` cho item `source === 'habit'`,
+ở Day view của cả `/tasks` (`TaskDayView`) lẫn dashboard (`ScheduleDayViewPanel` → `TaskDayView`).
 
-| Preset    | Glyph | Giờ mặc định |
-| --------- | ----- | ------------ |
-| Dawn      | ◐     | 07:00        |
-| Deep Work | ❖     | 10:00        |
-| Afternoon | ☉     | 14:00        |
-| Twilight  | ☾     | 19:00        |
+**`RescheduleHabitModal`** — `src/features/tasks/components/day/RescheduleHabitModal.tsx`,
+tiêu đề "Reschedule Ritual":
 
-Preset trùng với giờ hiện tại của habit sẽ bị disabled (label "current").
+| Preset    | Glyph | Giờ   |
+| --------- | ----- | ----- |
+| Dawn      | ◐     | 07:00 |
+| Deep Work | ❖     | 10:00 |
+| Afternoon | ☉     | 14:00 |
+| Twilight  | ☾     | 19:00 |
 
-### Custom Time
+- Preset trùng giờ hiện tại: disabled, nhãn "current". Mặc định chọn preset đầu tiên khác giờ hiện tại.
+- `<input type="time">` tuỳ ý — có giá trị thì đè preset.
+- Preview `↷ [tên] will move to [HH:MM]`. Actions: Cancel · ↷ Reschedule.
 
-Ngoài preset, user có thể nhập giờ tùy ý qua `<input type="time">`. Khi nhập custom time, nó override preset đang chọn.
+**Optimistic:** card habit gốc chuyển `cancelled` → gạch ngang + badge **MOVED**; task tạm chèn
+vào slot theo giờ (`<10` morning · `<13` deep · `<17` afternoon · còn lại evening). Lỗi → hoàn tác.
 
-### Preview
+## Edge cases
 
-Khi đã chọn giờ (preset hoặc custom), hiển thị preview:
+- Reschedule cùng habit **nhiều lần** trong ngày → nhiều task `habitRef` — vẫn được phép.
+- Habit bị xoá (hard delete) sau khi reschedule → task vẫn sống, `habitRef` trỏ vào habit không
+  còn tồn tại; không ảnh hưởng gì.
+- Xoá task reschedule → `buildCalendar` không còn thấy `habitRef`, occurrence habit tự hiện lại.
 
-```
-↷ [Habit name] will move to [HH:MM]
-```
+## Câu hỏi mở / lỗi phát hiện khi đối chiếu code
 
-### Actions
+- **Tên bị cắt chữ đầu:** cả modal lẫn payload dùng `title.replace(/^\S+\s+/, '')` để bỏ emoji
+  đầu title. Từ `0375a0c` title habit không còn mang icon → "Morning Run" thành "Run".
+- **Luôn là hôm nay:** `startDate`/block dùng `todayStr`, không phải ngày đang xem. Bấm Reschedule
+  trên habit của ngày khác sẽ tạo task cho hôm nay. Nên giới hạn nút ở hôm nay hay dùng ngày chọn?
+- **Rollback lỗi:** nhánh `onError` nối `ts.filter(...)` với `ts.map(...)` → danh sách bị nhân đôi.
+- Task tạo được nhưng block lỗi (bước 2) → task không giờ vẫn tồn tại, habit ngày đó đã bị ẩn;
+  không có hoàn tác cho nhánh này.
 
-- **Cancel** — đóng modal, không làm gì.
-- **↷ Reschedule** — gọi `POST /api/v1/tasks` với `habitRef` và `startTime` mới.
+</requirement>
 
----
-
-## API
-
-```
-POST /api/v1/tasks
-Body: {
-  name:      string         // tên habit
-  icon:      string         // icon habit
-  tagId:     string         // tagId của habit
-  color:     TaskColor      // color của habit
-  startDate: "YYYY-MM-DD"   // ngày reschedule
-  startTime: "HH:MM"        // giờ mới
-  habitRef:  string         // habit._id
-  status:    'todo'
-}
-```
-
-Không có endpoint riêng — dùng `POST /api/v1/tasks` thông thường.
-
----
-
-## Counting & Rewards
-
-- Khi task được toggle done (qua `POST /api/v1/task-logs`), rewards giống task thường: **60 XP + 15 coins**.
-- Habit log cho ngày đó **không được tạo thêm** — ngày đó, task log là nguồn sự thật.
-- Logic tránh double count: dashboard check `habitRef` để biết habit này đã được handle bởi task.
-
----
-
-## Edge Cases
-
-- Nếu user reschedule cùng một habit **nhiều lần** trong cùng một ngày → nhiều tasks `habitRef` cùng ngày — behavior hiện tại cho phép, nhưng nên tránh.
-- Nếu habit bị xóa (soft delete) sau khi đã tạo task reschedule → task vẫn tồn tại và hoạt động bình thường (không bị ảnh hưởng).
-
----
-
-## Trạng thái hiện tại
-
-✅ Đã implement: `habitRef` field trong Task model, RescheduleHabitModal UI với slot presets + custom time + preview.
-
-🟡 Chưa làm:
-
-- Logic tránh tạo nhiều reschedule task cho cùng 1 habit trong 1 ngày.
-- Hiển thị rõ ràng trong DayView rằng habit đã được reschedule (phân biệt với habit occurrence gốc).
-- Sync ngược: nếu task reschedule bị xóa, habit log của ngày đó có tự restore không.
+<tone>Concise, technical. Không endpoint mới — dùng Task + ScheduleBlock sẵn có.</tone>

@@ -1,5 +1,7 @@
 # Schedule Management System Requirement
 
+> ⚠ File vượt giới hạn 150 dòng — đang chờ tách. Đây là bản thiết kế gốc; chỉ các câu đã sai so với code (2026-10) được ghi chú "Thực tế". Spec đúng: [schedule-engine](./schedule-engine.md) §20.
+
 ---
 
 # 1. Mục tiêu tính năng
@@ -9,6 +11,7 @@ Xây dựng hệ thống quản lý lịch trình cho:
 - Habit
 - Quest
 - Task
+- Event (thêm sau — lịch cố định/phát sinh không có "done", xem [event](./event.md))
 
 Cho phép:
 
@@ -134,6 +137,9 @@ Tạo:
 habit_schedule_override
 ```
 
+> Thực tế: không có bảng này. Một lần habit bị dời = task thay thế có `habitRef` + schedule block
+> tại giờ mới ([reschedule-habit](./reschedule-habit.md)). Ưu tiên chỉ 2 mức: override > weekly.
+
 ---
 
 ## Override Structure
@@ -180,6 +186,10 @@ Nhiệm vụ phát sinh nhanh.
 | reward_coin        | number   |
 | reward_gems        | number   |
 | status             | enum     |
+
+> Thực tế: Quest **không có** `start_date` / `estimated_duration` / multi-day. Model có `title`,
+> `type`, `difficulty`, `dueDate`, `dueTime?` (HH:MM), `done`. Quest Rule và Quest Scheduling bên
+> dưới chưa được triển khai.
 
 ---
 
@@ -381,6 +391,9 @@ Hiển thị:
 - columns = days
 - rows = timeline
 
+> Thực tế: mỗi cột là **danh sách** item sắp theo giờ (item không giờ xuống cuối), không có trục
+> timeline. Xem [week-view-rescheduling](./week-view-rescheduling.md).
+
 ---
 
 # Drag & Drop Rules
@@ -408,6 +421,8 @@ Nếu kéo:
 ---
 
 # Habit Edit Flow
+
+> Thực tế: chưa triển khai — bấm habit ở Week View mở tab Habits, không có prompt.
 
 Khi click habit:
 
@@ -451,6 +466,10 @@ Tuesday ∉ [start_date, due_date]
 ---
 
 # Recommendation
+
+> Thực tế: Strict/Flexible, popup "outside range" và auto extension **chưa triển khai**.
+> `scheduleMode` có trong UserSetting nhưng không được đọc. Kéo task chỉ dời ngày; task có
+> `endDate` không kéo được.
 
 # Có 2 mode
 
@@ -509,6 +528,8 @@ due_date = 7/1
 
 # 5.3 Monthly View
 
+> Thực tế: sub-tab Month đang được cất khỏi Schedule (`SUB_TABS = ['day','week']`).
+
 ## Mục tiêu
 
 High-level planning.
@@ -562,14 +583,14 @@ calendar_instance
 
 # Calendar Instance Structure
 
-| Field       | Type             |
-| ----------- | ---------------- |
-| source_type | habit/task/quest |
-| source_id   | relation         |
-| date        | date             |
-| start_time  | time             |
-| end_time    | time             |
-| status      | enum             |
+| Field       | Type                   |
+| ----------- | ---------------------- |
+| source_type | habit/task/quest/event |
+| source_id   | relation               |
+| date        | date                   |
+| start_time  | time                   |
+| end_time    | time                   |
+| status      | enum                   |
 
 ---
 
@@ -614,6 +635,9 @@ Nếu:
 ```txt
 Potential burnout detected.
 ```
+
+> Thực tế: chưa có fatigue detection; chỉ có overload theo `dailyCapacityMinutes`
+> ([conflict-capacity](./conflict-capacity.md)).
 
 ---
 

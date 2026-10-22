@@ -1,95 +1,136 @@
-# AI Task Agent
+# AI Task Agent — trợ lý đọc lịch, đề xuất thay đổi, chỉ ghi khi user xác nhận
 
-An assistant that reads the user's tasks and proposes creating, editing, completing or deleting them from natural language. Backend lives in `src/server/agent/`, routes in `src/app/api/v1/agent/`.
+<role>Fullstack engineer xây trợ lý chat (LLM + tool-use) cho dashboard</role>
 
-## Flow
+<context>
+User muốn nói một câu ("dời buổi học sang thứ Sáu 10h", "lên lịch tuần này") thay vì mở
+từng form. Model ngôn ngữ thì có thể hiểu sai, bịa id hoặc bị nội dung task "ra lệnh". Vì vậy
+trợ lý được **đọc tự do nhưng không bao giờ tự ghi**: mọi thay đổi thành một đề xuất
+(proposal) mà user bấm Confirm thì server mới thực hiện.
 
-1. Client sends the new message to `POST /api/v1/agent` with its local `today` (`YYYY-MM-DD`) and `timezone`. Earlier turns are read from the stored conversation, not sent by the client.
-2. The server runs a tool-use loop (max 8 steps; if it runs out, one last call without tools makes the model answer from what the tools already returned, instead of failing) against an OpenAI-compatible LLM.
-3. **Read tools** (`list_tasks`, `list_categories`, `list_sessions`, `list_habits`, `list_notes`, `list_events`) run immediately, scoped to the caller.
-4. **Write tools** (`create_task`, `update_task`, `complete_task`, `delete_task`, `create_session`, `update_session`, `delete_session`, `create_habit`, `update_habit`, `set_habit_active`, `delete_habit`, `create_note`, `create_event`, `update_event`, `delete_event`, `cancel_occurrence`, `move_occurrence`) never write. They are stored as a `proposal` item with a one-line `summary` for the confirm card.
-5. The user decides with `POST /api/v1/agent/execute { proposalId, decision }`. The actions are read from the stored proposal, never from the request, so a client cannot run anything the assistant did not propose. The claim is atomic: a proposal is decided once.
+Backend ở `src/server/agent/`, route ở `src/app/api/v1/agent/`, model ở
+`src/server/models/agent-chat.model.ts`, type dùng chung ở `src/types/agent.ts`.
+Danh mục tool: [ai-task-agent-tools.md](ai-task-agent-tools.md). Giao diện web:
+[ai-task-agent-ui.md](ai-task-agent-ui.md).
+</context>
 
-## Conversation storage
+<task>
+Một hội thoại lưu trên server, dùng chung web + app; trợ lý tra cứu task / session / habit /
+event / note / giờ trống, đề xuất tạo-sửa-xoá, lên kế hoạch ngày/tuần, hỏi lại bằng nút chọn
+nhanh, và sau khi xác nhận thì chỉ đường tới thứ vừa thay đổi.
+</task>
 
-One rolling conversation per user (`AgentChat`, last 100 items), shared by the web and the app. A turn is saved only after the model answered, so a failed send leaves nothing behind and the client just sends the same message again. Items are `user`, `assistant` or `proposal` (`open` / `done` / `dismissed`). A confirmed change appends an assistant message with the outcome, so the model knows it happened.
+<requirement>
 
-## Endpoints
+## Luồng một lượt (`run-agent.ts`)
 
-| Route                          | Body                             | Returns                                                |
-| ------------------------------ | -------------------------------- | ------------------------------------------------------ |
-| `POST /api/v1/agent`           | `{ message, today?, timezone? }` | `{ items }` the items this turn added                  |
-| `GET /api/v1/agent/history`    | —                                | `{ items }` oldest first                               |
-| `DELETE /api/v1/agent/history` | —                                | clears the conversation                                |
-| `POST /api/v1/agent/execute`   | `{ proposalId, decision }`       | `{ state, results[], items }` (409 if already decided) |
+1. Client gửi **chỉ tin nhắn mới** tới `POST /api/v1/agent` kèm `today` (`YYYY-MM-DD` local)
+   và `timezone`. Lượt cũ đọc từ hội thoại đã lưu — client không gửi lại history, nên web và
+   app không thể lệch nhau.
+2. Server dựng system prompt (ngày hôm nay, timezone, luật dùng tool) + tối đa
+   `MAX_HISTORY = 20` lượt text gần nhất (cũ hơn bị bỏ, không tóm tắt).
+3. Vòng tool-use tối đa `MAX_STEPS = 8`:
+   - **Read tool** chạy ngay, luôn lọc theo `userId`; kết quả trả lại model.
+   - **Write tool** không ghi gì: `proposeActions` validate (zod), tra entity để viết `summary`
+     một dòng, rồi gom vào `pendingActions`. Id sai → lỗi về model, không tới user.
+   - `ask_user` → kết thúc lượt ngay (xem dưới).
+4. **Hết bước**: thay vì báo lỗi, gọi model thêm một lần **không có tool** kèm lệnh "trả lời
+   từ kết quả tool đã có". Chỉ khi lần đó cũng rỗng/lỗi mới trả câu mặc định
+   "I could not finish that request…". Lý do: 8 bước thường đã đọc đủ dữ liệu, vứt đi là phí.
+5. Lưu lượt: `user` + `assistant` (+ `proposal` nếu có action) **trong một lần ghi, sau khi
+   model đã trả lời**. Request lỗi giữa chừng không để lại gì → client gửi lại y nguyên là an
+   toàn (cơ sở cho auto-retry phía client).
+6. Client đã huỷ (`req.signal.aborted`) → trả 499 và **không lưu** lượt đó.
 
-All need the Bearer token like every other `/api/v1` route.
+## Hội thoại lưu trữ (`AgentChat`, `chat-store.ts`)
 
-## Configuration
+- Một document mỗi user (`userId` unique), mảng `items` cuộn, giữ `MAX_CHAT_ITEMS = 100`
+  item cuối (`$push` + `$slice: -100`). Web và app đọc/ghi cùng một hội thoại.
+- Item: `user` (`text`) · `assistant` (`text`, `choices?`) · `proposal` (`actions[]`,
+  `state: open | done | dismissed`, `targets?`). `text` ≤ 4000.
+- Chỉ item `user`/`assistant` có text mới được đưa vào ngữ cảnh model (`toTurns`). Vì thế
+  confirm thành công **append một item `assistant`** ghi kết quả ("Created "X".") — để lượt
+  sau model biết thay đổi đã thật sự xảy ra.
+- `DELETE /history` xoá cả document ("New chat" xoá trên mọi thiết bị).
 
-| Variable             | Default                                                   | Purpose                            |
-| -------------------- | --------------------------------------------------------- | ---------------------------------- |
-| `LLM_API_KEY`        | — (or `GEMINI_API_KEY`)                                   | Provider key; unset → 503          |
-| `LLM_BASE_URL`       | `https://generativelanguage.googleapis.com/v1beta/openai` | Any OpenAI-compatible server       |
-| `LLM_MODEL`          | `gemini-3.8-flash`                                        | Model id                           |
-| `LLM_FALLBACK_MODEL` | built-in: `gemini-3.6-flash`, `gemini-3.5-flash-lite`     | Tried when the model is overloaded |
+## Proposal — xác nhận trước khi ghi
 
-## Constraints
+- Mỗi action: `{ tool, args, summary }`. `plan_schedule` là ngoại lệ duy nhất: một lời gọi
+  sinh **nhiều** action (`update_task` / `create_session`) để user xác nhận cả kế hoạch một lần.
+- `POST /agent/execute { proposalId, decision }`: action đọc **từ proposal đã lưu**, không
+  từ request → client không thể chạy thứ trợ lý không đề xuất.
+- **Claim nguyên tử** (`claimProposal`): một `findOneAndUpdate` lọc `state: 'open'` và set
+  `done`/`dismissed` cùng lúc. Bấm đúp hay hai thiết bị cùng bấm → chỉ một bên thắng, bên kia
+  nhận **409**.
+- Lúc thực hiện, `executeAction` **validate lại** từ đầu (gọi lại `proposeAction`) và scope
+  theo user — dữ liệu có thể đã đổi giữa lúc đề xuất và lúc bấm.
+- Action chạy tuần tự. **Tất cả fail** → `reopenProposal` đưa về `open`, trả `state: 'open'`,
+  không append message — user thử lại được. Fail một phần → vẫn `done`; client hiện
+  "Some changes could not be saved".
+- `dismiss` không chạy gì, trả `{ state: 'dismissed', results: [], items: [] }`.
 
-- The key stays on the server; never expose it to a client bundle.
-- Provider errors map to friendly statuses: 429 busy (a provider 503 is reported as 429 too, so 503 only ever means not configured), 504 timeout, 502 other, 503 not configured.
-- Free tiers may use submitted content to improve the provider's models. Task names, dates and categories are sent; notes are only sent when the user types them.
-- `create_task` with `startTime` (24-hour `HH:MM`, requires `startDate`) also books a session on that day at that hour, the same `ScheduleBlock` record `POST /schedule-blocks` writes. Length is `duration`, default 60 min; without a time only the task is created.
-- `complete_task` refuses multi-day tasks: those are ticked per day through task logs in the app.
-- `update_task` changes only the fields passed; `null` clears `endDate`, `duration` or `note`. It cannot set `done` (that is `complete_task`).
-- Sessions after `update_task`: a **single-day** task's `planned` sessions are forced onto its `startDate` (and onto `startTime` / `duration` when given); with none booked, a `startTime` books one. `done` / `missed` sessions stay where they happened. A **multi-day** task's sessions are not moved — the result counts any now outside its days — and are edited one by one with `list_sessions` + `create_session` / `update_session` / `delete_session`, which keep each session inside the task's range.
-- `list_tasks` with a range returns every task with a day in it (date overlap), so a multi-day task begun earlier still shows.
-- Event tools live in `event-tools.ts` and keep the app's own model ([event.md](event.md)): one rule row plus one override row per cancelled/moved day. `list_events` with `start`+`end` returns expanded occurrences (≤62 days), without a range the rules; a moved occurrence reports its **series** id as `eventId`, which is what later edits address. `update_event` / `delete_event` act on the whole series (`recurrence: null` makes it a one-off and retires its overrides; delete retires them too). `cancel_occurrence` / `move_occurrence` take the series id and the day the occurrence is on **now**, check that an occurrence really exists there, and look up the day the rule originally generated it (a moved occurrence is overridden under its old day) via `applyEventOverride`, shared with `POST /events/:id/override`. No `startTime` = all-day; a time given to an all-day event makes it timed (default 60 min).
-- Note tools live in `note-tools.ts`: only `list_notes` (open by default — no `archivedAt`) and `create_note` (the user's words, unedited). Editing, deleting and marking notes done stay out, as decided in [quick-notes.md](quick-notes.md).
-- Habit tools live in `habit-tools.ts`. `update_habit` with `schedule` replaces the whole schedule. `set_habit_active` pauses/resumes (history kept; paused habits drop out of quests and stats). `delete_habit` is the same hard delete as `DELETE /habits/:id`, logs included — the prompt steers "stop for a while" to pause instead.
-- `delete_task` is the same soft delete as `DELETE /tasks/:id`: `active: false`, and the task's `ScheduleBlock`s are removed.
-- Writes on an existing task look it up while proposing, so the confirm card names the task and a bad id goes back to the model as an error instead of reaching the user.
-- Task names and notes are data to the model, never instructions (stated in the system prompt).
+## Targets — chỉ đường tới thứ vừa đổi
 
-## Asking back (`ask_user`)
+Mỗi action thành công có thể trả `target: { kind, id, label, date? }`
+(`kind: task | habit | event | note`). Là kind + id chứ **không phải URL**: web và app tự biết
+màn của mình ở đâu.
 
-When a detail is ambiguous or the user sounds unsure ("tomorrow or Friday?"), the model calls `ask_user { question, options[2..5] }` instead of guessing. The turn ends there: the question is stored as an `assistant` item with `choices`, and any change lined up in the same turn is dropped so a question and a proposal never appear together.
+- Route gộp target trùng theo `kind:id` (sửa rồi book cùng task = một chỗ), lưu vào proposal
+  bằng `setProposalTargets` (để reload vẫn còn link) và trả trong response.
+- Action xoá (`delete_task`, `delete_session`, `delete_habit`, `delete_event`) **không** có
+  target — không còn gì để mở. `date` có khi thay đổi gắn một ngày (session, occurrence…).
+- Web map target → link ở [ai-task-agent-ui.md](ai-task-agent-ui.md); app mobile map sang
+  màn riêng của nó.
 
-- Options are cleaned, not rejected: blanks and repeats are removed, entries cut to 60 characters, at most 5 kept; fewer than 2 distinct options goes back to the model as an error.
-- Clients show the choices as buttons under the question **only while it is the last message**; tapping one sends its text as an ordinary user message, so there is no extra endpoint. Typing instead works the same.
-- Plain-text questions remain for open answers such as a task name.
+## Hỏi lại (`ask_user`)
 
-## Planner (day / week)
+Thiếu chi tiết hoặc user phân vân ("mai hay thứ Sáu?") → model gọi
+`ask_user { question, options[2..5] }` thay vì đoán. Lượt dừng ngay; câu hỏi lưu thành item
+`assistant` với `choices`; **mọi action đã gom trong lượt bị bỏ**, để câu hỏi và proposal không
+bao giờ cùng xuất hiện.
 
-`plan_schedule { from, to, taskIds?, dayStart?, dayEnd?, breakMinutes? }` places tasks into the free time of the calendar and proposes every placement at once, as ordinary `update_task` (single-day or undated task: new `startDate` + `startTime`) or `create_session` (multi-day task, inside its range) actions. `get_free_time { from, to }` is the read-only view of the same gaps. `list_unscheduled` returns the open tasks with no planned session in one call (the answer to "which tasks are not planned?").
+- Options được làm sạch chứ không bị từ chối: bỏ rỗng/trùng, cắt 60 ký tự, giữ tối đa 5;
+  còn < 2 option khác nhau → lỗi về model. `question` cắt 240 ký tự.
+- Không có endpoint riêng: bấm một choice = gửi text đó như tin nhắn thường.
+- Câu hỏi mở (vd. tên task) vẫn là text thường.
 
-- **Placement is deterministic** (`plan-core.ts`, pure, no database): most urgent task first (overdue, then earliest end date, then start date, then longest). The same calendar and tasks always give the same plan.
-- **Which day:** a task with its own start date, or an overdue one, takes the earliest day it may use. An undated task, or one spanning several days, takes the **least loaded** allowed day (earliest on a tie), so a week is spread rather than filled from Monday.
-- **Busy time** comes from `buildCalendar`: sessions, habits, quests and events with a start time. Events marked free are ignored. Every block is widened by `breakMinutes` (default 15).
-- **Rules:** quarter-hour starts; working hours 09:00–18:00 by default; nothing before now today; a task never moves earlier than its own start date; a multi-day task stays inside its range.
-- **Ceilings:** at most 240 new minutes per day and 480 in total, so a week is spread rather than front-loaded.
-- **Which tasks:** `taskIds` when given, otherwise every open task with no planned session (up to 30). Tasks that do not fit are returned as `unplaced` with a reason and are never forced in.
-- The result carries `days` (`bookedMinutes`, `addedMinutes` per day) so the assistant can say whether an empty day was already full or simply had no task left.
-- Window is capped at 14 days and days before today are skipped. Placements are computed when proposed; the calendar can change before the user confirms.
+## API
 
-## Adding a tool
+| Route                          | Body                                  | Trả về                                                     |
+| ------------------------------ | ------------------------------------- | ---------------------------------------------------------- |
+| `POST /api/v1/agent`           | `{ message≤2000, today?, timezone? }` | `{ items }` các item lượt này thêm                         |
+| `GET /api/v1/agent/history`    | —                                     | `{ items }` cũ → mới                                       |
+| `DELETE /api/v1/agent/history` | —                                     | xoá hội thoại                                              |
+| `POST /api/v1/agent/execute`   | `{ proposalId, decision }`            | `{ state, results[], targets?, items }` · 409 nếu đã quyết |
 
-Add its zod schema and description to `READ_TOOLS` or `WRITE_TOOLS` in `tools.ts` (habit tools: `HABIT_READ_TOOLS` / `HABIT_WRITE_TOOLS` in `habit-tools.ts`), and its name to `AgentPendingAction['tool']` in `types/agent.ts`. A write tool also needs a branch in `executeAction`. The JSON schema sent to the model is generated from the zod schema.
+Tất cả cần Bearer token như mọi route `/api/v1`. Thiếu `today` → ngày UTC server; thiếu
+`timezone` → `UTC`.
 
-## Web UI
+## LLM (`llm.ts`)
 
-Route `/assistant` (`src/app/[locale]/(protected)/assistant/page.tsx`), reached from the dashboard menu (✨ Assistant).
+Client tối giản cho mọi endpoint OpenAI-compatible — đổi provider là đổi env, không đổi code.
 
-| File                                              | Role                                         |
-| ------------------------------------------------- | -------------------------------------------- |
-| `features/assistant/components/AssistantPage.tsx` | Chat shell, input, suggestions, retry        |
-| `features/assistant/components/ChatBubble.tsx`    | One message                                  |
-| `features/assistant/components/ProposalCard.tsx`  | Pending changes with Cancel / Confirm        |
-| `features/assistant/hooks/useAssistant.ts`        | `useAgentChat`, `useExecuteAgentActions`     |
-| `services/endpoints/agent.ts`                     | `/agent` (60 s timeout) and `/agent/execute` |
+| Biến                 | Mặc định                                                  | Ý nghĩa                         |
+| -------------------- | --------------------------------------------------------- | ------------------------------- |
+| `LLM_API_KEY`        | — (hoặc `GEMINI_API_KEY`)                                 | Thiếu → 503                     |
+| `LLM_BASE_URL`       | `https://generativelanguage.googleapis.com/v1beta/openai` | Server OpenAI-compatible bất kỳ |
+| `LLM_MODEL`          | `gemini-3.8-flash`                                        | Model chính                     |
+| `LLM_FALLBACK_MODEL` | chuỗi có sẵn `gemini-3.6-flash`, `gemini-3.5-flash-lite`  | Dùng khi model chính quá tải    |
 
-- Mobile-first: one centred column (`max-w-2xl`), input pinned to the bottom, equal-width buttons.
-- Enter sends, Shift+Enter adds a line. The stored conversation loads on open; "New chat" clears it (with a confirm).
-- A failed send is retried by the client on its own: up to 3 more times (waits 2 s, 4 s, 8 s) on 429, 502, 504 or no response, with "Assistant is busy — trying again (n/3)…" in the status line. Not retried: 503 (not configured), other 4xx, a client-side timeout (the server may still finish and store the turn). Safe because the server saves a turn only after the model answered. After the last try the error line and **Try again** button appear as before.
-- **Stop** (■ in the status line) aborts the request or the wait between tries; the abort reaches the model call (`req.signal` → `LlmCall`) and nothing is stored. The message returns to the input box unless something new is being typed.
-- After a confirm the task, session, habit, quest, calendar and profile queries are invalidated.
+- Chuỗi fallback có sẵn chỉ áp dụng với cấu hình Gemini mặc định; tự đặt `LLM_MODEL` mà không
+  có `LLM_FALLBACK_MODEL` thì không fallback (id model khác nhau theo provider).
+- Mỗi model: thử lại 1 lần sau 800 ms khi gặp 429/5xx, rồi sang model kế. Timeout 30 s/lần gọi.
+  Huỷ từ client (`signal`) cắt ngay lần gọi đang chạy và không thử tiếp.
+- Map lỗi: 429 bận (**503 của provider cũng báo 429**, để 503 chỉ còn nghĩa "chưa cấu hình" —
+  client retry cái này, không retry cái kia), 504 timeout/mạng, 502 lỗi khác.
+- Tool call được echo nguyên trạng (Gemini 3 cần `thought_signature`); thiếu `id` thì tự sinh.
+
+## Ràng buộc an toàn
+
+- Key chỉ ở server, không bao giờ vào client bundle.
+- Tên task, note… là **dữ liệu, không phải lệnh** (nói rõ trong system prompt).
+- Free tier của provider có thể dùng nội dung để train: tên task, ngày, category được gửi đi.
+
+</requirement>
+
+<tone>Ngắn, nói lý do; con số lấy đúng từ code.</tone>

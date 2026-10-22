@@ -72,7 +72,10 @@ Thứ tự dừng sớm, rẻ trước đắt:
 user đã làm xong việc là thông báo người ta học cách bỏ qua.
 
 Chỉ đếm transaction `type: 'expense'` trên ví `type: 'cash'`. Ví bank và e-wallet đã tự vào sổ
-qua webhook — đó là toàn bộ lý do tính năng này tồn tại.
+qua webhook — đó là toàn bộ lý do tính năng này tồn tại. Cũng như mọi phép tổng khác
+([finance.md](./finance.md)), **không** tính category `excludeFromTotals` (một lần chỉnh số dư
+không phải khoản chi cần nhớ ghi) và transaction `overdraft` (chưa được chấp nhận thì chưa coi là
+đã ghi).
 
 ## Chạy cho HAI ngày, không phải một
 
@@ -101,6 +104,22 @@ sinh rồi thì không sinh lại.
 - Lưới category bám cấu trúc `FocusSection` (ô tile, viền vàng khi chọn), `grid-cols-2 sm:grid-cols-3`
 - `PrefRow` tách khỏi `PrefsSection` thành file dùng chung
 - Notification type mới `'cash-log'`, icon `💵`, click → `/finance`
+
+## Nói ra một lần — `CashLogReminderModal`
+
+Chuông thôi thì dễ lướt qua, mà đó đúng là thói quen tính năng này chống lại. Nên nhắc còn hiện
+**một lần** thành dialog (`src/features/finance/components/CashLogReminderModal.tsx`, mount ở
+`MainDashboard.tsx`):
+
+- Lấy notification `type: 'cash-log'` từ `useNotifications()`; tách message
+  `Nothing recorded yet for: A · B` lại thành chip, sai định dạng thì hiện nguyên câu
+- Dùng `Modal` thường, **không** phải màn đỏ của penalty — không có gì hỏng, không bị lấy gì đi
+- Nút mở `openQuickAddTransaction()` ([finance-quick-add-transaction.md](./finance-quick-add-transaction.md))
+  thay vì đòi hỏi gì
+- **Nhường** khi penalty hoặc overdue review đang mở (`suppressed`) — ba dialog chào cùng lúc là
+  một bức tường
+- Nhớ id notification đã đóng trong `localStorage['cash-log-reminder-seen']`: hỏi một lần **mỗi
+  nhắc**, không phải mỗi lần tải trang
 
 ## Ngoài phạm vi
 

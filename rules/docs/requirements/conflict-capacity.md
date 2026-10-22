@@ -1,120 +1,104 @@
-# Conflict Detection & Capacity Planning
+# Conflict Detection & Capacity — trùng giờ và quá tải trong ngày
 
-<role>Lớp kiểm tra lịch: phát hiện trùng giờ và quá tải trong ngày.</role>
+<role>Engineer giữ lớp kiểm tra lịch chạy trên Calendar Item</role>
 
 <context>
-Spec [schedule-engine](./schedule-engine.md) mục 12 & 13. Hiện codebase **không có** bất kỳ logic
-conflict/overload nào (grep = 0). Cần một bộ kiểm tra chạy trên danh sách
-[calendar-item](./calendar-item.md) của một ngày.
+Lên lịch nhiều nguồn (habit, block task/quest, event) dễ dẫn tới hai lịch chồng giờ, hoặc một ngày
+xếp 12h trên 10h khả dụng. Lớp này là **hàm thuần** trên `CalendarItem[]` mà
+[calendar-item](./calendar-item.md) sinh ra (`buildCalendar` trong
+`src/server/services/schedule-engine.ts`), dùng chung cho SessionPlanner và
+[schedule-notifications](./schedule-notifications.md). Gốc: [schedule-engine](./schedule-engine.md)
+§12–13.
 </context>
 
 <task>
-Viết các hàm thuần (pure) tính conflict & capacity từ `CalendarItem[]`, trả về cảnh báo cho UI và
-[schedule-notifications](./schedule-notifications.md).
+`detectConflicts` + `computeCapacity` (`src/server/services/schedule-insights.ts`) và endpoint
+insights.
 </task>
 
----
+<requirement>
 
-## 1. Conflict Detection (mục 12)
+## Conflict — `detectConflicts(items, minBreakMinutes)`
 
-### Hard Conflict — hai lịch trùng giờ
+Chỉ xét item có `startTime !== null` **và** `duration > 0`. Nhóm theo ngày, sort theo giờ bắt đầu:
 
-```txt
-Gym     19:00–20:00
-Meeting 19:30–20:30   ⇒ HARD (overlap thực sự)
-```
+| Loại   | Điều kiện                       | Ví dụ                            |
+| ------ | ------------------------------- | -------------------------------- |
+| `hard` | `[start, end)` giao nhau (> 0') | Gym 19:00–20:00 · Meeting 19:30  |
+| `soft` | `0 ≤ gap < minBreakMinutes`     | A 10:00–12:00 · B 12:05 (gap 5') |
 
-Quy tắc: hai item có `[start,end)` giao nhau (> 0 phút).
+Với mỗi item `a`, quét các item sau: chồng → `hard`; gặp item đầu tiên bắt đầu sau `a` kết thúc thì
+đo gap (có thể ra `soft`) rồi **dừng** — đã sort nên không item nào sau nữa chồng `a`.
 
-### Soft Conflict — khoảng nghỉ quá ngắn
+Bị loại khỏi check: item all-day/không giờ, task không có block (item không giờ), quest chỉ có
+deadline (`duration: 0`, kể cả khi có `dueTime`), habit không có `duration`.
 
-```txt
-Task A 10:00–12:00
-Task B 12:05–14:00    ⇒ SOFT (gap 5' < ngưỡng)
-```
-
-Quy tắc: `0 ≤ gap < MIN_BREAK` (ngưỡng mặc định **15 phút**, cấu hình trong UserSetting sau).
-
-### Output
-
-```typescript
+```ts
 interface ScheduleConflict {
+  // src/types/calendar-insights.ts
   type: 'hard' | 'soft';
   date: string;
-  a: { id: string; title: string; startTime: string; endTime: string };
-  b: { id: string; title: string; startTime: string; endTime: string };
-  gap?: number; // phút, chỉ cho soft
+  a: { id; title; startTime; endTime };
+  b: { id; title; startTime; endTime };
+  gap?: number; // chỉ soft
 }
 ```
 
-- Item `startTime: null` (all-day / deadline-only) **bỏ qua** khỏi conflict check.
-- Habit, Task block, Quest block đều tham gia check như nhau.
-
----
-
-## 2. Capacity Planning (mục 13)
-
-### Mục tiêu — phát hiện ngày quá tải
+## Capacity — `computeCapacity(items, dateKeys, availableMinutes)`
 
 ```txt
-Khả dụng:  10h
-Đã lên:    Habit 3h + Task 5h + Quest 4h = 12h  ⇒ OVERLOADED
+plannedMinutes = Σ duration MỌI item trong ngày (kể cả item không giờ)
+loadPct        = round(planned / available × 100)
 ```
 
-### Logic
+| loadPct | status       |
+| ------- | ------------ |
+| < 80    | `normal`     |
+| 80–100  | `tight`      |
+| > 100   | `overloaded` |
 
-```txt
-plannedMinutes = Σ duration mọi CalendarItem trong ngày (có giờ)
-availableMinutes = UserSetting.dailyCapacity (default 600 = 10h)
-load = plannedMinutes / availableMinutes
-```
-
-| load    | trạng thái |
-| ------- | ---------- |
-| ≤ 0.8   | normal     |
-| 0.8–1.0 | tight      |
-| > 1.0   | overloaded |
-
-### Output
-
-```typescript
-interface DayCapacity {
-  date: string;
-  plannedMinutes: number;
-  availableMinutes: number;
-  loadPct: number;
-  status: 'normal' | 'tight' | 'overloaded';
-}
-```
-
----
+Trả một `DayCapacity {date, plannedMinutes, availableMinutes, loadPct, status}` cho **mọi** ngày trong
+range, kể cả ngày trống.
 
 ## API
 
-Trả kèm trong calendar response hoặc endpoint riêng:
-
 ```txt
-GET /api/v1/calendar/insights?from=&to=
+GET /api/v1/calendar/insights?from=YYYY-MM-DD&to=YYYY-MM-DD   (cả hai bắt buộc)
 → { conflicts: ScheduleConflict[], capacity: DayCapacity[] }
 ```
 
----
+`src/app/api/v1/calendar/insights/route.ts` — đọc `UserSetting.schedule`:
 
-## Cấu hình (UserSetting)
+| Setting                | Default | Giới hạn |
+| ---------------------- | ------- | -------- |
+| `dailyCapacityMinutes` | 600     | 60..1440 |
+| `minBreakMinutes`      | 15      | 0..240   |
 
-Thêm: `dailyCapacityMinutes` (default 600), `minBreakMinutes` (default 15).
-Xem [user-setting](./user-setting.md).
-
----
+Xem [user-setting](./user-setting.md). Client: `useCalendarInsights(from, to, enabled)`.
 
 ## Hiển thị
 
-- Day/Week View — badge "⚠ Overloaded" trên header ngày; viền đỏ giữa 2 item hard-conflict,
-  viền vàng cho soft.
-- Month View — ô ngày overloaded tô đậm (heat).
+- **SessionPlanner** — range = khoảng ngày của task ∪ ngày các block. Block dính hard conflict viền
+  đỏ, soft viền vàng ("overlap" / "tight"); có ngày `overloaded` → banner liệt kê các ngày đó.
+  Timeline của ngày đang chọn vẽ mọi block của ngày + preview phiên đang gõ.
+- **Notifications** — overload + hard conflict của hôm nay.
+- **Week View** không gọi endpoint này; nó tự tính đồng hồ tải riêng (xem
+  [week-view-rescheduling](./week-view-rescheduling.md)) — chỉ block + event busy có giờ.
 
----
+## Edge cases
 
-## Trạng thái hiện tại
+- Event `busy: false` vẫn được tính vào capacity và conflict ở đây, khác với Week View và với ý
+  của [event](./event.md) ("chỉ event busy trừ capacity").
+- Task không block, có estimate, nằm trên `startDate` → cộng **toàn bộ** estimate vào ngày bắt đầu,
+  dù task kéo dài nhiều ngày.
+- Block của quest đã xoá bị xoá theo; block của task archive bằng `PATCH active:false` thì không,
+  nhưng `buildCalendar` chỉ lấy task active nên chúng không vào capacity.
 
-❌ Chưa có conflict detection, ❌ chưa có capacity/overload, ❌ chưa có field capacity trong UserSetting.
+## Open questions
+
+- Capacity/conflict có nên bỏ event `busy: false` cho khớp Week View và spec event?
+- Day View / Month View có cần badge "⚠ Overloaded" (spec cũ) không? Hiện chưa view nào có.
+
+</requirement>
+
+<tone>Kỹ thuật, nêu đúng cái gì được đếm.</tone>

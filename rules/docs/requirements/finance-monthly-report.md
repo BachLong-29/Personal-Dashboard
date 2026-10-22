@@ -1,94 +1,86 @@
-# Finance — Monthly Report
+# Finance — Monthly Report — "cuốn sách" tổng kết một tháng đã xong
 
-<role>Fullstack engineer thêm tính năng Báo cáo chi tiêu tháng (Monthly Report) cho module Finance</role>
+<role>Fullstack engineer cho Báo cáo tháng của module Finance</role>
 
 <context>
-[finance-budget.md](./finance-budget.md) đã có `Budget` model + `listBudgetsWithSpent()` (spent/limit/%
-mỗi category, ngưỡng màu mint <80% / amber 80–99% / rose >=100%, dùng trong `BudgetList.tsx`). User muốn 1
-trang tổng kết trực quan, nhiều animation, cho **một tháng đã kết thúc** — không áp dụng cho tháng đang
-diễn ra, vì số liệu tháng chưa xong là chưa "chốt".
+Overview trả lời "tháng này đang thế nào". User muốn thêm một trang tổng kết trực quan, có
+animation, cho **một tháng đã kết thúc** — không cho tháng đang chạy, vì số liệu chưa xong là chưa
+"chốt", và một báo cáo đổi số mỗi lần mở thì không phải báo cáo.
 </context>
 
 <task>
-Page mới `/finance/monthly-report?month=YYYY-MM`, dạng "sách" 2 trang (page-flip) tổng hợp thu/chi + budget
-của 1 tháng đã qua. Nút vào page này chỉ xuất hiện khi tháng đang xem (qua `MonthStepper` ở Overview) đã
-kết thúc.
+Route `/finance/monthly-report?month=YYYY-MM`, dạng sách hai trang lật 3D: trang tổng quan thu/chi
+và trang chi tiết ngân sách. Không có API mới.
 </task>
 
 <requirement>
 
 ## Điều kiện truy cập
 
-- Chỉ `month < currentMonthKey()` (tháng đã kết thúc hoàn toàn) mới có nút/entry point.
-- Vào thẳng URL với tháng hiện tại/tương lai → redirect về `/finance`.
+Validate ở **server page** (`src/app/[locale]/(protected)/finance/monthly-report/page.tsx`), vì
+không có API riêng để validate: thiếu `month`, sai `YYYY-MM`, hoặc `month >= tháng hiện tại` →
+`redirect('/finance')`. Chỉ tháng **đã qua hoàn toàn** mới có báo cáo.
 
-## Entry point — nút "Xem báo cáo"
+## Entry point — `MonthlyReportBanner` (Overview)
 
-- Overview page: khi `MonthStepper` đang ở tháng đã qua, hiện banner CTA phía trên các card: "📊 Báo cáo
-  tháng {Tên tháng}" → `Link` tới `/finance/monthly-report?month=...`.
-- Khi đang xem tháng hiện tại (mặc định khi mở Overview), thêm 1 banner riêng mời xem báo cáo **tháng
-  trước** — đúng ý "đầu tháng có nút" mà không bắt user tự bấm prev. Dismiss theo session (giống
-  `OverdueReviewModal`'s `dismissModal`/`sessionStorage` pattern), không hỏi lại trong cùng phiên.
+- `MonthStepper` đang ở tháng đã qua → banner 📊 "Báo cáo tháng {tháng}" → link tới report
+- Đang ở **tháng hiện tại** (mặc định khi mở Overview) → banner mời xem báo cáo **tháng trước** —
+  đúng ý "đầu tháng có nút" mà không bắt user tự bấm lùi. Nút đóng lưu
+  `sessionStorage['finance_monthly_report_nudge_dismissed']`: không hỏi lại trong cùng phiên
+- Đang ở tháng tương lai → không hiện gì
 
-## API — không cần route mới
+Không có link "Back to Finance" trong trang — tab Finance ở trên đã làm việc đó.
 
-`useFinanceOverview(month)` (`GET /finance/overview`) đã trả `income`/`expense`/`net`/`topCategories`
-(`OverviewCategorySlice[]`, có sẵn `icon`/`color`/`amount`/`percentage`). `useBudgets(month)`
-(`GET /finance/budgets`) đã trả đúng `BudgetWithSpent` shape (spent/limit/percentage/categoryName). Trang
-report chỉ cần **gọi lại 2 hook này trên client**, KHÔNG viết endpoint mới:
+## Dữ liệu — tái dùng hook, tính ở client
 
-- `overallBudget = budgets.find(b => b.categoryId === null)`.
-- `totalBudgetLimit = overallBudget?.limit ?? sum(limit của budget có categoryId)`.
-- `savings = totalBudgetLimit > 0 && overview.expense < totalBudgetLimit ? totalBudgetLimit - overview.expense : null`.
-- `overBudget = budgets.filter(b => b.percentage >= 100)`.
-- `topCategories = overview.topCategories` — dùng thẳng cho donut chart.
+`MonthlyReportPage.tsx` gọi `useFinanceOverview(month)` + `useBudgets(month)` và tự suy:
 
-Validate "tháng đã kết thúc" ở **route `page.tsx`** (so `month` param với `currentMonthKey()`), không phải
-ở API — vì không có API riêng.
+```ts
+totalBudgetLimit = monthBudgetLimit(budgets); // budget tổng thắng, không thì cộng category
+savings = totalBudgetLimit > 0 && expense < totalBudgetLimit ? totalBudgetLimit - expense : null;
+savingsPercent = round((savings / totalBudgetLimit) * 100);
+overBudget = budgets.filter((b) => b.percentage >= 100);
+```
 
-## UI — 2 "trang" kiểu sách, page-flip
+`monthBudgetLimit()` (`src/features/finance/utils.ts`) dùng chung với Overview và Budget page —
+viết riêng ở đây từng là chỗ thứ ba trả lời câu "budget tháng là bao nhiêu" theo một cách khác.
 
-### Trang 1 — Tổng quan
+Vì dẫn xuất từ overview + budgets, báo cáo **tự động** loại category `excludeFromTotals` và
+transaction `overdraft` ([finance.md](./finance.md)). Không cần lọc gì thêm.
 
-- Header: tên tháng + khoảng ngày.
-- 3 stat lớn: Tổng thu / Tổng chi / Số dư ròng — count-up khi vào trang (reuse `useCountUp`).
-- `savings != null` → banner mint "🎉 Tiết kiệm được {savings}₫ ({%} ngân sách)".
-- `overBudget.length > 0` → list cảnh báo rose, mỗi dòng: tên category, số tiền vượt (`spent - limit`), %,
-  icon ⚠.
-- Donut chart (recharts) — `topCategories`.
+Lưu ý: `savings` ở đây là **so với ngân sách** (budget − đã chi), khác "Savings" ở
+`MonthSummaryCard` (income − chi) — xem [finance-stats.md](./finance-stats.md).
 
-### Trang 2 — Chi tiết ngân sách
+## Trang 1 — Tổng quan (`ReportOverviewPage.tsx`)
 
-- Full list `budgets`: progress bar spent/limit, màu theo đúng ngưỡng của `BudgetList.tsx` (reuse, không
-  bịa ngưỡng mới).
-- `budgets.length === 0` → empty state "Tháng này chưa đặt ngân sách nào."
-- % mỗi budget category trong `totalBudgetLimit` — bar ngang hoặc donut thứ 2.
+- Header: tên tháng (`formatMonthLabel`)
+- Ba stat: Thu (mint) / Chi (rose) / Net — count-up (`useCountUp`), stagger delay
+- `savings != null` → banner mint "Tiết kiệm được {savings} ({%} ngân sách)"
+- `overBudget.length > 0` → list cảnh báo ⚠ màu rose: category, số vượt (`spent − limit`), %
+- Donut Recharts (`PieChart`) trên `overview.topCategories` (top 5)
 
-### Điều hướng + animation (Framer Motion — đã là dependency, xem `BudgetPage.tsx`/`SectionCard.tsx`)
+## Trang 2 — Ngân sách (`ReportBudgetPage.tsx`)
 
-- Vào trang: stagger fade + slide-up từng section, cùng nhịp với convention hiện có.
-- Chuyển trang 1↔2: page-flip 3D (`rotateY`) — đúng cảm giác "lật trang sách"; nút ◂ 1/2 ▸ dưới cùng +
-  swipe (touch drag) trên mobile.
-- Responsive: mobile full-screen từng trang; `lg:` trở lên cân nhắc hiện cả 2 trang cạnh nhau kiểu sách mở
-  nếu đủ chỗ — quyết định cụ thể lúc code theo nội dung thực tế.
+- Toàn bộ `budgets`: progress spent/limit, **cùng ngưỡng màu với `BudgetList.tsx`**
+  (`<80%` mint · `80–99%` gold · `≥100%` danger), % hiển thị chặn ở 999
+- Mỗi dòng kèm % của nó trong `totalBudgetLimit`
+- Không có budget → "Tháng này chưa đặt ngân sách nào."
+- Trang **tự cuộn** khi list dài (từng không cuộn được với nhiều budget)
 
-## Reuse
+## Lật trang — `BookFlip.tsx` (Framer Motion)
 
-| File / hook                                               | Vai trò                                            |
-| --------------------------------------------------------- | -------------------------------------------------- |
-| `listBudgetsWithSpent()` (`finance-budget.ts`)            | Nguồn spent/limit/percentage — không viết lại      |
-| `BudgetList.tsx` (màu progress bar)                       | Đồng bộ ngưỡng mint/amber/rose                     |
-| `useCountUp`                                              | Count-up số tổng thu/chi/balance                   |
-| `SectionCard.tsx`, `BudgetPage.tsx`                       | Convention Framer Motion hiện có                   |
-| `MonthStepper`, `currentMonthKey()`, `formatMonthLabel()` | Dùng lại nguyên, không viết bản mới                |
-| `dataviz` skill                                           | Đọc trước khi viết chart code (palette, mark spec) |
+- `rotateY` ±78° theo hướng lật, `perspective: 1600`; hướng đi qua `custom` + variants function
+  — đặt cứng thì lật lùi chạy sai chiều (lỗi đã sửa)
+- Điều hướng: nút ◂ / ▸ (`ArrowLeft` / `ArrowRight` icon asset của app), chấm từng trang
+  (`aria-current`), và **swipe** ngang trên touch — kéo quá **80px** mới lật
+- `prefers-reduced-motion` → bỏ perspective và xoay, chỉ còn fade
+- Một trang mỗi lần ở **mọi** kích thước — chưa có chế độ hai trang cạnh nhau trên desktop
 
-## Trạng thái hiện tại
+## Ngoài phạm vi
 
-❌ Chưa có gì — route `/finance/monthly-report`, API, và toàn bộ UI 2-trang đều mới.
+Báo cáo tháng đang chạy · xuất PDF/ảnh · so sánh nhiều tháng · chart ngoài donut và progress.
 
 </requirement>
 
-<tone>Concise, technical. Không vẽ thêm chart/số liệu ngoài yêu cầu — chỉ overview + budget breakdown +
-savings + warnings. "Nhiều animation" nghĩa là mượt và có chủ đích (enter + page-turn + tương tác), không
-phải hiệu ứng thừa gây rối mắt hay nặng máy yếu.</tone>
+<tone>Concise, technical. "Nhiều animation" nghĩa là mượt và có chủ đích (vào trang, lật trang,
+tương tác), không phải hiệu ứng thừa làm nặng máy yếu.</tone>

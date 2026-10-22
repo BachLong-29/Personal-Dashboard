@@ -1,15 +1,10 @@
-# Finance — SePay Webhook Integration
+# Finance — SePay Webhook — giao dịch ngân hàng tự vào sổ
 
-<role>Backend engineer tích hợp webhook SePay để tự động ghi nhận giao dịch ngân hàng</role>
+<role>Backend engineer tích hợp webhook SePay để ghi nhận giao dịch ngân hàng</role>
 
 <context>
-[finance.md](./finance.md) định nghĩa `Wallet` (có `bankCode` + `bankAccountNumber`) và
-`Transaction` (có `source: 'sepay'` + `sepayTransactionId` unique). SePay là dịch vụ nhận
-webhook mỗi khi tài khoản ngân hàng liên kết phát sinh giao dịch (chuyển khoản vào/ra qua
-VietQR). SePay POST payload tới một URL webhook do user cấu hình trên dashboard SePay,
-xác thực bằng header `Authorization: Apikey <API_KEY>`.
-
-**Payload thực tế từ SePay** (xác nhận từ docs.sepay.vn):
+SePay gọi một URL webhook mỗi khi tài khoản ngân hàng liên kết có tiền vào/ra, xác thực bằng header
+`Authorization: Apikey <API_KEY>`. Payload (theo docs.sepay.vn):
 
 ```json
 {
@@ -17,96 +12,99 @@ xác thực bằng header `Authorization: Apikey <API_KEY>`.
   "gateway": "Vietcombank",
   "transactionDate": "2024-07-02 11:08:33",
   "accountNumber": "1017588888",
-  "subAccount": "",
-  "code": "SEVN63DC8E5C",
   "content": "SEVN63DC8E5C chuyen tien",
   "transferType": "in",
   "description": "NGUYEN VAN A chuyen tien",
   "transferAmount": 5000000,
-  "accumulated": 105000000,
   "referenceCode": "FT24012345678"
 }
 ```
 
-`transferType`: `"in"` (tiền vào = income) hoặc `"out"` (tiền ra = expense).
+`transferType`: `in` = income, `out` = expense. Đây là lý do cash reminder chỉ nhắc ví tiền mặt —
+ví bank đã tự vào sổ ([cash-log-reminder.md](./cash-log-reminder.md)).
 </context>
 
 <task>
-Tạo endpoint webhook nhận payload SePay, xác thực API key, map sang `Wallet` theo
-`accountNumber`, tạo `Transaction` idempotent (chống trùng khi SePay retry), và UI để user
-cấu hình API key + xem trạng thái kết nối.
+Endpoint public nhận webhook, map về đúng ví theo số tài khoản, tạo transaction idempotent, tự
+phân loại theo keyword, và UI để sinh API key + xem trạng thái.
 </task>
 
 <requirement>
 
-## Model: thêm vào Wallet
+## Dữ liệu
 
-```
-sepayWebhookSecret?: string   // API key user tự đặt trên SePay dashboard, dùng để verify request
-```
-
-Lưu **hashed** (không lưu plaintext) — dùng chung cơ chế hash hiện có cho token nếu có, hoặc
-`bcrypt`. So sánh bằng hàm compare, không so sánh chuỗi thô.
+`Wallet.sepayWebhookSecret` — **bcrypt hash** của API key (`hashSecret` / `compareSecret`,
+`src/server/libs/hash.ts`), không bao giờ lưu plaintext. Transaction: `source: 'sepay'`,
+`sepayTransactionId = String(payload.id)` (unique sparse), `overdraft` khi cần.
 
 ## API
 
-| Method  | Endpoint                            | Mô tả                                                               |
-| ------- | ----------------------------------- | ------------------------------------------------------------------- |
-| `POST`  | `/api/v1/webhooks/sepay`            | Endpoint public (không qua JWT auth middleware), nhận payload SePay |
-| `PATCH` | `/api/v1/finance/wallets/:id/sepay` | Set/rotate `sepayWebhookSecret` cho wallet                          |
+| Method  | Endpoint                            | Ghi chú                                  |
+| ------- | ----------------------------------- | ---------------------------------------- |
+| `POST`  | `/api/v1/webhooks/sepay`            | Public, không JWT — xác thực bằng Apikey |
+| `GET`   | `/api/v1/finance/wallets/:id/sepay` | `{ configured, connected, webhookUrl }`  |
+| `PATCH` | `/api/v1/finance/wallets/:id/sepay` | Sinh/xoay key, trả plaintext **một lần** |
 
-### POST /api/v1/webhooks/sepay
+Hai route dưới chỉ nhận ví `type: 'bank'` của user. `PATCH` trả **400** nếu ví chưa có
+`bankAccountNumber` — không có số tài khoản thì webhook không bao giờ map được về ví này. Key =
+`randomBytes(24)` hex.
 
-1. Đọc header `Authorization: Apikey <key>`. Thiếu/sai format → `401`.
-2. Tìm `Wallet` theo `bankAccountNumber === payload.accountNumber` (global lookup, không theo
-   userId — request đến từ SePay không có JWT). Không tìm thấy → `200 { success: true }` (SePay
-   yêu cầu 200 dù bỏ qua, tránh retry vô ích) nhưng không tạo transaction.
-3. So khớp `key` với `wallet.sepayWebhookSecret` (hashed compare). Sai → `401`.
-4. **Idempotency**: `Transaction.findOne({ sepayTransactionId: String(payload.id) })` — nếu đã
-   tồn tại → trả `200 { success: true }` ngay, không tạo lại (SePay có thể gửi lại khi timeout).
-5. Map payload → Transaction:
-   - `type`: `payload.transferType === 'in' ? 'income' : 'expense'`
-   - `amount`: `payload.transferAmount`
-   - `note`: `payload.content || payload.description`
-   - `date`: parse `payload.transactionDate` ("YYYY-MM-DD HH:MM:SS")
-   - `source`: `'sepay'`
-   - `sepayTransactionId`: `String(payload.id)`
-   - `categoryId`: category mặc định "Khác" (income/expense tương ứng) — user tự phân loại lại sau
-6. Tạo Transaction + cộng/trừ `Wallet.balance`.
-7. Response: **phải trả trong 30 giây**, HTTP `200`/`201`, body `{ "success": true }` (yêu cầu bắt buộc từ SePay).
-8. Lỗi xử lý nội bộ (DB down, v.v.) → vẫn cố trả `200` nếu có thể để tránh SePay disable webhook
-   sau nhiều lần fail liên tiếp; log lỗi riêng để investigate.
+## `POST /api/v1/webhooks/sepay` (`src/app/api/v1/webhooks/sepay/route.ts`)
 
-## UI — Kết nối SePay (trong Wallet edit/detail)
+1. Rate limit **30 request/phút/IP** (in-memory, `rateLimit`) → 429. Riêng với rate limit login,
+   để chống dò API key
+2. Header không đúng dạng `Apikey <key>` → 401
+3. Payload sai schema → **ack 200** (SePay ngừng retry một payload không bao giờ hợp lệ)
+4. Tìm ví `bankAccountNumber = accountNumber`, `type: 'bank'`, `active` — tra **toàn cục**, vì
+   request không mang user. Không có ví hoặc ví chưa có secret → **ack 200**, không tạo gì
+5. `compareSecret(key, wallet.sepayWebhookSecret)` sai → 401
+6. Đã có transaction với `sepayTransactionId` → ack (SePay retry khi timeout)
+7. Phân loại: keyword dài nhất khớp trong `content + description` trên category cùng type; không
+   khớp → **Chưa phân loại** (upsert) — luật đầy đủ ở [finance-categories.md](./finance-categories.md)
+8. `overdraft = balance + delta < 0` — balance **vẫn** đi theo ngân hàng, cờ giữ transaction khỏi
+   các phép tổng cho tới khi user chấp nhận ([finance.md](./finance.md))
+9. Tạo transaction (`note = content || description`), `$inc` balance → **201** `{ success: true }`
+10. Mọi lỗi nội bộ → log `[SePay webhook error]` và **vẫn ack 200** — SePay tắt webhook sau nhiều
+    lần fail liên tiếp, mất cả những giao dịch sau đó còn tệ hơn mất một
 
-- Field wallet `type='bank'` mới có mục "SePay Integration".
-- Hiện webhook URL để user copy dán vào SePay dashboard:
-  `{NEXT_PUBLIC_APP_URL}/api/v1/webhooks/sepay`
-- Nút "Generate API Key" → gọi `PATCH .../sepay`, hiện key **một lần duy nhất** (giống pattern
-  hiện access token), nhắc user lưu lại trước khi đóng modal.
-- Badge trạng thái: "Connected" nếu có ít nhất 1 transaction `source='sepay'` trong 30 ngày gần
-  nhất cho wallet đó, ngược lại "Not synced yet".
+`transactionDate` (`YYYY-MM-DD HH:MM:SS`, không timezone) được parse như **giờ local của server**.
+
+## Webhook URL đưa cho SePay
+
+SePay gọi từ server của họ, nên URL phải là origin public — `localhost` bị từ chối. Thứ tự
+(`resolveWebhookUrl`, `wallets/[id]/sepay/route.ts`):
+
+1. `SEPAY_WEBHOOK_BASE_URL` — đặt khi dev local để đọc ra origin đã deploy
+2. Origin mà request **thực sự đến** (`x-forwarded-host` / `host` + proto) — trên Vercel là domain
+   của chính deployment, không cần cấu hình gì
+3. `NEXT_PUBLIC_APP_URL` — phương án cuối
+
+**Cắt `/` ở cuối**: Vercel lưu app URL có `/`, và `//api/...` làm Next.js trả **308** thay vì chạy
+route — một webhook sender không theo redirect sẽ không giao gì, mà không có lỗi nào để thấy.
+
+## UI — `SepayConnectModal.tsx`
+
+Mở từ nút 🔌 trên card ví bank ở Accounts ([finance-wallets.md](./finance-wallets.md)):
+
+- Badge **Connected** khi ví có ít nhất một transaction `sepay` trong **30 ngày**, ngược lại
+  **Not synced yet**
+- Webhook URL + nút copy
+- "Generate API Key" → hiện key **một lần** + nút copy; đóng modal là mất, chỉ còn cách sinh key mới
+- Đã từng có card SePay trên Overview — đã bỏ (`77ddc6f`)
 
 ## Bảo mật
 
-- Route `/api/v1/webhooks/sepay` phải nằm ngoài JWT middleware ([src/proxy.ts](../../../src/proxy.ts))
-  nhưng validate bằng Apikey header — không expose data của user khác (chỉ query đúng 1 wallet
-  theo accountNumber + key match).
-- Rate-limit endpoint này riêng (khác rate-limit cho user login) để tránh brute-force API key.
+- Route nằm ngoài guard trang của `src/proxy.ts` và không đọc JWT; chỉ chạm đúng một ví khớp cả số
+  tài khoản lẫn key
+- 401 chỉ trả khi key sai cho một ví **có thật** → về lý thuyết lộ ra số tài khoản nào đã nối
+  SePay; chấp nhận được vì rate limit và số tài khoản không phải bí mật
 
-## Trạng thái hiện tại
+## Ngoài phạm vi
 
-✅ Đã implement: `sepayWebhookSecret` (bcrypt hash) trên Wallet, `POST /api/v1/webhooks/sepay`
-(public, Apikey auth, idempotent qua `sepayTransactionId`, auto-tạo category "Khác", luôn ack
-`{success:true}` kể cả khi lỗi nội bộ), in-memory rate limit riêng cho webhook,
-`GET`/`PATCH /api/v1/finance/wallets/:id/sepay` (status + generate/rotate key), UI
-`SepayConnectModal` (webhook URL copy, badge Connected/Not synced, reveal API key một lần) mở từ
-nút 🔌 trên wallet card (`WalletStrip`).
+Backfill lịch sử trước khi nối (đặt số dư tay thay thế) · xác thực HMAC-SHA256 · nhiều ví cùng
+một số tài khoản · phân loại lại row cũ khi đổi keyword.
 
 </requirement>
 
-<tone>
-Concise, technical. Payload đã xác nhận từ docs.sepay.vn nhưng nên double-check lại trên
-dashboard SePay thực tế của user (auth method có thể chọn HMAC-SHA256 thay vì Apikey) trước khi
-code — spec này giả định user chọn phương thức Apikey vì đơn giản nhất.
-</tone>
+<tone>Concise, technical. Payload đã đối chiếu docs.sepay.vn; kiểm lại trên dashboard SePay thật
+trước khi đổi parser.</tone>

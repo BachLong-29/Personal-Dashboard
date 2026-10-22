@@ -1,46 +1,83 @@
-<role>
-Engineer refactoring task scheduling so schedule blocks are the single source of truth for a task's time-of-day, replacing the per-task `startTime` field.
-</role>
+# Block-Driven Scheduling — giờ của task đến từ block, không từ task
+
+<role>Engineer giữ quy tắc "block là nguồn sự thật duy nhất về giờ" cho mọi view lịch</role>
 
 <context>
-Previously a task carried a single `startTime` (HH:MM) that decided which day-view slot
-(Dawn/Deep/Afternoon/Twilight) its card appeared in. Schedule blocks were a separate,
-optional planning layer (SessionPlanner) and were never rendered in the day grid.
-This created two sources of truth for "when" a task happens.
+Trước đây task có một `startTime` (HH:MM) quyết định slot Dawn/Deep/Afternoon/Twilight ở Day View,
+còn [schedule-block](./schedule-block.md) là lớp lập lịch tuỳ chọn không bao giờ hiện trên grid —
+hai nguồn sự thật cho câu hỏi "làm lúc nào".
 
-Decision: drop `task.startTime`. A task's slot on a given date is derived from its
-**earliest schedule block on that date**. Tasks with no block on the date fall back to a
-default slot so they still show in the grid. Dragging a card into a slot creates or moves a
-block instead of writing `startTime`. Existing `startTime` values are migrated into blocks.
+Quyết định: bỏ `task.startTime`. Một task chỉ có giờ khi có block. Field đã bị gỡ khỏi
+`task.model.ts`, `src/types/task.ts`, schema POST/PATCH và serializer; dữ liệu cũ được chuyển bằng
+`scripts/migrate-starttime-to-blocks.ts` (đọc raw collection để vẫn chạy sau khi field biến mất
+khỏi schema; tạo block `duration = task.duration ?? 60` nếu ngày đó chưa có block, rồi `$unset`).
 </context>
 
 <task>
-Remove the `startTime` field end-to-end and make blocks drive slot placement.
+Mọi view đặt task theo block; mọi thao tác "đặt giờ" ghi block, không ghi task.
 </task>
 
 <requirement>
-- DATA: remove `startTime` from the Task model, `Task` / `CreateTaskPayload` /
-  `UpdateTaskPayload` types, and the tasks POST/PATCH schemas + serializer.
-- MIGRATION: one-time script converts each task with `startTime` into a `ScheduleBlock`
-  { sourceType:'task', date:startDate, startTime, duration: task.duration ?? 60 } when the
-  task has no block on that date, then `$unset`s the field. Reads the raw collection so it
-  works after the schema field is removed.
-- SLOT DERIVATION: for a task card shown on date D, slot = slot of the earliest block with
-  sourceId=task.id and date=D. No block on D → fallback (`offsetToSlot(day)` →
-  morning / current-hour for today). `UITask.startTime` is kept but is now a DERIVED display
-  value sourced from that block, not from the task entity.
-- DRAG-TO-SLOT: dropping a task into a slot creates a block (date = the column's date,
-  startTime = slot default, duration = task.est ?? 60) when none exists for that date, or
-  updates the earliest existing block's startTime. Persisted via the schedule-block API.
-- FORM: remove the Start Time input + slot badge from the shared TaskForm and the legacy
-  dashboard ScheduleTaskModal. Initial scheduling happens via drag or the SessionPlanner.
-- HABIT RESCHEDULE: still moves a habit occurrence to a new time, now by creating the
-  replacement task and a block at that time (was: task.startTime).
-- DASHBOARD: WeekView / DayView / ScheduleTaskModal stop reading `task.startTime`.
+
+## Day View — chỉ task có block
+
+`useScheduleDayTasks({ requireBlock: true })` (`src/features/dashboard/hooks/useScheduleDayTasks.ts`)
+— dùng ở `ScheduleDayViewPanel` và `TaskManagement`. Task có `startDate` mà **không** có block
+ngày đó **không hiện** trên grid (đã bỏ fallback slot cũ từ 07/2026).
+
+Vì sao: grid là timeline theo giờ; một task không giờ đặt vào "slot mặc định" trông như đã lên lịch
+dù chưa. Task có ngày mà chưa có phiên vẫn thấy ở Week View (dạng span).
+
+Slot của card = slot của **block sớm nhất** của task trong ngày đó. `UITask.startTime` vẫn tồn tại
+nhưng là giá trị **dẫn xuất** từ block — giữ để `QuestCardMini`, `ScheduleStrip`, edit modal không
+phải đổi.
+
+## Kéo vào slot (Day View)
+
+`onMoveToSlot`: giờ mới = `slotToDefaultTime(slot)` (06:00 / 10:00 / 13:00 / 17:00,
+`src/features/tasks/data/adapters.ts`).
+
+- Ngày đó đã có block → `PATCH` `startTime` của block đó.
+- Chưa có → `POST` block `{date, startTime, duration: task.est ?? 60}`.
+
+## Week View — block trước, span sau
+
+`src/features/dashboard/components/schedule/WeekView.tsx`:
+
+- Task có ≥1 block **trong tuần đang xem** → hiện đúng ở các ngày có block, kèm giờ + phút.
+- Task không có block nào trong tuần → hiện như **span** trên mọi ngày thuộc
+  `[startDate, endDate ?? startDate]`, không giờ, xếp cuối cột.
+
+Chi tiết kéo-thả: [week-view-rescheduling](./week-view-rescheduling.md).
+
+## Form
+
+`TaskForm` (`src/features/tasks/components/shared/TaskForm.tsx`) không có ô Start Time. Lập lịch
+ban đầu đi qua:
+
+- `AddTaskModal` — tạo xong mà có **cả** `duration` và `startDate` → mở SessionPlanner.
+- `EditTaskModal` — sau khi lưu, nếu task là việc cần làm, có ngày, **chưa có block nào**, và
+  (trước đó chưa có ngày · ngày bắt đầu đổi · vừa mở lại từ `done`) → mở SessionPlanner. Không đòi
+  estimate: task không estimate chính là task cần xếp tay.
+- Task đã có block mà đổi ngày hoặc đổi estimate → `SessionUpdatePrompt` (xem
+  [overdue-task-handling](./overdue-task-handling.md) §Session prompt).
+
+`EditTaskModal` bật các dialog này **sau** khi save đã clear `task`, nên mọi nơi render nó phải giữ
+mounted và điều khiển bằng `open` — render có điều kiện sẽ unmount luôn dialog đang chờ.
+
+## Habit reschedule
+
+Dời một lần habit sang giờ khác = tạo task thay thế có `habitRef` + block tại giờ mới (không còn ghi
+`startTime`). Engine bỏ occurrence habit ngày đó khi có task `habitRef` cùng ngày. Xem
+[reschedule-habit](./reschedule-habit.md).
+
+## Edge cases
+
+- Task có block ở tuần khác nhưng không có block tuần này → hiện dạng span (Week View xét block theo
+  tuần, không theo toàn bộ lịch sử).
+- Calendar engine (`buildCalendar`) vẫn sinh item **không giờ** cho task có `startDate` mà không có
+  block — item đó đi vào capacity/stats nhưng không vào conflict check.
+
 </requirement>
 
-<tone>
-Surgical. Lean on the type checker to find every reference. Keep `UITask.startTime` so
-display components (QuestCardMini, ScheduleStrip, edit modal) need no change — only its
-source changes.
-</tone>
+<tone>Chính xác, mỗi quy tắc kèm lý do.</tone>

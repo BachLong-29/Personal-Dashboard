@@ -1,141 +1,103 @@
-# Finance — Quick Add Transaction (Global Shortcut)
+# Finance — Quick Add Transaction — ghi một khoản chi từ bất kỳ trang nào
 
 <role>Fullstack engineer cho gamified personal dashboard</role>
 
 <context>
-Overview page (`RecentTransactionsCard.tsx`) đã có ô "Quick add: 85k lunch momo" —
-`parseQuickEntry()` (`src/features/finance/quick-entry.ts`) đọc 1 dòng text thành
-`QuickEntryDraft` (amount/type/note + wallet/category match mờ theo tên), rồi
-`TransactionFormModal` mở lên với draft đó để user xác nhận. Vấn đề: chỉ dùng được khi
-đang đứng ở Overview. User phải điều hướng tới `/finance` mỗi lần muốn ghi nhanh 1 khoản
-chi nhỏ (vd "5k giữ xe"), mất thời gian hơn cả việc tự tìm category.
+Overview (`RecentTransactionsCard.tsx`) có ô "Quick add: 85k lunch momo": `parseQuickEntry()`
+(`src/features/finance/quick-entry.ts`) đọc một dòng thành `QuickEntryDraft`, rồi
+`TransactionFormModal` mở với draft đó để user xác nhận. Vấn đề: chỉ dùng được khi đang đứng ở
+Overview — muốn ghi "5k giữ xe" phải điều hướng tới `/finance` trước, lâu hơn cả tự tìm category.
 
-App đã có sẵn pattern "mount 1 instance ở `(protected)/layout.tsx` + phím tắt toàn cục"
-qua 2 tiền lệ: Global Search (`Ctrl/Cmd+K`, `ui.store.searchOpen`) và Quick Add Task
-(`Ctrl/Cmd+Shift+Q`, `ui.store.quickAddTaskOpen` — xem
-[quick-add-task.md](./quick-add-task.md)). Tính năng này tái dùng đúng pattern đó, cộng
-thêm việc tái dùng `CommandPalette` (component đứng sau Global Search) làm khung UI cho ô
-nhập liệu, thay vì tạo overlay mới.
+App đã có pattern "mount một instance ở `(protected)/layout.tsx` + phím tắt toàn cục": Global
+Search (`⌘K`) và Quick Add Task (`⌘⇧Q`, [quick-add-task.md](./quick-add-task.md)).
 </context>
 
 <task>
-Phím tắt toàn cục **Ctrl/Cmd + Shift + E**: mở 1 ô nhập liệu kiểu command-palette (dùng lại
-`CommandPalette`, không tạo overlay mới) ở bất kỳ trang nào trong `(protected)`. Gõ 1 dòng
-theo đúng cú pháp `parseQuickEntry()` đã có, Enter → đóng palette, mở `TransactionFormModal`
-với draft đã parse để user xác nhận (không tự động lưu).
+Phím tắt toàn cục **Ctrl/Cmd + Shift + E** mở một ô nhập kiểu command palette (tái dùng
+`CommandPalette`) ở mọi trang `(protected)`. Gõ một dòng, chọn → mở `TransactionFormModal` với draft
+đã parse. **Không bao giờ tự lưu.**
 </task>
 
 <requirement>
 
-## State — `ui.store`
+## Parser — `parseQuickEntry(text, wallets, categories)`
 
-Thêm vào `UIState`, giữ đúng style field `search*`/`quickAddTask*`:
+Rule-based, không LLM, và **cố ý chỉ là draft**: parse là gợi ý user xác nhận trong form thường,
+nên đọc sai không bao giờ ghi một con số sai vào ledger.
 
-```ts
-quickAddTransactionOpen: boolean;
-openQuickAddTransaction: () => void;
-closeQuickAddTransaction: () => void;
-```
+- Bỏ dấu tiếng Việt trước khi so (`ăn trưa` khớp được `Ăn uống`)
+- Số tiền: `([+-]?)(\d+([.,]\d+)?)\s*(k|nghin|ngan|tr|trieu|m|ty)?` — `k/nghin/ngan` ×1.000,
+  `tr/trieu/m` ×1.000.000, `ty` ×1.000.000.000; `,` trong số là dấu thập phân (`1,5tr`)
+- Dấu `+` → `income`; còn lại `expense`
+- Không có số tiền hợp lệ → `null`
+- Ví: `@ten-vi` trước, rồi khớp theo từ; category: khớp theo **từ nguyên vẹn**, không chuỗi con
+  (`an` không được khớp trong `thanh`), chỉ trong category cùng type
+- `note` = text gốc (giữ hoa thường, dấu) trừ token số tiền và `@...`
 
-Không cần `toggle*` — không có UI nào cần toggle field này (khác `searchOpen` được cả
-phím tắt lẫn nút bấm dùng).
+## State — `src/stores/ui.store.ts`
 
-## Component `QuickAddTransaction`
+`quickAddTransactionOpen` + `openQuickAddTransaction()` / `closeQuickAddTransaction()`, cùng kiểu
+`search*` / `quickAddTask*`. Không có `toggle*` — không UI nào cần.
 
-File mới: `src/features/finance/components/QuickAddTransaction.tsx`.
+## Component — `src/features/finance/components/QuickAddTransaction.tsx`
 
-- Tự fetch `useWallets()` + `useFinanceCategories()` — cần data này để `parseQuickEntry()`
-  match tên category/wallet, bất kể đang ở trang nào (không phụ thuộc `/finance` đã fetch
-  sẵn hay chưa).
-- State local: `text` (nội dung đang gõ) và `pendingDraft: QuickEntryDraft | null` (draft
-  đã confirm, để mở `TransactionFormModal` sau khi palette đóng).
-- `draft = parseQuickEntry(text, wallets, categories)` tính lại mỗi lần `text` đổi (useMemo).
-- Render `<CommandPalette>` với:
-  - `open={quickAddTransactionOpen}`, `query={text}`, `onQueryChange={setText}`,
-    `disableFilter`.
-  - `placeholder` = `t('overview.quickAddPlaceholder')`, `emptyLabel` =
-    `t('overview.quickAddHelp')` — tái dùng 2 key i18n đã có, không thêm key mới cho phần
-    này.
-  - `groups`: rỗng nếu `draft` null (không có amount) → palette tự hiện `emptyLabel`.
-    Có `draft` → 1 group, 1 item duy nhất:
-    - `label`: `"{+|-}{formatCurrency(amount)}{note ? ' · ' + note : ''}{categoryName ? ' · ' + categoryName : ''}"`.
-    - `onSelect`: `setPendingDraft(draft)` rồi mở `TransactionFormModal` (đóng palette là
-      hành vi có sẵn của `CommandPalette` khi `onSelect` chạy).
-- `<TransactionFormModal open={!!pendingDraft} draft={pendingDraft} wallets={wallets}
-categories={categories} onClose={...} />` — đóng thì clear cả `pendingDraft` lẫn `text`,
-  giống `FinancePage.closeTxModal()` (không để draft cũ rò sang lần mở tiếp theo).
+- Tự fetch `useWallets()` + `useFinanceCategories()` — không phụ thuộc trang hiện tại đã fetch chưa
+- State local `text` + `pendingDraft`; `draft = useMemo(parseQuickEntry(...))` theo `text`
+- `CommandPalette`: `query={text}`, `disableFilter`, placeholder/empty tái dùng
+  `overview.quickAddPlaceholder` / `overview.quickAddHelp`
+- `draft` null → không group nào, palette hiện help text. Có draft → **một** item, icon category
+  (hoặc ➕), label `{+|−}{số tiền} · {note} · {category}`; chọn → `setPendingDraft(draft)` (palette
+  tự đóng)
+- `TransactionFormModal` mở khi có `pendingDraft`; đóng (lưu hoặc huỷ) thì xoá cả `pendingDraft`
+  lẫn `text` — draft cũ không rò sang lần mở sau
 
 ## Phím tắt
 
-Y hệt cấu trúc listener của `QuickAddTask.tsx` — tự quản lý trong component, không tách
-hook chung:
+Listener `keydown` trên `window`, tự quản trong component (giống `QuickAddTask.tsx`):
 
-```ts
-useEffect(() => {
-  const handle = (e: KeyboardEvent) => {
-    if (!(e.metaKey || e.ctrlKey) || !e.shiftKey || e.key.toLowerCase() !== 'e') return;
+- Cần `(meta || ctrl) && shift && key === 'e'`
+- Bỏ qua khi đang gõ trong `INPUT` / `TEXTAREA` / `contentEditable`
+- Bỏ qua khi Search, Quick Add Task, hoặc chính palette này đang mở — không mở chồng
+- `preventDefault()` rồi `openQuickAddTransaction()`
 
-    const target = e.target as HTMLElement;
-    const isTyping =
-      target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable;
-    if (isTyping) return;
-
-    const store = useUIStore.getState();
-    if (store.searchOpen || store.quickAddTaskOpen || store.quickAddTransactionOpen) return;
-
-    e.preventDefault();
-    store.openQuickAddTransaction();
-  };
-  window.addEventListener('keydown', handle);
-  return () => window.removeEventListener('keydown', handle);
-}, []);
-```
+Từng là `⌘⇧A`, đổi sang `⌘⇧E` (`f21aee1`).
 
 ## Mount
 
-Thêm `<QuickAddTransaction />` vào `src/app/[locale]/(protected)/layout.tsx`, cạnh
-`<GlobalSearch />` và `<QuickAddTask />`.
+`<QuickAddTransaction />` trong `src/app/[locale]/(protected)/layout.tsx`, cạnh `<GlobalSearch />`
+và `<QuickAddTask />`.
 
-## Mobile
+## Không có bàn phím — `QuickCreateFab`
 
-Không có phím tắt vật lý trên mobile. **Cập nhật** (khác quyết định ban đầu "không thêm gì"):
-nút `＋` sẵn có ở topbar mobile (`DashboardTopbar.tsx`) — trước đây bấm là mở thẳng Quick Add
-Task — đổi thành trigger của `Dropdown` (`src/components/ui/Dropdown.tsx`) với 2 lựa chọn:
-"Quick add task" và "Quick add transaction". Không thêm icon mới vào topbar (đã chật, fix
-cramped nhiều lần trước đó) — chỉ thêm 1 bước chọn sau khi bấm nút có sẵn.
+Lối vào không cần phím tắt là **nút nổi `QuickCreateFab`** (`src/components/common/QuickCreateFab.tsx`,
+mount ở cùng layout), mở ra ba lựa chọn: Note · Task (`⌘⇧Q`) · **Transaction (`⌘⇧E`)** — chọn
+Transaction gọi `openQuickAddTransaction()`. Hiện ở **mọi** kích thước màn, ẩn ở `/profile`; chi
+tiết vị trí ở [quick-notes.md](./quick-notes.md).
 
-i18n: `dashboard.quickAddMenu.{ariaLabel,task,transaction}` — thay thế
-`dashboard.quickAddTask.button` cũ (không còn dùng).
+Thay cho dropdown `＋` trên `DashboardTopbar` của bản trước: góc trên trái là chỗ ngón cái khó với
+nhất, và menu desktop cũ bị mép phải cửa sổ cắt mất. i18n `dashboard.quickAddMenu.*`.
+
+Cash reminder ([cash-log-reminder.md](./cash-log-reminder.md)) cũng mở đúng palette này từ nút
+trong dialog của nó.
+
+## TransactionFormModal — những gì draft rơi vào
+
+Form chung với Overview / Transactions: Enter submit, `DatePicker` của design system, category
+searchable, `＋ New category`, lỗi server (vd. ví xuống âm) hiện ngay trong modal
+([finance.md](./finance.md)).
 
 ## Edge cases
 
-| Case                                           | Xử lý                                                                                                             |
-| ---------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
-| Đang gõ trong 1 input/textarea bất kỳ          | Bỏ qua phím tắt                                                                                                   |
-| Search / Quick Add Task / palette này đang mở  | Bỏ qua, không mở chồng                                                                                            |
-| Gõ text không có amount hợp lệ                 | Palette hiện `emptyLabel` (help text), Enter không làm gì                                                         |
-| Category không match được tên nào              | `TransactionFormModal` mở với `categoryId` rỗng — user tự chọn (đúng hành vi hiện có của quick-add trên Overview) |
-| Đóng `TransactionFormModal` (Save hoặc Cancel) | Clear `pendingDraft` + `text`, palette đã đóng từ bước chọn item                                                  |
-
-## Reuse / Types
-
-| File                                                            | Thay đổi                                                                    |
-| --------------------------------------------------------------- | --------------------------------------------------------------------------- |
-| `src/stores/ui.store.ts`                                        | thêm `quickAddTransactionOpen` + 2 action                                   |
-| `src/features/finance/components/QuickAddTransaction.tsx` (mới) | palette + phím tắt + modal                                                  |
-| `src/features/finance/quick-entry.ts`                           | tái sử dụng nguyên trạng, không sửa                                         |
-| `src/components/ui/CommandPalette.tsx`                          | tái sử dụng nguyên trạng, không sửa                                         |
-| `src/features/finance/components/TransactionFormModal.tsx`      | tái sử dụng nguyên trạng, không sửa                                         |
-| `src/app/[locale]/(protected)/layout.tsx`                       | mount `<QuickAddTransaction />`                                             |
-| i18n                                                            | không thêm key mới — tái dùng `overview.quickAddPlaceholder`/`quickAddHelp` |
-
-## Trạng thái hiện tại
-
-❌ Chưa có gì mới cần build ngoài `QuickAddTransaction.tsx` + 2 field trong `ui.store` +
-1 dòng mount — mọi phần tính toán/UI khác đều tái dùng nguyên trạng.
+| Case                         | Xử lý                                      |
+| ---------------------------- | ------------------------------------------ |
+| Đang gõ trong input/textarea | Bỏ qua phím tắt                            |
+| Palette khác đang mở         | Bỏ qua, không mở chồng                     |
+| Không có số tiền hợp lệ      | Palette hiện help text, Enter không làm gì |
+| Không khớp category          | Form mở với category rỗng — user tự chọn   |
+| Không khớp ví                | Ví mặc định của form (ví đầu tiên)         |
+| Lưu bị từ chối (ví âm)       | Modal giữ nguyên, hiện câu lỗi của server  |
 
 </requirement>
 
 <tone>Concise, technical. Tái dùng tối đa (`parseQuickEntry`, `CommandPalette`,
-`TransactionFormModal`) — không viết form/parser/overlay mới. Không thêm nút mobile để
-tránh trùng nút Quick Add Task đã có.</tone>
+`TransactionFormModal`) — không viết form, parser hay overlay mới.</tone>

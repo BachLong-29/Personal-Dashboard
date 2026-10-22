@@ -1,85 +1,82 @@
-# Schedule Statistics Integration
+# Schedule Statistics — số liệu theo GIỜ từ Schedule Engine
 
-<role>Cung cấp số liệu theo GIỜ cho Statistics từ Schedule Engine.</role>
+<role>Engineer cung cấp khối `schedule` (phút planned/done/missed) cho Statistics</role>
 
 <context>
-[stats/route.ts](../../../src/app/api/v1/stats/route.ts) hiện chỉ **đếm số lượng** task/habit và
-completion rate. Spec [schedule-engine](./schedule-engine.md) mục 14 yêu cầu số liệu theo **giờ**:
-Planned / Completed / Missed Hours, Completion Rate, Workload Trend. `WeekStats.tsx` hiện đang
-hard-code ("Focus Hours 16.5h", "Streak 14d").
+`GET /api/v1/stats` ban đầu chỉ **đếm** task/habit và completion rate theo số lượng. Đếm không nói
+được "tuần này đã ngồi làm bao lâu". Khối `schedule` tính theo phút từ cùng Calendar Item mà các view
+dùng ([calendar-item](./calendar-item.md)), nên con số khớp với cái user thấy trên lịch. Gốc:
+[schedule-engine](./schedule-engine.md) §14.
 </context>
 
 <task>
-Tính các chỉ số theo giờ từ [calendar-item](./calendar-item.md) + [schedule-block](./schedule-block.md)
-và trả về qua API stats.
+Khối `schedule` trong `src/app/api/v1/stats/route.ts`, hiển thị ở AnalyticsPanel.
 </task>
 
----
+<requirement>
 
-## Chỉ số yêu cầu (mục 14)
+## Range
 
-| Chỉ số          | Công thức                                                |
-| --------------- | -------------------------------------------------------- |
-| Planned Hours   | Σ duration mọi CalendarItem (status planned+done+missed) |
-| Completed Hours | Σ duration item status=done                              |
-| Missed Hours    | Σ duration item status=missed                            |
-| Completion Rate | Completed / Planned                                      |
-| Workload Trend  | Planned Hours theo từng ngày trong range                 |
+**Cố định 7 ngày kết thúc hôm nay** (`localMidnight(-6)` → hôm nay). Endpoint **không** nhận
+`?from=&to=`. `buildCalendar(userId, from, today)` dựng item cho cả range.
 
-Tất cả tính theo **phút** ở backend, format ra giờ ở UI.
+## Công thức (đơn vị phút, format giờ ở UI)
 
----
+| Field              | Công thức                                              |
+| ------------------ | ------------------------------------------------------ |
+| `plannedMinutes`   | Σ `duration` mọi item (mọi status, mọi nguồn)          |
+| `completedMinutes` | Σ `duration` item `status = 'done'`                    |
+| `missedMinutes`    | Σ `duration` item `status = 'missed'`                  |
+| `completionRate`   | `round(completed / planned × 100)`, 0 khi planned = 0  |
+| `trend[]`          | 7 phần tử `{date: 'MM-DD', planned, completed}`        |
+| `bySource`         | phút **completed** theo `habit · task · quest · event` |
 
-## API
+Status lấy từ engine: `done` khi nguồn đã xong (HabitLog done, `task.status === 'done'` hoặc block
+`done`, `quest.done`); `missed` khi ngày < hôm nay mà chưa xong; còn lại `planned`.
 
-Mở rộng `GET /api/v1/stats` (giữ field cũ, thêm khối mới):
+## Đóng góp theo nguồn
+
+| Nguồn | Phút                                                                         |
+| ----- | ---------------------------------------------------------------------------- |
+| Habit | `habit.duration` mỗi occurrence; habit không có duration → 0                 |
+| Task  | `block.duration` mỗi block; task không block → `task.duration` ở `startDate` |
+| Quest | `block.duration` nếu có block; quest chỉ deadline → 0                        |
+| Event | `occ.duration` (all-day = 0); luôn `planned`, không bao giờ done/missed      |
+
+## Response
 
 ```jsonc
-{
-  "schedule": {
-    "range": { "from": "2026-06-13", "to": "2026-06-19" },
-    "plannedMinutes": 1230,
-    "completedMinutes": 980,
-    "missedMinutes": 120,
-    "completionRate": 80, // %
-    "trend": [
-      { "date": "06-13", "planned": 180, "completed": 150 },
-      // ... 7 ngày
-    ],
-    "bySource": { "habit": 300, "task": 720, "quest": 210 }, // completed minutes
-  },
+"schedule": {
+  "range": { "from": "2026-10-16", "to": "2026-10-22" },
+  "plannedMinutes": 1230, "completedMinutes": 980, "missedMinutes": 120,
+  "completionRate": 80,
+  "trend": [{ "date": "10-16", "planned": 180, "completed": 150 } /* …7 */],
+  "bySource": { "habit": 300, "task": 680, "quest": 0, "event": 0 }
 }
 ```
 
-Hỗ trợ query `?from=&to=` (default: 7 ngày gần nhất).
-
----
-
-## Nguồn dữ liệu
-
-- **Habit completed** — từ `HabitLog.done` × `habit.duration` (nếu habit không có duration → bỏ qua
-  khỏi giờ, vẫn đếm count).
-- **Task/Quest** — từ `ScheduleBlock.status` × `block.duration`.
-- **Missed** — item ngày đã qua, chưa done.
-
----
-
-## Thay WeekStats hard-code
-
-[WeekStats.tsx](../../../src/features/tasks/components/week/WeekStats.tsx) hiện hard-code
-"Focus Hours 16.5h", "Combo ×3", "Streak 14d" → thay bằng `schedule.completedMinutes` thật và
-streak tính từ HabitLog.
-
----
+Giữ nguyên mọi field cũ (`tasks`, `habits`, `weekly`, `character`…) — mobile app đọc cùng response.
+Type client: `DashboardStats.schedule` trong `src/features/dashboard/hooks/useStats.ts`.
 
 ## Hiển thị
 
-- AnalyticsPanel / Statistics page — biểu đồ Workload Trend (planned vs completed theo ngày).
-- Month View — workload tổng theo tuần (mục 11).
+`AnalyticsPanel.tsx` — thẻ **Focus Time** = `completedMinutes`, sub "of `plannedMinutes`". Thẻ
+**Day Streak** lấy `character.streak` (UserProfile). `trend`, `missedMinutes`, `bySource` hiện
+**chưa có UI** nào vẽ. `RangeControl` trên panel chỉ đổi state cục bộ, không gửi gì lên API.
 
----
+## Edge cases
 
-## Trạng thái hiện tại
+- Event không bao giờ `done` nên mọi phút event có giờ kéo `completionRate` xuống; event quá khứ
+  cũng không thành `missed` → planned ≠ completed + missed.
+- Task không block mà done: cả estimate được tính completed vào **ngày bắt đầu**, dù làm ngày nào.
+- Habit `done` chỉ đọc theo `HabitLog` từng ngày; habit đã tắt (`active:false`) bị loại khỏi cả quá
+  khứ.
 
-🟡 Một phần: stats đếm count + completion rate theo số lượng. ❌ Chưa có: bất kỳ chỉ số theo GIỜ nào,
-workload trend, bySource. WeekStats đang dùng số giả.
+## Open questions
+
+- Có loại event khỏi `plannedMinutes` (hoặc chỉ giữ `busy`) để completion rate có nghĩa?
+- Cần `?from=&to=` + biểu đồ Workload Trend (spec cũ) không, hay bỏ hẳn khỏi spec?
+
+</requirement>
+
+<tone>Kỹ thuật, nói rõ con số đến từ đâu.</tone>

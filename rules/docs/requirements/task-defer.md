@@ -1,98 +1,73 @@
-<role>
-Product owner định nghĩa tính năng "Dời task" cho hệ thống gamified dashboard.
-</role>
+# Task Defer — dời task kèm lý do, ngay trong EditTaskModal
+
+<role>Fullstack engineer giữ tính năng "Cannot complete today" của task</role>
 
 <context>
-User đôi khi không thể hoàn thành task trong ngày. Thay vì để task tồn đọng hoặc xoá đi,
-họ muốn ghi lại lý do và dời task sang ngày khác — tất cả trong EditTaskModal hiện có,
-không mở thêm modal mới.
+User đôi khi không xong task trong ngày. Thay vì để tồn đọng hay xoá, họ ghi lại lý do và dời
+sang ngày khác — trong `EditTaskModal` có sẵn, không mở modal mới. Dời task quá hạn hàng loạt là
+việc của [overdue-task-handling](./overdue-task-handling.md), không phải ở đây.
 </context>
 
 <task>
-Thêm tính năng "Dời task" (defer) vào EditTaskModal:
-- Checkbox để kích hoạt chế độ defer
-- Chọn lý do (chip cố định + input tuỳ chỉnh)
-- Chọn ngày dời (date picker, mặc định ngày mai)
-- Khi submit: cập nhật startDate + lưu deferReason riêng
-- Hiển thị badge "Rescheduled" trên TaskCard nếu deferReason tồn tại
+Checkbox bật chế độ defer → chọn lý do + ngày → lưu `startDate` mới và `deferReason`.
 </task>
 
 <requirement>
 
-## UI — EditTaskModal
+## Dữ liệu
 
-### Trigger
+`Task.deferReason?: string` — trim, ≤200 ký tự.
 
-- Checkbox label: "Không thể hoàn thành hôm nay"
-- Nằm ở cuối form, trước footer
-- Khi checked: mở rộng section defer bên dưới checkbox
+`PATCH /api/v1/tasks/:id`: `deferReason: z.string().max(200).optional().nullable()` —
+`null` → `$unset`, string → `$set`. Response của `PATCH` và `GET /tasks/:id` có `deferReason`;
+response list `GET /tasks` và `POST` thì **không** serialize field này.
 
-### Defer Section
+## UI — `EditTaskModal.tsx`
 
-- **Reason chips** (4 lý do cố định, chọn 1):
-  - "Quá bận / hết thời gian"
-  - "Bị chặn / chờ người khác"
-  - "Ưu tiên thay đổi đột xuất"
-  - "Sức khỏe / cá nhân"
-- **Custom reason input**: text input tuỳ chỉnh, max 200 ký tự
-  - Nếu chip đã chọn → input disabled, hiện chip value
-  - Nếu không chọn chip → input enabled
-- **Date picker**: chọn ngày dời, mặc định ngày mai
-  - Không cho phép chọn ngày trong quá khứ
+Section nằm **dưới `TaskForm`**, ngăn bằng border-top, và **chỉ hiện với task single-day**
+(`!endDate || endDate === startDate`). Task multi-day không có defer — dời một ngày của dải
+không có nghĩa rõ ràng.
 
-### Submit Button
+- Checkbox: "Cannot complete today" (`tasks.defer.checkboxLabel`). Bỏ tick → reset toàn bộ state
+  defer.
+- **Chip lý do** (chọn một, bấm lại để bỏ), key i18n `tasks.defer.reasons.*`:
+  `tooBusy` · `blocked` · `priorityShift` · `health`.
+- **Ô lý do tự nhập** (≤200): có chip → ô bị disable và hiện text của chip.
+- **DatePicker** "Reschedule to": mặc định **ngày mai**, chọn ngày trước hôm nay bị bỏ qua.
+- Nút submit: "↺ Reschedule" khi defer bật, "✦ Save Changes" khi tắt.
 
-- Defer OFF: label "✦ Save Changes" (mặc định)
-- Defer ON: label "↺ Reschedule"
+State defer reset khi đóng modal.
 
-## Data Flow
-
-### Khi defer = ON và submit:
+## Payload khi submit
 
 ```
-payload.deferReason = selectedChip ?? customReason.trim() || 'Dời task'
-payload.startDate   = deferDate (YYYY-MM-DD)
+defer ON:  deferReason = <text chip đã dịch> ?? custom.trim() || <text checkbox đã dịch>
+           startDate   = deferDate (YYYY-MM-DD, giờ local)
+defer OFF: task đang có deferReason → deferReason = null (xoá)
 ```
 
-- `startTime` và `endDate` giữ nguyên theo form hiện tại
+`endDate` và các field form khác gửi như lưu bình thường. Lý do được lưu **bằng chữ đã dịch theo
+ngôn ngữ lúc lưu**, không phải key — đổi ngôn ngữ sau đó không dịch lại lý do cũ.
 
-### Khi defer = OFF và submit:
+**Lưu không defer sẽ xoá `deferReason` cũ** — tức là mỗi lần sửa task đã dời mà không tick lại
+checkbox, dấu vết "đã dời" mất đi.
 
-- Payload như bình thường, không có `deferReason`
+## Sau khi lưu
 
-## API — PATCH /api/v1/tasks/:id
+Ngày đổi nên đi qua đúng luồng của [tasks-sessions](./tasks-sessions.md): task đã có session →
+`SessionUpdatePrompt` (dời session sang ngày mới); chưa có → Session Planner.
 
-### Schema mới
+## Không có (spec cũ ghi sai)
 
-```
-deferReason: z.string().max(200).optional().nullable()
-```
+- **Badge "↺ Rescheduled" trên card**: không chỗ nào render `deferReason`. Adapter
+  `taskToUITask` có map `deferReason` vào `UITask` nhưng không component nào đọc.
+- Lịch sử các lần dời — chỉ giữ lý do gần nhất.
 
-- null → $unset deferReason
-- string → $set deferReason
+## Open questions
 
-## Database — Task Model
-
-```typescript
-deferReason?: string  // max 200 chars, optional
-```
-
-## UI — TaskCard
-
-- Hiển thị badge "↺ Rescheduled" sau tagLabel badge khi `task.deferReason` truthy
-- Style: amber/gold accent, nhỏ hơn hoặc bằng các badge hiện có
-
-## Types cần thêm
-
-| File                                    | Thay đổi                                                                       |
-| --------------------------------------- | ------------------------------------------------------------------------------ |
-| `src/types/task.ts`                     | `Task.deferReason?: string` + `UpdateTaskPayload.deferReason?: string \| null` |
-| `src/features/dashboard/types/index.ts` | `Task.deferReason?: string`                                                    |
-| `src/features/tasks/data/mock.ts`       | `UITask.deferReason?: string`                                                  |
-| `src/features/tasks/data/adapters.ts`   | map `t.deferReason` trong `taskToUITask()`                                     |
+- Có làm lại badge "Rescheduled" không, và đặt ở đâu khi day view của `/tasks` đang ẩn?
+- Lưu bình thường xoá `deferReason` có phải ý muốn, hay chỉ nên xoá khi task xong?
 
 </requirement>
 
-<tone>
-Ngắn gọn, đủ để implement. Không giải thích lý do business ngoài những gì đã ghi.
-</tone>
+<tone>Ngắn gọn, đủ để implement.</tone>

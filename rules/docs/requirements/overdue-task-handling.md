@@ -1,139 +1,95 @@
-<role>
-Product owner định nghĩa tính năng "Overdue Task Handling" cho hệ thống gamified dashboard.
-</role>
+# Overdue Task Handling — leo thang, phạt, rồi dọn hàng loạt
+
+<role>Fullstack engineer giữ vòng đời task trễ hạn trên dashboard gamified</role>
 
 <context>
-Tasks có thể bị bỏ qua qua nhiều ngày. Hiện tại không có cơ chế nào xử lý chúng ngoài badge "overdue" và đếm trong stats. Tính năng này thêm 2 lớp: visual escalation theo số ngày trễ và một review modal để user giải quyết hàng loạt.
+Task bị bỏ qua nhiều ngày trước đây chỉ có badge "overdue" và một con số trong stats — không có lý do
+nào để quay lại xử lý. Tính năng này thêm ba lớp chạy khi dashboard load: **badge leo thang** theo số
+ngày trễ, **penalty tự động** ([penalty](./penalty.md)), và **review modal** để giải quyết từng task.
+Khi dời ngày một task đã có phiên, nó còn hỏi có dời luôn các phiên không.
 </context>
 
 <task>
-Triển khai 2 hướng kết hợp:
-- **Hướng 3 (Escalation Badge)**: Badge trên TaskCard leo thang theo số ngày trễ; auto-archive sau 7 ngày.
-- **Hướng 1 (Review Modal)**: Modal xuất hiện khi dashboard load nếu có tasks overdue, cho phép Reschedule / Mark Done / Abandon từng task.
+Hook `useOverdueReview` + `computeOverdueLevel` + badge trên card + `OverdueReviewModal`, xếp hàng
+sau penalty.
 </task>
 
 <requirement>
 
-## 1. Định nghĩa "Overdue"
+## Định nghĩa
 
-- Task bị coi là overdue khi: `active: true`, `status !== 'done'`, và due date < today
-- **Due date** = `endDate` nếu có, ngược lại dùng `startDate`
-- Tasks không có `startDate` (backlog) → **không bao giờ overdue**
-- Số ngày trễ: `Math.floor((today - dueDate) / 86_400_000)` (>= 1)
+- Overdue khi `active !== false`, `status !== 'done'`, và **due** < hôm nay.
+- **Due** = `endDate ?? startDate`. Không có `startDate` (backlog) → **không bao giờ** overdue.
+- `daysOverdue = -dayOffset(due)` (≥ 1).
 
----
+`computeOverdueLevel(task)` — `src/features/tasks/data/adapters.ts`, gắn vào `UITask.overdueLevel`:
 
-## 2. Escalation Levels
+| Ngày trễ | Level      | Hệ quả                                                |
+| -------- | ---------- | ----------------------------------------------------- |
+| 1–2      | `late`     | badge `⚠` vàng                                        |
+| 3–6      | `critical` | badge `!` hồng nhấp nháy + 1 notification mỗi session |
+| ≥ 7      | `failed`   | auto-archive + notification "☠ Quest Failed"          |
 
-| Ngày trễ | Level      | Badge                | Hành động                                           |
-| -------- | ---------- | -------------------- | --------------------------------------------------- |
-| 1–2 ngày | `late`     | `⚠ Late` (amber)     | Chỉ hiển thị badge                                  |
-| 3–6 ngày | `critical` | `🔴 Critical` (rose) | Badge + tạo notification 1 lần                      |
-| ≥ 7 ngày | `failed`   | —                    | Auto-archive + notification "Quest Failed" + trừ XP |
+Badge render trong `src/features/tasks/components/shared/QuestCard.tsx`, ẩn khi task done/cancelled
+hoặc level `failed`.
 
-### Badge trên TaskCard
+## Hook — `src/features/tasks/hooks/useOverdueReview.ts`
 
-- Thêm badge escalation vào TaskCard, hiện sau badge `deferReason` (nếu có)
-- Style `late`: nền amber/gold mờ, text amber
-- Style `critical`: nền rose mờ, text rose, nhấp nháy nhẹ (CSS pulse)
-- Chỉ render khi `overdueLevel !== null`
+`useOverdueReview()` tự đọc `useTasks()`, trả `{ overdueItems, isReady, showModal, dismissModal,
+removeItem }`. Chạy **một lần** sau khi tasks load (`ranRef`):
 
-### Auto-archive (7 ngày)
+1. Phân loại. Với mỗi `critical` chưa báo trong session (`sessionStorage`
+   `overdue_critical_notified_<id>`) → `POST /notifications` type `reminder`, "🔴 Quest Critical".
+2. Tuần tự `PATCH /tasks/:id {active:false}` cho mọi task `failed`, kèm notification `system`
+   "☠ Quest Failed" có `entityId`. Bấm notification đó mở `EditTaskModal` để khôi phục
+   (`MainDashboard.tsx`). Không trừ XP ở bước này — hình phạt nằm ở penalty.
+3. `overdueItems` = task 1–6 ngày; `showModal = true` nếu có item và `sessionStorage`
+   `overdue_reviewed` chưa set.
 
-- **Lazy-on-load**: khi hook `useOverdueReview` chạy lần đầu trong session, tách tasks overdue ≥ 7 ngày, gọi `PATCH /api/v1/tasks/:id { active: false }` cho từng task
-- Sau khi archive, tạo notification: `type: 'system'`, title `"☠ Quest Failed"`, message ghi tên task
-- Không block render — chạy async, invalidate query sau khi xong
+## Thứ tự với Penalty
 
-### Critical Notification (3–6 ngày)
+`usePenaltyFlow` (`src/features/dashboard/hooks/usePenaltyFlow.ts`) nhận `overdueItems`: có item và
+hôm nay chưa phạt (`localStorage` `aetheria_task_penalty_date`) → tự tạo penalty `source: 'task'`
+(pool bài tập). Review modal chỉ mở khi **không** có penalty task đang chờ — penalty là modal chặn,
+hai modal cùng lúc là một bức tường. `CashLogReminderModal` nhường cả hai.
 
-- Dùng existing `useCreateNotification`
-- `dedupeKey`: `overdue:critical:${taskId}` (idempotent — chỉ tạo 1 lần)
-- Tạo khi hook detect task lên level `critical` lần đầu trong session
+## Review Modal — `src/features/tasks/components/shared/OverdueReviewModal.tsx`
 
----
+- Title "⚠ Overdue Quests" + "N quest(s) missed their deadline". Mỗi dòng: icon, tên, badge level,
+  số ngày trễ, `endDate` hoặc `startDate` gốc.
+- 3 nút: **Reschedule** · **Done** · **Abandon**. Footer: **Dismiss** (set `overdue_reviewed`).
+- **Reschedule** → `DatePicker` inline → `PATCH {startDate: mới, endDate: null}`.
+- **Done** → `PATCH {status:'done'}` — không thưởng XP vì đã trễ.
+- **Abandon** → confirm inline (bấm lần 2) → `PATCH {active:false}`.
+- Xử lý xong, dòng biến mất. Hết dòng → "All caught up" rồi tự đóng sau 1.5s (không set
+  `overdue_reviewed`, nhưng hook không chạy lại trong session nên không mở lại).
 
-## 3. Overdue Review Modal
+## Session prompt sau Reschedule
 
-### Trigger
+Task đã có block mà bị dời ngày thì các phiên vẫn nằm ở ngày cũ. Sau reschedule thành công, nếu
+`useTaskBlocks(id)` có block → mở `SessionUpdatePrompt`
+(`src/features/tasks/components/shared/SessionUpdatePrompt.tsx`):
 
-- Hiện **một lần mỗi session** (dùng `sessionStorage` key `overdue_reviewed`)
-- Chỉ hiện nếu có ít nhất 1 task overdue với 1–6 ngày trễ (tasks 7+ ngày đã bị auto-archive trước)
-- Hiện sau khi auto-archive xong (await)
+- **Move to <date>** — `PATCH` mọi block sang `startDate` mới (id lấy từ trước, không refetch).
+  Lỗi → giữ prompt mở, hiện "move failed" để thử lại.
+- **Manage schedule** → mở SessionPlanner với ngày mới.
+- **Later** → đóng.
 
-### Modal Layout
+Prompt và planner sống ở **modal cha**, không ở dòng — dòng bị unmount ngay khi reschedule xong.
+Cùng prompt này được dùng ở `EditTaskModal` (đổi ngày/estimate) và khi kéo task qua ngày ở Week View.
 
-- Title: `"⚠ Overdue Quests"`, subtitle: `"N quest(s) missed their deadline"`
-- Danh sách tasks, mỗi item hiện: icon + tên + due date + số ngày trễ
-- Mỗi task có 3 nút action: **Reschedule** / **Done** / **Abandon**
-- Footer: nút `"Dismiss"` (đóng modal, đánh dấu session đã review)
+## Edge cases
 
-### Reschedule Action
+- Abandon/auto-archive dùng `PATCH active:false` → block của task **không** bị xoá (xem
+  [schedule-block](./schedule-block.md)).
+- Notification "Quest Failed" cũ thiếu `entityId` được backfill ở `GET /notifications` bằng cách
+  parse tên task từ message.
+- "Move" dời **mọi** block của task, kể cả block ngày đã qua.
 
-- Hiển thị inline DatePicker ngay dưới task item khi user click Reschedule
-- Submit: `PATCH /api/v1/tasks/:id { startDate: newDate, endDate: null }` (reset endDate)
-- Sau khi save: item biến mất khỏi danh sách
+## Open questions
 
-### Mark Done Action
-
-- `PATCH /api/v1/tasks/:id { status: 'done' }`
-- Sau khi save: item biến mất khỏi danh sách
-- Không có XP reward (task đã trễ)
-
-### Abandon Action
-
-- `PATCH /api/v1/tasks/:id { active: false }`
-- Xác nhận inline (confirm chip hiện ra thay 3 nút, click lần 2 mới execute)
-- Sau khi save: item biến mất khỏi danh sách
-
-### Khi list rỗng
-
-- Thay nội dung bằng: `"All caught up! ✓"` + auto-close sau 1.5s
-
----
-
-## 4. Hook — `useOverdueReview`
-
-```typescript
-// src/features/tasks/hooks/useOverdueReview.ts
-function useOverdueReview(tasks: Task[]): {
-  overdueItems: OverdueItem[]; // tasks 1-6 ngày trễ (sau khi auto-archive xong)
-  isReady: boolean; // false khi đang auto-archive
-  markSessionReviewed: () => void;
-};
-```
-
-- `OverdueItem`: Task + `daysOverdue: number` + `overdueLevel: 'late' | 'critical'`
-- Chạy 1 lần khi mount (effect với empty-deps sau tasks loaded)
-- Bước 1: tìm tasks >= 7 ngày → batch PATCH `active: false` → invalidate
-- Bước 2: `isReady = true`, set `overdueItems` = tasks 1–6 ngày
-- Check `sessionStorage` trước khi show modal
-
----
-
-## 5. Utility — `computeOverdueLevel`
-
-```typescript
-// Thêm vào src/features/tasks/data/adapters.ts
-function computeOverdueLevel(task: Task, today: string): 'late' | 'critical' | 'failed' | null;
-```
-
-- null nếu không overdue, không có due date, hoặc done
-- Dựa trên `daysOverdue`: 1–2 → `late`, 3–6 → `critical`, >= 7 → `failed`
-
----
-
-## 6. Files cần tạo / sửa
-
-| File                                                            | Thay đổi                     |
-| --------------------------------------------------------------- | ---------------------------- |
-| `src/features/tasks/hooks/useOverdueReview.ts`                  | Hook mới                     |
-| `src/features/tasks/data/adapters.ts`                           | Thêm `computeOverdueLevel()` |
-| `src/features/tasks/components/shared/OverdueReviewModal.tsx`   | Component mới                |
-| `src/features/dashboard/components/MainDashboard.tsx`           | Mount hook + render Modal    |
-| `src/features/tasks/components/TaskCard.tsx` (hoặc tương đương) | Thêm escalation badge        |
+- Spec cũ ghi "trừ XP" khi failed — code không trừ; có cần không, hay penalty là đủ?
 
 </requirement>
 
-<tone>
-Ngắn gọn, đủ để implement. Không giải thích lý do business ngoài những gì đã ghi.
-</tone>
+<tone>Ngắn, nói rõ thứ tự các modal và lý do.</tone>

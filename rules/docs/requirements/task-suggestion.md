@@ -1,117 +1,102 @@
-# Task Suggestion from Backlog
+# Task Suggestion — gợi ý task backlog khi chọn task cho một ngày
 
 <role>Fullstack engineer cho gamified personal dashboard</role>
 
 <context>
-Ở Week view của Dashboard, mỗi ngày có nút "pick task" mở `TaskPickerModal`
-(`src/features/dashboard/components/schedule/TaskPickerModal.tsx`). Modal chỉ có ô search
-theo tên — người dùng phải tự nhớ mình còn task gì chưa xếp lịch. Trong khi đó backlog
-(task `active`, chưa `done`, **không có `startDate`**) ngày càng phình ra; AnalyticsPanel
-đã cảnh báo "Backlog Alert" khi ≥ 5 task nhưng không có đường dẫn nào để xử lý ngay.
+Ở week view của dashboard, mỗi ngày có nút "pick task" mở `TaskPickerModal`
+(`src/features/dashboard/components/schedule/TaskPickerModal.tsx`). Trước đây modal chỉ có ô
+search theo tên — user phải tự nhớ mình còn task gì chưa xếp. Backlog (task chưa có `startDate`)
+thì cứ phình ra; AnalyticsPanel cảnh báo "Backlog Alert" khi ≥5 task nhưng không có đường xử lý.
 </context>
 
 <task>
-Khi mở modal pick task ở Week view (ô search còn trống), hiển thị sẵn danh sách task
-backlog được **chấm điểm và xếp hạng** theo mức phù hợp với đúng ngày đang chọn, kèm
-chip lý do. Chọn một gợi ý → gán `startDate`/`endDate` = ngày đó (dùng lại `onPick` sẵn có).
-Gõ từ khóa → quay về luồng search cũ, không đổi.
+Khi mở picker với ô search trống, hiện sẵn task backlog đã **chấm điểm và xếp hạng** theo mức hợp
+với đúng ngày đang chọn, kèm chip lý do. Chọn một gợi ý → `PATCH { startDate: day, endDate: day }`
+(dùng chung `onPick`). Gõ từ khoá → quay về luồng search cũ.
 </task>
 
 <requirement>
 
-## Định nghĩa backlog
+## Backlog
 
-`{ userId, active: true, status != 'done', startDate: { $exists: false } }` — trùng với
-định nghĩa đang dùng ở `adapters.ts` và section "07 · Backlog" của AnalyticsPanel.
+`{ userId, active: true, status != 'done', startDate: { $exists: false } }`, sort `createdAt` asc.
 
-## Logic chấm điểm (cốt lõi)
+## Chấm điểm — `src/server/services/task-suggestion.ts`
 
-Điểm cộng dồn rồi **clamp 0–100**. Tie-break: task nằm backlog lâu hơn xếp trước
-(query sort `createdAt` asc, `Array.sort` ổn định).
+Cộng dồn rồi **clamp ≤100**, làm tròn. Sort score desc; `Array.sort` ổn định nên hoà điểm thì task
+nằm backlog lâu hơn đứng trước.
 
-| Tín hiệu       | Điểm | Điều kiện                                                                                                          |
-| -------------- | ---- | ------------------------------------------------------------------------------------------------------------------ |
-| `deadline`     | 5–35 | Project có `deadline`: quá hạn/đúng hạn 35 · ≤ `deadlineWarningDays` 32 · ≤ 3d 28 · ≤ 7d 20 · ≤ 14d 12 · còn lại 5 |
-| `priority`     | 3–15 | Project `priority`: high 15 · medium 8 · low 3 (chỉ high mới hiện chip)                                            |
-| `stale`        | 0–25 | `floor(ageDays / 3) * 5`, cap 25. Chip khi `ageDays >= 7`                                                          |
-| `fits`         | 0–20 | `duration <= remainingMinutes` → 20. Không có `duration` → 8 (trung tính, không chip)                              |
-| `same_project` | 15   | Cùng `projectId` với task đã có trên ngày đó                                                                       |
-| `same_tag`     | 10   | Cùng `tagId` — **chỉ xét khi không khớp `same_project`**                                                           |
-| `unblocked`    | 10   | Task có `dependencies` và **tất cả** đã `done`                                                                     |
+| Tín hiệu       | Điểm | Điều kiện                                                                                          | Chip                     |
+| -------------- | ---- | -------------------------------------------------------------------------------------------------- | ------------------------ |
+| `deadline`     | 5–35 | Project có `deadline`: ≤0 ngày 35 · ≤`deadlineWarningDays` 32 · ≤3 28 · ≤7 20 · ≤14 12 · còn lại 5 | **Luôn** khi có deadline |
+| `priority`     | 3–15 | Task thuộc project: high 15 · medium 8 · low 3                                                     | Chỉ `high`               |
+| `stale`        | 0–25 | `floor(ageDays / 3) * 5`, cap 25 (`ageDays` từ `createdAt`)                                        | `ageDays >= 7`           |
+| `fits`         | 8/20 | Không có `duration` → 8 (trung tính); `duration <= remainingMinutes` → 20                          | Chỉ khi 20               |
+| `same_project` | 15   | Cùng `projectId` với một task đã có trên ngày đó                                                   | Có                       |
+| `same_tag`     | 10   | Cùng `tagId` — **chỉ xét khi không khớp `same_project`**                                           | Có                       |
+| `unblocked`    | 10   | Có `dependencies` và **tất cả** đã `done`                                                          | Có                       |
+
+Chip sort theo trọng số giảm dần, cắt còn **tối đa 3**. Nhãn chip là tiếng Anh từ server
+(`Deadline in 3d`, `In backlog 12d`, `Fits 90m left`…) và render thẳng.
 
 **Loại khỏi kết quả (không phải trừ điểm):**
 
-- Còn dependency chưa `done` → không actionable, ẩn hẳn (khớp `isBlocked` trong WeekView).
-- Đã có `ScheduleBlock` trên đúng ngày đó → task đang hiển thị rồi, tránh gợi ý trùng.
+- Còn dependency chưa `done` → không actionable.
+- Đã có `ScheduleBlock` trên đúng ngày đó (backlog task bị kéo vào ngày mà không có ngày) →
+  đang hiện rồi, gợi ý nữa là trùng.
 
-**`remainingMinutes`** = `schedule.dailyCapacityMinutes` (UserSetting, default 600)
-− tổng `duration` mọi `ScheduleBlock` trong ngày (cả task lẫn quest)
-− tổng `duration` các task có `startDate` rơi vào ngày đó **mà chưa có block** (tránh đếm 2 lần).
-Clamp `>= 0`.
-
-**Reasons:** sort theo trọng số giảm dần, cắt còn tối đa **3 chip**.
-
-## API
-
-`GET /api/v1/tasks/suggestions?date=YYYY-MM-DD&limit=<n>` (mới)
-
-- Auth bắt buộc (`getAuthUser`) → chưa đăng nhập trả 401.
-- `date` required, regex `^\d{4}-\d{2}-\d{2}$`; `limit` optional (1..20, default 5).
-- Đặt ở segment tĩnh `tasks/suggestions` — Next.js ưu tiên hơn `tasks/[id]`.
-- Backlog rỗng → trả `[]` sớm, không chạy thêm query nào.
-- Response:
+## `remainingMinutes`
 
 ```
-SuggestionReasonCode =
-  'deadline' | 'priority' | 'stale' | 'fits' | 'same_project' | 'same_tag' | 'unblocked'
-
-SuggestionReason { code, label }        // label render thẳng thành chip
-TaskSuggestion   { task: Task, score: number, reasons: SuggestionReason[] }
-
-response.data = TaskSuggestion[]        // sort score desc
+dailyCapacityMinutes (UserSetting.schedule, default 600)
+ − Σ duration mọi ScheduleBlock trong ngày (task + quest)
+ − Σ duration task có ngày rơi vào hôm đó mà CHƯA có block   // tránh đếm hai lần
+ − Σ duration event busy, không all-day trong ngày            // mới, từ khi có Event
+→ clamp ≥ 0
 ```
 
-## Ràng buộc kỹ thuật
+Vì sao trừ event: họp, lớp học không phải task nhưng ăn giờ thật; trước khi có
+[event](./event.md) scorer tính như thể ngày họp 4 tiếng vẫn trống, nên `fits` chấm sai.
+Event all-day hoặc không `busy` nằm trên lịch mà không chiếm giờ.
 
-- **Timezone:** mọi mốc ngày trong DB lưu ở UTC midnight (`new Date("YYYY-MM-DD")`).
-  Service phải tính bound bằng UTC, đồng nhất với route `tasks` và `schedule-blocks`.
-- **Số query:** 4 query song song (backlog / setting / blocks trong ngày / task trong ngày),
-  rồi 1 lượt `Promise.all` nữa cho dependencies + projects. Không query trong vòng lặp.
-- Task trả về serialize giống `GET /api/v1/tasks` (không kèm `progress` — backlog chưa có block).
+## API — `GET /api/v1/tasks/suggestions?date=YYYY-MM-DD&limit=n`
 
-## Client — hook
+- Cần auth → 401. `date` bắt buộc, regex `^\d{4}-\d{2}-\d{2}$`; `limit` 1..20, default 5.
+- Segment tĩnh `tasks/suggestions` được Next.js ưu tiên hơn `tasks/[id]`.
+- Backlog rỗng → trả `[]` sớm.
+- Query: **5 truy vấn song song** (backlog · setting · block trong ngày · task trong ngày ·
+  `expandEvents`), rồi một `Promise.all` cho dependencies + projects. Không query trong vòng lặp.
+- Mọi mốc ngày tính theo UTC midnight, khớp route `tasks` và `schedule-blocks`.
 
-`useTaskSuggestions(date: string | null, limit = 5)`
+```
+SuggestionReasonCode = 'deadline'|'priority'|'stale'|'fits'|'same_project'|'same_tag'|'unblocked'
+SuggestionReason { code, label }
+TaskSuggestion   { task: Task, score: number, reasons: SuggestionReason[] }   // src/types/task-suggestion.ts
+```
 
-- `queryKey: ['tasks', 'suggestions', date, limit]`, `enabled: Boolean(date)`, `staleTime: 60s`.
-- Gọi `apiClient` trực tiếp trong hook (khớp `useTaskSearch`, chưa có `endpoints/tasks.ts`).
+Task serialize giống `GET /tasks` nhưng **không** kèm `progress` (backlog chưa có block).
 
-## Client — TaskPickerModal
+## Client
 
-- `isBrowsing` = ô search trống sau `trim()`. Chỉ khi `open && isBrowsing` mới truyền
-  `dateStr` vào hook (ngược lại truyền `null` → không gọi API).
-- Layout: section **"✦ Suggested from backlog"** ở trên, section **"Recent"** ở dưới
-  (nhãn "Recent" chỉ hiện khi có gợi ý). Đang gõ → chỉ còn kết quả search như cũ.
-- Lọc `excludeIds` cho cả gợi ý; dedupe id đã nằm ở block gợi ý ra khỏi list Recent.
-- Mỗi dòng gợi ý: icon · tên · các chip lý do (wrap) · badge score bên phải.
-  Viền/nền gold nhạt để tách khỏi dòng Recent.
-- `onPick` đổi kiểu tham số sang `Task` của `@/types` (trước đó cast nhầm sang
-  `Task` của `features/dashboard/types` — type này bắt buộc `startDate`, backlog thì không có).
-  WeekView chỉ dùng `task.id` nên không phải sửa gì.
-- Text hardcode tiếng Anh theo đúng idiom sẵn có của file (modal này chưa dùng `next-intl`).
-- Responsive: chip `flex-wrap`, vùng list `max-h-[320px] overflow-y-auto`, modal giữ 380px.
+**Hook** `useTaskSuggestions(date | null, limit = 5)` (`src/features/dashboard/hooks/`):
+`queryKey ['tasks','suggestions',date,limit]`, `enabled: Boolean(date)`, `staleTime 60s`.
 
-## Files
+**`TaskPickerModal`** (rộng 380px):
 
-| File                                                             | Thay đổi                     |
-| ---------------------------------------------------------------- | ---------------------------- |
-| `src/types/task-suggestion.ts` (mới)                             | 3 type ở trên                |
-| `src/types/index.ts`                                             | export barrel                |
-| `src/server/services/task-suggestion.ts` (mới)                   | `suggestBacklogTasks()`      |
-| `src/app/api/v1/tasks/suggestions/route.ts` (mới)                | endpoint GET                 |
-| `src/features/dashboard/hooks/useTaskSuggestions.ts` (mới)       | React Query hook             |
-| `src/features/dashboard/components/schedule/TaskPickerModal.tsx` | section gợi ý + chip + score |
+- `isBrowsing` = ô search trống sau `trim()`. Chỉ khi `open && isBrowsing` mới truyền `dateStr`
+  vào hook; ngược lại `null` → không gọi API.
+- Section **"✦ Suggested from backlog"** ở trên; nhãn **"Recent"** chỉ hiện khi có gợi ý và còn
+  kết quả recent. Recent = `useTaskSearch(query, 20)`, lọc `active`, chưa done.
+- Lọc `excludeIds` (task đã có trên ngày) cho cả hai list; bỏ khỏi Recent những id đã ở block gợi ý.
+- Dòng gợi ý: icon · tên · chip lý do (`flex-wrap`) · badge score bên phải; viền/nền gold nhạt.
+- Text tiếng Anh hardcode, đúng idiom sẵn có của file (modal chưa dùng `next-intl`).
+
+## Open questions
+
+- Chip `deadline` hiện cả khi deadline còn xa (5 điểm) — có muốn chỉ hiện khi gần hạn?
+- Chọn gợi ý chỉ đặt ngày, không tạo session; day view (`requireBlock`) sẽ không hiện task đó
+  cho tới khi có block. Có nên mở Session Planner sau khi pick?
 
 </requirement>
 
-<tone>Concise, technical. Tái sử dụng modal và luồng onPick sẵn có; scoring thuần in-memory sau vài query song song, không thêm collection hay cron.</tone>
+<tone>Concise, technical. Scoring thuần in-memory sau vài query song song, không thêm collection hay cron.</tone>

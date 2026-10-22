@@ -1,5 +1,7 @@
 # Schedule Engine Requirement
 
+> ⚠ File vượt giới hạn 150 dòng — đang chờ tách. Chỉ sửa các câu đã sai so với code (2026-10); chi tiết đúng nằm ở các spec con ở §20.
+
 ## 1. Tổng quan
 
 ### Mục tiêu
@@ -8,7 +10,7 @@ Schedule Engine là module trung tâm chịu trách nhiệm:
 
 - Lập lịch cho Habit, Quest, Task.
 - Sinh dữ liệu hiển thị cho Dashboard.
-- Hỗ trợ Day View, Week View, Month View.
+- Hỗ trợ Day View, Week View, Month View (Month hiện đang được cất khỏi tab — xem §11).
 - Phát hiện xung đột lịch.
 - Tính toán khối lượng công việc.
 - Hỗ trợ reschedule.
@@ -173,6 +175,10 @@ Chỉ áp dụng cho ngày đó.
 
 Không ảnh hưởng lịch Habit gốc.
 
+> Thực tế: override được hiện thực bằng một **task thay thế có `habitRef`** + block tại giờ mới;
+> engine bỏ occurrence habit ngày đó khi có task `habitRef` cùng ngày
+> ([reschedule-habit](./reschedule-habit.md)). Không có bảng override riêng.
+
 ---
 
 ## Quy tắc ưu tiên
@@ -183,6 +189,9 @@ Không ảnh hưởng lịch Habit gốc.
 | 2           | Special Schedule |
 | 3           | Weekly Schedule  |
 | 4           | Default Schedule |
+
+> Thực tế: chỉ có 2 mức — task `habitRef` (override) thắng `habit.schedule` (weekly). Chưa có
+> Special/Default Schedule.
 
 ---
 
@@ -208,7 +217,7 @@ OT
 
 Quest chỉ có **hạn chót** (`dueDate`), không có ngày bắt đầu / thời lượng.
 
-Quest không bắt buộc phải có giờ cụ thể.
+Quest không bắt buộc phải có giờ cụ thể — có thể có `dueTime` (HH:MM) tuỳ chọn; có `dueTime` thì Calendar Item đặt ở giờ đó, không thì all-day.
 
 Có thể:
 
@@ -276,6 +285,9 @@ Tổng thời gian hoàn thành
 Tổng thời gian ước tính
 ```
 
+> Thực tế: "hoàn thành" = Σ block `status: 'done'`, nhưng chưa UI nào set block `done` — xem
+> [schedule-block](./schedule-block.md).
+
 ---
 
 # 7. Schedule Block
@@ -293,7 +305,8 @@ Schedule Block có thể được tạo từ:
 - Task
 - Quest
 
-Habit sẽ sinh trực tiếp Calendar Item.
+Habit sẽ sinh trực tiếp Calendar Item. Event cũng vậy (expand từ series + override — xem
+[event](./event.md)).
 
 ---
 
@@ -332,6 +345,7 @@ Habit sẽ sinh trực tiếp Calendar Item.
 - habit
 - quest
 - task
+- event
 
 ---
 
@@ -347,7 +361,9 @@ Tập trung vào thực thi.
 
 - Habit hôm nay
 - Quest hôm nay
-- Task Block hôm nay
+- Task Block hôm nay — task **không có block** ngày đó không hiện trên Day View
+  ([block-driven-scheduling](./block-driven-scheduling.md))
+- Event hôm nay
 
 ---
 
@@ -392,10 +408,15 @@ Cho phép:
 Không cho phép:
 
 - Habit
+- Event
+- Task có cả `startDate` và `endDate` (hiện như span trên nhiều ngày — sửa qua edit modal)
 
 ---
 
 ## Khi chỉnh Habit
+
+> Chưa triển khai: Week View hiện không cho sửa habit; bấm habit mở tab Habits. Xem
+> [week-view-rescheduling](./week-view-rescheduling.md).
 
 Hiển thị lựa chọn:
 
@@ -410,6 +431,9 @@ Chỉnh toàn bộ Habit
 ---
 
 ## Xử lý Task ngoài phạm vi
+
+> Chưa triển khai: kéo task chỉ dời `startDate`/`endDate` theo số ngày chênh, không validate phạm vi.
+> `UserSetting.schedule.scheduleMode` có lưu nhưng không ai đọc.
 
 Ví dụ:
 
@@ -445,6 +469,8 @@ Bạn muốn:
 ---
 
 # 11. Month View
+
+> Đang được cất: `ScheduleView.tsx` chỉ mở sub-tab `day` và `week`; code Month giữ nguyên.
 
 ## Mục tiêu
 
@@ -567,6 +593,7 @@ Schedule Engine phát sinh:
 | Field       |
 | ----------- |
 | id          |
+| user_id     |
 | source_type |
 | source_id   |
 | date        |
@@ -577,6 +604,9 @@ Schedule Engine phát sinh:
 ---
 
 ## calendar_items
+
+> Thực tế: **không lưu** — Calendar Item được dựng mỗi lần đọc bởi `buildCalendar`
+> (`src/server/services/schedule-engine.ts`). Bảng dưới là shape của object trả về.
 
 | Field       |
 | ----------- |
@@ -592,6 +622,8 @@ Schedule Engine phát sinh:
 ---
 
 ## habit_schedule_overrides
+
+> Thực tế: không tồn tại — xem ghi chú Override Habit ở §4.
 
 | Field          |
 | -------------- |
@@ -659,14 +691,14 @@ Do đó Schedule Engine phải được thiết kế như một Domain Core thay
 
 Spec tổng quan này được tách thành các requirement doc theo từng tính năng còn thiếu:
 
-| #   | Doc                                                      | Phạm vi                                          |
-| --- | -------------------------------------------------------- | ------------------------------------------------ |
-| 1   | [schedule-block.md](./schedule-block.md)                 | Model phiên làm việc + Task Progress             |
-| 2   | [calendar-item.md](./calendar-item.md)                   | Lớp chuẩn hóa chung cho Dashboard/Views          |
-| 3   | [conflict-capacity.md](./conflict-capacity.md)           | Hard/Soft conflict + overload                    |
-| 4   | [schedule-statistics.md](./schedule-statistics.md)       | Số liệu theo giờ + workload trend                |
-| 5   | [schedule-notifications.md](./schedule-notifications.md) | Reminder/deadline/overload/conflict warning      |
-| 6   | [week-view-rescheduling.md](./week-view-rescheduling.md) | Strict/Flexible + sửa habit "lần này vs toàn bộ" |
+| #   | Doc                                                      | Phạm vi                                                         |
+| --- | -------------------------------------------------------- | --------------------------------------------------------------- |
+| 1   | [schedule-block.md](./schedule-block.md)                 | Model phiên làm việc + Task Progress                            |
+| 2   | [calendar-item.md](./calendar-item.md)                   | Lớp chuẩn hóa chung cho Dashboard/Views                         |
+| 3   | [conflict-capacity.md](./conflict-capacity.md)           | Hard/Soft conflict + overload                                   |
+| 4   | [schedule-statistics.md](./schedule-statistics.md)       | Số liệu theo giờ + workload trend                               |
+| 5   | [schedule-notifications.md](./schedule-notifications.md) | Reminder/deadline/overload/conflict warning                     |
+| 6   | [week-view-rescheduling.md](./week-view-rescheduling.md) | Week View: kéo-thả, pick task, bộ lọc (Strict/Flexible chưa có) |
 
 **Thứ tự triển khai đề xuất:** Schedule Block + Calendar Item (nền tảng) →
 Conflict/Capacity → Statistics/Notifications → Week View rescheduling.

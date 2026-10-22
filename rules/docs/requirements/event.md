@@ -1,149 +1,124 @@
-# Event — Lịch cố định & phát sinh trong tuần
+# Event — lịch cố định & phát sinh trong tuần
 
-<role>Fullstack engineer thêm entity thứ 4 vào lớp lịch của dashboard</role>
+<role>Fullstack engineer duy trì nguồn lịch thứ 4 của dashboard: việc xảy đến với user</role>
 
 <context>
-Hệ thống có 3 nguồn lịch: **Habit** (lặp hàng tuần, có streak + XP), **Task** (việc phải xong,
-có status/overdue/backlog), **Quest** (thử thách gamified theo difficulty). Cả ba đều là
-**thành tựu** — có "hoàn thành", có thưởng, vào thống kê.
+Habit / Task / Quest đều là **thành tựu** — có "xong", có XP, vào thống kê. Event là thứ còn
+thiếu: họp tuần, lớp học, khám bệnh, ca trực. Chiếm giờ thật nhưng không có "done", không streak,
+không bao giờ overdue.
 
-Thiếu hẳn một loại: việc **xảy đến với** user chứ không phải user làm để tiến bộ — họp tuần,
-lớp học, khám bệnh, đám cưới, ca trực. Chúng chiếm thời gian thật nhưng không có "done",
-không nên có streak, không nên bị tính là overdue.
+Không dùng lại entity cũ được: Habit sinh HabitLog + streak + XP cứng và không có `endDate` /
+lặp cách tuần; Task có `status`/backlog/overdue ("cuộc họp quá hạn" vô nghĩa) và không có cơ chế
+lặp — họp tuần sẽ thành 52 task.
 
-Hệ quả cụ thể đang sai: `schedule.dailyCapacityMinutes` (UserSetting) chỉ trừ ScheduleBlock và
-task có `startDate`. Ngày có 4 tiếng họp vẫn bị coi là trống, nên
-[task-suggestion](./task-suggestion.md) chấm `fits` sai và [conflict-capacity](./conflict-capacity.md)
-không bao giờ phát hiện quá tải thật.
+Hành vi "đang diễn ra" (marquee, LIVE, ngọn lửa) nằm ở [event-live](./event-live.md).
 </context>
 
 <task>
-Model `Event` + rule lặp, mở rộng [calendar-item](./calendar-item.md) thành 4 nguồn, cho event
-`busy` trừ vào capacity ngày, và trang quản lý tại `/manage/events`.
+Model `Event` + rule lặp, expand on-the-fly thành occurrence, gộp vào
+[calendar-item](./calendar-item.md), trừ capacity ngày, trang quản lý `/manage/events`.
 </task>
 
 <requirement>
 
-## Vì sao không dùng entity sẵn có
+## Model — `src/server/models/event.model.ts`
 
-| Cách làm             | Vì sao hỏng                                                                                                             |
-| -------------------- | ----------------------------------------------------------------------------------------------------------------------- |
-| Habit không XP       | Habit sinh HabitLog + streak + XP cứng; rule chỉ weekly, không có `endDate`, không lặp cách tuần                        |
-| Task + ScheduleBlock | Task có `status`/backlog/overdue — "cuộc họp quá hạn" là vô nghĩa; task **không có** cơ chế lặp, họp tuần = tạo 52 task |
+| Field                        | Kiểu / ràng buộc                         | Ghi chú                                                         |
+| ---------------------------- | ---------------------------------------- | --------------------------------------------------------------- |
+| `title`                      | string ≤100                              | Bắt buộc **chỉ** trên series/one-off (`required: isSeriesRow`)  |
+| `note`                       | string ≤500                              |                                                                 |
+| `tagId` · `color` · `icon`   | Category id · `TaskColor` · string       | Như title: override row kế thừa từ series. `icon` có thể là URL |
+| `allDay`                     | bool, default false                      |                                                                 |
+| `startTime` · `duration`     | `HH:MM` · phút 1..1440                   | Bắt buộc khi `allDay=false` (validate ở route)                  |
+| `startDate`                  | Date                                     | One-off: ngày diễn ra · recurring: ngày rule bắt đầu            |
+| `endDate`                    | Date?                                    | Chỉ recurring; POST bỏ qua nếu không có `recurrence`            |
+| `recurrence`                 | `{ freq, days?, dayOfMonth?, interval }` | Vắng = one-off. `freq`: `weekly`\|`monthly`, `interval` 1..12   |
+| `seriesRef` · `overrideDate` | ObjectId · Date                          | Có mặt = **override row** cho đúng 1 occurrence của series      |
+| `cancelled`                  | bool                                     | Override: buổi đó bị bỏ                                         |
+| `busy`                       | bool, default true                       | Trừ vào capacity ngày                                           |
+| `paused`                     | bool, default false                      | Tắt tạm — ở lại list, không sinh occurrence                     |
+| `active`                     | bool, default true                       | Soft delete                                                     |
 
-## Model: Event
+**Vì sao `paused` tách khỏi `active`:** trước đây toggle trên list ghi `active:false`, mà list
+chỉ đọc row active → bật tắt = xoá không cần confirm, không có đường quay lại. Giờ `active` chỉ
+là soft delete, `paused` là công tắc.
 
-```
-Event {
-  userId: ObjectId
-  title: string            // max 100
-  note?: string            // max 500
-  tagId: string            // Category, dùng chung với task/habit
-  color: TaskColor         // gold|mint|violet|cyan|rose|amber|blue
-  icon: string
+**Override nằm chung collection**, theo pattern `habitRef` của [reschedule-habit](./reschedule-habit.md).
+Override row chỉ mang ngày/giờ; mọi field hiển thị lấy từ series → đổi tên/màu series thì buổi
+đã dời đổi theo. `weekly` cần `days` ≥1; `monthly` cần `dayOfMonth`, lớn hơn số ngày của tháng
+→ rơi vào **ngày cuối tháng**.
 
-  allDay: boolean          // default false
-  startTime?: string       // "HH:MM" — required khi allDay=false
-  duration?: number        // phút 1..1440 — required khi allDay=false
+## Expand — `src/server/services/event-expand.ts`
 
-  startDate: Date          // one-off: ngày diễn ra · recurring: ngày bắt đầu rule
-  endDate?: Date           // chỉ recurring — null = vô thời hạn
+`expandEvents(userId, from, to)` — **không lưu occurrence, không cron**, giống Habit; khác
+finance-recurring (phải materialize vì đụng `Wallet.balance`).
 
-  recurrence?: {           // undefined = event phát sinh (one-off)
-    freq: 'weekly' | 'monthly'
-    days?: HabitDay[]      // required khi freq='weekly'
-    dayOfMonth?: number    // 1..31, required khi freq='monthly'
-    interval: number       // default 1 · 2 = cách tuần/cách tháng
-  }
-  seriesRef?: ObjectId     // trỏ về event lặp mà row này ghi đè
-  overrideDate?: Date      // ngày occurrence GỐC bị thay thế
-  cancelled: boolean       // default false — true = buổi đó bị huỷ
+- Query: `active: true`, `paused ≠ true`, và một trong: series có `startDate < to+1`, row có
+  `startDate` trong range (one-off + override dời tới), row có `overrideDate` trong range
+  (override dời **ra ngoài** range vẫn phải chặn buổi gốc).
+- Series thiếu (chỉ override khớp) → nạp thêm theo id. Lần nạp này **không** mang filter, nên
+  vòng override kiểm lại `series.active && !series.paused`.
+- Recurring: duyệt từng ngày, `>= startDate`, `<= endDate`, khớp rule. `interval` đếm tuần
+  (neo thứ Hai) hoặc tháng từ `startDate`. Ngày có override → bỏ bản sinh, emit từ override
+  (`cancelled` thì không emit).
+- `EventOccurrence.id = event:<id>:<date>`; `allDay` → `startTime: null`, `duration: 0`.
+  Kèm `isOverride`, `seriesId`, `recurring`, `busy`. Sort `(date, startTime)`.
 
-  busy: boolean            // default true — trừ vào capacity ngày
-  active: boolean          // soft delete
-}
-```
+## Capacity
 
-- Chỉ `weekly` + `monthly` theo [finance-recurring](./finance-recurring.md) — YAGNI.
-- `dayOfMonth` > số ngày thật của tháng → rơi vào **ngày cuối tháng đó**.
-- **Override nằm chung collection**, theo đúng pattern `habitRef` của
-  [reschedule-habit](./reschedule-habit.md): một `Event` có `seriesRef` + `overrideDate` là bản
-  ghi đè cho đúng 1 occurrence của series. Huỷ 1 buổi → override `cancelled: true`. Dời 1 buổi
-  → override mang ngày/giờ mới. Không cần collection thứ hai, và buổi bị dời **vẫn giữ liên kết**
-  với series (đổi tên/màu series không làm nó trôi, xoá series thì dọn được kèm).
+`task-suggestion.ts` trừ `duration` của event `busy && !allDay` khỏi `remainingMinutes`.
+Week view cũng cộng event đó vào đồng hồ giờ của cột (`WeekView.tsx`). All-day hoặc
+`busy:false` hiện trên lịch nhưng không chiếm giờ.
 
-## Sinh occurrence — tính on-the-fly, KHÔNG cron
+## API — `src/app/api/v1/events/`
 
-Giống Habit (expand rule mỗi ngày), **không** giống finance-recurring (phải materialize vì
-transaction đụng `Wallet.balance`). Event chỉ để hiển thị và trừ capacity → không lưu occurrence,
-không cần endpoint sync, không cần lazy-generate.
+| Method   | Endpoint               | Hành vi                                                                                      |
+| -------- | ---------------------- | -------------------------------------------------------------------------------------------- |
+| `GET`    | `/events`              | List series + one-off `active`, **loại override row**, sort `startDate`                      |
+| `GET`    | `/events?from=&to=`    | Occurrence đã expand                                                                         |
+| `POST`   | `/events`              | Tạo; `checkShape` ép time/duration theo `allDay`, days/dayOfMonth theo `freq`                |
+| `PATCH`  | `/events/:id`          | Sửa cả series. `null` = `$unset`. `recurrence:null` gỡ luôn `endDate`; `allDay:true` gỡ time |
+| `POST`   | `/events/:id/override` | `{ date, cancelled, newDate?, startTime?, duration? }` — upsert 1 row/occurrence             |
+| `DELETE` | `/events/:id`          | `active:false` cho series **và mọi override** của nó                                         |
 
-```
-expandEvents(userId, from, to) → EventOccurrence[]
-```
+Override chỉ nhận series đang active **có** `recurrence` (one-off → 400). Logic upsert ở
+`event-override.ts`, dùng chung với assistant (`src/server/agent/event-tools.ts`: list, create,
+update, delete, cancel/move occurrence — luôn chờ user confirm).
 
-- one-off: `startDate` nằm trong range → 1 occurrence.
-- recurring: duyệt từng ngày trong range, ngày khớp `days`/`dayOfMonth`, `>= startDate`,
-  `<= endDate`, đúng `interval` (đếm số tuần/tháng từ `startDate`).
-- Nạp sẵn override của range (`seriesRef` ∈ các series đang expand) → occurrence nào có override
-  thì **bỏ bản sinh ra**, thay bằng override; override `cancelled` thì không ra item nào. Đây
-  chính là cơ chế Habit dùng để tránh double count.
-- Chỉ lấy `active: true`.
+Mọi mutation client invalidate `events`, `calendar` và `['tasks','suggestions']`
+(`useEvents.ts`) — event ảnh hưởng cả lịch lẫn capacity.
 
-## Tích hợp CalendarItem
+## UI — `/manage/events` (`EventsPage.tsx`)
 
-- `CalendarSource` thêm `'event'` → `'habit' | 'quest' | 'task' | 'event'`.
-- `buildCalendar` gọi thêm `expandEvents`, merge và sort cùng 3 nguồn cũ.
-- `status` luôn `'planned'` — event không có done/missed. Giữ nguyên union `CalendarStatus`.
-- `id`: `event:<eventId>:<date>`. `allDay` → `startTime: null`, `duration: 0`.
+Lối vào: menu hero card (desktop), bottom sheet (mobile), global search, marquee.
 
-## Capacity — chỗ phải sửa
+- Card: icon cạnh title · `↻` nếu lặp (không badge chữ) · badge `Free` khi `!busy` · dòng meta
+  "Weekly · Mon, Wed · 09:00" / "Every 2 weeks · …" / "Day 15" / ngày one-off · category.
+- `Switch` **ON/OFF** điều khiển `paused`; row tắt mờ 55%. Nhãn chữ bắt buộc — switch trơn
+  từng khiến user hỏi nó có xoá event không.
+- Sửa / xoá là icon button; xoá qua `Modal` confirm, series lặp ghi rõ "kể cả các buổi đã dời".
+- **Thứ tự 3 tầng:** (0) đang bật và còn hiệu lực · (1) bật nhưng đã qua (one-off qua ngày,
+  series quá `endDate`) · (2) tắt/xoá. Trong tầng: event đang LIVE lên đầu, rồi series lặp,
+  rồi `startDate`.
+- Empty state có CTA riêng → nút header ẩn để không có hai nút giống nhau.
+- Form (`EventFormModal.tsx`): icon trên cùng qua `IconPickerSheet` (emoji, quest icon, ảnh
+  upload) · title · note · category · màu (hàng riêng) · ngày · all-day · giờ + duration ·
+  lặp → freq / every N / days / dayOfMonth / ends on · busy.
 
-`task-suggestion.ts`: `remainingMinutes` trừ thêm duration event `busy` trong ngày (hiện chỉ
-trừ block + dated task). `conflict-capacity` khi triển khai phải coi event là item chiếm giờ
-như block. Event `allDay` hoặc `busy: false` **không** trừ capacity.
+**Week view** (`WeekView.tsx`): chip viền đứt, nền nhạt — "việc xảy ra", không phải việc để
+xong. Không kéo thả. Click occurrence lặp → modal "bỏ buổi này" → `/override` `cancelled:true`.
+Có công tắc 📅 Events riêng; tắt thì giờ event cũng rời đồng hồ cột. Day view **không** hiện event.
 
-## API
+## Ngoài phạm vi
 
-| Method   | Endpoint                      | Mô tả                                                                                |
-| -------- | ----------------------------- | ------------------------------------------------------------------------------------ |
-| `GET`    | `/api/v1/events?from=&to=`    | Không có range → list rule; có range → occurrence đã expand                          |
-| `POST`   | `/api/v1/events`              | Tạo (validate `startTime`/`duration` theo `allDay`, `days`/`dayOfMonth` theo `freq`) |
-| `PATCH`  | `/api/v1/events/:id`          | Sửa cả series                                                                        |
-| `POST`   | `/api/v1/events/:id/override` | Body `{ date, cancelled }` hoặc ngày/giờ mới → override 1 buổi                       |
-| `DELETE` | `/api/v1/events/:id`          | Soft-delete `active: false`                                                          |
+Không XP/coin/streak · không nhắc lịch · không người tham dự / địa điểm / Google Calendar ·
+không freq `daily`/`yearly`.
 
-## UI
+## Câu hỏi mở
 
-**`/manage/events`** — cạnh `/manage/rewards` sẵn có, không tạo IA mới.
-
-- List rule: icon · title · badge lặp ("Thứ 2,4,6 · 09:00" / "Hàng tháng ngày 15" / "Một lần
-  14/09") · category · `Switch` bật tắt `active`.
-- Nút "+ New Event" mở `Modal`: title, note, category `Select`, color, icon, `Switch` all-day,
-  `DatePicker` ngày bắt đầu, giờ + duration, `Switch` lặp → chọn freq/days/dayOfMonth/interval,
-  `DatePicker` ngày kết thúc (optional), `Switch` busy.
-- Xoá: confirm trước khi soft-delete.
-
-**Week/Day view dashboard** — event hiện cùng task/habit/quest qua CalendarItem; style phân biệt
-(viền đứt hoặc nền nhạt) để thấy ngay đây là việc không phải làm để "hoàn thành". Menu ngữ cảnh
-trên 1 occurrence: "Huỷ buổi này" / "Dời buổi này" → gọi `/override`.
-
-**Bắt buộc:** chỉ Tailwind + design token sẵn có, component từ `src/components/ui`, có Loading
-(`Skeleton`) / Empty (`NoData`) / Error state, responsive mobile-first.
-
-## Ngoài phạm vi MVP
-
-Không XP/coin/streak · không nhắc lịch (để [schedule-notifications](./schedule-notifications.md)
-làm sau) · không người tham dự / địa điểm / sync Google Calendar · không freq `daily`/`yearly`.
-
-## Trạng thái hiện tại
-
-✅ Model + `expandEvents`, 4 nguồn trong `buildCalendar`, capacity trong `task-suggestion`,
-API CRUD + `/override`, `/manage/events`, event trong Week view (viền đứt, click occurrence
-lặp → confirm bỏ buổi).
-
-🟡 Chưa: dời occurrence sang ngày khác từ UI (`/override` đã nhận `newDate`), Day/Month view.
+- Dời occurrence sang ngày/giờ khác mới có qua assistant (`move_occurrence`); UI chưa có.
+- Chuỗi trên `EventsPage` / `EventFormModal` đang hard-code tiếng Anh, chưa qua next-intl.
 
 </requirement>
 
-<tone>Concise, technical. Tái sử dụng tối đa: Category/TaskColor/HabitDay đã có, expand theo pattern Habit, IA theo `/manage/*`. Không cron, không collection thừa.</tone>
+<tone>Concise, technical. Tái dùng Category/TaskColor/HabitDay, expand theo pattern Habit, IA `/manage/*`.</tone>

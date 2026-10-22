@@ -1,151 +1,131 @@
-# Finance (Cash Flow)
+# Finance (Cash Flow) — sổ thu/chi cá nhân, nhiều ví
 
 <role>Fullstack engineer + product designer cho gamified personal dashboard</role>
 
 <context>
-Dashboard hiện chưa có module quản lý tiền. User muốn theo dõi thu/chi cá nhân, nhiều tài
-khoản/ví, đồng bộ tự động giao dịch ngân hàng qua SePay webhook, đặt ngân sách theo tháng,
-giao dịch định kỳ và xem biểu đồ thống kê. Đây là module **thuần chức năng — không gắn
-XP/coins/quest**, tách biệt hoàn toàn khỏi hệ thống gamification hiện có.
+User theo dõi thu/chi cá nhân trên nhiều tài khoản (ngân hàng, tiền mặt, ví điện tử), đồng bộ
+giao dịch ngân hàng qua SePay, đặt ngân sách tháng, tích luỹ mục tiêu tiết kiệm và theo dõi vàng.
+
+Đây là module **thuần chức năng — không gắn XP/coins/quest**, tách hẳn khỏi gamification. Một
+công cụ tiền cá nhân, không phải kế toán doanh nghiệp: không transfer, không đa tiền tệ thật
+(`currency` có nhưng gần như luôn là `VND`), không sổ cái kép.
 </context>
 
 <task>
-Xây dựng module Finance: 3 model nền tảng (Wallet, FinanceCategory, Transaction), trang
-`/finance` để quản lý thu/chi. Các phần mở rộng (SePay, Budget, Recurring, Stats) tách thành
-requirement doc riêng — xem mục "Tài liệu con" bên dưới.
+Doc gốc của module: 3 model nền (`Wallet`, `FinanceCategory`, `Transaction`), luật số dư, luật
+"cái gì được tính vào tổng", và cấu trúc tab `/finance`. Chi tiết từng phần nằm ở doc con.
 </task>
 
 <requirement>
 
-## Model: Wallet
+## Model: Transaction (`src/server/models/transaction.model.ts`)
 
-Đại diện một tài khoản ngân hàng hoặc ví tiền mặt/ví điện tử.
+| Field                | Kiểu                                 | Ghi chú                                                        |
+| -------------------- | ------------------------------------ | -------------------------------------------------------------- |
+| `walletId`           | ObjectId → Wallet                    | Bắt buộc                                                       |
+| `categoryId`         | ObjectId → FinanceCategory           | Bắt buộc, `type` phải khớp `type` của category                 |
+| `type`               | `'income' \| 'expense'`              |                                                                |
+| `amount`             | number, `min 0.01`                   | Luôn dương — dấu nằm ở `type`                                  |
+| `note`               | string?, ≤200                        |                                                                |
+| `date`               | Date                                 | Ngày giao dịch, API trả `YYYY-MM-DD`                           |
+| `source`             | `'manual' \| 'sepay' \| 'recurring'` | `POST` thường luôn ghi `'manual'`                              |
+| `overdraft`          | boolean, default `false`             | Xem "Ví không âm" dưới                                         |
+| `sepayTransactionId` | string?, unique sparse               | Chống trùng khi SePay retry                                    |
+| `recurringId`        | ObjectId?                            | Chưa dùng — xem [finance-recurring.md](./finance-recurring.md) |
 
-```
-Wallet {
-  userId: ObjectId
-  name: string              // max 50, required, VD "Vietcombank", "Tiền mặt"
-  type: 'bank' | 'cash' | 'ewallet'
-  icon: string               // emoji
-  color: TaskColor           // reuse từ task.ts
-  currency: string           // default 'VND'
-  balance: number            // running balance, default 0, cập nhật mỗi transaction
-  bankCode?: string          // VD "VCB", "MB" — chỉ khi type='bank', dùng để map SePay gateway
-  bankAccountNumber?: string // chỉ khi type='bank', dùng để map SePay accountNumber
-  active: boolean            // default true, soft-delete
-  createdAt / updatedAt
-}
-```
+Index: `{userId, walletId, date:-1}`, `{userId, categoryId}`, `{sepayTransactionId}` unique sparse.
 
-- User có nhiều Wallet. Tổng số dư hiển thị = tổng `balance` các wallet active.
-- Xoá wallet: soft-delete (`active: false`), giữ nguyên transaction lịch sử (không cascade xoá).
+`Wallet` → [finance-wallets.md](./finance-wallets.md). `FinanceCategory` →
+[finance-categories.md](./finance-categories.md).
 
-## Model: FinanceCategory
+## Số dư là running total, không phải giá trị suy ra
 
-Tách biệt hoàn toàn với `Category` (tag của Task/Habit) — không dùng chung.
+`Wallet.balance` được `$inc` mỗi lần tạo/sửa/xoá transaction (income `+`, expense `−`); sửa thì
+đảo hiệu ứng cũ trên ví cũ rồi áp hiệu ứng mới lên ví mới. Ngoài ra user **đặt thẳng** số dư
+được (ví mới nối SePay không có lịch sử để cộng dồn) — nên balance **không** bằng tổng ledger,
+và không có job nào tính lại nó.
 
-```
-FinanceCategory {
-  userId: ObjectId
-  name: string          // max 50, required
-  type: 'income' | 'expense'
-  icon: string
-  color: TaskColor
-  createdAt / updatedAt
-}
-```
+## Ví không âm — chặn khi gõ tay, ghi nhận khi từ ngân hàng
 
-- `(userId, name, type)` unique.
-- Seed mặc định khi user gọi `GET /api/v1/finance/categories` lần đầu mà rỗng:
-  - **expense**: Ăn uống, Di chuyển, Mua sắm, Hoá đơn, Giải trí, Sức khoẻ, Khác
-  - **income**: Lương, Thưởng, Khác
-- Không cho xoá category đang được Transaction nào tham chiếu (409).
+`POST`/`PATCH`/`DELETE /transactions` trả **400** `This would put the wallet below zero` nếu số
+dư sau thao tác < 0. Cả sửa và xoá đều bị kiểm: tăng một khoản chi, chuyển sang ví mỏng hơn, hay
+xoá một khoản thu đều làm âm y như tạo mới — chỉ chặn tạo mới là khoá cửa trước bỏ cửa sau.
+`TransactionFormModal` hiện nguyên câu lỗi của server trong modal.
 
-## Model: Transaction
+Từ webhook SePay thì khác: tiền **đã đi** ở ngân hàng, nên balance vẫn đi theo dù xuống âm —
+số dư lệch sao kê còn tệ hơn số âm. Transaction đó được gắn `overdraft: true`:
 
-```
-Transaction {
-  userId: ObjectId
-  walletId: ObjectId        // ref Wallet
-  categoryId: ObjectId      // ref FinanceCategory
-  type: 'income' | 'expense'
-  amount: number             // luôn dương, min 0.01
-  note?: string              // max 200
-  date: Date                 // ngày giao dịch (khác createdAt)
-  source: 'manual' | 'sepay' | 'recurring'  // default 'manual'
-  sepayTransactionId?: string  // id giao dịch từ SePay, unique sparse — chống trùng khi webhook retry
-  recurringId?: ObjectId       // ref RecurringTransaction (xem finance-recurring.md)
-  createdAt / updatedAt
-}
-```
+- vẫn di chuyển balance, nhưng **bị loại khỏi** income/expense/budget/forecast/cash-reminder
+- hiện dấu `!` ở `TransactionRow`; mở ra có hộp giải thích + nút **Count it anyway**
+  (`PATCH { overdraft: false }`)
 
-- Không hỗ trợ transfer giữa 2 wallet trong phạm vi này (ngoài scope).
-- Tạo/sửa/xoá transaction → cập nhật `Wallet.balance` tương ứng (income: +amount, expense: -amount).
-- Index: `{ userId: 1, walletId: 1, date: -1 }`, `{ userId: 1, categoryId: 1 }`,
-  `{ sepayTransactionId: 1 }` (unique, sparse).
+Ví âm gần như luôn có nghĩa số dư mở đầu chưa đặt đúng — cờ là thứ nói điều đó ra.
 
-## API
+## Tiền không phải thu cũng không phải chi
 
-| Method   | Endpoint                           | Mô tả                                                             |
-| -------- | ---------------------------------- | ----------------------------------------------------------------- |
-| `GET`    | `/api/v1/finance/wallets`          | List wallet active của user + `balance`                           |
-| `POST`   | `/api/v1/finance/wallets`          | Tạo wallet                                                        |
-| `PATCH`  | `/api/v1/finance/wallets/:id`      | Sửa wallet (name, icon, color, bankCode, ...)                     |
-| `DELETE` | `/api/v1/finance/wallets/:id`      | Soft-delete (`active: false`)                                     |
-| `GET`    | `/api/v1/finance/categories`       | List category theo `type` (query `?type=`), auto-seed             |
-| `POST`   | `/api/v1/finance/categories`       | Tạo category                                                      |
-| `DELETE` | `/api/v1/finance/categories/:id`   | Xoá — 409 nếu đang dùng                                           |
-| `GET`    | `/api/v1/finance/transactions`     | List, filter `?walletId=&categoryId=&type=&from=&to=`, phân trang |
-| `POST`   | `/api/v1/finance/transactions`     | Tạo transaction (source luôn `'manual'` qua endpoint này)         |
-| `PATCH`  | `/api/v1/finance/transactions/:id` | Sửa (đảo balance cũ, áp balance mới)                              |
-| `DELETE` | `/api/v1/finance/transactions/:id` | Xoá, hoàn `Wallet.balance`                                        |
+Category có `excludeFromTotals: true` (chỉnh số dư cho khớp ngân hàng, chuyển tiền giữa các ví
+của mình): transaction vẫn di chuyển ví, nhưng bị loại khỏi mọi phép tổng. Cờ nằm ở **category**,
+không chép xuống từng transaction — bật cờ sau này thì row cũ cũng theo, bản sao trên row sẽ thành
+dối. `excludedCategoryIds()` (`src/server/services/finance-exclusions.ts`) là nguồn duy nhất.
 
-## UI — Routing
+**Năm chỗ cộng tiền phải cùng lọc** cả hai luật (`categoryId $nin excluded`, `overdraft $ne
+true`): `finance-overview.ts`, `finance-budget.ts`, `finance-forecast.ts`,
+`cash-log-notifications.ts`, và Monthly Report (dẫn xuất từ hai cái đầu). Sót một chỗ là hai màn
+hiện hai con số khác nhau. Bật cờ **không** viết lại quá khứ — row đã ghi là income thì phải đổi
+category.
 
-```
-src/app/[locale]/(protected)/finance/
-├── layout.tsx             // topbar + tab nav (Overview/Accounts/Budget/Transactions)
-├── page.tsx                // Overview (Ledger)
-├── wallets/page.tsx        // Accounts (wallet CRUD)
-├── budget/page.tsx         // stub — xem finance-budget.md
-└── transactions/page.tsx   // stub — full ledger, TBD
-```
+## API — Transactions
 
-Tab chuyển route qua Next.js App Router (client-side, không reload) — không state-switch nội bộ.
+| Method   | Endpoint                           | Ghi chú                                                                                                        |
+| -------- | ---------------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| `GET`    | `/api/v1/finance/transactions`     | `?walletId&categoryId&type&from&to&search` (regex trên `note`), sort `date↓`, **tối đa 500, không phân trang** |
+| `POST`   | `/api/v1/finance/transactions`     | Ví phải active + thuộc user; category phải đúng `type`                                                         |
+| `PATCH`  | `/api/v1/finance/transactions/:id` | Mọi field optional; `note: null` → `$unset`; `overdraft`                                                       |
+| `DELETE` | `/api/v1/finance/transactions/:id` | Hard delete, hoàn balance                                                                                      |
 
-## UI — FinancePage Layout
+## UI — Routing (`src/app/[locale]/(protected)/finance/`)
 
-- **Header**: tổng số dư + nút "+ Add Transaction".
-- **Wallet strip**: card ngang scroll-x/wallet (icon, tên, balance), click filter theo wallet;
-  nút "+ Wallet" cuối strip.
-- **Filter bar**: search note, dropdown category/type/month — collapse trên `< sm`.
-- **Transaction list**: nhóm theo ngày, icon category + note + wallet + amount (xanh income /
-  đỏ expense), 1 cột mọi breakpoint.
+`layout.tsx` = `DashboardTopbar` + `FinanceTabs` (Link của App Router, không state nội bộ):
 
-## Reuse / Types
+| Tab          | Route                            | Doc                                                      |
+| ------------ | -------------------------------- | -------------------------------------------------------- |
+| Overview     | `/finance`                       | [finance-stats.md](./finance-stats.md)                   |
+| Accounts     | `/finance/wallets`               | [finance-wallets.md](./finance-wallets.md)               |
+| Budget       | `/finance/budget`                | [finance-budget.md](./finance-budget.md)                 |
+| Goals        | `/finance/goals`                 | [finance-goals.md](./finance-goals.md)                   |
+| Transactions | `/finance/transactions`          | (dưới)                                                   |
+| Categories   | `/finance/categories`            | [finance-categories.md](./finance-categories.md)         |
+| —            | `/finance/monthly-report?month=` | [finance-monthly-report.md](./finance-monthly-report.md) |
 
-| File                                                | Thay đổi                                             |
-| --------------------------------------------------- | ---------------------------------------------------- |
-| `src/server/models/wallet.model.ts` (mới)           | Model Wallet                                         |
-| `src/server/models/finance-category.model.ts` (mới) | Model FinanceCategory                                |
-| `src/server/models/transaction.model.ts` (mới)      | Model Transaction                                    |
-| `src/types/finance.ts` (mới)                        | `Wallet`, `FinanceCategory`, `Transaction`, payloads |
-| `src/services/endpoints/finance.ts` (mới)           | Axios client                                         |
-| `src/features/finance/` (mới)                       | Feature module — components, hooks, adapters         |
-| i18n `src/i18n/locales/`                            | strings cho finance                                  |
+**Transactions** (`TransactionsPage.tsx`): full ledger, `FinanceFilters` (search note, tab
+all/income/expense, category, wallet) + chọn tháng trong 12 tháng gần nhất hoặc "tất cả"; nhóm
+theo ngày (`formatDateGroup`: Today / Yesterday / `Mon, Jan 5`). Overview chỉ hiện 5 dòng mới nhất.
+
+**Form** (`TransactionFormModal.tsx`): category là `Select searchable selectedFirst` (chip grid cũ
+chiếm năm hàng ở hai chục category), nút `＋ New category` mở `FinanceCategoryFormModal` khoá theo
+type hiện tại và tự chọn category vừa tạo; ngày dùng `DatePicker` của design system; Enter submit.
+
+## Code chính
+
+`src/types/finance.ts` · `src/services/endpoints/finance.ts` · `src/features/finance/`
+(components, hooks React Query, `utils.ts`, `quick-entry.ts`, `budget-csv.ts`) · i18n `en/vi/th`.
 
 ## Tài liệu con
 
-| #   | Doc                                            | Phạm vi                                   |
-| --- | ---------------------------------------------- | ----------------------------------------- |
-| 1   | [finance-sepay.md](./finance-sepay.md)         | Webhook SePay tự động tạo transaction     |
-| 2   | [finance-budget.md](./finance-budget.md)       | Ngân sách theo tháng/category + cảnh báo  |
-| 3   | [finance-recurring.md](./finance-recurring.md) | Giao dịch định kỳ (lazy-generate)         |
-| 4   | [finance-stats.md](./finance-stats.md)         | Biểu đồ thu/chi theo tháng/category       |
-| 5   | [finance-gold.md](./finance-gold.md)           | Theo dõi tài sản vàng theo giá thị trường |
+[finance-wallets](./finance-wallets.md) · [finance-categories](./finance-categories.md) ·
+[finance-sepay](./finance-sepay.md) · [finance-budget](./finance-budget.md) ·
+[finance-budget-import](./finance-budget-import.md) · [finance-stats](./finance-stats.md) ·
+[finance-goals](./finance-goals.md) · [finance-gold](./finance-gold.md) ·
+[finance-monthly-report](./finance-monthly-report.md) ·
+[finance-quick-add-transaction](./finance-quick-add-transaction.md) ·
+[finance-transaction-presets](./finance-transaction-presets.md) ·
+[cash-log-reminder](./cash-log-reminder.md) · [finance-recurring](./finance-recurring.md) (chưa làm)
 
-**Thứ tự triển khai đề xuất:** Wallet + FinanceCategory + Transaction → SePay → Stats → Budget → Recurring.
+## Ngoài phạm vi
+
+Transfer giữa hai ví (dùng cặp transaction trên category `excludeFromTotals`) · đa tiền tệ ·
+import/export transaction · phân trang ledger.
 
 </requirement>
 
-<tone>Concise, technical. Không over-engineer — đây là công cụ quản lý tiền cá nhân đơn giản, không phải kế toán doanh nghiệp.</tone>
+<tone>Concise, technical. Nói lý do của luật, không mô tả lại code.</tone>

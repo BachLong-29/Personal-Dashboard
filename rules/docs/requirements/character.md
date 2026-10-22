@@ -1,153 +1,112 @@
-# Character Progression
+# Character Progression — XP, level, rank, stat
 
-Hệ thống RPG tích hợp vào productivity. Mỗi hành động (hoàn thành quest, habit, task) đều đóng góp vào sự phát triển của nhân vật.
+<role>Fullstack engineer + game designer cho gamified personal dashboard</role>
 
----
+<context>
+Mỗi quest, habit, task hoàn thành đều trả thưởng cho nhân vật. Nhân vật là `UserProfile`
+(`src/server/models/user-profile.model.ts`) — cùng document chứa hero identity sửa ở
+`/profile` (xem `profile.md`).
 
-## Currencies
+Điểm cần biết trước khi đụng: **tính level-up chạy ở client**. `useCharacterProgress.ts` cộng
+XP, xét lên cấp, rồi `PUT /api/v1/profile` với cả bộ `{ level, xp, xpNext, streak, coins, gems,
+rank }`. Server nhận giá trị tuyệt đối, không tự tính.
+</context>
 
-| Currency  | Kiếm từ                           | Dùng để                       |
-| --------- | --------------------------------- | ----------------------------- |
-| **XP**    | Hoàn thành quests/habits/tasks    | Level up                      |
-| **Coins** | Hoàn thành quests/habits/tasks    | Mua rewards trong marketplace |
-| **Gems**  | Quest difficulty S (5 gems/quest) | Mua rewards premium           |
+<task>
+Mô tả tiền tệ, bảng thưởng, công thức lên cấp, rank, stat và streak đúng như code đang chạy.
+</task>
 
----
+<requirement>
 
-## XP & Level Up
+## Tiền tệ
 
-```
-XP hiện tại + XP kiếm được ≥ xpNext → Level Up
-```
+| Field   | Mặc định | Kiếm từ                              | Tiêu ở                             |
+| ------- | -------- | ------------------------------------ | ---------------------------------- |
+| `xp`    | 0        | Quest, habit, task, project complete | Level up                           |
+| `coins` | 0        | Như trên                             | Marketplace (xem `marketplace.md`) |
+| `gems`  | 0        | Chỉ quest rank S: +5/quest           | Marketplace                        |
 
-**Level Up logic:**
+Penalty trừ `xp`/`coins` (kẹp ở 0) — xem `penalty.md`.
 
-```typescript
-const leveled = newXp >= xpNext;
-return {
-  xp: leveled ? newXp - xpNext : newXp, // reset về 0 sau khi level up
-  level: leveled ? level + 1 : level,
-  xpNext: leveled ? Math.round(xpNext * 1.3) : xpNext, // tăng 30% mỗi level
-};
-```
+## Bảng thưởng
 
-Mỗi lần level up, threshold tăng 30%:
+| Nguồn                   | XP                       | Coins                  | Định nghĩa ở                                 |
+| ----------------------- | ------------------------ | ---------------------- | -------------------------------------------- |
+| Quest S / A / B / C / D | 150 / 120 / 90 / 60 / 50 | 40 / 30 / 25 / 15 / 12 | `XP_MAP`, `COIN_MAP` (lưu vào quest lúc tạo) |
+| Habit                   | 30                       | 10                     | `HABIT_XP`, `HABIT_COINS`                    |
+| Task                    | 60                       | 15                     | `TASK_XP`, `TASK_COINS`                      |
+| Project                 | do user đặt              | do user đặt            | Server `$inc` (xem `projects.md`)            |
 
-- Level 1→2: 1000 XP
-- Level 2→3: 1300 XP
-- Level 3→4: 1690 XP
-- ...
+Hằng số ở `src/features/dashboard/constants/index.ts`; người gọi là `useQuestOrchestration.ts`
+và `useScheduleDayTasks.ts`. Goal hiển thị bounty theo rank nhưng **không cộng** vào profile
+(xem `goals.md`).
 
----
+## Lên cấp
 
-## Rank System
-
-Rank là milestones lớn hơn level. Rank được set thủ công hoặc tự động khi đạt đủ level.
-
-| Rank | Symbol     | Ý nghĩa     |
-| ---- | ---------- | ----------- |
-| F    | Beginner   | Mới bắt đầu |
-| E    | Novice     | Đang học    |
-| D    | Apprentice | Có tiến bộ  |
-| C    | Journeyman | Ổn định     |
-| B    | Expert     | Thành thạo  |
-| A    | Master     | Xuất sắc    |
-| S    | Legend     | Đỉnh cao    |
-
-**Rank Demotion:** Penalty tier 3+ có thể demote rank xuống 1 bậc (không thể xuống dưới F).
-
----
-
-## Hero Stats
-
-5 chỉ số, mỗi chỉ số từ 1-10:
-
-| Stat        | Key | Ý nghĩa                              |
-| ----------- | --- | ------------------------------------ |
-| Discipline  | DIS | Sức đề kháng với cám dỗ, consistency |
-| Wisdom      | WIS | Khả năng học hỏi, phân tích          |
-| Endurance   | END | Sức bền cho công việc dài hơi        |
-| Composition | COM | Tổ chức, cân bằng                    |
-| Serenity    | SER | Sự tĩnh tâm, quản lý stress          |
-
-**Stat Pool:** Mỗi user có `statPool` (default 30) — tổng điểm phân bổ cho stats.
-
-**Hiển thị:** Stats được scale ra 0-100 để hiển thị trong CharacterPanel:
-
-```typescript
-display_value = Math.round((raw_value / statPool) * 100);
+```ts
+leveled = xp + award >= xpNext;
+xp = leveled ? xp + award - xpNext : xp + award; // dư XP chuyển sang cấp mới
+level = leveled ? level + 1 : level;
+xpNext = leveled ? Math.round(xpNext * 1.3) : xpNext; // mỗi cấp đắt hơn 30%
 ```
 
-**Stat Loss (Penalty):** Penalty tier 3-4 có thể trừ điểm stats (raw value, min 1).
+`xpNext` khởi điểm 1000 → 1300 → 1690 → … Mỗi lần thưởng **chỉ lên tối đa một cấp**, kể cả khi
+award lớn hơn hai ngưỡng — XP dư vẫn giữ, cấp tiếp theo bật ở lần thưởng sau.
 
----
+## Rank
+
+Thứ tự `F < E < D < C < B < A < S`. Profile mới bắt đầu ở **E** (default schema), không phải F.
+
+**Tự thăng hạng** khi lên cấp, theo `RANK_LEVEL_THRESHOLDS`:
+
+| Rank            | E   | D   | C   | B   | A   | S   |
+| --------------- | --- | --- | --- | --- | --- | --- |
+| Level tối thiểu | 5   | 10  | 20  | 35  | 55  | 80  |
+
+Chỉ thăng, không bao giờ tự giáng — rank hiện tại cao hơn ngưỡng level thì giữ nguyên. Giáng
+rank chỉ đến từ penalty tier 3–4 (một bậc, không dưới F). Thăng hạng gọi `onLevelUp(level, rank)`
+để `LevelUpToast` hiện hạng mới.
+
+## Hero stats
+
+5 chỉ số `discipline · wisdom · endurance · composition · serenity`, mỗi cái **1–10** (default
+6/6/5/7/6). `statPool` (default 30, 10–50) là tổng điểm được phân ở `/profile`.
+
+Hiển thị trên `CharacterPanel` dạng thanh %: `min(round(value / statPool * 100), 100)`.
+
+Stat **không tăng theo gameplay** — chỉ đổi khi user phân lại ở `/profile`. Penalty fail trừ stat
+trên state client, không ghi DB.
+
+## Class & companion
+
+Class (`HERO_CLASSES` trong `src/constants/hero-data.ts`) có `bias` một stat: Scribe/Sage →
+wisdom · Ranger → endurance · Artificer → composition · Warden → serenity · Forgeborn →
+discipline. Companion (Fox, Crane, Wolf, Owl, Phoenix) có chuỗi `bonus` như "+15% XP on creative
+solutions".
+
+**Cả hai hiện chỉ là flavour**: `bias` và `bonus` chỉ được render (HeroCard, RevealModal,
+CharacterPanel, topbar), không đi vào phép tính thưởng nào.
 
 ## Streak
 
-Streak = số ngày liên tiếp user hoàn thành ít nhất một quest/habit/task.
+`UserProfile.streak`, hiện ở topbar. Penalty tier ≥2 reset về 0.
 
-- **Tăng:** Hoàn thành bất kỳ item nào trong ngày
-- **Reset:** Penalty tier 2+ (streakBreak: true)
-- **Bảo vệ:** `streakProtection` setting (0-3 lần bỏ qua không mất streak)
-- **Hiển thị:** Streak badge trong Topbar
+## Edge cases
 
----
+- Hai tab cùng mở: mỗi tab giữ `char` riêng rồi PUT giá trị tuyệt đối → tab ghi sau đè tab kia.
+- **Ghi phía server bị client đè.** `MainDashboard` chỉ nạp `char` từ profile **một lần**. Penalty
+  fail (trừ XP/coins/streak/rank) và project complete (`$inc` XP/coins, không xét level-up) sửa DB,
+  nhưng lần `awardProgress` kế tiếp PUT lại giá trị cũ của client — thay đổi server biến mất.
+- `PUT /profile` nhận `xp`/`coins`/`gems`/`rank` từ client không kiểm tra — đây là single-user
+  app, nhưng đừng copy mô hình này cho thứ gì có nhiều người chơi.
 
-## Rewards kiếm được
+## Câu hỏi mở
 
-| Action  | XP  | Coins | Gems |
-| ------- | --- | ----- | ---- |
-| Quest S | 150 | 40    | 5    |
-| Quest A | 120 | 30    | 0    |
-| Quest B | 90  | 25    | 0    |
-| Quest C | 60  | 15    | 0    |
-| Quest D | 50  | 12    | 0    |
-| Habit   | 30  | 10    | 0    |
-| Task    | 60  | 15    | 0    |
+- **Không có code nào tăng `streak`** — chỉ có reset. Streak hiển thị luôn là 0 hoặc giá trị nhập
+  tay. Cần định nghĩa luật tăng (ngày có ≥1 hoàn thành?) và nơi chạy (server, theo timezone).
+- Setting `streakProtection` (0–3) lưu được nhưng không ai đọc — áp vào đâu?
+- Có muốn class bias / companion bonus thành cơ chế thật không?
 
----
+</requirement>
 
-## Classes
-
-Class ảnh hưởng đến narrative và có thể bias stat bonuses:
-
-| Class     | Icon | Stat Focus  |
-| --------- | ---- | ----------- |
-| Scribe    | ✍    | Wisdom      |
-| Ranger    | 🏹   | Endurance   |
-| Artificer | ⚙    | Composition |
-| Warden    | ☯    | Serenity    |
-| Sage      | 🔮   | Wisdom      |
-| Forgeborn | ⚔    | Discipline  |
-
----
-
-## Companions
-
-Companion cung cấp passive bonuses (lore-driven, implementation varies):
-
-| Companion  | Bonus                               |
-| ---------- | ----------------------------------- |
-| Fox 🦊     | Adaptability +15% XP                |
-| Crane 🦢   | Rest quality +20% streak protection |
-| Wolf 🐺    | Endurance +10% XP for long tasks    |
-| Owl 🦉     | Learning +12% XP for reflect quests |
-| Phoenix 🔥 | Comeback +50% streak recovery       |
-
----
-
-## Achievements / Badges
-
-Badges được earn khi đạt milestones. Categorized theo era và rarity.
-
-**Rarity:** common → uncommon → rare → epic → legendary
-
-**Examples:**
-
-- First Light: Complete first quest
-- Week Strider: 7-day streak
-- Month Guardian: 30-day streak
-- Century Keeper: Complete 100 quests
-- Legendary S: Complete 10 S-rank quests
-
-**Display:** User chọn tối đa 4 badges để hiển thị trên hero profile.
+<tone>Concise, technical. Gamified language nhưng số liệu phải khớp code.</tone>
