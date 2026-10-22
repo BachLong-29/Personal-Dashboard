@@ -2,7 +2,7 @@
  * Migration: convert task.startTime → a schedule block, then drop the field.
  *
  * Part of the "block-driven scheduling" refactor — see
- * rules/docs/requirements/block-driven-scheduling.md.
+ * aetheria-docs/requirements/block-driven-scheduling.md.
  *
  * For each task that still has a `startTime`:
  *   - create a ScheduleBlock { sourceType:'task', date:startDate, startTime,

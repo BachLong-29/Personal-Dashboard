@@ -13,7 +13,7 @@ controls which column the task card appears in and carries its own colour palett
 | `evening`   | Twilight  | 17 – 22    | ☾     | `17:00`      |
 
 > **Tasks no longer carry a `startTime` field.** A task's time-of-day comes from its
-> **schedule blocks**. See `rules/docs/requirements/block-driven-scheduling.md`.
+> **schedule blocks**. See `aetheria-docs/requirements/block-driven-scheduling.md`.
 
 ---
 

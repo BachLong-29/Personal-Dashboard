@@ -292,7 +292,7 @@ export interface UpdateFinanceCategoryPayload {
 
 export type GoldType = 'sjc' | 'vngsjc';
 
-/** VND-per-"chỉ" price quote for one gold type — see rules/docs/requirements/finance-gold.md. */
+/** VND-per-"chỉ" price quote for one gold type — see aetheria-docs/requirements/finance-gold.md. */
 export interface GoldPriceEntry {
   goldType: GoldType;
   name: string;

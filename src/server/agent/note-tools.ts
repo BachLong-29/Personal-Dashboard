@@ -7,7 +7,7 @@ import type { AgentTarget } from '@/types/agent';
 /**
  * Quick-note tools for the assistant: read the notes, and capture a new one.
  * Editing, deleting and marking notes done are deliberately not here — see
- * `rules/docs/requirements/quick-notes.md`.
+ * `aetheria-docs/requirements/quick-notes.md`.
  */
 
 const NOTE_STATUSES = ['open', 'done', 'all'] as const;
