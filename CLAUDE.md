@@ -81,8 +81,9 @@ src/
   Add fields; don't rename or remove them without updating the app.
 - **Mongoose in dev:** models are cached across hot reloads, so a new schema field is silently
   dropped until the dev server restarts.
-- **Docs:** files under `rules/docs/` stay at or under 150 lines. A feature that changes behaviour
-  updates its spec in `rules/docs/requirements/` in the same branch.
+- **Docs:** feature specs are shared with the mobile app and live in the sibling repo
+  `../aetheria-docs` — never copy them back here. A change in behaviour updates its spec there in
+  the same piece of work. Files under `rules/docs/` and `aetheria-docs` stay at or under 150 lines.
 
 ## Additional Documentation
 
@@ -103,16 +104,18 @@ src/
 [database](rules/docs/architecture/database.md) ·
 [mongodb-connection](rules/docs/architecture/mongodb-connection.md)
 
-**Feature specs — `rules/docs/requirements/`:** start from the
-[index](rules/docs/requirements/README.md), which lists every spec by domain. Read the spec of
-the feature you are changing before you change it.
+**Feature specs — `../aetheria-docs/requirements/` (shared with Dashboard-app):** start from the
+[index](../aetheria-docs/requirements/README.md), which lists every spec by domain, and read the
+[docs repo README](../aetheria-docs/README.md) for the conventions (shared part, then `## Web` /
+`## Mobile` sections). Read the spec of the feature you are changing before you change it. If
+`../aetheria-docs` is missing, clone it next to this repo.
 
-**Known bugs — `rules/bugs/`:** one file per bug, indexed in
-[rules/bugs/README.md](rules/bugs/README.md). Check it before touching an area, and mark a bug
-fixed there (with the commit) when you fix it.
+**Known bugs — GitHub Issues of `aetheria-docs`:** shared with the app, labelled by platform
+(`web` · `ios` · `android` · `server`) and `severity:*`. List them with
+`gh issue list -R BachLong-29/aetheria-docs` and check the area you are touching. Reference the
+issue (`BachLong-29/aetheria-docs#<n>`) in the commit that fixes it and close it once merged.
 
 **Workflow:** [feature development guideline](rules/docs/feature_development_guideline.md) ·
 [React component standards](rules/docs/react-component-standards.md) · commands
 [/new-feature](rules/commands/new-feature.md), [/fix-bug](rules/commands/fix-bug.md),
-[/translation](rules/commands/translation.md) · product context
-[vision](rules/context/product-vision.md), [target users](rules/context/target-users.md)
+[/translation](rules/commands/translation.md)
