@@ -252,7 +252,7 @@ const DashboardTopbar = (props: DashboardTopbarProps) => {
                     (companion?.glyph ?? '🧝‍♀️')
                   )}
                 </div>
-                <div className="absolute -bottom-[1px] -right-[1px] w-5 h-5 bg-[linear-gradient(135deg,var(--gold),#b45309)] rounded-[5px] flex items-center justify-center font-[var(--font-title)] text-[10px] font-black text-[var(--on-gold)] border border-[var(--panel)] shadow-[0_0_8px_var(--gold-glow)]">
+                <div className="absolute -bottom-[1px] -right-[1px] w-5 h-5 bg-[linear-gradient(135deg,var(--gold-fill),#b45309)] rounded-[5px] flex items-center justify-center font-[var(--font-title)] text-[10px] font-black text-[var(--on-gold-fill)] border border-[var(--panel)] shadow-[0_0_8px_var(--gold-glow)]">
                   {rank.name[0]?.toUpperCase() ?? char.rank}
                 </div>
               </div>

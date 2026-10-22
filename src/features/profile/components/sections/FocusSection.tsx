@@ -37,7 +37,7 @@ export function FocusSection({ value, onChange }: Props) {
             {active && (
               <div
                 className="absolute top-[8px] right-[8px] w-[20px] h-[20px] rounded-full grid place-items-center [font-family:var(--f-mono)] text-[10px] font-bold"
-                style={{ background: 'var(--gold)', color: 'var(--on-gold)' }}
+                style={{ background: 'var(--gold-fill)', color: 'var(--on-gold-fill)' }}
               >
                 {idx + 1}
               </div>

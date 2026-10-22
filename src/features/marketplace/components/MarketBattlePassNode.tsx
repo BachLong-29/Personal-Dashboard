@@ -30,7 +30,7 @@ const bpNode =
 const bpNodeClaimed =
   'bg-[linear-gradient(180deg,oklch(0.4_0.15_145_/_0.15),var(--panel2))] border-[oklch(0.6_0.18_145_/_0.4)] after:content-[\"✓\"] after:absolute after:top-[6px] after:right-[6px] after:w-[18px] after:h-[18px] after:rounded-full after:bg-[oklch(0.6_0.18_145)] after:text-white after:text-[10px] after:flex after:items-center after:justify-center after:font-bold';
 const bpNodeCurrent =
-  'bg-[linear-gradient(180deg,oklch(0.5_0.18_85_/_0.2),var(--panel2))] border-[var(--gold)] shadow-[0_0_24px_var(--gold-glow)] -translate-y-1 scale-[1.05] z-[2] before:content-[\"YOU\"] before:absolute before:top-[-10px] before:left-1/2 before:-translate-x-1/2 before:font-[var(--font-title)] before:text-[9px] before:tracking-[0.15em] before:bg-[var(--gold)] before:text-[var(--on-gold)] before:px-2 before:py-0.5 before:rounded-[4px] before:font-bold';
+  'bg-[linear-gradient(180deg,oklch(0.5_0.18_85_/_0.2),var(--panel2))] border-[var(--gold-fill)] shadow-[0_0_24px_var(--gold-glow)] -translate-y-1 scale-[1.05] z-[2] before:content-[\"YOU\"] before:absolute before:top-[-10px] before:left-1/2 before:-translate-x-1/2 before:font-[var(--font-title)] before:text-[9px] before:tracking-[0.15em] before:bg-[var(--gold-fill)] before:text-[var(--on-gold-fill)] before:px-2 before:py-0.5 before:rounded-[4px] before:font-bold';
 const bpNodeLv =
   'font-[var(--font-title)] text-[10px] tracking-[0.15em] text-[var(--text-mid)] mb-1.5';
 const bpNodeLvCurrent = 'text-[var(--gold)]';

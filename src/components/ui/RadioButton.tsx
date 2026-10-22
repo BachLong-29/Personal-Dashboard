@@ -57,9 +57,7 @@ export function RadioButton({
         )}
       >
         {checked && (
-          <span
-            className="w-[9px] h-[9px] rounded-full bg-gradient-to-br from-[var(--gold-2)] to-[var(--gold)] shadow-[0_0_6px_var(--gold-glow)]"
-          />
+          <span className="w-[9px] h-[9px] rounded-full bg-gradient-to-br from-[var(--gold-fill-2)] to-[var(--gold-fill)] shadow-[0_0_6px_var(--gold-glow)]" />
         )}
       </span>
       {children}

@@ -90,6 +90,15 @@
   --on-gold: #ffffff;
   --on-mint: #ffffff;
 
+  /* Gold-filled buttons. `--gold` has to stay dark here to read as text on white, which
+     made a fill of it look muddy — buttons take the bright gold the dark theme uses. */
+  --gold-fill: rgb(234 171 5);
+  --gold-fill-2: oklch(0.72 0.14 82);
+  --on-gold-fill: #1f1300;
+  /* Deep end of the confirm-button gradients, and the bright end of the epic CTA. */
+  --gold-fill-deep: oklch(0.72 0.14 82);
+  --gold-fill-hi: oklch(0.86 0.16 82);
+
   /* Type scale */
   --t-9: 44px;
   --t-8: 36px;
@@ -219,6 +228,11 @@
   --panel-grid: oklch(1 0 0 / 0.012);
   --on-gold: #0a0400;
   --on-mint: #002211;
+  --gold-fill: var(--gold);
+  --gold-fill-2: var(--gold-2);
+  --on-gold-fill: var(--on-gold);
+  --gold-fill-deep: oklch(0.55 0.12 85);
+  --gold-fill-hi: var(--gold-hi);
   --sh-1: 0 1px 2px oklch(0 0 0 / 0.4);
   --sh-2: 0 4px 12px oklch(0 0 0 / 0.5);
   --sh-3: 0 8px 24px oklch(0 0 0 / 0.6);
@@ -992,9 +1006,9 @@ body {
 }
 
 .modal-btn.confirm {
-  background: linear-gradient(135deg, oklch(0.55 0.12 85), var(--gold));
-  border-color: var(--gold);
-  color: var(--on-gold);
+  background: linear-gradient(135deg, var(--gold-fill-deep), var(--gold-fill));
+  border-color: var(--gold-fill);
+  color: var(--on-gold-fill);
   box-shadow: 0 0 12px var(--gold-glow);
 }
 
@@ -1161,9 +1175,9 @@ body {
 }
 
 .confirm-checkbox.checked {
-  background: var(--gold);
-  border-color: var(--gold);
-  color: var(--on-gold);
+  background: var(--gold-fill);
+  border-color: var(--gold-fill);
+  color: var(--on-gold-fill);
 }
 
 .confirm-actions {
@@ -1187,9 +1201,9 @@ body {
 }
 
 .confirm-btn.primary {
-  background: linear-gradient(135deg, oklch(0.55 0.12 85), var(--gold));
-  border-color: var(--gold);
-  color: var(--on-gold);
+  background: linear-gradient(135deg, var(--gold-fill-deep), var(--gold-fill));
+  border-color: var(--gold-fill);
+  color: var(--on-gold-fill);
   box-shadow: 0 0 16px var(--gold-glow);
 }
 
@@ -2058,7 +2072,7 @@ body {
   color: var(--text-md);
 }
 .mt-btn.active {
-  color: var(--on-gold);
+  color: var(--on-gold-fill);
 }
 .mt-indicator {
   position: absolute;
@@ -2067,7 +2081,7 @@ body {
   bottom: 5px;
   width: calc(50% - 5px);
   left: 5px;
-  background: linear-gradient(135deg, var(--gold-2), var(--gold));
+  background: linear-gradient(135deg, var(--gold-fill-2), var(--gold-fill));
   border-radius: 7px;
   box-shadow:
     0 0 16px var(--gold-glow),
@@ -2262,9 +2276,9 @@ body {
   transition: all 0.2s var(--ease-spring);
 }
 .auth-check-box.checked {
-  background: linear-gradient(135deg, var(--gold-2), var(--gold));
-  border-color: var(--gold);
-  color: var(--on-gold);
+  background: linear-gradient(135deg, var(--gold-fill-2), var(--gold-fill));
+  border-color: var(--gold-fill);
+  color: var(--on-gold-fill);
   box-shadow: 0 0 10px var(--gold-glow);
 }
 .auth-check-pill:hover .auth-check-box {
@@ -2340,8 +2354,8 @@ body {
 .auth-primary-btn {
   position: relative;
   width: 100%;
-  background: linear-gradient(135deg, var(--gold-2), var(--gold));
-  border: 1px solid var(--gold);
+  background: linear-gradient(135deg, var(--gold-fill-2), var(--gold-fill));
+  border: 1px solid var(--gold-fill);
   border-radius: 10px;
   padding: 14px 16px;
   display: flex;
@@ -2352,7 +2366,7 @@ body {
   font-size: 13px;
   font-weight: 700;
   letter-spacing: 0.32em;
-  color: var(--on-gold);
+  color: var(--on-gold-fill);
   text-transform: uppercase;
   cursor: pointer;
   margin-top: 4px;
@@ -2864,8 +2878,8 @@ body {
   text-transform: uppercase;
   padding: 8px var(--s-4);
   border-radius: var(--r-pill);
-  background: linear-gradient(135deg, var(--gold-2), var(--gold));
-  color: var(--on-gold);
+  background: linear-gradient(135deg, var(--gold-fill-2), var(--gold-fill));
+  color: var(--on-gold-fill);
   box-shadow:
     var(--sh-glow-gold),
     inset 0 0 6px oklch(1 0 0 / 0.25);
@@ -3078,9 +3092,14 @@ body {
   text-transform: uppercase;
   padding: 16px 28px;
   border-radius: var(--r-md);
-  background: linear-gradient(135deg, var(--gold-2) 0%, var(--gold) 50%, var(--gold-hi) 100%);
-  color: var(--on-gold);
-  border: 1px solid var(--gold);
+  background: linear-gradient(
+    135deg,
+    var(--gold-fill-2) 0%,
+    var(--gold-fill) 50%,
+    var(--gold-fill-hi) 100%
+  );
+  color: var(--on-gold-fill);
+  border: 1px solid var(--gold-fill);
   box-shadow:
     0 0 40px var(--gold-glow),
     inset 0 1px 0 oklch(1 0 0 / 0.4),
@@ -4492,8 +4511,8 @@ body {
   position: absolute;
   bottom: -3px;
   right: -3px;
-  background: linear-gradient(135deg, var(--gold-2), var(--gold));
-  color: var(--on-gold);
+  background: linear-gradient(135deg, var(--gold-fill-2), var(--gold-fill));
+  color: var(--on-gold-fill);
   font-family: var(--f-title);
   font-weight: 900;
   font-size: 9px;

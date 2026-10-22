@@ -53,7 +53,9 @@ export function Switch({
             : 'bg-[var(--bg-3)] border-[var(--border)]',
         )}
         style={
-          checked ? { background: 'linear-gradient(90deg, var(--gold-2), var(--gold))' } : undefined
+          checked
+            ? { background: 'linear-gradient(90deg, var(--gold-fill-2), var(--gold-fill))' }
+            : undefined
         }
       >
         <span
@@ -61,7 +63,7 @@ export function Switch({
             'absolute top-[2px] w-[16px] h-[16px] rounded-full',
             'transition-all duration-[250ms] [transition-timing-function:var(--ease-spring)]',
             checked
-              ? 'left-[calc(100%-18px)] bg-[var(--on-gold)] shadow-[0_0_4px_oklch(0_0_0_/_0.4)]'
+              ? 'left-[calc(100%-18px)] bg-[var(--on-gold-fill)] shadow-[0_0_4px_oklch(0_0_0_/_0.4)]'
               : 'left-[2px] bg-[var(--text-md)]',
           )}
         />

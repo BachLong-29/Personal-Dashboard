@@ -154,7 +154,7 @@ const rewardPriceByCurrency: Record<MarketRewardCurrency, string> = {
   achievement: 'text-[var(--cyan)] text-[10px] tracking-[0.15em]',
 };
 const rewardRedeem =
-  'font-[var(--font-title)] text-[10px] tracking-[0.12em] font-bold bg-[linear-gradient(135deg,oklch(0.55_0.12_85),var(--gold))] text-[var(--on-gold)] px-3 py-1.5 rounded-md cursor-pointer uppercase transition-all duration-200 shadow-[0_0_12px_var(--gold-glow)] hover:scale-105 hover:shadow-[0_0_20px_var(--gold-glow)]';
+  'font-[var(--font-title)] text-[10px] tracking-[0.12em] font-bold bg-[linear-gradient(135deg,var(--gold-fill-deep),var(--gold-fill))] text-[var(--on-gold-fill)] px-3 py-1.5 rounded-md cursor-pointer uppercase transition-all duration-200 shadow-[0_0_12px_var(--gold-glow)] hover:scale-105 hover:shadow-[0_0_20px_var(--gold-glow)]';
 const rewardRedeemCant =
   'bg-[var(--panel3)] text-[var(--text-lo)] shadow-none cursor-not-allowed hover:scale-100 hover:shadow-none';
 

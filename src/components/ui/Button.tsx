@@ -19,8 +19,8 @@ export const buttonVariants = cva(
       variant: {
         default: 'bg-[var(--surface-2)] text-[var(--text-hi)] border-[var(--border)]',
         primary: [
-          'bg-gradient-to-br from-[var(--gold-2)] to-[var(--gold)]',
-          'text-[var(--on-gold)] border-[var(--gold)]',
+          'bg-gradient-to-br from-[var(--gold-fill-2)] to-[var(--gold-fill)]',
+          'text-[var(--on-gold-fill)] border-[var(--gold-fill)]',
           'btn-shadow-primary',
         ].join(' '),
         violet: [
