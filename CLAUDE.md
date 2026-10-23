@@ -9,7 +9,7 @@ pay out XP and coins, alongside a finance module (wallets, budgets, gold, SePay 
 a reward marketplace and an AI task assistant. One Next.js app serves both the web UI and the
 `/api/v1` REST API.
 
-The API also serves the sibling mobile app (`../Dashboard-app`, Expo). It authenticates with a
+The API also serves the sibling mobile app (`../aetheria-app`, Expo). It authenticates with a
 Bearer token, not cookies — never make a route depend on cookies alone.
 
 ## Tech Stack
@@ -77,7 +77,7 @@ src/
 - **Responsive:** every new page or feature is mobile-first and must work at phone, tablet and
   desktop widths (Tailwind `sm:` / `md:` / `lg:`). Verify small viewports before calling it done.
 - **i18n:** user-facing text goes through next-intl and must exist in `en`, `vi` and `th`.
-- **Keep the mobile app working:** changing an `/api/v1` response shape breaks `../Dashboard-app`.
+- **Keep the mobile app working:** changing an `/api/v1` response shape breaks `../aetheria-app`.
   Add fields; don't rename or remove them without updating the app.
 - **Mongoose in dev:** models are cached across hot reloads, so a new schema field is silently
   dropped until the dev server restarts.
@@ -104,7 +104,7 @@ src/
 [database](rules/docs/architecture/database.md) ·
 [mongodb-connection](rules/docs/architecture/mongodb-connection.md)
 
-**Feature specs — `../aetheria-docs/requirements/` (shared with Dashboard-app):** start from the
+**Feature specs — `../aetheria-docs/requirements/` (shared with aetheria-app):** start from the
 [index](../aetheria-docs/requirements/README.md), which lists every spec by domain, and read the
 [docs repo README](../aetheria-docs/README.md) for the conventions (shared part, then `## Web` /
 `## Mobile` sections). Read the spec of the feature you are changing before you change it. If
